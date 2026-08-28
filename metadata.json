@@ -1,0 +1,6 @@
+{
+  "name": "WikiZero - Enciclopédia Livre",
+  "description": "WikiZero - Enciclopédia colaborativa e livre com editor wikitexto otimizado, sincronização em tempo real e conformidade LGPD.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
