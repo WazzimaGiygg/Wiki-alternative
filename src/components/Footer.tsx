@@ -57,7 +57,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal
               <Heart size={11} className="text-rose-500" /> {t('sidebar.donations')}
             </button>
             <a
-              href="https://github.com/WazzimaGiygg/wiki"
+              href="https://github.com/WazzimaGiygg/Wiki-alternative"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-slate-900 dark:hover:text-white flex items-center gap-1 underline underline-offset-2 font-medium"
