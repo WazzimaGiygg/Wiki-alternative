@@ -125,9 +125,35 @@ export const GitHubBadge: React.FC = () => (
   </a>
 );
 
+export const WazzimaDossierBadge: React.FC = () => (
+  <a
+    href="https://wazzimagiygg.com/averdade/"
+    target="_blank"
+    rel="noopener noreferrer"
+    title="Investigação e Dossiê dos abusos da Wikipédia contra WazzimaGiygg: https://wazzimagiygg.com/averdade/"
+    className="inline-flex items-center justify-between w-[88px] h-[31px] bg-gradient-to-br from-amber-950 via-slate-900 to-black border border-amber-500/60 hover:border-amber-400 rounded transition p-1 shadow-xs group"
+  >
+    {/* Alert / Truth Document Icon */}
+    <div className="w-5 h-5 rounded flex items-center justify-center bg-amber-500/20 text-amber-400 border border-amber-500/30 flex-shrink-0">
+      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current">
+        <path d="M12 2L1 21h22L12 2zm0 3.5l7.53 13.5H4.47L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z" />
+      </svg>
+    </div>
+    <div className="flex flex-col text-right leading-none pr-0.5">
+      <span className="text-[5.5px] font-mono tracking-tighter text-amber-400 font-bold uppercase">
+        DOSSIÊ WIKI
+      </span>
+      <span className="text-[7.5px] font-sans font-bold text-amber-100 group-hover:text-white tracking-tight">
+        A Verdade
+      </span>
+    </div>
+  </a>
+);
+
 export const FooterBadges: React.FC = () => {
   return (
     <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 pt-1">
+      <WazzimaDossierBadge />
       <GitHubBadge />
       <GoogleAIStudioBadge />
       <CreativeCommonsBadge />

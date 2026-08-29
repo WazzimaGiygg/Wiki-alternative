@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Heart, Shield, Lock, FileText, Globe2, History } from 'lucide-react';
+import { ExternalLink, Heart, Shield, Lock, FileText, Globe2, History, AlertTriangle } from 'lucide-react';
 import { ViewMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { FooterBadges } from './FooterBadges';
@@ -63,6 +63,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal
               className="hover:text-slate-900 dark:hover:text-white flex items-center gap-1 underline underline-offset-2 font-medium"
             >
               GitHub <ExternalLink size={10} />
+            </a>
+            <a
+              href="https://wazzimagiygg.com/averdade/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Dossiê e Investigação dos abusos da Wikipédia contra o usuário WazzimaGiygg"
+              className="hover:text-amber-600 dark:hover:text-amber-300 flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/60 transition"
+            >
+              <AlertTriangle size={11} className="text-amber-600 dark:text-amber-400" />
+              <span>Dossiê & Investigação Wikipédia</span>
+              <ExternalLink size={9} />
             </a>
           </div>
         </div>
