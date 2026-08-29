@@ -19,6 +19,7 @@ import {
 import { WikiPage, WikiArticle, UserProfile } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { ALL_LANGUAGES, getLanguageByCode } from '../utils/languages';
+import { getCleanExcerpt } from '../utils/wikitextParser';
 
 interface WikiHubProps {
   pages: WikiPage[];
@@ -181,7 +182,7 @@ export const WikiHub: React.FC<WikiHubProps> = ({
                         </h3>
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
-                        {art.resumo || art.descricao.slice(0, 90)}
+                        {art.resumo || getCleanExcerpt(art.descricao, 110)}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400 font-mono">
                         <span className="text-blue-600 dark:text-blue-400 font-bold">#{art.pageUid}</span>

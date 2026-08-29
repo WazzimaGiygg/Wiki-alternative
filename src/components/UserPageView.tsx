@@ -797,7 +797,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
 
                 {/* Rendered Wikitext Body */}
                 <div
-                  className="prose dark:prose-invert max-w-none text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed"
+                  className="wiki-rendered-content font-wiki-body text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: parsedBio.html }}
                 />
               </div>
