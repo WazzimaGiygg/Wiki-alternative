@@ -1,93 +1,95 @@
-<div align="center">
-<img width="1200" height="475" src="https://gspotfverwazzimagiygg.wazzimagiygg.com/images/chora.png" />
-</div>
+# Wiki Zero
 
-WikiZero: A Modern, Compliance-First Wiki Alternative
+> O paradigma *Wiki Zero* vs. sistemas tradicionais de documentação colaborativa
 
-1. Project Essence and Strategic Vision
+[![Runtime](https://img.shields.io/badge/runtime-Bun-000000?logo=bun)](https://bun.sh)
+[![Build](https://img.shields.io/badge/build-Vite-646CFF?logo=vite)](https://vitejs.dev)
+[![Lang](https://img.shields.io/badge/lang-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
+[![Backend](https://img.shields.io/badge/backend-Firebase-FFCA28?logo=firebase)](https://firebase.google.com)
+[![Deploy](https://img.shields.io/badge/deploy-Vercel-000000?logo=vercel)](https://vercel.com)
 
-The enterprise knowledge management landscape is currently undergoing a forced evolution. Organizations are aggressively migrating away from monolithic, PHP-based legacy wikis toward decoupled, TypeScript-native architectures that prioritize performance and data sovereignty. WikiZero (internally tracked as Wiki-alternative) is engineered to lead this transition. It is not merely a content repository but a high-performance documentation engine designed for an era where privacy-first, lightweight platforms are the prerequisite for operational agility.
+---
 
-Deployed at wikialt.vercel.app, WikiZero leverages a modern execution layer to eliminate the "bloat-ware" tax associated with traditional systems. By strictly adhering to a "zero-friction" philosophy, the project ensures that information architecture remains fluid and accessible without the overhead of heavy server-side rendering or complex database maintenance.
+## 📖 Sobre o Projeto
 
-Core Value Proposition
+O **Wiki Zero** (referenciado no ecossistema GitHub como `Wiki-alternative`) é uma solução de documentação colaborativa construída sobre o template oficial `google-gemini/aistudio-repository-template`. O projeto adota o "triângulo de eficiência" composto por **TypeScript**, **Vite** e **Bun**, substituindo o Node.js tradicional para garantir maior velocidade de execução tanto em desenvolvimento quanto em produção.
 
-* Performance-Engineered Architecture: Utilizing Vite’s native ESM-based development server and Bun’s high-performance runtime for near-instantaneous interaction and deployment.
-* Privacy by Design: Native implementation of data governance protocols, ensuring strict compliance with evolving global privacy mandates.
-* AI-Native Foundation: Architected on top of the Google Gemini AI Studio template to support intelligent, automated documentation workflows.
+Diferente das ferramentas de wiki tradicionais, o Wiki Zero propõe uma arquitetura *backend-less* e *serverless*, eliminando a necessidade de provisionar ou manter servidores próprios.
 
-While the strategic vision focuses on replacing legacy technical debt, the platform’s functional capabilities are rooted in a modern, opinionated technology stack.
+---
 
-2. Key Features and Privacy Differentiators
+## 🆚 Wiki Zero vs. MediaWiki
 
-In a professional engineering environment, documentation tools must provide more than static storage; they require administrative robustness and rigorous legal compliance to remain viable. WikiZero differentiates itself by treating data governance as a core architectural feature rather than an elective plugin.
+O **MediaWiki** — motor por trás da Wikipédia — é o padrão histórico do setor, mas carrega uma complexidade operacional significativa por depender de uma pilha **LAMP/LEMP** (Linux, Apache/Nginx, MySQL/MariaDB, PHP), exigindo patches de segurança constantes e gerenciamento manual de dependências.
 
-A primary differentiator is the User Rename Tool (implemented in commit 777d770). This is a critical administrative utility specifically designed for compliance with the LGPD (Lei Geral de Proteção de Dados) and Marco Civil da Internet. In traditional wikis, author names are often hard-coded into snapshots or audit trails, making "The Right to Correction" or "Right to be Forgotten" technically difficult to execute without breaking database references. WikiZero’s tool enables systematic pseudonymization—a core LGPD requirement—ensuring that personal identifiable information (PII) can be corrected or removed while maintaining the integrity of the documentation’s version history.
+O Wiki Zero substitui esse modelo por uma persistência de dados descentralizada, oferecendo autonomia através da abstração total da infraestrutura — sem exigir um administrador de sistemas dedicado.
 
-As a high-tier wiki alternative, the platform provides distinct functional advantages:
+| Critério | Wiki Zero (Firebase/Vercel) | MediaWiki (Hospedagem Tradicional) |
+|---|---|---|
+| **Runtime Environment** | Bun / Vite | PHP / Apache ou Nginx |
+| **Escalabilidade** | Automática e Nativa (Serverless) | Requer Load Balancers e Config. Manual |
+| **Manutenção de Banco** | Gerenciada (Cloud Firestore) | Manual (MySQL/PostgreSQL) |
+| **Facilidade de Deploy** | CI/CD Contínuo (Vercel/Git) | Complexa (Scripts de migração/Manual) |
+| **Custo de Entrada** | Próximo a Zero (Nível Gratuito) | Elevado (Hospedagem Fixa/Servidor) |
 
-* Gemini-Integrated Workflows: Inherited from the google-gemini/aistudio-repository-template, the system includes pre-configured integration points for AI-assisted content generation and curation.
-* Rapid-Cycle Deployment: The Vite-based build pipeline ensures that documentation updates are propagated across the Vercel edge network with minimal latency.
-* Granular Data Security: A security-first data layer powered by Firebase, enforcing strict access controls at the document level.
+---
 
-This sophisticated feature set is made possible by a meticulously selected technology stack that emphasizes type safety and runtime efficiency.
+## 🔥 Diferencial Firebase
 
-3. Technical Architecture and Modern Stack Analysis
+A adoção do **Firebase** como backend elimina a fricção de gerenciamento de servidores, permitindo que a equipe de engenharia foque na entrega de valor em vez da manutenção de infraestrutura.
 
-WikiZero adopts a TypeScript-first philosophy (representing 99.2% of the codebase) to ensure long-term maintainability and to mitigate the runtime regressions common in legacy JavaScript environments. This strict typing provides a clear, self-documenting roadmap for full-stack contributors.
+A análise dos arquivos de configuração do projeto revela uma implementação sofisticada:
 
-Core Technology Stack
+- **`firestore.rules`** — Segurança declarativa movida para a "borda" (*edge*) do banco de dados, com lógica de autorização tratada nativamente pelo Firebase.
+- **`firebase-blueprint.json`** — Estrutura de dashboard administrativo pré-configurada, permitindo estabelecer a governança da wiki imediatamente após o deploy.
+- **`firebase-applet-config.json`** — Configuração adicional do applet integrado à plataforma.
 
-Component	Technology	Strategic Benefit
-Runtime	Bun	A unified toolkit (test runner, bundler, and package manager) that significantly simplifies CI/CD pipelines.
-Build Tool	Vite	Leverages native ESM for rapid HMR (Hot Module Replacement) and optimized production assets.
-Language	TypeScript (99.2%)	Ensures robust type safety across the entire application lifecycle, reducing technical debt.
-Backend/Database	Firebase / Firestore	Provides serverless scaling and real-time listeners for collaborative editing without manual WebSocket management.
+> A sinergia entre Vite, TypeScript e o runtime Bun redefine a experiência de desenvolvimento, entregando uma aplicação otimizada para carregamento instantâneo.
 
-The project’s heritage is a significant technical advantage; being "Generated from google-gemini/aistudio-repository-template" means the architecture is pre-optimized for large language model (LLM) interactions. This allows the wiki to function as an active, AI-aware knowledge base rather than a passive archive.
+---
 
-While the stack provides the engine, the repository's internal organization ensures that this power is channeled into a maintainable, developer-friendly structure.
+## 💰 Eficiência e Custo Total de Propriedade (TCO)
 
-4. Repository Structure and Navigation
+O modelo *pay-per-use*, combinado ao deploy via **Vercel**, resulta em custo total de entrada virtualmente zero, permitindo que os custos escalem proporcionalmente à adoção da ferramenta.
 
-The WikiZero repository is organized around a strict separation of concerns, facilitating ease of onboarding and high-velocity development.
+- **MediaWiki:** o custo real está no "custo de oportunidade" e nas horas-homem gastas em *patch management* de PHP e SQL.
+- **Wiki Zero:** essa carga é delegada aos provedores de nuvem (Google e Vercel), mantendo a infraestrutura sempre atualizada e segura.
 
-* src: The primary application domain, containing the core logic, UI components, and state management.
-* firestore.rules & firebase-blueprint.json: These files represent the Infrastructure as Code (IaC) definition. firestore.rules enforces "Privacy by Design" by applying least-privilege access, while the blueprint ensures reproducible backend deployments.
-* assets/.aistudio: Contains the prompt configurations and integration assets used by the Google Gemini AI Studio to facilitate automated content curation.
-* vite.config.ts & tsconfig.json: The environmental and compilation backbone, defining the optimization parameters for the modern build pipeline.
+---
 
-This structured approach prepares the codebase for a streamlined installation process, leveraging the fastest tooling available in the current ecosystem.
+## 🔒 Conformidade e Governança de Dados (LGPD / Marco Civil)
 
-5. Installation and Environment Setup
+A conformidade legal é tratada como requisito arquitetural, não como um detalhe posterior.
 
-To maximize Developer Experience (DX), WikiZero utilizes Bun as its primary package manager. This choice reflects our commitment to modern tooling that dramatically reduces dependency resolution times compared to legacy managers like npm or yarn.
+Um ponto técnico de destaque é a **ferramenta de renomeação de usuários** (commit `777d770`). Em bancos NoSQL como o Firestore, manter a consistência de dados ao renomear uma entidade é tecnicamente desafiador devido à natureza desnormalizada dos dados — desafio que o Wiki Zero resolve nativamente.
 
-Implementation Workflow
+Essa funcionalidade atende diretamente a:
 
-1. Clone the Source:
+- **LGPD** (Lei Geral de Proteção de Dados)
+- **Marco Civil da Internet**
+- **Direito ao Esquecimento** e anonimização de dados pessoais
 
-git clone https://github.com/WazzimaGiygg/Wiki-alternative.git
+Ter essa capacidade integrada nativamente elimina a dependência de plugins de terceiros para governança de dados.
 
+---
 
-1. Synchronize Dependencies: Use Bun to ensure a deterministic build based on the bun.lock file.
+## ✅ Recomendações de Uso
 
-bun install
+| Perfil | Adequação |
+|---|---|
+| **Startups e Scale-ups** | Ideal para baixo custo operacional e escalabilidade imediata |
+| **Equipes de Engenharia** | Perfeito para documentação técnica interna integrada a fluxos Git |
+| **Projetos com Rigor de Compliance** | Recomendado para controle estrito de dados de usuários (LGPD) |
 
+---
 
-1. Environment Configuration: Initialize the environment by copying the template.
+## 🚀 Conclusão
 
-cp .env.example .env
+O Wiki Zero integra a robustez do **TypeScript** com a agilidade do **Bun** e a escalabilidade do **Firebase**, propondo-se como uma alternativa moderna, *serverless* e economicamente vantajosa frente aos sistemas de wiki tradicionais — priorizando eficiência, segurança declarativa e performance.
 
+---
 
-Senior Lead Pro-Tip: The .env file must be populated with the specific Firebase API keys and environment identifiers found in your firebase-applet-config.json. Failure to sync these will result in failed database handshaking and rule validation errors.
+## 📚 Fonte
 
-Once the backend synchronization is established, the platform is ready for either local iterative development or production-scale deployment.
-
-6. Administrative Compliance and Data Governance
-
-In the modern enterprise, data governance is a strategic necessity rather than a secondary feature. WikiZero provides administrators with the granular controls required to maintain an immutable audit trail while respecting individual data rights.
-
-The implementation of the User Rename Tool in commit 777d770 is the cornerstone of this approach. By facilitating the "Right to Correction" and "Right to be Forgotten" (crucial under LGPD and Marco Civil), the platform ensures that organizations can comply with legal deletion requests without destroying the relational integrity of their documentation history.
-
-Furthermore, the firestore.rules configuration acts as a technical firewall, enforcing least-privilege access at the database level. This ensures that only authenticated users with specific roles can modify sensitive documentation or administrative settings. This synthesis of legal implementation and technical security positions WikiZero as a robust, production-ready solution for high-stakes documentation environments.
+Conteúdo adaptado do artigo original:
+**"Análise Comparativa de Plataformas Wiki: O Paradigma Wiki Zero vs. Sistemas Tradicionais"** — [WazzimaGiygg](https://wazzimagiyggcore.blogspot.com/2026/08/analise-comparativa-de-plataformas-wiki.html), agosto de 2026.
