@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Heart, Shield, Lock, FileText, Globe2, History, AlertTriangle } from 'lucide-react';
+import { ExternalLink, Heart, Shield, Lock, FileText, Globe2, History, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { ViewMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { FooterBadges } from './FooterBadges';
@@ -37,6 +37,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal
               className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-medium"
             >
               <History size={11} className="text-cyan-500" /> {t('sidebar.recent_changes')}
+            </button>
+            <button
+              onClick={() => onNavigate('privacy')}
+              title="Conformidade integral com LGPD (Lei nº 13.709/2018) e Marco Civil da Internet (Lei nº 12.965/2014)"
+              className="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 transition"
+            >
+              <ShieldCheck size={12} className="text-emerald-600 dark:text-emerald-400" />
+              <span>LGPD & Marco Civil</span>
             </button>
             <button
               onClick={() => onNavigate('privacy')}
@@ -121,12 +129,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal
               >
                 GoDaddy
               </a>
-              . DPO: pedrohenriquecardonaperes@gmail.com
+              {' '}• Em conformidade com a <strong>LGPD (Lei nº 13.709/2018)</strong> e o <strong>Marco Civil da Internet (Lei nº 12.965/2014)</strong>. DPO: pedrohenriquecardonaperes@gmail.com
             </p>
           </div>
 
-          {/* 88x31 px MediaWiki, Google AI Studio, Creative Commons & DeepSeek Badges */}
-          <FooterBadges />
+          {/* 88x31 px MediaWiki, LGPD & MCI, Google AI Studio, Creative Commons & DeepSeek Badges */}
+          <FooterBadges onNavigate={onNavigate} />
         </div>
       </div>
     </footer>

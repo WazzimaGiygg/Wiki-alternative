@@ -217,9 +217,34 @@ export const GoDaddyBadge: React.FC = () => (
   </a>
 );
 
-export const FooterBadges: React.FC = () => {
+export const LgpdMarcoCivilBadge: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    title="Conformidade integral com a LGPD (Lei nº 13.709/2018) e Marco Civil da Internet (Lei nº 12.965/2014) no Brasil"
+    className="inline-flex items-center justify-between w-[88px] h-[31px] bg-gradient-to-br from-[#062c1e] via-[#051f15] to-[#02100b] border border-emerald-500/70 hover:border-emerald-400 rounded transition p-1 shadow-xs group cursor-pointer text-left"
+  >
+    {/* Shield with Brazil-inspired checkmark/lock */}
+    <div className="w-5 h-5 rounded flex items-center justify-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex-shrink-0">
+      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-emerald-400">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
+      </svg>
+    </div>
+    <div className="flex flex-col text-right leading-none pr-0.5">
+      <span className="text-[5.2px] font-mono tracking-tighter text-emerald-400 font-bold uppercase">
+        CONFORME
+      </span>
+      <span className="text-[7.5px] font-sans font-bold text-emerald-100 group-hover:text-white tracking-tight">
+        LGPD & MCI
+      </span>
+    </div>
+  </button>
+);
+
+export const FooterBadges: React.FC<{ onNavigate?: (view: any) => void }> = ({ onNavigate }) => {
   return (
     <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 pt-1">
+      <LgpdMarcoCivilBadge onClick={() => onNavigate && onNavigate('privacy')} />
       <FirebaseBadge />
       <GoDaddyBadge />
       <GoogleAIStudioBadge />
