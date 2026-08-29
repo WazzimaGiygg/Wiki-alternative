@@ -192,10 +192,36 @@ export const FirebaseBadge: React.FC = () => (
   </a>
 );
 
+export const GoDaddyBadge: React.FC = () => (
+  <a
+    href="https://www.godaddy.com"
+    target="_blank"
+    rel="noopener noreferrer"
+    title="Domínio oficial registrado e adquirido via GoDaddy: https://www.godaddy.com"
+    className="inline-flex items-center justify-between w-[88px] h-[31px] bg-gradient-to-br from-[#003734] via-[#002725] to-[#011413] border border-emerald-500/60 hover:border-emerald-400 rounded transition p-1 shadow-xs group"
+  >
+    {/* GoDaddy 'GO' Heart/Logo Vector Icon */}
+    <div className="w-5 h-5 rounded flex items-center justify-center bg-emerald-400/10 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current text-[#00A4A6]">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5h-2v-2h2v2zm0-4h-2V7h2v5.5z" />
+      </svg>
+    </div>
+    <div className="flex flex-col text-right leading-none pr-0.5">
+      <span className="text-[5.5px] font-mono tracking-tighter text-emerald-400 font-bold uppercase">
+        DOMÍNIO
+      </span>
+      <span className="text-[7.5px] font-sans font-bold text-emerald-100 group-hover:text-white tracking-tight">
+        GoDaddy
+      </span>
+    </div>
+  </a>
+);
+
 export const FooterBadges: React.FC = () => {
   return (
     <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 pt-1">
       <FirebaseBadge />
+      <GoDaddyBadge />
       <GoogleAIStudioBadge />
       <WazzimaDossierBadge />
       <GitHubBadge />

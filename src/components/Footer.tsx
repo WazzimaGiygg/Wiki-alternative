@@ -112,6 +112,15 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal
               >
                 Google Firebase (Cloud Firestore DB)
               </a>
+              {' '}• Domínio registrado e adquirido via{' '}
+              <a
+                href="https://www.godaddy.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
+              >
+                GoDaddy
+              </a>
               . DPO: pedrohenriquecardonaperes@gmail.com
             </p>
           </div>
