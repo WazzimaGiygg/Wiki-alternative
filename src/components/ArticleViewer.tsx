@@ -54,6 +54,7 @@ interface ArticleViewerProps {
   onNavigateToPage: (pageUid: string) => void;
   onNavigateToArticleByTitle: (title: string) => void;
   onNavigateToArticleById?: (articleId: string) => void;
+  onNavigateToUser?: (identifier: string) => void;
   onBack: () => void;
   onRestoreRevision?: (historyItem: ArticleHistoryItem) => void;
 }
@@ -69,6 +70,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   onNavigateToPage,
   onNavigateToArticleByTitle,
   onNavigateToArticleById,
+  onNavigateToUser,
   onBack,
   onRestoreRevision,
 }) => {
@@ -546,9 +548,18 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                   <User size={11} />
                   <span>
                     Autor:{' '}
-                    <strong className="text-slate-700 dark:text-slate-300">
-                      {article.autor || 'Anônimo'}
-                    </strong>
+                    {onNavigateToUser && article.autor ? (
+                      <button
+                        onClick={() => onNavigateToUser(article.autor)}
+                        className="font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center"
+                      >
+                        {article.autor}
+                      </button>
+                    ) : (
+                      <strong className="text-slate-700 dark:text-slate-300">
+                        {article.autor || 'Anônimo'}
+                      </strong>
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">

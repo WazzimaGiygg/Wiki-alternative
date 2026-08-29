@@ -435,6 +435,7 @@ export default function App() {
               onNavigateToPage={handleSelectPage}
               onNavigateToArticleByTitle={handleNavigateToArticleByTitle}
               onNavigateToArticleById={handleSelectArticle}
+              onNavigateToUser={handleNavigateToUser}
               onBack={() => handleNavigate('hub')}
               onRestoreRevision={handleRestoreRevision}
             />
@@ -447,6 +448,7 @@ export default function App() {
               user={user}
               onNavigateToArticle={handleSelectArticle}
               onNavigateToPage={handleSelectPage}
+              onNavigateToUser={handleNavigateToUser}
               initialTab="all"
             />
           )}
@@ -458,7 +460,30 @@ export default function App() {
               user={user}
               onNavigateToArticle={handleSelectArticle}
               onNavigateToPage={handleSelectPage}
+              onNavigateToUser={handleNavigateToUser}
               initialTab="watchlist"
+            />
+          )}
+
+          {currentView === 'user-page' && (
+            <UserPageView
+              targetUserIdentifier={targetUserIdentifier || user?.displayName || user?.username || 'WazzimaGiygg'}
+              currentUser={user}
+              allArticles={articles}
+              allPages={pages}
+              initialTab={userPageInitialTab}
+              onNavigateToArticle={handleSelectArticle}
+              onNavigateToPage={handleSelectPage}
+              onNavigateToUser={handleNavigateToUser}
+              onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'admin-users' && (
+            <AdminUsersManagementView
+              currentUser={user}
+              onNavigateToUser={handleNavigateToUser}
+              onBack={() => handleNavigate('hub')}
             />
           )}
 
