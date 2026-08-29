@@ -23,6 +23,7 @@ import {
   PlusCircle,
   Database,
   Info,
+  Sparkles,
 } from 'lucide-react';
 import { UserProfile, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -218,6 +219,23 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               >
                 <Home size={16} className="text-blue-600" />
                 <span>Página Principal (Hub)</span>
+              </button>
+
+              <button
+                onClick={() => handleItemClick('site-updates')}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition ${
+                  currentView === 'site-updates'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Sparkles size={16} className="text-amber-500" />
+                  <span>Atualizações & Melhorias</span>
+                </div>
+                <span className="text-[9px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1 py-0.2 rounded-xs font-mono font-bold">
+                  v3.3
+                </span>
               </button>
 
               <button

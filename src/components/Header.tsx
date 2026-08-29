@@ -245,6 +245,22 @@ export const Header: React.FC<HeaderProps> = ({
               <Sparkles size={13} className="text-purple-500" />
               {t('header.nav_beta')}
             </button>
+            <button
+              id="btn-header-site-updates"
+              onClick={() => onNavigate('site-updates')}
+              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 transition font-semibold ${
+                currentView === 'site-updates'
+                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+              title="Ver melhorias e notas de versão do sistema"
+            >
+              <Sparkles size={13} className="text-amber-500" />
+              <span>Atualizações</span>
+              <span className="text-[9px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1 py-0.2 rounded-xs font-mono font-bold">
+                v3.3
+              </span>
+            </button>
           </nav>
 
           {/* Language Switcher Dropdown */}

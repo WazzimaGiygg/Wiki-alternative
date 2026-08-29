@@ -84,10 +84,19 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" title="Servidor Firestore e Cache Operacional" />
             <span className="font-bold text-slate-800 dark:text-slate-200">
-              WazzimaGiygg / WikiZero v3.0
+              WazzimaGiygg / WikiZero v3.3
             </span>
             <span className="text-slate-300 dark:text-slate-700">|</span>
-            <span>Enciclopédia Livre e Aberta</span>
+            <button
+              id="btn-footer-site-updates"
+              onClick={() => onNavigate('site-updates')}
+              className="text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1"
+              title="Ver notas de versão e melhorias do sistema"
+            >
+              <span>Notas de Versão & Atualizações</span>
+            </button>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+            <span>Enciclopédia Livre</span>
             <span className="text-slate-300 dark:text-slate-700">|</span>
             <span className="text-blue-600 dark:text-blue-400 font-mono flex items-center gap-1">
               <span>{currentLanguage.flag}</span>

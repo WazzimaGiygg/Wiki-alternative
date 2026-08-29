@@ -31,6 +31,7 @@ interface WikiHubProps {
   onCreatePageClick: () => void;
   onCreateArticleClick: (pageUid?: string) => void;
   onOpenEditor: () => void;
+  onNavigate?: (view: any) => void;
 }
 
 export const WikiHub: React.FC<WikiHubProps> = ({
@@ -43,6 +44,7 @@ export const WikiHub: React.FC<WikiHubProps> = ({
   onCreatePageClick,
   onCreateArticleClick,
   onOpenEditor,
+  onNavigate,
 }) => {
   const { currentLanguage, t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
@@ -355,6 +357,40 @@ export const WikiHub: React.FC<WikiHubProps> = ({
           })}
         </div>
       </div>
+
+      {/* System Changelog & Updates Quick Access Banner */}
+      {onNavigate && (
+        <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-slate-50 dark:from-slate-900 dark:via-blue-950/40 dark:to-slate-900 border border-blue-200 dark:border-blue-800/80 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2.5 rounded-lg bg-blue-600 text-white shadow-xs flex-shrink-0">
+              <Sparkles size={20} className="text-amber-300 animate-pulse" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                  Histórico de Atualizações & Registro de Melhorias
+                </h3>
+                <span className="text-[10px] font-mono font-bold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-300 dark:border-blue-700">
+                  v3.3.0 Ativa
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 max-w-2xl">
+                Versão mobile otimizada, central de tickets 24h, conformidade LGPD e editor wikitexto.
+                Acompanhe o changelog completo das melhorias inseridas no sistema.
+              </p>
+            </div>
+          </div>
+
+          <button
+            id="btn-hub-open-updates"
+            onClick={() => onNavigate('site-updates')}
+            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs flex-shrink-0 active:scale-95"
+          >
+            <span>Ver Notas de Versão</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

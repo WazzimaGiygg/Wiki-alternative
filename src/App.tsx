@@ -23,6 +23,7 @@ import {
   BetaModeView,
   OfflineModeView,
 } from './components/InformativeViews';
+import { SiteUpdatesView } from './components/SiteUpdatesView';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileSearchModal } from './components/MobileSearchModal';
@@ -439,6 +440,7 @@ export default function App() {
               onCreatePageClick={() => setShowCreatePageModal(true)}
               onCreateArticleClick={(uid) => handleOpenNewEditor(uid)}
               onOpenEditor={() => handleOpenNewEditor()}
+              onNavigate={handleNavigate}
             />
           )}
 
@@ -598,6 +600,14 @@ export default function App() {
               articles={articles}
               onNavigateToArticle={handleSelectArticle}
               onOpenEditor={() => handleOpenNewEditor()}
+            />
+          )}
+
+          {currentView === 'site-updates' && (
+            <SiteUpdatesView
+              currentUser={user}
+              onNavigateHome={() => handleNavigate('hub')}
+              onSelectSpecialPage={(p) => handleNavigate(p as any)}
             />
           )}
 

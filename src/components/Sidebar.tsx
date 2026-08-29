@@ -20,6 +20,7 @@ import {
   Database,
   LifeBuoy,
   ExternalLink,
+  Layers,
 } from 'lucide-react';
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -145,6 +146,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
+              id="btn-sidebar-site-updates"
+              onClick={() => onNavigate('site-updates')}
+              title="Atualizações do Site & Notas de Versão"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'site-updates'
+                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Sparkles size={15} className="text-amber-500 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Atualizações do Site</span>
+                  <span className="text-[9px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono font-bold px-1 rounded-xs">
+                    v3.3
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
               onClick={() => onNavigate('special-pages')}
               title="Páginas Especiais (Special:SpecialPages)"
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
@@ -153,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
               }`}
             >
-              <Sparkles size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              <Layers size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
               {!isCollapsed && <span className="truncate">Páginas Especiais</span>}
             </button>
 

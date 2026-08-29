@@ -210,6 +210,22 @@ export interface RecentChangeEntry {
   isBot?: boolean;
 }
 
+export interface SystemUpdateEntry {
+  id: string;
+  version: string;
+  title: string;
+  date: string;
+  category: 'feature' | 'improvement' | 'security' | 'mobile' | 'backend' | 'design' | 'compliance' | 'fix';
+  author: string;
+  authorRole?: string;
+  summary: string;
+  highlights: string[];
+  badge?: string;
+  commitHash?: string;
+  affectedComponents?: string[];
+  isLatest?: boolean;
+}
+
 export type DeviceMode = 'auto' | 'mobile' | 'desktop';
 
 export type ViewMode =
@@ -229,5 +245,6 @@ export type ViewMode =
   | 'privacy'
   | 'terms'
   | 'mydata'
+  | 'site-updates'
   | 'beta'
   | 'offline';

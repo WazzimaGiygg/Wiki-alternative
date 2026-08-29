@@ -36,6 +36,7 @@ import {
   UserTalkMessage,
   UserAuditLog,
   UserRole,
+  SystemUpdateEntry,
 } from '../types';
 import {
   INITIAL_PAGES,
@@ -44,6 +45,7 @@ import {
   INITIAL_COMMUNITY_USERS,
   INITIAL_USER_TALK_MESSAGES,
   INITIAL_USER_AUDIT_LOGS,
+  INITIAL_SYSTEM_UPDATES,
 } from '../data/seedData';
 
 // Configuração oficial do projeto Firebase
@@ -86,6 +88,7 @@ const STORAGE_KEYS = {
   COMMUNITY_USERS: 'wikizero_community_users_v3',
   USER_TALK_MESSAGES: 'wikizero_user_talk_messages_v3',
   USER_AUDIT_LOGS: 'wikizero_user_audit_logs_v3',
+  SYSTEM_UPDATES: 'wikizero_system_updates_v3',
 };
 
 const INITIAL_TALK_THREADS: TalkThread[] = [
@@ -183,6 +186,28 @@ function initializeLocalStorage() {
   }
   if (!localStorage.getItem(STORAGE_KEYS.USER_AUDIT_LOGS)) {
     localStorage.setItem(STORAGE_KEYS.USER_AUDIT_LOGS, JSON.stringify(INITIAL_USER_AUDIT_LOGS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES)) {
+    localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(INITIAL_SYSTEM_UPDATES));
+  } else {
+    // If exists, make sure newest seed items are present
+    try {
+      const existing: SystemUpdateEntry[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES) || '[]');
+      const existingIds = new Set(existing.map((u) => u.id));
+      let changed = false;
+      for (const item of INITIAL_SYSTEM_UPDATES) {
+        if (!existingIds.has(item.id)) {
+          existing.push(item);
+          changed = true;
+        }
+      }
+      if (changed) {
+        existing.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(existing));
+      }
+    } catch {
+      localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(INITIAL_SYSTEM_UPDATES));
+    }
   }
 }
 
@@ -1532,6 +1557,103 @@ export const StorageService = {
     }
 
     return { syncedPages, syncedArticles, syncedUsers };
+  },
+
+  // === SYSTEM UPDATES & CHANGELOG ===
+  async getSystemUpdates(): Promise<SystemUpdateEntry[]> {
+    initializeLocalStorage();
+    let updates: SystemUpdateEntry[] = [];
+    try {
+      updates = JSON.parse(localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES) || '[]');
+    } catch {
+      updates = INITIAL_SYSTEM_UPDATES;
+    }
+
+    // Try fetching from Firestore if available
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'system_updates'));
+        if (!snap.empty) {
+          const firestoreUpdates: SystemUpdateEntry[] = [];
+          snap.forEach((docSnap) => {
+            firestoreUpdates.push(docSnap.data() as SystemUpdateEntry);
+          });
+          // Merge firestore updates with local updates
+          const mergedMap = new Map<string, SystemUpdateEntry>();
+          updates.forEach((u) => mergedMap.set(u.id, u));
+          firestoreUpdates.forEach((u) => mergedMap.set(u.id, u));
+          updates = Array.from(mergedMap.values());
+        }
+      } catch (err) {
+        console.warn('Firestore getSystemUpdates background read error:', err);
+      }
+    }
+
+    // Sort descending by date
+    updates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return updates;
+  },
+
+  async addSystemUpdate(
+    entry: Omit<SystemUpdateEntry, 'id' | 'date'> & { id?: string; date?: string }
+  ): Promise<SystemUpdateEntry> {
+    const updates = await this.getSystemUpdates();
+    const newEntry: SystemUpdateEntry = {
+      id: entry.id || `upd-${Date.now()}`,
+      version: entry.version.trim(),
+      title: entry.title.trim(),
+      date: entry.date || new Date().toISOString(),
+      category: entry.category,
+      author: entry.author || 'Administrador',
+      authorRole: entry.authorRole || 'Sistema',
+      summary: entry.summary.trim(),
+      highlights: entry.highlights && entry.highlights.length > 0 ? entry.highlights : [entry.summary],
+      badge: entry.badge || 'Melhoria',
+      commitHash: entry.commitHash || `commit-${Math.random().toString(36).substring(2, 9)}`,
+      affectedComponents: entry.affectedComponents || [],
+      isLatest: true,
+    };
+
+    // Mark previous latest as false
+    const updatedList = updates.map((u) => ({ ...u, isLatest: false }));
+    updatedList.unshift(newEntry);
+    localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(updatedList));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'system_updates', newEntry.id), {
+          ...newEntry,
+          timestamp: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Firestore addSystemUpdate background sync error:', err);
+      }
+    }
+
+    return newEntry;
+  },
+
+  async deleteSystemUpdate(id: string): Promise<boolean> {
+    const updates = await this.getSystemUpdates();
+    const filtered = updates.filter((u) => u.id !== id);
+    if (filtered.length > 0) {
+      filtered[0].isLatest = true;
+    }
+    localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(filtered));
+
+    if (firebaseActive && db) {
+      try {
+        await deleteDoc(doc(db, 'system_updates', id));
+      } catch (err) {
+        console.warn('Firestore deleteSystemUpdate error:', err);
+      }
+    }
+    return true;
+  },
+
+  async resetSystemUpdatesToDefault(): Promise<SystemUpdateEntry[]> {
+    localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(INITIAL_SYSTEM_UPDATES));
+    return INITIAL_SYSTEM_UPDATES;
   },
 
   async clearLocalCache(): Promise<void> {
