@@ -18,8 +18,11 @@ import {
   Globe2,
   ChevronDown,
   Database,
+  Menu,
+  Smartphone,
+  Monitor,
 } from 'lucide-react';
-import { UserProfile, NotificationItem, ViewMode } from '../types';
+import { UserProfile, NotificationItem, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 
 interface HeaderProps {
@@ -28,6 +31,7 @@ interface HeaderProps {
   currentView: ViewMode;
   searchQuery: string;
   isDark: boolean;
+  deviceMode?: DeviceMode;
   onSearchChange: (q: string) => void;
   onSearchSubmit: () => void;
   onRandomPage: () => void;
@@ -35,6 +39,9 @@ interface HeaderProps {
   onLoginClick: () => void;
   onLogoutClick: () => void;
   onToggleTheme: () => void;
+  onToggleDeviceMode?: (mode: DeviceMode) => void;
+  onOpenMobileDrawer?: () => void;
+  onOpenMobileSearch?: () => void;
   onMarkNotificationsAsRead: () => void;
   onNotificationClick: (notif: NotificationItem) => void;
   onOpenLanguagesModal?: () => void;
@@ -46,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentView,
   searchQuery,
   isDark,
+  deviceMode = 'auto',
   onSearchChange,
   onSearchSubmit,
   onRandomPage,
@@ -53,6 +61,9 @@ export const Header: React.FC<HeaderProps> = ({
   onLoginClick,
   onLogoutClick,
   onToggleTheme,
+  onToggleDeviceMode,
+  onOpenMobileDrawer,
+  onOpenMobileSearch,
   onMarkNotificationsAsRead,
   onNotificationClick,
   onOpenLanguagesModal,
@@ -123,31 +134,43 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Main High Density Header Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-13 flex items-center justify-between gap-3">
-        {/* Brand Logo & Title */}
-        <div
-          onClick={() => onNavigate('hub')}
-          className="flex items-center gap-2.5 cursor-pointer group flex-shrink-0"
-        >
-          <div className="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center font-serif-heading font-bold text-lg shadow-xs group-hover:bg-blue-700 transition">
-            W
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 leading-none">
-              <h1 className="font-serif-heading font-bold text-lg text-slate-900 dark:text-white tracking-tight">
-                WazzimaGiygg
-              </h1>
-              <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-1 py-0.2 rounded-xs">
-                Wiki
-              </span>
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-13 flex items-center justify-between gap-2 sm:gap-3">
+        {/* Left Side: Mobile Menu Button + Brand Logo & Title */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* Hamburger Menu Trigger for Mobile Drawer */}
+          <button
+            id="btn-header-mobile-drawer"
+            onClick={onOpenMobileDrawer}
+            className="p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden active:scale-95 transition"
+            aria-label="Abrir menu de navegação"
+          >
+            <Menu size={20} />
+          </button>
+
+          <div
+            onClick={() => onNavigate('hub')}
+            className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+          >
+            <div className="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center font-serif-heading font-bold text-lg shadow-xs group-hover:bg-blue-700 transition">
+              W
             </div>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans leading-none mt-0.5">
-              {t('header.tagline')}
-            </p>
+            <div>
+              <div className="flex items-center gap-1.5 leading-none">
+                <h1 className="font-serif-heading font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
+                  WazzimaGiygg
+                </h1>
+                <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-1 py-0.2 rounded-xs">
+                  Wiki
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans leading-none mt-0.5 hidden xs:block">
+                {t('header.tagline')}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Dense Global Search Bar */}
+        {/* Dense Global Search Bar (Desktop) */}
         <div className="flex-1 max-w-lg mx-2 hidden md:block">
           <div className="relative">
             <input
@@ -178,7 +201,17 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* High Density Navigation Links & Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Quick Mobile Search Button (Visible on mobile/tablet) */}
+          <button
+            id="btn-header-mobile-search"
+            onClick={onOpenMobileSearch}
+            className="p-1.5 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden transition"
+            aria-label="Pesquisar artigos"
+            title="Buscar"
+          >
+            <Search size={16} />
+          </button>
           <nav className="hidden lg:flex items-center gap-1 text-xs font-medium mr-1 border-r border-slate-200 dark:border-slate-800 pr-2">
             <button
               onClick={() => onNavigate('hub')}

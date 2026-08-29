@@ -21,12 +21,13 @@ import {
   LifeBuoy,
   ExternalLink,
 } from 'lucide-react';
-import { ViewMode } from '../types';
+import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 
 interface SidebarProps {
   currentView: ViewMode;
   isCollapsed: boolean;
+  deviceMode?: DeviceMode;
   onToggleCollapse: () => void;
   onNavigate: (view: ViewMode) => void;
   onRandomPage: () => void;
@@ -39,6 +40,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   isCollapsed,
+  deviceMode = 'auto',
   onToggleCollapse,
   onNavigate,
   onRandomPage,
@@ -49,9 +51,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { currentLanguage, t } = useLanguage();
 
+  const visibilityClass =
+    deviceMode === 'mobile'
+      ? 'hidden'
+      : deviceMode === 'desktop'
+      ? 'flex'
+      : 'hidden md:flex';
+
   return (
     <aside
-      className={`relative flex flex-col bg-[#f8f9fa] dark:bg-[#0b0f17] border-r border-slate-200 dark:border-slate-800 transition-all duration-200 z-30 select-none ${
+      id="desktop-sidebar"
+      className={`relative flex-col bg-[#f8f9fa] dark:bg-[#0b0f17] border-r border-slate-200 dark:border-slate-800 transition-all duration-200 z-30 select-none ${visibilityClass} ${
         isCollapsed ? 'w-14' : 'w-56'
       }`}
     >

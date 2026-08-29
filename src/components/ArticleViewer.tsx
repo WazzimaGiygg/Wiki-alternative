@@ -41,6 +41,7 @@ import { parseWikitext, TocItem } from '../utils/wikitextParser';
 import { ArticleHistoryView } from './ArticleHistoryView';
 import { TalkPageView } from './TalkPageView';
 import { WhatLinksHereView } from './WhatLinksHereView';
+import { MobileArticleTOC } from './MobileArticleTOC';
 import { StorageService } from '../services/storageService';
 
 interface ArticleViewerProps {
@@ -827,6 +828,20 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             </div>
           </aside>
         </div>
+      )}
+
+      {/* Floating Bottom TOC and Reader Controls on Mobile */}
+      {activeTab === 'article' && (
+        <MobileArticleTOC
+          toc={toc}
+          fontSize={fontSize}
+          isPlayingAudio={isPlayingAudio}
+          isWatched={isWatched}
+          onFontSizeChange={setFontSize}
+          onToggleSpeech={toggleSpeech}
+          onToggleWatch={handleToggleWatchlist}
+          onShare={handleShare}
+        />
       )}
     </div>
   );

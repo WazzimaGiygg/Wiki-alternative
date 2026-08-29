@@ -1,20 +1,84 @@
 import React from 'react';
-import { ExternalLink, Heart, Shield, Lock, FileText, Globe2, History, AlertTriangle, ShieldCheck, LifeBuoy } from 'lucide-react';
-import { ViewMode } from '../types';
+import {
+  ExternalLink,
+  Heart,
+  Shield,
+  Lock,
+  FileText,
+  Globe2,
+  History,
+  AlertTriangle,
+  ShieldCheck,
+  LifeBuoy,
+  Smartphone,
+  Monitor,
+} from 'lucide-react';
+import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { FooterBadges } from './FooterBadges';
 
 interface FooterProps {
   onNavigate: (view: ViewMode) => void;
+  deviceMode?: DeviceMode;
+  onToggleDeviceMode?: (mode: DeviceMode) => void;
   onOpenLanguagesModal?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal }) => {
+export const Footer: React.FC<FooterProps> = ({
+  onNavigate,
+  deviceMode = 'auto',
+  onToggleDeviceMode,
+  onOpenLanguagesModal,
+}) => {
   const { currentLanguage, t } = useLanguage();
 
   return (
-    <footer className="mt-12 bg-[#f8f9fa] dark:bg-[#0b0f17] border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 py-5 transition-colors select-none font-sans">
+    <footer className="mt-12 bg-[#f8f9fa] dark:bg-[#0b0f17] border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 py-6 pb-24 md:pb-6 transition-colors select-none font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4">
+        {/* Official Wikimedia-style Mobile / Desktop View Selector Bar */}
+        <div className="bg-slate-200/70 dark:bg-slate-850 p-2 rounded-lg flex flex-wrap items-center justify-between gap-2 border border-slate-300/80 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+              Modo de Exibição:
+            </span>
+            <span className="text-[10px] text-slate-500">
+              (Escolha como deseja visualizar a enciclopédia)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              id="btn-footer-mobile-view"
+              onClick={() => onToggleDeviceMode?.('mobile')}
+              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
+                deviceMode === 'mobile'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700'
+              }`}
+              title="Ativar layout e navegação otimizados para smartphones e telas touch"
+            >
+              <Smartphone size={13} />
+              <span>Versão móvel</span>
+              {deviceMode === 'mobile' && <span className="text-[9px] bg-blue-500 text-white px-1 rounded-xs uppercase">Ativo</span>}
+            </button>
+
+            <button
+              id="btn-footer-desktop-view"
+              onClick={() => onToggleDeviceMode?.('desktop')}
+              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
+                deviceMode === 'desktop'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700'
+              }`}
+              title="Ativar layout completo e painéis de computador"
+            >
+              <Monitor size={13} />
+              <span>Versão para computador</span>
+              {deviceMode === 'desktop' && <span className="text-[9px] bg-blue-500 text-white px-1 rounded-xs uppercase">Ativo</span>}
+            </button>
+          </div>
+        </div>
+
         {/* Top Info & Navigation Row */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-wrap">

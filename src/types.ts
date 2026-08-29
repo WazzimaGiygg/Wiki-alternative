@@ -210,6 +210,8 @@ export interface RecentChangeEntry {
   isBot?: boolean;
 }
 
+export type DeviceMode = 'auto' | 'mobile' | 'desktop';
+
 export type ViewMode =
   | 'hub'
   | 'article'

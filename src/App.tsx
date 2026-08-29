@@ -24,8 +24,20 @@ import {
   OfflineModeView,
 } from './components/InformativeViews';
 import { Footer } from './components/Footer';
+import { MobileBottomNav } from './components/MobileBottomNav';
+import { MobileSearchModal } from './components/MobileSearchModal';
+import { MobileDrawerMenu } from './components/MobileDrawerMenu';
 import { StorageService } from './services/storageService';
-import { WikiPage, WikiArticle, UserProfile, NotificationItem, CookieConsent, ViewMode, ArticleHistoryItem } from './types';
+import {
+  WikiPage,
+  WikiArticle,
+  UserProfile,
+  NotificationItem,
+  CookieConsent,
+  ViewMode,
+  ArticleHistoryItem,
+  DeviceMode,
+} from './types';
 
 export default function App() {
   // === STATE MANAGEMENT ===
@@ -48,6 +60,20 @@ export default function App() {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState<boolean>(false);
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>(() => {
+    const saved = localStorage.getItem('wikizero_device_mode');
+    if (saved === 'mobile' || saved === 'desktop' || saved === 'auto') {
+      return saved as DeviceMode;
+    }
+    return 'auto';
+  });
+
+  const handleToggleDeviceMode = (mode: DeviceMode) => {
+    setDeviceMode(mode);
+    localStorage.setItem('wikizero_device_mode', mode);
+  };
   const [isDark, setIsDark] = useState<boolean>(() => {
     return (
       localStorage.getItem('wikizero_theme_v3') === 'dark' ||
@@ -368,6 +394,7 @@ export default function App() {
         currentView={currentView}
         searchQuery={searchQuery}
         isDark={isDark}
+        deviceMode={deviceMode}
         onSearchChange={setSearchQuery}
         onSearchSubmit={handleSearchSubmit}
         onRandomPage={handleRandomPage}
@@ -375,6 +402,9 @@ export default function App() {
         onLoginClick={handleLoginClick}
         onLogoutClick={handleLogout}
         onToggleTheme={handleToggleTheme}
+        onToggleDeviceMode={handleToggleDeviceMode}
+        onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)}
+        onOpenMobileSearch={() => setIsMobileSearchOpen(true)}
         onMarkNotificationsAsRead={handleMarkNotificationsAsRead}
         onNotificationClick={handleNotificationClick}
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
@@ -386,6 +416,7 @@ export default function App() {
         <Sidebar
           currentView={currentView}
           isCollapsed={isSidebarCollapsed}
+          deviceMode={deviceMode}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           onNavigate={handleNavigate}
           onRandomPage={handleRandomPage}
@@ -396,7 +427,7 @@ export default function App() {
         />
 
         {/* Content Body Container */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-hidden">
+        <main className="flex-1 p-3 sm:p-6 md:p-8 overflow-hidden">
           {currentView === 'hub' && (
             <WikiHub
               pages={pages}
@@ -584,9 +615,59 @@ export default function App() {
       </div>
 
       {/* 3. Global Footer */}
-      <Footer onNavigate={handleNavigate} />
+      <Footer
+        onNavigate={handleNavigate}
+        deviceMode={deviceMode}
+        onToggleDeviceMode={handleToggleDeviceMode}
+        onOpenLanguagesModal={() => setShowLanguageModal(true)}
+      />
 
-      {/* 4. Modals & Overlays */}
+      {/* 4. Mobile Bottom Navigation Bar (Fixed at bottom for smartphones) */}
+      <MobileBottomNav
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onRandomPage={handleRandomPage}
+        onOpenDrawer={() => setIsMobileDrawerOpen(true)}
+        onOpenSearch={() => setIsMobileSearchOpen(true)}
+      />
+
+      {/* 5. Mobile Search Fullscreen Modal */}
+      <MobileSearchModal
+        isOpen={isMobileSearchOpen}
+        onClose={() => setIsMobileSearchOpen(false)}
+        articles={articles}
+        pages={pages}
+        onSelectArticle={(id) => handleSelectArticle(id)}
+        onSelectPage={(uid) => handleSelectPage(uid)}
+        onRandomPage={handleRandomPage}
+      />
+
+      {/* 6. Mobile Side Drawer Navigation Menu */}
+      <MobileDrawerMenu
+        isOpen={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        currentView={currentView}
+        user={user}
+        isDark={isDark}
+        deviceMode={deviceMode}
+        totalPages={pages.length}
+        totalArticles={articles.length}
+        onNavigate={handleNavigate}
+        onToggleTheme={handleToggleTheme}
+        onToggleDeviceMode={handleToggleDeviceMode}
+        onLoginClick={handleLoginClick}
+        onLogoutClick={handleLogout}
+        onCreatePageClick={() => {
+          setIsMobileDrawerOpen(false);
+          setShowCreatePageModal(true);
+        }}
+        onOpenLanguagesModal={() => {
+          setIsMobileDrawerOpen(false);
+          setShowLanguageModal(true);
+        }}
+      />
+
+      {/* 7. Modals & Overlays */}
       {/* Banned User Alert Overlay */}
       {user?.isBanned && (
         <BannedOverlay reason={user.banReason} onLogout={handleLogout} />
