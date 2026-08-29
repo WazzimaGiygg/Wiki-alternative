@@ -103,7 +103,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal
               .
             </p>
             <p className="text-slate-500 dark:text-slate-500">
-              WikiZero Enciclopédia Aberta © 2026. DPO: pedrohenriquecardonaperes@gmail.com
+              WikiZero Enciclopédia Aberta © 2026. Infraestrutura e Banco de Dados alimentados por{' '}
+              <a
+                href="https://firebase.google.com/products/firestore"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-amber-600 dark:text-amber-400 hover:underline font-semibold"
+              >
+                Google Firebase (Cloud Firestore DB)
+              </a>
+              . DPO: pedrohenriquecardonaperes@gmail.com
             </p>
           </div>
 

@@ -150,12 +150,55 @@ export const WazzimaDossierBadge: React.FC = () => (
   </a>
 );
 
+export const FirebaseBadge: React.FC = () => (
+  <a
+    href="https://firebase.google.com/products/firestore"
+    target="_blank"
+    rel="noopener noreferrer"
+    title="Banco de Dados e Infraestrutura Cloud fornecidos por Google Firebase Firestore"
+    className="inline-flex items-center justify-between w-[88px] h-[31px] bg-gradient-to-br from-[#1a140b] via-[#241a0d] to-[#0f0c08] border border-amber-500/50 hover:border-amber-400 rounded transition p-1 shadow-xs group"
+  >
+    {/* Firebase Flame Vector Logo */}
+    <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0" fill="none">
+      <path
+        d="M5.4 17.5L8.2 2.8C8.3 2.3 9 2.1 9.4 2.5L13.1 9.3L5.4 17.5Z"
+        fill="#FFA000"
+      />
+      <path
+        d="M13.1 9.3L15.3 5.3C15.6 4.8 16.3 4.9 16.5 5.5L18.8 17.5L13.1 9.3Z"
+        fill="#F57C00"
+      />
+      <path
+        d="M3.2 19.8L5.4 17.5L13.1 9.3L15.3 13.5L3.8 20.3C3.3 20.6 2.8 20.2 3.2 19.8Z"
+        fill="#FFCA28"
+      />
+      <path
+        d="M18.8 17.5L15.3 13.5L13.1 9.3L9.4 2.5C9 2.1 8.3 2.3 8.2 2.8L3.2 19.8C2.9 20.9 3.9 21.8 4.9 21.3L12 17.3L19.1 21.3C20.1 21.8 21.1 20.9 20.8 19.8L18.8 17.5Z"
+        fill="#FFA000"
+      />
+      <path
+        d="M12 17.3L4.9 21.3C3.9 21.8 2.9 20.9 3.2 19.8L3.8 20.3C3.3 20.2 2.8 20.6 3.2 19.8L4.9 21.3L12 17.3Z"
+        fill="#FF8F00"
+      />
+    </svg>
+    <div className="flex flex-col text-right leading-none pr-0.5">
+      <span className="text-[5.5px] font-mono tracking-tighter text-amber-400 font-bold uppercase">
+        POWERED BY
+      </span>
+      <span className="text-[7.5px] font-sans font-bold text-amber-200 group-hover:text-amber-100 tracking-tight">
+        Firebase DB
+      </span>
+    </div>
+  </a>
+);
+
 export const FooterBadges: React.FC = () => {
   return (
     <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 pt-1">
+      <FirebaseBadge />
+      <GoogleAIStudioBadge />
       <WazzimaDossierBadge />
       <GitHubBadge />
-      <GoogleAIStudioBadge />
       <CreativeCommonsBadge />
       <DeepSeekIABadge />
     </div>
