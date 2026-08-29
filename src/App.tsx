@@ -5,6 +5,7 @@ import { WikiHub } from './components/WikiHub';
 import { RecentChanges } from './components/RecentChanges';
 import { ArticleViewer } from './components/ArticleViewer';
 import { WikitextEditor } from './components/WikitextEditor';
+import { SpecialPagesView } from './components/SpecialPagesView';
 import { CreatePageModal } from './components/CreatePageModal';
 import { CookieBanner } from './components/CookieBanner';
 import { BannedOverlay } from './components/BannedOverlay';
@@ -412,12 +413,37 @@ export default function App() {
               article={activeArticle}
               page={activePage}
               user={user}
+              allArticles={articles}
+              allPages={pages}
               onEdit={handleOpenEditorForEdit}
               onDelete={handleDeleteArticle}
               onNavigateToPage={handleSelectPage}
               onNavigateToArticleByTitle={handleNavigateToArticleByTitle}
+              onNavigateToArticleById={handleSelectArticle}
               onBack={() => handleNavigate('hub')}
               onRestoreRevision={handleRestoreRevision}
+            />
+          )}
+
+          {currentView === 'special-pages' && (
+            <SpecialPagesView
+              articles={articles}
+              pages={pages}
+              user={user}
+              onNavigateToArticle={handleSelectArticle}
+              onNavigateToPage={handleSelectPage}
+              initialTab="all"
+            />
+          )}
+
+          {currentView === 'watchlist' && (
+            <SpecialPagesView
+              articles={articles}
+              pages={pages}
+              user={user}
+              onNavigateToArticle={handleSelectArticle}
+              onNavigateToPage={handleSelectPage}
+              initialTab="watchlist"
             />
           )}
 

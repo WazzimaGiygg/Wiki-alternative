@@ -19,7 +19,18 @@ import {
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
-import { WikiPage, WikiArticle, UserProfile, NotificationItem, CookieConsent, RecentChangeEntry } from '../types';
+import {
+  WikiPage,
+  WikiArticle,
+  UserProfile,
+  NotificationItem,
+  CookieConsent,
+  RecentChangeEntry,
+  TalkThread,
+  TalkReply,
+  ArticleRatingData,
+  WatchlistItem,
+} from '../types';
 import { INITIAL_PAGES, INITIAL_ARTICLES, INITIAL_NOTIFICATIONS } from '../data/seedData';
 
 // Configuração original do projeto
@@ -55,7 +66,67 @@ const STORAGE_KEYS = {
   DRAFT: 'wikizero_editor_draft_v3',
   THEME: 'wikizero_theme_v3',
   RECENT_CHANGES: 'wikizero_recent_changes_v3',
+  TALK_THREADS: 'wikizero_talk_threads_v3',
+  WATCHLIST: 'wikizero_watchlist_v3',
+  RATINGS: 'wikizero_ratings_v3',
 };
+
+const INITIAL_TALK_THREADS: TalkThread[] = [
+  {
+    id: 'talk-metro-01',
+    articleId: 'art-metro-01',
+    titulo: 'Expansão da Linha 2-Verde até Penha e Dutra',
+    autor: 'Metrofilo_SP',
+    autorEmail: 'contato@metrosp.org',
+    autorRole: 'editor',
+    data: '2026-08-27T10:15:00Z',
+    status: 'em_discussao',
+    conteudo: 'Olá colegas editores! Proponho atualizarmos a seção sobre o avanço das obras do Tatuzão (tuneladora Cora Coralina) rumo à estação Penha da Linha 2-Verde com dados oficiais de 2026. Alguém possui o relatório mais recente da Companhia?',
+    respostas: [
+      {
+        id: 'reply-1',
+        autor: 'WazzimaGiygg',
+        autorEmail: 'pedrohenriquecardonaperes@gmail.com',
+        autorRole: 'admin',
+        data: '2026-08-27T14:30:00Z',
+        conteudo: 'Excelente iniciativa! Já localizei o relatório semestral de investimentos em infraestrutura. Vou estruturar uma subseção no artigo e citar as fontes em <ref>.',
+        upvotes: 4,
+      },
+    ],
+  },
+  {
+    id: 'talk-metro-02',
+    articleId: 'art-metro-01',
+    titulo: 'Padronização de referências bibliográficas do HMD',
+    autor: 'Historiador_Transportes',
+    autorRole: 'leitor',
+    data: '2026-08-25T11:00:00Z',
+    status: 'resolvido',
+    conteudo: 'As menções ao consórcio alemão-brasileiro HMD (Hochtief-Montreal-Deconsult) de 1968 foram verificadas e devidamente creditadas conforme os arquivos da Biblioteca Nacional.',
+    respostas: [],
+  },
+  {
+    id: 'talk-wiki-01',
+    articleId: 'art-wiki-01',
+    titulo: 'Diretrizes de neutralidade e fontes secundárias',
+    autor: 'WikiAdmin',
+    autorEmail: 'admin@wikizero.org',
+    autorRole: 'admin',
+    data: '2026-08-28T09:00:00Z',
+    status: 'consenso',
+    conteudo: 'Lembramos a todos os contribuidores que os artigos da WikiZero devem seguir o princípio da verificabilidade e ponto de vista neutro (NPOV), similar aos pilares da Wikimedia Foundation.',
+    respostas: [
+      {
+        id: 'reply-wiki-1',
+        autor: 'Colaborador_Livre',
+        autorRole: 'editor',
+        data: '2026-08-28T10:45:00Z',
+        conteudo: 'Concordo plenamente! Já inseri as predefinições de aviso editorial {{Aviso}} e {{Nota}} nos artigos principais.',
+        upvotes: 6,
+      },
+    ],
+  },
+];
 
 // Seed LocalStorage if empty
 function initializeLocalStorage() {
@@ -67,6 +138,25 @@ function initializeLocalStorage() {
   }
   if (!localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) {
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(INITIAL_NOTIFICATIONS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.TALK_THREADS)) {
+    localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify(INITIAL_TALK_THREADS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.WATCHLIST)) {
+    localStorage.setItem(STORAGE_KEYS.WATCHLIST, JSON.stringify([
+      {
+        articleId: 'art-metro-01',
+        articleTitle: 'História do Metrô de São Paulo',
+        pageUid: 'metro_sp',
+        dataAdicionado: '2026-08-28T12:00:00Z',
+      },
+      {
+        articleId: 'art-wiki-01',
+        articleTitle: 'O que é a WikiZero?',
+        pageUid: 'wikizero_info',
+        dataAdicionado: '2026-08-28T12:00:00Z',
+      },
+    ]));
   }
 }
 
@@ -566,4 +656,239 @@ export const StorageService = {
 
     return fullEntry;
   },
+
+  // === TALK PAGES / PÁGINAS DE DISCUSSÃO ===
+  getTalkThreads(articleId: string): TalkThread[] {
+    initializeLocalStorage();
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
+      const list: TalkThread[] = raw ? JSON.parse(raw) : [];
+      return list.filter((t) => t.articleId === articleId);
+    } catch (e) {
+      console.warn('Error loading talk threads:', e);
+      return [];
+    }
+  },
+
+  addTalkThread(
+    articleId: string,
+    titulo: string,
+    conteudo: string,
+    user: UserProfile | null
+  ): TalkThread {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
+    const list: TalkThread[] = raw ? JSON.parse(raw) : [];
+
+    const newThread: TalkThread = {
+      id: `talk-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      articleId,
+      titulo,
+      conteudo,
+      autor: user ? user.displayName || user.email.split('@')[0] : 'Colaborador Anônimo',
+      autorEmail: user?.email,
+      autorRole: user?.role || 'leitor',
+      data: new Date().toISOString(),
+      status: 'aberto',
+      respostas: [],
+    };
+
+    list.unshift(newThread);
+    localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify(list));
+    return newThread;
+  },
+
+  addTalkReply(
+    threadId: string,
+    conteudo: string,
+    user: UserProfile | null
+  ): TalkReply | null {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
+    const list: TalkThread[] = raw ? JSON.parse(raw) : [];
+
+    const thread = list.find((t) => t.id === threadId);
+    if (!thread) return null;
+
+    const newReply: TalkReply = {
+      id: `reply-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      autor: user ? user.displayName || user.email.split('@')[0] : 'Colaborador Anônimo',
+      autorEmail: user?.email,
+      autorRole: user?.role || 'leitor',
+      conteudo,
+      data: new Date().toISOString(),
+      upvotes: 0,
+    };
+
+    thread.respostas.push(newReply);
+    if (thread.status === 'aberto') {
+      thread.status = 'em_discussao';
+    }
+
+    localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify(list));
+    return newReply;
+  },
+
+  updateTalkThreadStatus(threadId: string, status: TalkThread['status']): boolean {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
+    const list: TalkThread[] = raw ? JSON.parse(raw) : [];
+
+    const thread = list.find((t) => t.id === threadId);
+    if (!thread) return false;
+
+    thread.status = status;
+    localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify(list));
+    return true;
+  },
+
+  // === WATCHLIST / PÁGINAS VIGIADAS ===
+  getWatchlist(): WatchlistItem[] {
+    initializeLocalStorage();
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.WATCHLIST);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  isWatched(articleId: string): boolean {
+    const list = this.getWatchlist();
+    return list.some((item) => item.articleId === articleId);
+  },
+
+  toggleWatchlist(article: WikiArticle): boolean {
+    initializeLocalStorage();
+    const list = this.getWatchlist();
+    const index = list.findIndex((item) => item.articleId === article.id);
+
+    let isNowWatched = false;
+    if (index >= 0) {
+      list.splice(index, 1);
+      isNowWatched = false;
+    } else {
+      list.unshift({
+        articleId: article.id,
+        articleTitle: article.titulo,
+        pageUid: article.pageUid,
+        dataAdicionado: new Date().toISOString(),
+      });
+      isNowWatched = true;
+    }
+
+    localStorage.setItem(STORAGE_KEYS.WATCHLIST, JSON.stringify(list));
+    return isNowWatched;
+  },
+
+  // === COMMUNITY RATINGS & FEEDBACK ===
+  getArticleRating(articleId: string): ArticleRatingData {
+    initializeLocalStorage();
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.RATINGS);
+      const ratingsMap: Record<string, ArticleRatingData> = raw ? JSON.parse(raw) : {};
+      return (
+        ratingsMap[articleId] || {
+          articleId,
+          averageScore: 4.8,
+          totalVotes: 12,
+          feedbacks: [
+            {
+              autor: 'Estudante_USP',
+              nota: 5,
+              comentario: 'Artigo muito completo e com referências bem estruturadas.',
+              data: '2026-08-26T18:00:00Z',
+            },
+          ],
+        }
+      );
+    } catch (e) {
+      return {
+        articleId,
+        averageScore: 5.0,
+        totalVotes: 1,
+      };
+    }
+  },
+
+  submitRating(
+    articleId: string,
+    nota: number,
+    comentario: string,
+    user: UserProfile | null
+  ): ArticleRatingData {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.RATINGS);
+    const ratingsMap: Record<string, ArticleRatingData> = raw ? JSON.parse(raw) : {};
+
+    const current = ratingsMap[articleId] || {
+      articleId,
+      averageScore: 4.8,
+      totalVotes: 10,
+      feedbacks: [],
+    };
+
+    const newTotal = current.totalVotes + 1;
+    const newAverage = Number(((current.averageScore * current.totalVotes + nota) / newTotal).toFixed(1));
+
+    const feedbacks = current.feedbacks || [];
+    if (comentario.trim()) {
+      feedbacks.unshift({
+        autor: user ? user.displayName || user.email.split('@')[0] : 'Leitor WikiZero',
+        nota,
+        comentario: comentario.trim(),
+        data: new Date().toISOString(),
+      });
+    }
+
+    const updated: ArticleRatingData = {
+      articleId,
+      averageScore: newAverage,
+      totalVotes: newTotal,
+      userScore: nota,
+      feedbacks,
+    };
+
+    ratingsMap[articleId] = updated;
+    localStorage.setItem(STORAGE_KEYS.RATINGS, JSON.stringify(ratingsMap));
+    return updated;
+  },
+
+  // === WHAT LINKS HERE / PÁGINAS AFLUENTES ===
+  getBacklinks(targetTitle: string, allArticles: WikiArticle[]): { article: WikiArticle; snippet: string }[] {
+    if (!targetTitle) return [];
+    const normalizedTarget = targetTitle.toLowerCase().trim();
+
+    const results: { article: WikiArticle; snippet: string }[] = [];
+
+    allArticles.forEach((art) => {
+      // Don't link to self
+      if (art.titulo.toLowerCase() === normalizedTarget) return;
+
+      const desc = art.descricao || '';
+      // Check for [[Target]] or [[Target|Label]]
+      const linkRegex = new RegExp(`\\[\\[(${escapeRegex(targetTitle)})(?:\\|[^\\]]*)?\\]\\]`, 'i');
+      const match = desc.match(linkRegex);
+
+      if (match && match.index !== undefined) {
+        // Extract context snippet
+        const start = Math.max(0, match.index - 40);
+        const end = Math.min(desc.length, match.index + match[0].length + 40);
+        let snippet = desc.slice(start, end).replace(/\n/g, ' ');
+        if (start > 0) snippet = '...' + snippet;
+        if (end < desc.length) snippet = snippet + '...';
+
+        results.push({
+          article: art,
+          snippet,
+        });
+      }
+    });
+
+    return results;
+  },
 };
+
+function escapeRegex(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

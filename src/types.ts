@@ -77,6 +77,44 @@ export interface CookieConsent {
   version: string;
 }
 
+export interface TalkReply {
+  id: string;
+  autor: string;
+  autorEmail?: string;
+  autorRole?: string;
+  conteudo: string;
+  data: string;
+  upvotes?: number;
+}
+
+export interface TalkThread {
+  id: string;
+  articleId: string;
+  titulo: string;
+  autor: string;
+  autorEmail?: string;
+  autorRole?: string;
+  data: string;
+  conteudo: string;
+  status: 'aberto' | 'em_discussao' | 'resolvido' | 'consenso';
+  respostas: TalkReply[];
+}
+
+export interface ArticleRatingData {
+  articleId: string;
+  averageScore: number;
+  totalVotes: number;
+  userScore?: number;
+  feedbacks?: { autor: string; comentario: string; nota: number; data: string }[];
+}
+
+export interface WatchlistItem {
+  articleId: string;
+  articleTitle: string;
+  pageUid: string;
+  dataAdicionado: string;
+}
+
 export interface RecentChangeEntry {
   id: string;
   type: 'new_article' | 'edit_article' | 'new_collection' | 'minor_edit';
@@ -104,6 +142,8 @@ export type ViewMode =
   | 'create-page'
   | 'create-article'
   | 'recent-changes'
+  | 'special-pages'
+  | 'watchlist'
   | 'security'
   | 'donation'
   | 'privacy'
