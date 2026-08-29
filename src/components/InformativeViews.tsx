@@ -15,6 +15,7 @@ import {
   Layers,
   Database,
   ArrowRight,
+  LifeBuoy,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle } from '../types';
 
@@ -92,6 +93,32 @@ export const SecurityView: React.FC<InformativeViewsProps> = ({ user }) => {
               </p>
             </div>
           </div>
+
+          {/* Official Support & Tickets Card */}
+          <div className="p-3.5 rounded bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-3">
+            <div className="flex items-start gap-2.5">
+              <div className="p-2 rounded bg-indigo-600 text-white flex-shrink-0 mt-0.5 sm:mt-0">
+                <LifeBuoy size={16} />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 dark:text-white text-xs">
+                  Central de Suporte & Abertura de Tickets WazzimaGiygg
+                </h4>
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                  Reporte incidentes de segurança, solicite desbloqueios ou abra um chamado técnico para os serviços WazzimaGiygg.
+                </p>
+              </div>
+            </div>
+            <a
+              href="https://support.wazzimagiygg.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition flex items-center gap-1.5 whitespace-nowrap self-stretch sm:self-auto justify-center"
+            >
+              <span>Abrir Ticket</span>
+              <ExternalLink size={12} />
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -158,9 +185,25 @@ export const DonationView: React.FC<InformativeViewsProps> = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
             <a
-              href="https://github.com/WazzimaGiygg/wiki"
+              href="https://support.wazzimagiygg.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-3 rounded bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/80 hover:border-indigo-500 transition flex items-center justify-between group"
+            >
+              <div>
+                <span className="font-bold block text-slate-900 dark:text-white text-xs flex items-center gap-1">
+                  <LifeBuoy size={13} className="text-indigo-600 dark:text-indigo-400" />
+                  Suporte & Tickets
+                </span>
+                <span className="text-slate-500 dark:text-slate-400 text-[10px]">Atendimento dos serviços WazzimaGiygg</span>
+              </div>
+              <ExternalLink size={14} className="text-indigo-400 group-hover:text-indigo-600" />
+            </a>
+
+            <a
+              href="https://github.com/WazzimaGiygg/Wiki-alternative"
               target="_blank"
               rel="noopener noreferrer"
               className="p-3 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 transition flex items-center justify-between group"
@@ -215,10 +258,28 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = () => {
             <li><strong>Registros de Acesso (Logs):</strong> data, hora e metadados coletados conforme exigência legal do Art. 15 do Marco Civil da Internet.</li>
           </ul>
 
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">3. Seus Direitos (Art. 18 da LGPD)</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">3. Seus Direitos (Art. 18 da LGPD) e Abertura de Tickets</h3>
           <p>
-            Você pode exercer a qualquer momento seus direitos de acesso, retificação, portabilidade e revogação de consentimento através do botão "Meus Dados" no menu de navegação.
+            Você pode exercer a qualquer momento seus direitos de acesso, retificação, portabilidade e revogação de consentimento através do botão "Meus Dados" no menu de navegação ou abrindo um chamado direto com a equipe de privacidade na <a href="https://support.wazzimagiygg.com/" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 font-bold underline">Central de Tickets WazzimaGiygg</a>.
           </p>
+
+          <div className="p-3 rounded bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/70 flex items-center justify-between gap-3 mt-2">
+            <div className="flex items-center gap-2">
+              <LifeBuoy size={16} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+              <span className="text-[11px] text-slate-700 dark:text-slate-300">
+                Precisa de auxílio com seus dados ou suporte aos serviços WazzimaGiygg?
+              </span>
+            </div>
+            <a
+              href="https://support.wazzimagiygg.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 text-xs font-semibold rounded bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center gap-1 shadow-xs whitespace-nowrap"
+            >
+              <span>Tickets & Suporte</span>
+              <ExternalLink size={11} />
+            </a>
+          </div>
         </div>
       </div>
     </div>

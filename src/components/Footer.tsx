@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Heart, Shield, Lock, FileText, Globe2, History, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { ExternalLink, Heart, Shield, Lock, FileText, Globe2, History, AlertTriangle, ShieldCheck, LifeBuoy } from 'lucide-react';
 import { ViewMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { FooterBadges } from './FooterBadges';
@@ -32,6 +32,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
+            <a
+              href="https://support.wazzimagiygg.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Central Oficial de Suporte, Atendimento e Abertura de Tickets dos Serviços WazzimaGiygg"
+              className="hover:text-indigo-600 dark:hover:text-indigo-300 flex items-center gap-1 font-semibold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/60 transition shadow-xs"
+            >
+              <LifeBuoy size={12} className="text-indigo-600 dark:text-indigo-400" />
+              <span>Suporte & Tickets</span>
+              <ExternalLink size={9} />
+            </a>
             <button
               onClick={() => onNavigate('recent-changes')}
               className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-medium"
@@ -120,7 +131,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal
               >
                 Google Firebase (Cloud Firestore DB)
               </a>
-              {' '}• Domínio registrado e adquirido via{' '}
+              {' '}• Domínio via{' '}
               <a
                 href="https://www.godaddy.com"
                 target="_blank"
@@ -129,7 +140,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal
               >
                 GoDaddy
               </a>
-              {' '}• Em conformidade com a <strong>LGPD (Lei nº 13.709/2018)</strong> e o <strong>Marco Civil da Internet (Lei nº 12.965/2014)</strong>. DPO: pedrohenriquecardonaperes@gmail.com
+              {' '}• Central de Suporte & Tickets:{' '}
+              <a
+                href="https://support.wazzimagiygg.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
+              >
+                support.wazzimagiygg.com
+              </a>
+              {' '}• Em conformidade com a <strong>LGPD (Lei nº 13.709/2018)</strong> e o <strong>Marco Civil (Lei nº 12.965/2014)</strong>. DPO: pedrohenriquecardonaperes@gmail.com
             </p>
           </div>
 

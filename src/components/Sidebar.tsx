@@ -18,6 +18,8 @@ import {
   Star,
   Users,
   Database,
+  LifeBuoy,
+  ExternalLink,
 } from 'lucide-react';
 import { ViewMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -281,6 +283,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <UserCheck size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
               {!isCollapsed && <span className="truncate">{t('sidebar.my_data')}</span>}
             </button>
+
+            <a
+              href="https://support.wazzimagiygg.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Central de Suporte e Abertura de Tickets WazzimaGiygg: https://support.wazzimagiygg.com/"
+              className="w-full flex items-center justify-between px-2 py-1.5 rounded text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 hover:bg-indigo-100/80 dark:hover:bg-indigo-900/60 border border-indigo-200/80 dark:border-indigo-800/60 font-semibold transition group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <LifeBuoy size={15} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                {!isCollapsed && <span className="truncate">Suporte & Tickets</span>}
+              </div>
+              {!isCollapsed && <ExternalLink size={11} className="text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-200 flex-shrink-0 ml-1" />}
+            </a>
           </nav>
         </div>
 
