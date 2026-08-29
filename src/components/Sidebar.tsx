@@ -13,8 +13,10 @@ import {
   ChevronRight,
   WifiOff,
   Sparkles,
+  Globe2,
 } from 'lucide-react';
 import { ViewMode } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 interface SidebarProps {
   currentView: ViewMode;
@@ -25,6 +27,7 @@ interface SidebarProps {
   onCreatePageClick: () => void;
   totalPages: number;
   totalArticles: number;
+  onOpenLanguagesModal?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -36,7 +39,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCreatePageClick,
   totalPages,
   totalArticles,
+  onOpenLanguagesModal,
 }) => {
+  const { currentLanguage, t } = useLanguage();
+
   return (
     <aside
       className={`relative flex flex-col bg-[#f8f9fa] dark:bg-[#0b0f17] border-r border-slate-200 dark:border-slate-800 transition-all duration-200 z-30 select-none ${
@@ -57,13 +63,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div>
           {!isCollapsed && (
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center gap-1 font-mono">
-              <span>Navegação</span>
+              <span>{t('sidebar.navigation')}</span>
             </h3>
           )}
           <nav className="space-y-0.5">
             <button
               onClick={() => onNavigate('hub')}
-              title="Página Principal"
+              title={t('sidebar.home')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'hub'
                   ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
@@ -71,21 +77,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Home size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Página Principal</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.home')}</span>}
             </button>
 
             <button
               onClick={onRandomPage}
-              title="Artigo Aleatório"
+              title={t('sidebar.random')}
               className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition"
             >
               <Shuffle size={15} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Artigo Aleatório</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.random')}</span>}
             </button>
 
             <button
               onClick={onCreatePageClick}
-              title="Criar Página / Coleção"
+              title={t('sidebar.create_collection')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'create-page'
                   ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
@@ -93,12 +99,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <PlusCircle size={15} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Criar Coleção</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.create_collection')}</span>}
             </button>
 
             <button
               onClick={() => onNavigate('editor')}
-              title="Editor Wikitexto"
+              title={t('sidebar.wikitext_editor')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'editor'
                   ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
@@ -106,7 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Edit3 size={15} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Editor Wikitexto</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.wikitext_editor')}</span>}
             </button>
           </nav>
         </div>
@@ -115,13 +121,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
           {!isCollapsed && (
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center gap-1 font-mono">
-              <span>Legal & LGPD</span>
+              <span>{t('sidebar.legal_lgpd')}</span>
             </h3>
           )}
           <nav className="space-y-0.5">
             <button
               onClick={() => onNavigate('security')}
-              title="Segurança"
+              title={t('sidebar.security')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'security'
                   ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
@@ -129,12 +135,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Shield size={15} className="text-teal-600 dark:text-teal-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Segurança</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.security')}</span>}
             </button>
 
             <button
               onClick={() => onNavigate('donation')}
-              title="Doações"
+              title={t('sidebar.donations')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'donation'
                   ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
@@ -142,12 +148,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Heart size={15} className="text-rose-500 dark:text-rose-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Doações</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.donations')}</span>}
             </button>
 
             <button
               onClick={() => onNavigate('privacy')}
-              title="Privacidade (LGPD)"
+              title={t('sidebar.privacy')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'privacy'
                   ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
@@ -155,12 +161,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Lock size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Privacidade (LGPD)</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.privacy')}</span>}
             </button>
 
             <button
               onClick={() => onNavigate('terms')}
-              title="Termos de Uso"
+              title={t('sidebar.terms')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'terms'
                   ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
@@ -168,12 +174,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <FileText size={15} className="text-slate-600 dark:text-slate-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Termos de Uso</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.terms')}</span>}
             </button>
 
             <button
               onClick={() => onNavigate('mydata')}
-              title="Meus Dados (Portabilidade)"
+              title={t('sidebar.my_data')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'mydata'
                   ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
@@ -181,7 +187,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <UserCheck size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Meus Dados</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.my_data')}</span>}
             </button>
           </nav>
         </div>
@@ -190,13 +196,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
           {!isCollapsed && (
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center gap-1 font-mono">
-              <span>Layouts</span>
+              <span>{t('sidebar.layouts')}</span>
             </h3>
           )}
           <nav className="space-y-0.5">
             <button
               onClick={() => onNavigate('beta')}
-              title="Layout Beta Moderno"
+              title={t('sidebar.beta_mode')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'beta'
                   ? 'bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold border border-purple-200 dark:border-purple-800'
@@ -204,12 +210,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Sparkles size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Modo Beta 2026</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.beta_mode')}</span>}
             </button>
 
             <button
               onClick={() => onNavigate('offline')}
-              title="Modo Offline"
+              title={t('sidebar.offline_mode')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'offline'
                   ? 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800'
@@ -217,8 +223,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <WifiOff size={15} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Modo Offline</span>}
+              {!isCollapsed && <span className="truncate">{t('sidebar.offline_mode')}</span>}
             </button>
+
+            {onOpenLanguagesModal && (
+              <button
+                onClick={onOpenLanguagesModal}
+                title={t('header.change_language')}
+                className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition"
+              >
+                <Globe2 size={15} className="text-blue-500 flex-shrink-0" />
+                {!isCollapsed && (
+                  <span className="truncate flex items-center gap-1">
+                    <span>{currentLanguage.flag}</span>
+                    <span>{currentLanguage.nativeName}</span>
+                  </span>
+                )}
+              </button>
+            )}
           </nav>
         </div>
       </div>
@@ -227,11 +249,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {!isCollapsed && (
         <div className="p-2.5 border-t border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/70 text-[11px] text-slate-500 dark:text-slate-400 font-mono space-y-1">
           <div className="flex justify-between items-center">
-            <span>Coleções:</span>
+            <span>{t('sidebar.stats_collections')}</span>
             <span className="font-bold text-slate-800 dark:text-slate-200">{totalPages}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span>Artigos:</span>
+            <span>{t('sidebar.stats_articles')}</span>
             <span className="font-bold text-slate-800 dark:text-slate-200">{totalArticles}</span>
           </div>
           <div className="pt-1.5 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 text-center">

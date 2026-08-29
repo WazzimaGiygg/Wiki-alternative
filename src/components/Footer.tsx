@@ -1,12 +1,16 @@
 import React from 'react';
-import { ExternalLink, Heart, Shield, Lock, FileText } from 'lucide-react';
+import { ExternalLink, Heart, Shield, Lock, FileText, Globe2 } from 'lucide-react';
 import { ViewMode } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 interface FooterProps {
   onNavigate: (view: ViewMode) => void;
+  onOpenLanguagesModal?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal }) => {
+  const { currentLanguage, t } = useLanguage();
+
   return (
     <footer className="mt-12 bg-[#f8f9fa] dark:bg-[#0b0f17] border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 py-4 transition-colors select-none font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-3">
@@ -18,6 +22,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </span>
             <span className="text-slate-300 dark:text-slate-700">|</span>
             <span>Enciclopédia Livre e Aberta</span>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+            <span className="text-blue-600 dark:text-blue-400 font-mono flex items-center gap-1">
+              <span>{currentLanguage.flag}</span>
+              <span>{currentLanguage.nativeName}</span>
+            </span>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
@@ -25,19 +34,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               onClick={() => onNavigate('privacy')}
               className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
             >
-              <Lock size={11} /> Privacidade (LGPD)
+              <Lock size={11} /> {t('sidebar.privacy')}
             </button>
             <button
               onClick={() => onNavigate('terms')}
               className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
             >
-              <FileText size={11} /> Termos
+              <FileText size={11} /> {t('sidebar.terms')}
             </button>
             <button
               onClick={() => onNavigate('donation')}
               className="hover:text-rose-500 flex items-center gap-1"
             >
-              <Heart size={11} className="text-rose-500" /> Doações
+              <Heart size={11} className="text-rose-500" /> {t('sidebar.donations')}
             </button>
             <a
               href="https://github.com/WazzimaGiygg/wiki"
@@ -71,3 +80,4 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     </footer>
   );
 };
+

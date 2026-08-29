@@ -9,6 +9,7 @@ import { CookieBanner } from './components/CookieBanner';
 import { BannedOverlay } from './components/BannedOverlay';
 import { LgpdConsentModal } from './components/LgpdConsentModal';
 import { MyDataModal } from './components/MyDataModal';
+import { LanguageModal } from './components/LanguageModal';
 import {
   SecurityView,
   DonationView,
@@ -31,6 +32,7 @@ export default function App() {
   const [showLgpdModal, setShowLgpdModal] = useState<boolean>(false);
   const [showCreatePageModal, setShowCreatePageModal] = useState<boolean>(false);
   const [showMyDataModal, setShowMyDataModal] = useState<boolean>(false);
+  const [showLanguageModal, setShowLanguageModal] = useState<boolean>(false);
 
   const [currentView, setCurrentView] = useState<ViewMode>('hub');
   const [selectedPageUid, setSelectedPageUid] = useState<string | null>(null);
@@ -334,6 +336,7 @@ export default function App() {
         onToggleTheme={handleToggleTheme}
         onMarkNotificationsAsRead={handleMarkNotificationsAsRead}
         onNotificationClick={handleNotificationClick}
+        onOpenLanguagesModal={() => setShowLanguageModal(true)}
       />
 
       {/* 2. Main Workspace Layout */}
@@ -348,6 +351,7 @@ export default function App() {
           onCreatePageClick={() => setShowCreatePageModal(true)}
           totalPages={pages.length}
           totalArticles={articles.length}
+          onOpenLanguagesModal={() => setShowLanguageModal(true)}
         />
 
         {/* Content Body Container */}
@@ -478,6 +482,12 @@ export default function App() {
         onClose={() => setShowLgpdModal(false)}
         onAccept={handleAcceptLgpd}
         onDecline={handleDeclineLgpd}
+      />
+
+      {/* Language Selection Modal */}
+      <LanguageModal
+        isOpen={showLanguageModal}
+        onClose={() => setShowLanguageModal(false)}
       />
 
       {/* Create Topic Collection Modal */}
