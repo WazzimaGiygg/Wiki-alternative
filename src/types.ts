@@ -73,12 +73,33 @@ export interface CookieConsent {
   version: string;
 }
 
+export interface RecentChangeEntry {
+  id: string;
+  type: 'new_article' | 'edit_article' | 'new_collection' | 'minor_edit';
+  articleId?: string;
+  articleTitle: string;
+  pageUid: string;
+  pageTitle?: string;
+  autor: string;
+  autorEmail?: string;
+  autorRole?: string;
+  data: string;
+  resumo: string;
+  tamanho: number;
+  deltaBytes: number;
+  versao?: number;
+  idioma?: string;
+  isMinor?: boolean;
+  isBot?: boolean;
+}
+
 export type ViewMode =
   | 'hub'
   | 'article'
   | 'editor'
   | 'create-page'
   | 'create-article'
+  | 'recent-changes'
   | 'security'
   | 'donation'
   | 'privacy'

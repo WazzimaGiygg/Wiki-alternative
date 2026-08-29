@@ -23,6 +23,7 @@ export type TranslationKey =
   // Sidebar
   | 'sidebar.navigation'
   | 'sidebar.home'
+  | 'sidebar.recent_changes'
   | 'sidebar.random'
   | 'sidebar.create_collection'
   | 'sidebar.wikitext_editor'
@@ -137,6 +138,42 @@ export type TranslationKey =
   | 'modal.languages_regions'
   | 'modal.select_language'
 
+  // Recent Changes (Especial:MudançasRecentes)
+  | 'recent_changes.title'
+  | 'recent_changes.subtitle'
+  | 'recent_changes.stat_total_edits'
+  | 'recent_changes.stat_new_articles'
+  | 'recent_changes.stat_active_editors'
+  | 'recent_changes.stat_bytes_delta'
+  | 'recent_changes.filter_time'
+  | 'recent_changes.filter_type'
+  | 'recent_changes.filter_all'
+  | 'recent_changes.filter_new'
+  | 'recent_changes.filter_edits'
+  | 'recent_changes.filter_minor'
+  | 'recent_changes.filter_collections'
+  | 'recent_changes.filter_search_placeholder'
+  | 'recent_changes.filter_collection_select'
+  | 'recent_changes.filter_language_select'
+  | 'recent_changes.filter_hide_minor'
+  | 'recent_changes.filter_hide_bots'
+  | 'recent_changes.legend_title'
+  | 'recent_changes.legend_new'
+  | 'recent_changes.legend_minor'
+  | 'recent_changes.legend_bot'
+  | 'recent_changes.legend_bytes'
+  | 'recent_changes.diff_btn'
+  | 'recent_changes.hist_btn'
+  | 'recent_changes.view_btn'
+  | 'recent_changes.edit_btn'
+  | 'recent_changes.empty_results'
+  | 'recent_changes.refresh'
+  | 'recent_changes.group_today'
+  | 'recent_changes.group_yesterday'
+  | 'recent_changes.group_this_week'
+  | 'recent_changes.group_earlier'
+  | 'recent_changes.showing_entries'
+
   // Footer
   | 'footer.about'
   | 'footer.about_desc'
@@ -172,6 +209,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
 
     'sidebar.navigation': 'Navegação',
     'sidebar.home': 'Página Principal',
+    'sidebar.recent_changes': 'Mudanças Recentes',
     'sidebar.random': 'Artigo Aleatório',
     'sidebar.create_collection': 'Criar Coleção',
     'sidebar.wikitext_editor': 'Editor Wikitexto',
@@ -282,6 +320,41 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.languages_regions': 'Regiões',
     'modal.select_language': 'Aplicar Idioma',
 
+    'recent_changes.title': 'Mudanças Recentes',
+    'recent_changes.subtitle': 'Acompanhe em tempo real todas as edições, novos artigos e coleções criadas pela comunidade na WikiZero.',
+    'recent_changes.stat_total_edits': 'ALTERAÇÕES TOTAIS',
+    'recent_changes.stat_new_articles': 'NOVOS ARTIGOS',
+    'recent_changes.stat_active_editors': 'EDITORES ATIVOS',
+    'recent_changes.stat_bytes_delta': 'VARIAÇÃO DE BYTES',
+    'recent_changes.filter_time': 'Período:',
+    'recent_changes.filter_type': 'Tipo de Alteração:',
+    'recent_changes.filter_all': 'Todas as alterações',
+    'recent_changes.filter_new': 'Apenas Novos Artigos [N]',
+    'recent_changes.filter_edits': 'Edições de Artigos [E]',
+    'recent_changes.filter_minor': 'Edições Menores [m]',
+    'recent_changes.filter_collections': 'Novas Coleções [C]',
+    'recent_changes.filter_search_placeholder': 'Filtrar por título, autor ou resumo da edição...',
+    'recent_changes.filter_collection_select': 'Todas as Coleções',
+    'recent_changes.filter_language_select': 'Todos os Idiomas',
+    'recent_changes.filter_hide_minor': 'Ocultar edições menores',
+    'recent_changes.filter_hide_bots': 'Ocultar bots',
+    'recent_changes.legend_title': 'Legenda de abreviações do MediaWiki',
+    'recent_changes.legend_new': 'Novo artigo criado',
+    'recent_changes.legend_minor': 'Edição menor / ortográfica',
+    'recent_changes.legend_bot': 'Edição automática por bot',
+    'recent_changes.legend_bytes': 'Diferença em bytes (+/-) no tamanho do artigo',
+    'recent_changes.diff_btn': 'diff',
+    'recent_changes.hist_btn': 'hist',
+    'recent_changes.view_btn': 'ver',
+    'recent_changes.edit_btn': 'editar',
+    'recent_changes.empty_results': 'Nenhuma alteração encontrada com os filtros selecionados.',
+    'recent_changes.refresh': 'Atualizar Mudanças',
+    'recent_changes.group_today': 'Hoje',
+    'recent_changes.group_yesterday': 'Ontem',
+    'recent_changes.group_this_week': 'Esta Semana',
+    'recent_changes.group_earlier': 'Anteriores',
+    'recent_changes.showing_entries': 'Exibindo alterações recentes',
+
     'footer.about': 'Sobre a WikiZero',
     'footer.about_desc': 'Uma enciclopédia aberta de conhecimento livre baseada no protocolo MediaWiki, com privacidade e LGPD garantidas.',
     'footer.quick_links': 'Navegação Rápida',
@@ -316,6 +389,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
 
     'sidebar.navigation': 'Navigation',
     'sidebar.home': 'Main Page',
+    'sidebar.recent_changes': 'Recent Changes',
     'sidebar.random': 'Random Article',
     'sidebar.create_collection': 'Create Collection',
     'sidebar.wikitext_editor': 'Wikitext Editor',
@@ -426,6 +500,41 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.languages_regions': 'Regions',
     'modal.select_language': 'Apply Language',
 
+    'recent_changes.title': 'Recent Changes',
+    'recent_changes.subtitle': 'Track the most recent edits, new articles, and topic collections contributed by the community in WikiZero.',
+    'recent_changes.stat_total_edits': 'TOTAL EDITS',
+    'recent_changes.stat_new_articles': 'NEW ARTICLES',
+    'recent_changes.stat_active_editors': 'ACTIVE EDITORS',
+    'recent_changes.stat_bytes_delta': 'NET BYTES CHANGE',
+    'recent_changes.filter_time': 'Time Period:',
+    'recent_changes.filter_type': 'Change Type:',
+    'recent_changes.filter_all': 'All Changes',
+    'recent_changes.filter_new': 'New Articles Only [N]',
+    'recent_changes.filter_edits': 'Article Edits [E]',
+    'recent_changes.filter_minor': 'Minor Edits [m]',
+    'recent_changes.filter_collections': 'New Collections [C]',
+    'recent_changes.filter_search_placeholder': 'Filter by title, author, or edit summary...',
+    'recent_changes.filter_collection_select': 'All Collections',
+    'recent_changes.filter_language_select': 'All Languages',
+    'recent_changes.filter_hide_minor': 'Hide minor edits',
+    'recent_changes.filter_hide_bots': 'Hide bots',
+    'recent_changes.legend_title': 'MediaWiki abbreviation legend',
+    'recent_changes.legend_new': 'New page or article created',
+    'recent_changes.legend_minor': 'Minor or typo edit',
+    'recent_changes.legend_bot': 'Automated bot edit',
+    'recent_changes.legend_bytes': 'Byte change (+/-) in article size',
+    'recent_changes.diff_btn': 'diff',
+    'recent_changes.hist_btn': 'hist',
+    'recent_changes.view_btn': 'view',
+    'recent_changes.edit_btn': 'edit',
+    'recent_changes.empty_results': 'No changes match your selected filters.',
+    'recent_changes.refresh': 'Refresh Changes',
+    'recent_changes.group_today': 'Today',
+    'recent_changes.group_yesterday': 'Yesterday',
+    'recent_changes.group_this_week': 'This Week',
+    'recent_changes.group_earlier': 'Earlier',
+    'recent_changes.showing_entries': 'Showing recent changes',
+
     'footer.about': 'About WikiZero',
     'footer.about_desc': 'An open encyclopedia for free human knowledge based on the MediaWiki protocol with privacy and user rights guaranteed.',
     'footer.quick_links': 'Quick Links',
@@ -460,6 +569,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
 
     'sidebar.navigation': 'Navegación',
     'sidebar.home': 'Página Principal',
+    'sidebar.recent_changes': 'Cambios Recientes',
     'sidebar.random': 'Artículo Aleatorio',
     'sidebar.create_collection': 'Crear Colección',
     'sidebar.wikitext_editor': 'Editor Wikitexto',

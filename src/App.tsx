@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { WikiHub } from './components/WikiHub';
+import { RecentChanges } from './components/RecentChanges';
 import { ArticleViewer } from './components/ArticleViewer';
 import { WikitextEditor } from './components/WikitextEditor';
 import { CreatePageModal } from './components/CreatePageModal';
@@ -367,6 +368,19 @@ export default function App() {
               onCreatePageClick={() => setShowCreatePageModal(true)}
               onCreateArticleClick={(uid) => handleOpenNewEditor(uid)}
               onOpenEditor={() => handleOpenNewEditor()}
+            />
+          )}
+
+          {currentView === 'recent-changes' && (
+            <RecentChanges
+              articles={articles}
+              pages={pages}
+              currentUser={user}
+              onSelectArticle={handleSelectArticle}
+              onSelectPage={handleSelectPage}
+              onOpenEditorForEdit={handleOpenEditorForEdit}
+              onOpenNewEditor={(uid) => handleOpenNewEditor(uid)}
+              onCreatePageClick={() => setShowCreatePageModal(true)}
             />
           )}
 

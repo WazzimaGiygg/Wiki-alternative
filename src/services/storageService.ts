@@ -19,7 +19,7 @@ import {
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
-import { WikiPage, WikiArticle, UserProfile, NotificationItem, CookieConsent } from '../types';
+import { WikiPage, WikiArticle, UserProfile, NotificationItem, CookieConsent, RecentChangeEntry } from '../types';
 import { INITIAL_PAGES, INITIAL_ARTICLES, INITIAL_NOTIFICATIONS } from '../data/seedData';
 
 // Configuração original do projeto
@@ -54,6 +54,7 @@ const STORAGE_KEYS = {
   LGPD_TERMS: 'wikizero_lgpd_accepted_v3',
   DRAFT: 'wikizero_editor_draft_v3',
   THEME: 'wikizero_theme_v3',
+  RECENT_CHANGES: 'wikizero_recent_changes_v3',
 };
 
 // Seed LocalStorage if empty
@@ -419,5 +420,136 @@ export const StorageService = {
 
   clearDraft() {
     localStorage.removeItem(STORAGE_KEYS.DRAFT);
+  },
+
+  // === RECENT CHANGES (MUDANÇAS RECENTES) ===
+  async getRecentChanges(): Promise<RecentChangeEntry[]> {
+    initializeLocalStorage();
+    const articles = await this.getArticles();
+    const pages = await this.getPages();
+    const pageMap = new Map(pages.map((p) => [p.uid, p.titulo]));
+
+    const entries: RecentChangeEntry[] = [];
+
+    // Custom logged changes
+    try {
+      const rawCustom = localStorage.getItem(STORAGE_KEYS.RECENT_CHANGES);
+      if (rawCustom) {
+        const customList: RecentChangeEntry[] = JSON.parse(rawCustom);
+        entries.push(...customList);
+      }
+    } catch (e) {
+      console.warn('Error reading custom recent changes:', e);
+    }
+
+    // Compile from articles & their history items
+    articles.forEach((art) => {
+      if (art.historico && art.historico.length > 0) {
+        // history is usually sorted latest first
+        for (let i = 0; i < art.historico.length; i++) {
+          const item = art.historico[i];
+          const prevItem = art.historico[i + 1]; // older version
+          const deltaBytes = prevItem ? item.tamanho - prevItem.tamanho : item.tamanho;
+          const isCreation = !prevItem || i === art.historico.length - 1;
+          const isMinor =
+            !isCreation &&
+            (item.resumo.toLowerCase().includes('menor') ||
+              item.resumo.toLowerCase().includes('ajuste') ||
+              item.resumo.toLowerCase().includes('ortograf') ||
+              Math.abs(deltaBytes) <= 20);
+
+          entries.push({
+            id: `rc-${art.id}-${item.id || i}`,
+            type: isCreation ? 'new_article' : isMinor ? 'minor_edit' : 'edit_article',
+            articleId: art.id,
+            articleTitle: art.titulo,
+            pageUid: art.pageUid,
+            pageTitle: pageMap.get(art.pageUid) || art.pageUid,
+            autor: item.autor || art.autor || 'Colaborador',
+            autorEmail: item.autorEmail || art.autorEmail,
+            data: item.data || art.dataEdicao || art.dataCriacao,
+            resumo: item.resumo || (isCreation ? 'Criação do artigo' : 'Edição no artigo'),
+            tamanho: item.tamanho || (art.descricao ? art.descricao.length : 0),
+            deltaBytes,
+            versao: art.historico.length - i,
+            idioma: art.idioma || 'pt',
+            isMinor,
+            isBot: item.autor?.toLowerCase().includes('bot'),
+          });
+        }
+      } else {
+        // Article without detailed history array
+        const descLength = art.descricao ? art.descricao.length : 0;
+        entries.push({
+          id: `rc-${art.id}-init`,
+          type: 'new_article',
+          articleId: art.id,
+          articleTitle: art.titulo,
+          pageUid: art.pageUid,
+          pageTitle: pageMap.get(art.pageUid) || art.pageUid,
+          autor: art.autor || 'Colaborador',
+          autorEmail: art.autorEmail,
+          data: art.dataCriacao,
+          resumo: 'Criação do artigo',
+          tamanho: descLength,
+          deltaBytes: descLength,
+          versao: art.versao || 1,
+          idioma: art.idioma || 'pt',
+          isMinor: false,
+          isBot: art.autor?.toLowerCase().includes('bot'),
+        });
+      }
+    });
+
+    // Add page collections creations
+    pages.forEach((p) => {
+      entries.push({
+        id: `rc-page-${p.uid}`,
+        type: 'new_collection',
+        articleTitle: p.titulo,
+        pageUid: p.uid,
+        pageTitle: p.titulo,
+        autor: p.autor || 'Admin',
+        data: p.criadoEm,
+        resumo: `Nova coleção criada: ${p.descricao.slice(0, 70)}...`,
+        tamanho: p.descricao.length,
+        deltaBytes: p.descricao.length,
+        versao: 1,
+        isMinor: false,
+      });
+    });
+
+    // Deduplicate by ID
+    const uniqueMap = new Map<string, RecentChangeEntry>();
+    entries.forEach((e) => {
+      if (!uniqueMap.has(e.id)) {
+        uniqueMap.set(e.id, e);
+      }
+    });
+
+    // Sort descending by date
+    return Array.from(uniqueMap.values()).sort(
+      (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
+    );
+  },
+
+  recordRecentChange(entry: Omit<RecentChangeEntry, 'id' | 'data'>): RecentChangeEntry {
+    const fullEntry: RecentChangeEntry = {
+      ...entry,
+      id: `rc-live-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      data: new Date().toISOString(),
+    };
+
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.RECENT_CHANGES);
+      const list: RecentChangeEntry[] = raw ? JSON.parse(raw) : [];
+      list.unshift(fullEntry);
+      // Keep last 200 entries
+      localStorage.setItem(STORAGE_KEYS.RECENT_CHANGES, JSON.stringify(list.slice(0, 200)));
+    } catch (e) {
+      console.warn('Error recording recent change:', e);
+    }
+
+    return fullEntry;
   },
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Heart, Shield, Lock, FileText, Globe2 } from 'lucide-react';
+import { ExternalLink, Heart, Shield, Lock, FileText, Globe2, History } from 'lucide-react';
 import { ViewMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -30,6 +30,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenLanguagesModal
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
+            <button
+              onClick={() => onNavigate('recent-changes')}
+              className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
+            >
+              <History size={11} className="text-cyan-500" /> {t('sidebar.recent_changes')}
+            </button>
             <button
               onClick={() => onNavigate('privacy')}
               className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
