@@ -158,6 +158,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </nav>
         </div>
 
+        {/* Section: Comunidade & Usuários */}
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+          {!isCollapsed && (
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center gap-1 font-mono">
+              <span>Comunidade & Usuários</span>
+            </h3>
+          )}
+          <nav className="space-y-0.5">
+            <button
+              onClick={() => onNavigate('user-page')}
+              title="Página de Usuário (User:Perfil)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'user-page'
+                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <UserCheck size={15} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Página do Usuário</span>}
+            </button>
+
+            <button
+              onClick={() => onNavigate('admin-users')}
+              title="Diretório de Usuários (Special:ListUsers)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'admin-users'
+                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Shield size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Diretório de Usuários</span>}
+            </button>
+          </nav>
+        </div>
+
         {/* Section: WikiZero Institutional & LGPD */}
         <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
           {!isCollapsed && (

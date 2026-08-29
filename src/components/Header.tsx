@@ -405,6 +405,24 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="py-1">
                     <button
                       onClick={() => {
+                        onNavigate('user-page');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 font-semibold"
+                    >
+                      <UserIcon size={13} className="text-blue-600 dark:text-blue-400" /> Minha Página de Usuário
+                    </button>
+                    <button
+                      onClick={() => {
+                        onNavigate('admin-users');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                    >
+                      <Layers size={13} className="text-purple-600 dark:text-purple-400" /> Diretório de Usuários
+                    </button>
+                    <button
+                      onClick={() => {
                         onNavigate('mydata');
                         setShowUserMenu(false);
                       }}

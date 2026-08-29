@@ -6,6 +6,8 @@ import { RecentChanges } from './components/RecentChanges';
 import { ArticleViewer } from './components/ArticleViewer';
 import { WikitextEditor } from './components/WikitextEditor';
 import { SpecialPagesView } from './components/SpecialPagesView';
+import { UserPageView } from './components/UserPageView';
+import { AdminUsersManagementView } from './components/AdminUsersManagementView';
 import { CreatePageModal } from './components/CreatePageModal';
 import { CookieBanner } from './components/CookieBanner';
 import { BannedOverlay } from './components/BannedOverlay';
@@ -40,6 +42,8 @@ export default function App() {
   const [selectedPageUid, setSelectedPageUid] = useState<string | null>(null);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [editingArticle, setEditingArticle] = useState<WikiArticle | null>(null);
+  const [targetUserIdentifier, setTargetUserIdentifier] = useState<string>('WazzimaGiygg');
+  const [userPageInitialTab, setUserPageInitialTab] = useState<'profile' | 'talk' | 'contributions' | 'admin'>('profile');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
@@ -104,7 +108,18 @@ export default function App() {
   };
 
   const handleNavigate = (view: ViewMode) => {
+    if (view === 'user-page' && user) {
+      setTargetUserIdentifier(user.displayName || user.username || user.uid);
+      setUserPageInitialTab('profile');
+    }
     setCurrentView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToUser = (identifier: string, initialTab: 'profile' | 'talk' | 'contributions' | 'admin' = 'profile') => {
+    setTargetUserIdentifier(identifier);
+    setUserPageInitialTab(initialTab);
+    setCurrentView('user-page');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

@@ -30,8 +30,21 @@ import {
   TalkReply,
   ArticleRatingData,
   WatchlistItem,
+  UserBarnstar,
+  UserboxItem,
+  UserPermissions,
+  UserTalkMessage,
+  UserAuditLog,
+  UserRole,
 } from '../types';
-import { INITIAL_PAGES, INITIAL_ARTICLES, INITIAL_NOTIFICATIONS } from '../data/seedData';
+import {
+  INITIAL_PAGES,
+  INITIAL_ARTICLES,
+  INITIAL_NOTIFICATIONS,
+  INITIAL_COMMUNITY_USERS,
+  INITIAL_USER_TALK_MESSAGES,
+  INITIAL_USER_AUDIT_LOGS,
+} from '../data/seedData';
 
 // Configuração original do projeto
 export const firebaseConfig = {
@@ -69,6 +82,9 @@ const STORAGE_KEYS = {
   TALK_THREADS: 'wikizero_talk_threads_v3',
   WATCHLIST: 'wikizero_watchlist_v3',
   RATINGS: 'wikizero_ratings_v3',
+  COMMUNITY_USERS: 'wikizero_community_users_v3',
+  USER_TALK_MESSAGES: 'wikizero_user_talk_messages_v3',
+  USER_AUDIT_LOGS: 'wikizero_user_audit_logs_v3',
 };
 
 const INITIAL_TALK_THREADS: TalkThread[] = [
@@ -157,6 +173,15 @@ function initializeLocalStorage() {
         dataAdicionado: '2026-08-28T12:00:00Z',
       },
     ]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.COMMUNITY_USERS)) {
+    localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(INITIAL_COMMUNITY_USERS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES)) {
+    localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify(INITIAL_USER_TALK_MESSAGES));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.USER_AUDIT_LOGS)) {
+    localStorage.setItem(STORAGE_KEYS.USER_AUDIT_LOGS, JSON.stringify(INITIAL_USER_AUDIT_LOGS));
   }
 }
 
@@ -886,6 +911,515 @@ export const StorageService = {
     });
 
     return results;
+  },
+
+  // === COMMUNITY USERS / PÁGINAS DE USUÁRIO ===
+  async getCommunityUsers(): Promise<UserProfile[]> {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.COMMUNITY_USERS);
+    if (!raw) return INITIAL_COMMUNITY_USERS;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return INITIAL_COMMUNITY_USERS;
+    }
+  },
+
+  async getUserProfile(uidOrUsername: string): Promise<UserProfile | null> {
+    if (!uidOrUsername) return null;
+    const users = await this.getCommunityUsers();
+    const cleanId = uidOrUsername.toLowerCase().trim();
+
+    // Match by uid, username, or displayName
+    const found = users.find(
+      (u) =>
+        u.uid.toLowerCase() === cleanId ||
+        (u.username && u.username.toLowerCase() === cleanId) ||
+        (u.displayName && u.displayName.toLowerCase() === cleanId)
+    );
+
+    if (found) return found;
+
+    // Check if it's the current logged in user
+    const currentUser = this.getCurrentUser();
+    if (
+      currentUser &&
+      (currentUser.uid.toLowerCase() === cleanId ||
+        currentUser.displayName?.toLowerCase() === cleanId ||
+        currentUser.email?.toLowerCase() === cleanId)
+    ) {
+      return currentUser;
+    }
+
+    return null;
+  },
+
+  async saveCommunityUser(user: UserProfile): Promise<UserProfile> {
+    const users = await this.getCommunityUsers();
+    const index = users.findIndex((u) => u.uid === user.uid);
+
+    let updatedUsers: UserProfile[];
+    if (index >= 0) {
+      updatedUsers = [...users];
+      updatedUsers[index] = user;
+    } else {
+      updatedUsers = [user, ...users];
+    }
+
+    localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(updatedUsers));
+
+    // Also update current user if modifying self
+    const currentUser = this.getCurrentUser();
+    if (currentUser && currentUser.uid === user.uid) {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    }
+
+    return user;
+  },
+
+  async updateUserRole(
+    uid: string,
+    newRole: UserRole,
+    adminUser: UserProfile | null
+  ): Promise<UserProfile | null> {
+    const user = await this.getUserProfile(uid);
+    if (!user) return null;
+
+    const oldRole = user.role;
+    const updated: UserProfile = {
+      ...user,
+      role: newRole,
+    };
+
+    await this.saveCommunityUser(updated);
+
+    this.logUserAuditAction(
+      user.uid,
+      user.displayName || user.username || user.uid,
+      'role_change',
+      `Cargo alterado de "${oldRole}" para "${newRole}" por ${adminUser?.displayName || 'Administrador'}.`,
+      adminUser
+    );
+
+    return updated;
+  },
+
+  async banUser(
+    uid: string,
+    reason: string,
+    banType: 'permanente' | 'temporario' | 'advertencia',
+    durationDays: number | undefined,
+    adminUser: UserProfile | null
+  ): Promise<UserProfile | null> {
+    const user = await this.getUserProfile(uid);
+    if (!user) return null;
+
+    let banExpiresAt: string | undefined;
+    if (banType === 'temporario' && durationDays) {
+      const date = new Date();
+      date.setDate(date.getDate() + durationDays);
+      banExpiresAt = date.toISOString();
+    }
+
+    const updated: UserProfile = {
+      ...user,
+      isBanned: banType !== 'advertencia',
+      banReason: reason,
+      banType,
+      banExpiresAt,
+      warningCount: (user.warningCount || 0) + 1,
+      permissions: {
+        canEdit: false,
+        canCreate: false,
+        canTalk: banType === 'advertencia',
+        canDelete: false,
+        canGrantBarnstars: false,
+      },
+    };
+
+    await this.saveCommunityUser(updated);
+
+    const desc =
+      banType === 'permanente'
+        ? `Bloqueio permanente aplicado. Motivo: ${reason}`
+        : banType === 'temporario'
+        ? `Bloqueio temporário por ${durationDays} dias aplicado. Expira em ${banExpiresAt}. Motivo: ${reason}`
+        : `Advertência formal emitida. Motivo: ${reason}`;
+
+    this.logUserAuditAction(
+      user.uid,
+      user.displayName || user.username || user.uid,
+      banType === 'advertencia' ? 'warning_issued' : 'ban_user',
+      desc,
+      adminUser
+    );
+
+    // Also leave an administrative warning topic on their talk page
+    this.addUserTalkMessage(
+      user.uid,
+      user.displayName || user.username || user.uid,
+      {
+        titulo: `⚠️ Ação Administrativa: ${banType === 'advertencia' ? 'Advertência Formal' : 'Suspensão de Conta'}`,
+        conteudo: `'''Motivo:''' ${reason}\n\n'''Status:''' ${
+          banType === 'permanente'
+            ? 'Bloqueio Permanente'
+            : banType === 'temporario'
+            ? `Suspensão temporária por ${durationDays} dias.`
+            : 'Advertência sem bloqueio de acesso.'
+        }\n\nEmitido por: ${adminUser?.displayName || 'Corpo Administrativo da WikiZero'}.`,
+        tipo: 'aviso_admin',
+      },
+      adminUser
+    );
+
+    return updated;
+  },
+
+  async unbanUser(uid: string, adminUser: UserProfile | null): Promise<UserProfile | null> {
+    const user = await this.getUserProfile(uid);
+    if (!user) return null;
+
+    const updated: UserProfile = {
+      ...user,
+      isBanned: false,
+      banReason: undefined,
+      banExpiresAt: undefined,
+      banType: undefined,
+      permissions: {
+        canEdit: true,
+        canCreate: true,
+        canTalk: true,
+        canDelete: user.role === 'admin' || user.role === 'moderador',
+        canGrantBarnstars: true,
+      },
+    };
+
+    await this.saveCommunityUser(updated);
+
+    this.logUserAuditAction(
+      user.uid,
+      user.displayName || user.username || user.uid,
+      'unban_user',
+      `Bloqueio revogado e permissões restauradas por ${adminUser?.displayName || 'Administrador'}.`,
+      adminUser
+    );
+
+    return updated;
+  },
+
+  async updateUserPermissions(
+    uid: string,
+    permissions: Partial<UserPermissions>,
+    adminUser: UserProfile | null
+  ): Promise<UserProfile | null> {
+    const user = await this.getUserProfile(uid);
+    if (!user) return null;
+
+    const currentPerms = user.permissions || {
+      canEdit: true,
+      canCreate: true,
+      canTalk: true,
+      canDelete: user.role === 'admin' || user.role === 'moderador',
+      canGrantBarnstars: true,
+    };
+
+    const updated: UserProfile = {
+      ...user,
+      permissions: {
+        ...currentPerms,
+        ...permissions,
+      },
+    };
+
+    await this.saveCommunityUser(updated);
+
+    this.logUserAuditAction(
+      user.uid,
+      user.displayName || user.username || user.uid,
+      'permission_change',
+      `Permissões atualizadas por ${adminUser?.displayName || 'Administrador'}.`,
+      adminUser
+    );
+
+    return updated;
+  },
+
+  async resetUserBio(uid: string, adminUser: UserProfile | null): Promise<UserProfile | null> {
+    const user = await this.getUserProfile(uid);
+    if (!user) return null;
+
+    const updated: UserProfile = {
+      ...user,
+      bio: `= ${user.displayName || user.username} =\nPágina de usuário resetada pela moderação administrativa.`,
+    };
+
+    await this.saveCommunityUser(updated);
+
+    this.logUserAuditAction(
+      user.uid,
+      user.displayName || user.username || user.uid,
+      'profile_reset',
+      `Biografia de usuário resetada por conteúdo impróprio/spam por ${adminUser?.displayName || 'Administrador'}.`,
+      adminUser
+    );
+
+    return updated;
+  },
+
+  async awardBarnstar(
+    targetUid: string,
+    barnstarData: Omit<UserBarnstar, 'id' | 'awardedAt'>,
+    adminUser: UserProfile | null
+  ): Promise<UserProfile | null> {
+    const user = await this.getUserProfile(targetUid);
+    if (!user) return null;
+
+    const newBarnstar: UserBarnstar = {
+      id: 'bs-' + Date.now(),
+      ...barnstarData,
+      awardedAt: new Date().toISOString(),
+      awardedBy: adminUser?.displayName || 'Comunidade WikiZero',
+      awardedByUid: adminUser?.uid,
+    };
+
+    const barnstars = [newBarnstar, ...(user.barnstars || [])];
+    const updated: UserProfile = {
+      ...user,
+      barnstars,
+      reputationScore: (user.reputationScore || 0) + 50,
+    };
+
+    await this.saveCommunityUser(updated);
+
+    this.logUserAuditAction(
+      user.uid,
+      user.displayName || user.username || user.uid,
+      'barnstar_awarded',
+      `Condecoração concedida: "${barnstarData.title}".`,
+      adminUser
+    );
+
+    // Also post notice to user talk page
+    this.addUserTalkMessage(
+      user.uid,
+      user.displayName || user.username || user.uid,
+      {
+        titulo: `🏆 Nova Condecoração: ${barnstarData.title}`,
+        conteudo: `Parabéns! Você recebeu uma medalha wiki:\n\n'''${barnstarData.title}'''\n''"${barnstarData.description}"''\n\nConcedida por: ${adminUser?.displayName || 'Comunidade'}.`,
+        tipo: 'barnstar',
+      },
+      adminUser
+    );
+
+    return updated;
+  },
+
+  // === USER TALK MESSAGES / DISCUSSÃO DO USUÁRIO ===
+  getUserTalkMessages(targetUidOrUsername: string): UserTalkMessage[] {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
+    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : INITIAL_USER_TALK_MESSAGES;
+
+    const clean = targetUidOrUsername.toLowerCase().trim();
+    return messages.filter(
+      (m) =>
+        m.targetUserUid.toLowerCase() === clean ||
+        m.targetUsername.toLowerCase() === clean
+    );
+  },
+
+  addUserTalkMessage(
+    targetUid: string,
+    targetUsername: string,
+    msg: {
+      titulo: string;
+      conteudo: string;
+      tipo: 'geral' | 'aviso_admin' | 'barnstar' | 'duvida' | 'boas_vindas';
+    },
+    sender: UserProfile | null
+  ): UserTalkMessage {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
+    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : INITIAL_USER_TALK_MESSAGES;
+
+    const newMessage: UserTalkMessage = {
+      id: 'utalk-' + Date.now(),
+      targetUserUid: targetUid,
+      targetUsername: targetUsername,
+      senderUid: sender?.uid,
+      senderName: sender ? sender.displayName || sender.email.split('@')[0] : 'Colaborador Anônimo',
+      senderEmail: sender?.email,
+      senderRole: sender?.role || 'convidado',
+      titulo: msg.titulo.trim(),
+      conteudo: msg.conteudo.trim(),
+      tipo: msg.tipo || 'geral',
+      data: new Date().toISOString(),
+      status: 'aberto',
+      respostas: [],
+    };
+
+    messages.unshift(newMessage);
+    localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify(messages));
+
+    // Send a notification to current notifications if recipient matches
+    const notifs = this.getNotifications();
+    notifs.unshift({
+      id: 'notif-utalk-' + Date.now(),
+      title: `💬 Nova mensagem na sua Discussão: "${msg.titulo}"`,
+      message: `De ${newMessage.senderName}: "${msg.conteudo.slice(0, 80)}${msg.conteudo.length > 80 ? '...' : ''}"`,
+      date: 'Agora',
+      read: false,
+      type: msg.tipo === 'aviso_admin' ? 'warning' : 'info',
+    });
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+
+    return newMessage;
+  },
+
+  addUserTalkReply(
+    messageId: string,
+    conteudo: string,
+    sender: UserProfile | null
+  ): TalkReply | null {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
+    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : INITIAL_USER_TALK_MESSAGES;
+
+    const target = messages.find((m) => m.id === messageId);
+    if (!target) return null;
+
+    const reply: TalkReply = {
+      id: 'reply-' + Date.now(),
+      autor: sender ? sender.displayName || sender.email.split('@')[0] : 'Colaborador Anônimo',
+      autorEmail: sender?.email,
+      autorRole: sender?.role || 'convidado',
+      conteudo: conteudo.trim(),
+      data: new Date().toISOString(),
+      upvotes: 0,
+    };
+
+    target.respostas.push(reply);
+    target.status = 'em_discussao';
+
+    localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify(messages));
+    return reply;
+  },
+
+  updateUserTalkStatus(messageId: string, status: UserTalkMessage['status']): boolean {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
+    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : INITIAL_USER_TALK_MESSAGES;
+
+    const target = messages.find((m) => m.id === messageId);
+    if (!target) return false;
+
+    target.status = status;
+    localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify(messages));
+    return true;
+  },
+
+  // === USER AUDIT LOGS ===
+  getUserAuditLogs(targetUid?: string): UserAuditLog[] {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_AUDIT_LOGS);
+    const logs: UserAuditLog[] = raw ? JSON.parse(raw) : INITIAL_USER_AUDIT_LOGS;
+
+    if (!targetUid) return logs;
+    const clean = targetUid.toLowerCase().trim();
+    return logs.filter(
+      (l) =>
+        l.targetUserUid.toLowerCase() === clean ||
+        l.targetUsername.toLowerCase() === clean
+    );
+  },
+
+  logUserAuditAction(
+    targetUserUid: string,
+    targetUsername: string,
+    action: UserAuditLog['action'],
+    details: string,
+    performedBy: UserProfile | null
+  ): void {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_AUDIT_LOGS);
+    const logs: UserAuditLog[] = raw ? JSON.parse(raw) : INITIAL_USER_AUDIT_LOGS;
+
+    const newLog: UserAuditLog = {
+      id: 'log-' + Date.now(),
+      targetUserUid,
+      targetUsername,
+      action,
+      details,
+      performedBy: performedBy ? performedBy.displayName || performedBy.email.split('@')[0] : 'Sistema',
+      performedByRole: performedBy?.role || 'admin',
+      date: new Date().toISOString(),
+    };
+
+    logs.unshift(newLog);
+    localStorage.setItem(STORAGE_KEYS.USER_AUDIT_LOGS, JSON.stringify(logs));
+  },
+
+  // === USER CONTRIBUTIONS ===
+  async getUserContributions(
+    username: string
+  ): Promise<{
+    type: 'create' | 'edit';
+    articleId: string;
+    articleTitle: string;
+    pageUid: string;
+    date: string;
+    summary: string;
+    deltaBytes?: number;
+    isMinor?: boolean;
+  }[]> {
+    const articles = await this.getArticles();
+    const cleanName = username.toLowerCase().trim();
+    const contributions: {
+      type: 'create' | 'edit';
+      articleId: string;
+      articleTitle: string;
+      pageUid: string;
+      date: string;
+      summary: string;
+      deltaBytes?: number;
+      isMinor?: boolean;
+    }[] = [];
+
+    articles.forEach((art) => {
+      if (art.autor && art.autor.toLowerCase().includes(cleanName)) {
+        contributions.push({
+          type: 'create',
+          articleId: art.id,
+          articleTitle: art.titulo,
+          pageUid: art.pageUid,
+          date: art.dataCriacao,
+          summary: art.resumo || 'Criação inicial do verbete',
+          deltaBytes: (art.descricao || '').length,
+        });
+      }
+
+      if (art.historico && art.historico.length > 0) {
+        art.historico.forEach((h) => {
+          if (h.autor && h.autor.toLowerCase().includes(cleanName)) {
+            contributions.push({
+              type: 'edit',
+              articleId: art.id,
+              articleTitle: art.titulo,
+              pageUid: art.pageUid,
+              date: h.data,
+              summary: h.resumo || 'Edição de conteúdo e fontes',
+              deltaBytes: h.deltaBytes,
+              isMinor: h.isMinor,
+            });
+          }
+        });
+      }
+    });
+
+    // Sort descending by date
+    return contributions.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
   },
 };
 

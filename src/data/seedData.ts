@@ -1,4 +1,349 @@
-import { WikiArticle, WikiPage, NotificationItem } from '../types';
+import { WikiArticle, WikiPage, NotificationItem, UserProfile, UserTalkMessage, UserAuditLog } from '../types';
+
+export const INITIAL_COMMUNITY_USERS: UserProfile[] = [
+  {
+    uid: 'user-wazzima',
+    username: 'WazzimaGiygg',
+    displayName: 'WazzimaGiygg',
+    email: 'pedrohenriquecardonaperes@gmail.com',
+    role: 'admin',
+    isGuest: false,
+    isBanned: false,
+    reputationScore: 1250,
+    warningCount: 0,
+    location: 'São Paulo, Brasil',
+    website: 'https://github.com/WazzimaGiygg/wiki',
+    createdAt: '2026-01-15T09:00:00Z',
+    lastActive: '2026-08-28T17:30:00Z',
+    permissions: {
+      canEdit: true,
+      canCreate: true,
+      canTalk: true,
+      canDelete: true,
+      canGrantBarnstars: true,
+    },
+    bio: `{{Infobox
+| Nome = WazzimaGiygg
+| Cargo = Administrador & Burocrata
+| Especialidade = Mobilidade Urbana, Engenharia & LGPD
+| Status = Mantenedor Ativo
+| Entrada = Janeiro de 2026
+}}
+
+{{Destaque|Fundador e mantenedor técnico do projeto WikiZero. Trabalhando ativamente na documentação do sistema sobre trilhos e na infraestrutura de conhecimento livre sob licença GNU GPL v3.0.}}
+
+= Sobre o Usuário =
+Olá e bem-vindo à minha página de usuário na '''WikiZero'''! Meu foco editorial principal inclui o desenvolvimento de coleções sobre infraestrutura de transporte, história de ferrovias e a garantia da privacidade dos usuários conforme a Lei Geral de Proteção de Dados (LGPD).
+
+== Caixas de Usuário ==
+{{Userbox|🚇|Entusiasta e Pesquisador de Transporte sobre Trilhos}}
+{{Userbox|⚖️|Encarregado pelo Tratamento de Dados Pessoais (DPO)}}
+{{Userbox|🐧|Defensor de Software Livre e Licenciamento GNU GPL}}
+{{Userbox|🇧🇷|Editor em Língua Portuguesa}}
+
+== Projetos e Diretrizes Ativas ==
+* Padronização de artigos de infraestrutura com caixas de informação e referências bibliográficas.
+* Implementação dos pilares de neutralidade enciclopédica (NPOV) e verificabilidade.
+* Mediação de discussões e combate a práticas de vandalismo ou spam.`,
+    userboxes: [
+      {
+        id: 'ub-1',
+        title: '🚇 Mobilidade',
+        text: 'Pesquisador e documentador de transporte sobre trilhos de São Paulo',
+        icon: '🚇',
+        bgClass: 'bg-blue-50 dark:bg-blue-950/40',
+        borderClass: 'border-blue-200 dark:border-blue-800',
+      },
+      {
+        id: 'ub-2',
+        title: '⚖️ DPO / LGPD',
+        text: 'Encarregado oficial de Proteção de Dados Pessoais da WikiZero',
+        icon: '⚖️',
+        bgClass: 'bg-emerald-50 dark:bg-emerald-950/40',
+        borderClass: 'border-emerald-200 dark:border-emerald-800',
+      },
+      {
+        id: 'ub-3',
+        title: '📜 Software Livre',
+        text: 'Apoiador de código aberto e licença GNU General Public License v3.0',
+        icon: '📜',
+        bgClass: 'bg-amber-50 dark:bg-amber-950/40',
+        borderClass: 'border-amber-200 dark:border-amber-800',
+      },
+      {
+        id: 'ub-4',
+        title: '🛡️ Burocrata',
+        text: 'Superintendência de governança e gestão de permissões comunitárias',
+        icon: '🛡️',
+        bgClass: 'bg-purple-50 dark:bg-purple-950/40',
+        borderClass: 'border-purple-200 dark:border-purple-800',
+      },
+    ],
+    barnstars: [
+      {
+        id: 'bs-1',
+        title: '🌟 Medalha do Pioneiro da Enciclopédia',
+        description: 'Concedida pela concepção inicial da WikiZero e arquitetura descentralizada.',
+        icon: '🌟',
+        awardedBy: 'DevTeam',
+        awardedAt: '2026-02-01T12:00:00Z',
+      },
+      {
+        id: 'bs-2',
+        title: '🚇 Estrela de Ouro do Metropolitano',
+        description: 'Pela redação detalhada e minuciosa dos artigos sobre o Metrô de São Paulo e frotas de trens.',
+        icon: '🚇',
+        awardedBy: 'Metrofilo_SP',
+        awardedAt: '2026-04-18T16:20:00Z',
+      },
+      {
+        id: 'bs-3',
+        title: '🛡️ Guardião da Verificabilidade',
+        description: 'Por garantir a conformidade com NPOV e citações bibliográficas rigorosas.',
+        icon: '🛡️',
+        awardedBy: 'EditorSP',
+        awardedAt: '2026-07-10T11:00:00Z',
+      },
+    ],
+  },
+  {
+    uid: 'user-editorsp',
+    username: 'EditorSP',
+    displayName: 'EditorSP',
+    email: 'editorsp@comunidade.wikizero.org',
+    role: 'editor',
+    isGuest: false,
+    isBanned: false,
+    reputationScore: 480,
+    warningCount: 0,
+    location: 'Campinas, SP',
+    createdAt: '2026-02-12T14:00:00Z',
+    lastActive: '2026-08-28T16:00:00Z',
+    permissions: {
+      canEdit: true,
+      canCreate: true,
+      canTalk: true,
+      canDelete: false,
+      canGrantBarnstars: true,
+    },
+    bio: `= EditorSP =
+Colaborador assíduo com foco na história do transporte paulista e expansão das referências bibliográficas do acervo.`,
+    userboxes: [
+      {
+        id: 'ub-esp-1',
+        title: '📚 Verificabilidade',
+        text: 'Comprometido com fontes primárias e secundárias confiáveis',
+        icon: '📚',
+        bgClass: 'bg-indigo-50 dark:bg-indigo-950/40',
+        borderClass: 'border-indigo-200 dark:border-indigo-800',
+      },
+    ],
+    barnstars: [
+      {
+        id: 'bs-esp-1',
+        title: '⭐ Estrela do Editor Incansável',
+        description: 'Por mais de 100 edições precisas de referências e citações.',
+        icon: '⭐',
+        awardedBy: 'WazzimaGiygg',
+        awardedAt: '2026-05-10T10:00:00Z',
+      },
+    ],
+  },
+  {
+    uid: 'user-metrofilosp',
+    username: 'Metrofilo_SP',
+    displayName: 'Metrofilo_SP',
+    email: 'metrofilo@metrosp.org',
+    role: 'editor',
+    isGuest: false,
+    isBanned: false,
+    reputationScore: 390,
+    warningCount: 0,
+    location: 'São Paulo, SP',
+    createdAt: '2026-02-20T10:00:00Z',
+    lastActive: '2026-08-27T18:00:00Z',
+    permissions: {
+      canEdit: true,
+      canCreate: true,
+      canTalk: true,
+      canDelete: false,
+      canGrantBarnstars: true,
+    },
+    bio: `= Metrofilo_SP =
+Engenheiro civil e entusiasta da malha metroferroviária da RMSP. Monitorando obras de expansão das Linhas 2-Verde, 6-Laranja e 17-Ouro.`,
+    barnstars: [],
+  },
+  {
+    uid: 'user-devteam',
+    username: 'DevTeam',
+    displayName: 'DevTeam',
+    email: 'dev@wikizero.org',
+    role: 'moderador',
+    isGuest: false,
+    isBanned: false,
+    reputationScore: 780,
+    warningCount: 0,
+    location: 'Brasil',
+    createdAt: '2026-01-10T08:00:00Z',
+    lastActive: '2026-08-28T17:00:00Z',
+    permissions: {
+      canEdit: true,
+      canCreate: true,
+      canTalk: true,
+      canDelete: true,
+      canGrantBarnstars: true,
+    },
+    bio: `= DevTeam WikiZero =
+Equipe técnica dedicada à estabilidade, suporte offline, sincronização em tempo real e arquitetura da interface enciclopédica.`,
+    barnstars: [],
+  },
+  {
+    uid: 'user-historiador',
+    username: 'Historiador_Transportes',
+    displayName: 'Historiador_Transportes',
+    email: 'historia@acervo.edu.br',
+    role: 'leitor',
+    isGuest: false,
+    isBanned: false,
+    reputationScore: 190,
+    warningCount: 0,
+    location: 'São Paulo, Brasil',
+    createdAt: '2026-03-05T11:00:00Z',
+    lastActive: '2026-08-25T12:00:00Z',
+    permissions: {
+      canEdit: true,
+      canCreate: false,
+      canTalk: true,
+      canDelete: false,
+      canGrantBarnstars: false,
+    },
+    bio: `= Historiador_Transportes =
+Pesquisador de arquivos do consórcio HMD e das primeiras linhas de bonde e trólebus de São Paulo.`,
+    barnstars: [],
+  },
+  {
+    uid: 'user-suspeito',
+    username: 'Usuario_Suspeito',
+    displayName: 'Usuario_Suspeito',
+    email: 'spam_test@exemplo.com',
+    role: 'leitor',
+    isGuest: false,
+    isBanned: true,
+    banType: 'temporario',
+    banReason: 'Inclusão reiterada de hiperlinks promocionais e spam não verificado.',
+    banExpiresAt: '2026-09-15T00:00:00Z',
+    reputationScore: -10,
+    warningCount: 2,
+    createdAt: '2026-06-01T15:00:00Z',
+    lastActive: '2026-08-20T09:00:00Z',
+    permissions: {
+      canEdit: false,
+      canCreate: false,
+      canTalk: false,
+      canDelete: false,
+      canGrantBarnstars: false,
+    },
+    bio: `Usuário atualmente suspenso por infração às diretrizes comunitárias de conteúdo.`,
+    barnstars: [],
+  },
+];
+
+export const INITIAL_USER_TALK_MESSAGES: UserTalkMessage[] = [
+  {
+    id: 'utalk-1',
+    targetUserUid: 'user-wazzima',
+    targetUsername: 'WazzimaGiygg',
+    senderUid: 'user-devteam',
+    senderName: 'DevTeam',
+    senderRole: 'moderador',
+    titulo: '🎉 Parabéns pelo Lançamento do Sistema de Usuários e Discussão',
+    tipo: 'boas_vindas',
+    data: '2026-08-28T15:30:00Z',
+    status: 'resolvido',
+    conteudo: `Olá Wazzima! Parabéns pela liderança no desenvolvimento da versão 3.0 com Páginas de Usuário, Discussão de Usuário e Painel Administrativo. A interface segue com fidelidade os padrões MediaWiki e Fandom.`,
+    respostas: [
+      {
+        id: 'reply-u1',
+        autor: 'WazzimaGiygg',
+        autorEmail: 'pedrohenriquecardonaperes@gmail.com',
+        autorRole: 'admin',
+        data: '2026-08-28T16:00:00Z',
+        conteudo: 'Muito obrigado! Agora a comunidade possui ferramentas completas para comunicação interpessoal, mediação editorial e condecorações.',
+        upvotes: 3,
+      },
+    ],
+  },
+  {
+    id: 'utalk-2',
+    targetUserUid: 'user-wazzima',
+    targetUsername: 'WazzimaGiygg',
+    senderUid: 'user-editorsp',
+    senderName: 'EditorSP',
+    senderRole: 'editor',
+    titulo: '⭐ Proposta de Padronização de Citações Metroviárias',
+    tipo: 'duvida',
+    data: '2026-08-27T14:00:00Z',
+    status: 'em_discussao',
+    conteudo: `Olá! Notei que no artigo sobre a Linha 1-Azul temos múltiplas fontes do consórcio HMD. Podemos criar uma predefinição unificada para essas referências históricas?`,
+    respostas: [
+      {
+        id: 'reply-u2',
+        autor: 'WazzimaGiygg',
+        autorRole: 'admin',
+        data: '2026-08-27T15:10:00Z',
+        conteudo: 'Excelente sugestão! Vou redigir a documentação no Guia de Edição MediaWiki para uso geral.',
+        upvotes: 2,
+      },
+    ],
+  },
+  {
+    id: 'utalk-3',
+    targetUserUid: 'user-suspeito',
+    targetUsername: 'Usuario_Suspeito',
+    senderUid: 'user-wazzima',
+    senderName: 'WazzimaGiygg',
+    senderRole: 'admin',
+    titulo: '⚠️ Advertência Oficial: Violação de Políticas contra Spam',
+    tipo: 'aviso_admin',
+    data: '2026-08-20T09:00:00Z',
+    status: 'aberto',
+    conteudo: `Prezado usuário, suas edições recentes violam os termos da política de neutralidade e combate ao spam da WikiZero. Sua conta foi temporariamente suspensa para prevenção de vandalismo. Caso deseje recorrer, responda a este tópico com suas justificativas.`,
+    respostas: [],
+  },
+];
+
+export const INITIAL_USER_AUDIT_LOGS: UserAuditLog[] = [
+  {
+    id: 'log-1',
+    targetUserUid: 'user-suspeito',
+    targetUsername: 'Usuario_Suspeito',
+    action: 'ban_user',
+    performedBy: 'WazzimaGiygg',
+    performedByRole: 'admin',
+    details: 'Bloqueio temporário aplicado por 26 dias. Motivo: Inclusão reiterada de spam comercial.',
+    date: '2026-08-20T09:00:00Z',
+  },
+  {
+    id: 'log-2',
+    targetUserUid: 'user-editorsp',
+    targetUsername: 'EditorSP',
+    action: 'role_change',
+    performedBy: 'WazzimaGiygg',
+    performedByRole: 'admin',
+    details: 'Promoção de cargo: de Leitor para Editor Verificado.',
+    date: '2026-03-01T10:00:00Z',
+  },
+  {
+    id: 'log-3',
+    targetUserUid: 'user-wazzima',
+    targetUsername: 'WazzimaGiygg',
+    action: 'barnstar_awarded',
+    performedBy: 'DevTeam',
+    performedByRole: 'moderador',
+    details: 'Concessão de Medalha: Medalha do Pioneiro da Enciclopédia.',
+    date: '2026-02-01T12:00:00Z',
+  },
+];
 
 export const INITIAL_PAGES: WikiPage[] = [
   {

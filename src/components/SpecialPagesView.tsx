@@ -28,6 +28,7 @@ interface SpecialPagesViewProps {
   user: UserProfile | null;
   onNavigateToArticle: (articleId: string) => void;
   onNavigateToPage: (pageUid: string) => void;
+  onNavigateToUser?: (username: string) => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -37,6 +38,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   user,
   onNavigateToArticle,
   onNavigateToPage,
+  onNavigateToUser,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -544,9 +546,19 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
             <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
               {stats.topAuthors.map(([author, count], idx) => (
                 <div key={author} className="py-2 flex items-center justify-between">
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    {idx + 1}. {author}
-                  </span>
+                  {onNavigateToUser ? (
+                    <button
+                      onClick={() => onNavigateToUser(author)}
+                      className="font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1.5"
+                    >
+                      <span>{idx + 1}.</span>
+                      <span>User:{author}</span>
+                    </button>
+                  ) : (
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      {idx + 1}. {author}
+                    </span>
+                  )}
                   <span className="font-mono text-slate-500 dark:text-slate-400 font-bold">
                     {count} {count === 1 ? 'artigo' : 'artigos'}
                   </span>
