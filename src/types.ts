@@ -24,6 +24,10 @@ export interface ArticleHistoryItem {
   autorEmail?: string;
   resumo: string;
   tamanho: number;
+  deltaBytes?: number;
+  versao?: number;
+  isMinor?: boolean;
+  conteudo?: string;
 }
 
 export interface WikiPage {

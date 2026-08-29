@@ -149,7 +149,8 @@ export const StorageService = {
   async saveArticle(
     articleData: Partial<WikiArticle> & { titulo: string; pageUid: string; descricao: string },
     user?: UserProfile | null,
-    editSummary?: string
+    editSummary?: string,
+    isMinor?: boolean
   ): Promise<WikiArticle> {
     const articles = await this.getArticles();
     const now = new Date().toISOString();
@@ -161,13 +162,21 @@ export const StorageService = {
       // Update existing
       const existing = articles[existingIndex];
       const newVersion = (existing.versao || 1) + 1;
+      const prevLength = existing.descricao ? existing.descricao.length : 0;
+      const newLength = articleData.descricao.length;
+      const deltaBytes = newLength - prevLength;
+
       const historyItem = {
         id: `h-${Date.now()}`,
         data: now,
         autor: user?.displayName || user?.email || 'Anônimo',
         autorEmail: user?.email,
         resumo: editSummary || 'Edição no artigo',
-        tamanho: articleData.descricao.length,
+        tamanho: newLength,
+        deltaBytes,
+        versao: newVersion,
+        isMinor: !!isMinor,
+        conteudo: articleData.descricao,
       };
 
       article = {
@@ -181,13 +190,18 @@ export const StorageService = {
     } else {
       // Create new
       const id = articleData.id || `art-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      const newLength = articleData.descricao.length;
       const historyItem = {
         id: `h-${Date.now()}`,
         data: now,
         autor: user?.displayName || user?.email || 'Autor Original',
         autorEmail: user?.email,
         resumo: editSummary || 'Criação do artigo',
-        tamanho: articleData.descricao.length,
+        tamanho: newLength,
+        deltaBytes: newLength,
+        versao: 1,
+        isMinor: false,
+        conteudo: articleData.descricao,
       };
 
       article = {

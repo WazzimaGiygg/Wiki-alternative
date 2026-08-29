@@ -21,7 +21,7 @@ import {
 } from './components/InformativeViews';
 import { Footer } from './components/Footer';
 import { StorageService } from './services/storageService';
-import { WikiPage, WikiArticle, UserProfile, NotificationItem, CookieConsent, ViewMode } from './types';
+import { WikiPage, WikiArticle, UserProfile, NotificationItem, CookieConsent, ViewMode, ArticleHistoryItem } from './types';
 
 export default function App() {
   // === STATE MANAGEMENT ===
@@ -272,9 +272,10 @@ export default function App() {
 
   const handleSaveArticle = async (
     articleData: Partial<WikiArticle> & { titulo: string; pageUid: string; descricao: string },
-    editSummary: string
+    editSummary: string,
+    isMinor?: boolean
   ) => {
-    const saved = await StorageService.saveArticle(articleData, user, editSummary);
+    const saved = await StorageService.saveArticle(articleData, user, editSummary, isMinor);
     const updatedArticles = await StorageService.getArticles();
     const updatedPages = await StorageService.getPages();
 
@@ -286,11 +287,33 @@ export default function App() {
     setCurrentView('article');
 
     StorageService.addNotification({
-      title: '📝 Artigo Publicado',
-      message: `"${saved.titulo}" foi salvo com sucesso!`,
+      title: isMinor ? '✏️ Edição Menor Registrada' : '📝 Artigo Publicado',
+      message: `"${saved.titulo}" (${editSummary}) salvo com sucesso!`,
       type: 'success',
     });
     setNotifications(StorageService.getNotifications());
+  };
+
+  const handleRestoreRevision = async (historyItem: ArticleHistoryItem) => {
+    if (!activeArticle) return;
+    const restoredText = historyItem.conteudo || activeArticle.descricao;
+    const confirmRestore = confirm(
+      `Deseja realmente reverter o artigo "${activeArticle.titulo}" para a revisão de ${new Date(historyItem.data).toLocaleString('pt-BR')} feita por ${historyItem.autor}?`
+    );
+    if (!confirmRestore) return;
+
+    await handleSaveArticle(
+      {
+        id: activeArticle.id,
+        titulo: activeArticle.titulo,
+        pageUid: activeArticle.pageUid,
+        categoria: activeArticle.categoria,
+        idioma: activeArticle.idioma,
+        descricao: restoredText,
+      },
+      `Reversão para a revisão de ${new Date(historyItem.data).toLocaleDateString('pt-BR')} (${historyItem.autor})`,
+      false
+    );
   };
 
   const handleDeleteArticle = async (articleId: string) => {
@@ -394,6 +417,7 @@ export default function App() {
               onNavigateToPage={handleSelectPage}
               onNavigateToArticleByTitle={handleNavigateToArticleByTitle}
               onBack={() => handleNavigate('hub')}
+              onRestoreRevision={handleRestoreRevision}
             />
           )}
 
