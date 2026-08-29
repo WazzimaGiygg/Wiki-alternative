@@ -221,6 +221,7 @@ export type ViewMode =
   | 'watchlist'
   | 'user-page'
   | 'admin-users'
+  | 'admin-firebase'
   | 'security'
   | 'donation'
   | 'privacy'

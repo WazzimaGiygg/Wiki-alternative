@@ -16,6 +16,8 @@ import {
   Sparkles,
   Globe2,
   Star,
+  Users,
+  Database,
 } from 'lucide-react';
 import { ViewMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -188,8 +190,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
               }`}
             >
-              <Shield size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              <Users size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
               {!isCollapsed && <span className="truncate">Diretório de Usuários</span>}
+            </button>
+
+            <button
+              onClick={() => onNavigate('admin-firebase')}
+              title="Administração do Banco Firebase (Firestore DB)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'admin-firebase'
+                  ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-400 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Database size={15} className="text-amber-500 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Admin Firebase DB</span>}
             </button>
           </nav>
         </div>

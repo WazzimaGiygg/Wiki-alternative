@@ -17,6 +17,7 @@ import {
   PlusCircle,
   Globe2,
   ChevronDown,
+  Database,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -420,6 +421,15 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
                     >
                       <Layers size={13} className="text-purple-600 dark:text-purple-400" /> Diretório de Usuários
+                    </button>
+                    <button
+                      onClick={() => {
+                        onNavigate('admin-firebase');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 font-medium"
+                    >
+                      <Database size={13} className="text-amber-500" /> Admin Firebase DB
                     </button>
                     <button
                       onClick={() => {

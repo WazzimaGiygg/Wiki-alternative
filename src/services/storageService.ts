@@ -46,14 +46,15 @@ import {
   INITIAL_USER_AUDIT_LOGS,
 } from '../data/seedData';
 
-// Configuração original do projeto
+// Configuração oficial do projeto Firebase
 export const firebaseConfig = {
-  apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
-  authDomain: "wzzm-ce3fc.firebaseapp.com",
   projectId: "wzzm-ce3fc",
-  storageBucket: "wzzm-ce3fc.appspot.com",
+  appId: "1:249427877153:web:a423c9abb1ef0016deb260",
+  apiKey: "AIzaSyAL_MsRuFE8BGjOZU8MK-4n25iJllS-Nmc",
+  authDomain: "wzzm-ce3fc.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-wikizeroenciclop-0a14dc90-3ab3-47bc-8306-ca5bc2953699",
+  storageBucket: "wzzm-ce3fc.firebasestorage.app",
   messagingSenderId: "249427877153",
-  appId: "1:249427877153:web:0e4297294794a5aadeb260",
 };
 
 let db: ReturnType<typeof getFirestore> | null = null;
@@ -1420,6 +1421,133 @@ export const StorageService = {
     return contributions.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
+  },
+
+  // === FIREBASE DATABASE ADMINISTRATION (PARA ADMINISTRADORES) ===
+  getFirebaseStatus() {
+    return {
+      active: firebaseActive,
+      projectId: firebaseConfig.projectId,
+      firestoreDatabaseId: firebaseConfig.firestoreDatabaseId || '(default)',
+      authDomain: firebaseConfig.authDomain,
+      storageBucket: firebaseConfig.storageBucket,
+      apiKeyMasked: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.slice(0, 8)}...${firebaseConfig.apiKey.slice(-4)}` : 'Não configurada',
+    };
+  },
+
+  async testFirebaseConnection(): Promise<{ success: boolean; message: string; latencyMs?: number }> {
+    const start = Date.now();
+    if (!firebaseActive || !db) {
+      return { success: false, message: 'Firebase não está ativo ou instância de Firestore não inicializada.' };
+    }
+    try {
+      const pingDoc = doc(db, '_health_check', 'ping');
+      await setDoc(pingDoc, { ping: true, timestamp: serverTimestamp() });
+      const snap = await getDoc(pingDoc);
+      const latencyMs = Date.now() - start;
+      return {
+        success: snap.exists(),
+        message: `Conexão com Firestore autenticada e operacional (${latencyMs}ms).`,
+        latencyMs,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: `Falha na conexão com Firestore: ${err?.message || err}`,
+      };
+    }
+  },
+
+  async syncAllToFirebase(): Promise<{ syncedPages: number; syncedArticles: number; syncedUsers: number }> {
+    if (!firebaseActive || !db) {
+      throw new Error('Firestore não está conectado.');
+    }
+
+    const pages = await this.getPages();
+    const articles = await this.getArticles();
+    const users = await this.getCommunityUsers();
+
+    let syncedPages = 0;
+    let syncedArticles = 0;
+    let syncedUsers = 0;
+
+    for (const page of pages) {
+      try {
+        await setDoc(doc(db, 'documentos', page.uid), {
+          titulo: page.titulo,
+          descricao: page.descricao,
+          categoria: page.categoria,
+          criadoEm: page.criadoEm || serverTimestamp(),
+          status: page.status || 'ativo',
+          uid: page.uid,
+          autor: page.autor || 'Admin',
+        });
+        syncedPages++;
+      } catch (e) {
+        console.warn('Erro ao sincronizar página:', page.uid, e);
+      }
+    }
+
+    for (const art of articles) {
+      try {
+        await setDoc(doc(db, 'documentos', art.pageUid, 'inevitavel', art.id), {
+          id: art.id,
+          pageUid: art.pageUid,
+          titulo: art.titulo,
+          descricao: art.descricao,
+          resumo: art.resumo || '',
+          categoria: art.categoria || 'Geral',
+          idioma: art.idioma || 'pt',
+          autor: art.autor || 'Colaborador',
+          autorEmail: art.autorEmail || '',
+          autorUid: art.autorUid || 'anon',
+          versao: art.versao || 1,
+          visualizacoes: art.visualizacoes || 1,
+          dataCriacao: art.dataCriacao || new Date().toISOString(),
+          atualizadoEm: serverTimestamp(),
+        });
+        syncedArticles++;
+      } catch (e) {
+        console.warn('Erro ao sincronizar artigo:', art.id, e);
+      }
+    }
+
+    for (const u of users) {
+      try {
+        await setDoc(doc(db, 'users', u.uid), {
+          uid: u.uid,
+          email: u.email,
+          displayName: u.displayName,
+          username: u.username || u.displayName,
+          role: u.role,
+          isBanned: !!u.isBanned,
+          banReason: u.banReason || '',
+          createdAt: u.createdAt || new Date().toISOString(),
+          bio: u.bio || '',
+        });
+        syncedUsers++;
+      } catch (e) {
+        console.warn('Erro ao sincronizar usuário:', u.uid, e);
+      }
+    }
+
+    return { syncedPages, syncedArticles, syncedUsers };
+  },
+
+  async clearLocalCache(): Promise<void> {
+    const consent = this.getCookieConsent();
+    const isLgpd = this.isLgpdTermsAccepted();
+    const currentUser = this.getCurrentUser();
+    
+    // Clear storage keys
+    Object.values(STORAGE_KEYS).forEach((k) => localStorage.removeItem(k));
+    
+    // Restore session if existed
+    if (consent) this.saveCookieConsent(consent);
+    if (isLgpd) this.saveLgpdTermsAccepted();
+    if (currentUser) this.saveUser(currentUser);
+    
+    initializeLocalStorage();
   },
 };
 

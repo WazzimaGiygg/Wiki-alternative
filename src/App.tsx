@@ -8,6 +8,7 @@ import { WikitextEditor } from './components/WikitextEditor';
 import { SpecialPagesView } from './components/SpecialPagesView';
 import { UserPageView } from './components/UserPageView';
 import { AdminUsersManagementView } from './components/AdminUsersManagementView';
+import { FirebaseAdminDashboard } from './components/FirebaseAdminDashboard';
 import { CreatePageModal } from './components/CreatePageModal';
 import { CookieBanner } from './components/CookieBanner';
 import { BannedOverlay } from './components/BannedOverlay';
@@ -483,6 +484,17 @@ export default function App() {
             <AdminUsersManagementView
               currentUser={user}
               onNavigateToUser={handleNavigateToUser}
+              onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'admin-firebase' && (
+            <FirebaseAdminDashboard
+              currentUser={user}
+              pages={pages}
+              articles={articles}
+              onNavigateToPage={handleSelectPage}
+              onNavigateToArticle={handleSelectArticle}
               onBack={() => handleNavigate('hub')}
             />
           )}

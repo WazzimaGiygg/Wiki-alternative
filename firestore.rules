@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'pedrohenriquecardonaperes@gmail.com' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+    
+    function isModerator() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'moderador'
+      );
+    }
+
+    // Coleções de tópicos da Wiki
+    match /documentos/{pageUid} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+      
+      // Artigos dentro da coleção
+      match /inevitavel/{articleId} {
+        allow read: if true;
+        allow write: if isAuthenticated();
+        allow delete: if isModerator();
+      }
+    }
+
+    // Perfis de usuários
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Lista de banimentos
+    match /banned_users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isModerator();
+    }
+
+    // Logs de auditoria administrativa
+    match /audit_logs/{logId} {
+      allow read: if isModerator();
+      allow create: if isModerator();
+      allow update, delete: if isAdmin();
+    }
+
+    // Coleções gerais
+    match /{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+  }
+}
