@@ -1030,6 +1030,150 @@ export const StorageService = {
     return updated;
   },
 
+  async adminUpdateUserName(
+    targetUid: string,
+    newDisplayName: string,
+    legalJustification: string,
+    adminUser: UserProfile | null
+  ): Promise<{ success: boolean; user?: UserProfile; message: string }> {
+    // 1. Permission check: Only admin
+    const isAdmin =
+      adminUser?.role === 'admin' ||
+      adminUser?.email === 'pedrohenriquecardonaperes@gmail.com';
+
+    if (!isAdmin) {
+      return {
+        success: false,
+        message: 'Acesso negado: A retificação de nome de usuário é restrita exclusivamente a Administradores (LGPD / Marco Civil).',
+      };
+    }
+
+    const cleanNewName = (newDisplayName || '').trim();
+    if (!cleanNewName || cleanNewName.length < 3 || cleanNewName.length > 50) {
+      return {
+        success: false,
+        message: 'O novo nome deve conter entre 3 e 50 caracteres.',
+      };
+    }
+
+    // Check illegal chars in username
+    if (/[/\\#?%<>[\]|^`{}]/.test(cleanNewName)) {
+      return {
+        success: false,
+        message: 'O nome contém caracteres inválidos para identificador de usuário.',
+      };
+    }
+
+    const user = await this.getUserProfile(targetUid);
+    if (!user) {
+      return { success: false, message: 'Usuário não encontrado.' };
+    }
+
+    const oldName = user.displayName || user.username || user.uid;
+    if (oldName.toLowerCase() === cleanNewName.toLowerCase()) {
+      return { success: false, message: 'O novo nome informado é idêntico ao nome atual.' };
+    }
+
+    // Check if new name is already in use by another user
+    const allCommunity = await this.getCommunityUsers();
+    const isTaken = allCommunity.some(
+      (u) =>
+        u.uid !== user.uid &&
+        (u.displayName?.toLowerCase() === cleanNewName.toLowerCase() ||
+          u.username?.toLowerCase() === cleanNewName.toLowerCase())
+    );
+    if (isTaken) {
+      return { success: false, message: `O nome "${cleanNewName}" já está em uso por outro usuário.` };
+    }
+
+    const updatedUser: UserProfile = {
+      ...user,
+      displayName: cleanNewName,
+      username: cleanNewName.toLowerCase().replace(/\s+/g, '_'),
+    };
+
+    // Save updated user in community users & Firestore
+    await this.saveCommunityUser(updatedUser);
+
+    // If current logged-in user is this user, update localStorage current user
+    const currentRaw = localStorage.getItem(STORAGE_KEYS.USER);
+    if (currentRaw) {
+      try {
+        const parsedCurrent: UserProfile = JSON.parse(currentRaw);
+        if (parsedCurrent.uid === user.uid || parsedCurrent.email === user.email) {
+          localStorage.setItem(
+            STORAGE_KEYS.USER,
+            JSON.stringify({ ...parsedCurrent, displayName: cleanNewName, username: updatedUser.username })
+          );
+        }
+      } catch (e) {
+        console.error('Error updating current session user:', e);
+      }
+    }
+
+    // Update article author and revision history references for LGPD rectification
+    try {
+      const articles = await this.getArticles();
+      let updatedArticlesCount = 0;
+      const updatedArticles = articles.map((art) => {
+        let changed = false;
+        let artAutor = art.autor;
+        if (art.autorUid === user.uid || art.autor === oldName || (user.email && art.autorEmail === user.email)) {
+          artAutor = cleanNewName;
+          changed = true;
+        }
+
+        const historico = art.historico?.map((h) => {
+          if (h.autor === oldName || (user.email && h.autorEmail === user.email)) {
+            changed = true;
+            return { ...h, autor: cleanNewName };
+          }
+          return h;
+        });
+
+        if (changed) {
+          updatedArticlesCount++;
+          return { ...art, autor: artAutor, historico };
+        }
+        return art;
+      });
+
+      if (updatedArticlesCount > 0) {
+        localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(updatedArticles));
+      }
+    } catch (e) {
+      console.warn('Error cascading name change to articles:', e);
+    }
+
+    // Register immutable audit log entry
+    const justificationText = (legalJustification || '').trim() || 'Solicitação do Titular de Dados (Art. 18, III LGPD)';
+    this.logUserAuditAction(
+      user.uid,
+      cleanNewName,
+      'lgpd_name_change',
+      `Retificação Cadastral de Nome de "${oldName}" para "${cleanNewName}". Fundamento: ${justificationText}. Administrador: ${adminUser?.displayName || adminUser?.email}.`,
+      adminUser
+    );
+
+    // Send talk message notice
+    this.addUserTalkMessage(
+      user.uid,
+      cleanNewName,
+      {
+        titulo: `⚖️ Retificação de Nome Cadastral (LGPD / Marco Civil)`,
+        conteudo: `Seu nome de exibição e identificador público foi atualizado de '''"${oldName}"''' para '''"${cleanNewName}"''' em conformidade com as diretrizes da LGPD (Art. 18, III - Retificação de Dados) e Marco Civil da Internet.\n\n'''Fundamento / Justificativa:''' ${justificationText}\n\n'''Executado por:''' ${adminUser?.displayName || 'Administração WikiZero'}.`,
+        tipo: 'aviso_admin',
+      },
+      adminUser
+    );
+
+    return {
+      success: true,
+      user: updatedUser,
+      message: `Nome retificado com sucesso de "${oldName}" para "${cleanNewName}" com registro em auditoria LGPD.`,
+    };
+  },
+
   async banUser(
     uid: string,
     reason: string,

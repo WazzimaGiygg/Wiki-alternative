@@ -127,7 +127,9 @@ export interface UserAuditLog {
     | 'warning_issued'
     | 'permission_change'
     | 'profile_reset'
-    | 'barnstar_awarded';
+    | 'barnstar_awarded'
+    | 'name_change'
+    | 'lgpd_name_change';
   performedBy: string;
   performedByRole: string;
   details: string;

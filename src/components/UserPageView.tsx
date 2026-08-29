@@ -127,9 +127,19 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
     canGrantBarnstars: true,
   });
 
+  // Admin Rename User (LGPD / Marco Civil) State
+  const [newDisplayName, setNewDisplayName] = useState('');
+  const [renameJustification, setRenameJustification] = useState('Solicitação do Titular de Dados (Art. 18, III LGPD)');
+  const [customJustification, setCustomJustification] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
+
   const isAdminOrMod =
     currentUser?.role === 'admin' ||
     currentUser?.role === 'moderador' ||
+    currentUser?.email === 'pedrohenriquecardonaperes@gmail.com';
+
+  const isRealAdmin =
+    currentUser?.role === 'admin' ||
     currentUser?.email === 'pedrohenriquecardonaperes@gmail.com';
 
   const isOwner =
@@ -348,6 +358,47 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
       setAuditLogs(StorageService.getUserAuditLogs(userProfile.uid));
       setAdminFeedback({ msg: 'Biografia do usuário resetada com sucesso.', type: 'success' });
       setTimeout(() => setAdminFeedback(null), 4000);
+    }
+  };
+
+  // Handle Admin Rename User (LGPD / Marco Civil)
+  const handleAdminRenameUser = async () => {
+    if (!userProfile) return;
+    const targetName = newDisplayName.trim();
+    if (!targetName) {
+      setAdminFeedback({ msg: 'Por favor, informe o novo nome de exibição do usuário.', type: 'error' });
+      return;
+    }
+
+    if (targetName.length < 3 || targetName.length > 50) {
+      setAdminFeedback({ msg: 'O novo nome deve conter entre 3 e 50 caracteres.', type: 'error' });
+      return;
+    }
+
+    const justification = renameJustification === 'outros'
+      ? (customJustification.trim() || 'Retificação Cadastral em conformidade com a LGPD e Marco Civil')
+      : renameJustification;
+
+    setIsRenaming(true);
+    const result = await StorageService.adminUpdateUserName(
+      userProfile.uid,
+      targetName,
+      justification,
+      currentUser
+    );
+    setIsRenaming(false);
+
+    if (result.success && result.user) {
+      setUserProfile(result.user);
+      setAuditLogs(StorageService.getUserAuditLogs(userProfile.uid));
+      setTalkMessages(StorageService.getUserTalkMessages(userProfile.uid));
+      setAdminFeedback({ msg: result.message, type: 'success' });
+      setNewDisplayName('');
+      setCustomJustification('');
+      setTimeout(() => setAdminFeedback(null), 5000);
+    } else {
+      setAdminFeedback({ msg: result.message, type: 'error' });
+      setTimeout(() => setAdminFeedback(null), 5000);
     }
   };
 
@@ -1274,6 +1325,131 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 0. Retificação Cadastral de Nome (LGPD / Marco Civil - Exclusivo Administrador) */}
+            <div className="bg-white dark:bg-slate-900 border-2 border-purple-300 dark:border-purple-800/80 rounded-lg p-5 shadow-xs md:col-span-2">
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-purple-900 dark:text-purple-200 font-mono flex items-center gap-2">
+                  <UserCheck size={16} className="text-purple-600 dark:text-purple-400" />
+                  <span>Retificação Cadastral de Nome (LGPD Art. 18 & Marco Civil)</span>
+                </h3>
+                <span className="text-[10px] font-mono font-bold bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded border border-purple-300 dark:border-purple-700">
+                  Exclusivo para Administrador
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
+                Em estrita conformidade com a <strong>LGPD (Lei 13.709/2018, Art. 18, III — retificação de dados pessoais)</strong> e o <strong>Marco Civil da Internet (Lei 12.965/2014, Art. 15 — rastreabilidade e integridade de registros)</strong>, a alteração e retificação do nome de usuário só pode ser processada pelo <strong>Administrador do Sistema</strong>. Esta medida garante a cadeia de custódia, previne falsidade ideológica e preserva o histórico de autoria dos verbetes.
+              </p>
+
+              {isRealAdmin ? (
+                <div className="bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/60 rounded-lg p-4 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Nome Atual do Titular:
+                      </label>
+                      <input
+                        type="text"
+                        disabled
+                        value={userProfile.displayName || userProfile.username || userProfile.uid}
+                        className="w-full px-2.5 py-1.5 text-xs bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-600 dark:text-slate-400 font-mono font-bold cursor-not-allowed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Novo Nome de Exibição / Identificador:
+                      </label>
+                      <input
+                        type="text"
+                        value={newDisplayName}
+                        onChange={(e) => setNewDisplayName(e.target.value)}
+                        placeholder="Ex: Maria Silva ou RedatorTecnico_BR"
+                        className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-purple-300 dark:border-purple-700 rounded text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 block">
+                        De 3 a 50 caracteres alfanuméricos.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Fundamento Legal / Motivação da Retificação:
+                    </label>
+                    <select
+                      value={renameJustification}
+                      onChange={(e) => setRenameJustification(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                    >
+                      <option value="Solicitação do Titular de Dados (Art. 18, III LGPD)">
+                        Solicitação do Titular de Dados (Art. 18, III LGPD - Retificação Cadastral)
+                      </option>
+                      <option value="Retificação de Prenome / Nome Social (Lei 14.382/2022)">
+                        Retificação de Prenome / Nome Social (Lei 14.382/2022)
+                      </option>
+                      <option value="Correção de Erro Material ou Grafia Inexata">
+                        Correção de Erro Material ou Grafia Inexata
+                      </option>
+                      <option value="Proteção de Identidade e Privacidade do Titular">
+                        Proteção de Identidade e Privacidade do Titular
+                      </option>
+                      <option value="Decisão Administrativa ou Judicial">
+                        Cumprimento de Decisão Administrativa ou Judicial
+                      </option>
+                      <option value="outros">Outra Motivação Específica (Descrever abaixo)</option>
+                    </select>
+                  </div>
+
+                  {renameJustification === 'outros' && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Descreva o motivo legal detalhado:
+                      </label>
+                      <input
+                        type="text"
+                        value={customJustification}
+                        onChange={(e) => setCustomJustification(e.target.value)}
+                        placeholder="Ex: Protocolo de atendimento DPO #84920 referente a retificação de documento."
+                        className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-4 pt-1 flex-wrap">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Será gerado um registro imutável no <strong>Log de Auditoria</strong> e uma notificação na página de Discussão do usuário.
+                    </div>
+                    <button
+                      id="btn-admin-apply-rename"
+                      onClick={handleAdminRenameUser}
+                      disabled={isRenaming || !newDisplayName.trim()}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
+                    >
+                      {isRenaming ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Processando Retificação...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserCheck size={14} />
+                          <span>Efetuar Retificação de Nome (LGPD)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                  <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p>
+                    Seu nível de acesso atual é <strong>Moderador</strong>. Por exigência legal da LGPD e Marco Civil da Internet, a retificação de nomes cadastrais só pode ser homologada por um <strong>Administrador do Sistema</strong>.
+                  </p>
+                </div>
+              )}
+            </div>
+
             {/* 1. Alteração de Cargo e Nível de Acesso */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 shadow-xs">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white font-mono mb-3 flex items-center gap-2">

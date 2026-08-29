@@ -107,6 +107,13 @@ export const MyDataModal: React.FC<MyDataModalProps> = ({
             </p>
           </div>
 
+          <div className="bg-purple-50 dark:bg-purple-950/40 p-3 rounded border border-purple-200 dark:border-purple-800 text-xs text-purple-900 dark:text-purple-200">
+            <h4 className="font-bold font-mono text-[11px] uppercase mb-0.5">⚖️ Retificação de Nome (Art. 18, III)</h4>
+            <p className="text-[11px] leading-relaxed">
+              Para conformidade com a LGPD e o Marco Civil da Internet, a alteração e retificação cadastral de nome de usuário é realizada exclusivamente por um <strong>Administrador</strong>, garantindo a integridade dos registros e a cadeia de autoria dos verbetes.
+            </p>
+          </div>
+
           <div className="pt-1 flex flex-col gap-1.5">
             <button
               onClick={handleDownloadJson}

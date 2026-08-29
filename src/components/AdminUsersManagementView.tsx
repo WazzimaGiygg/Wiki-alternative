@@ -16,6 +16,8 @@ import {
   ExternalLink,
   MessageSquare,
   Sparkles,
+  Edit3,
+  X,
 } from 'lucide-react';
 import { UserProfile, UserRole } from '../types';
 import { StorageService } from '../services/storageService';
@@ -36,6 +38,18 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
 
+  // Admin Rename User Modal State (LGPD / Marco Civil)
+  const [targetUserForRename, setTargetUserForRename] = useState<UserProfile | null>(null);
+  const [newNameInput, setNewNameInput] = useState('');
+  const [renameJustification, setRenameJustification] = useState('Solicitação do Titular de Dados (Art. 18, III LGPD)');
+  const [customJustification, setCustomJustification] = useState('');
+  const [isProcessingRename, setIsProcessingRename] = useState(false);
+  const [renameFeedback, setRenameFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const isRealAdmin =
+    currentUser?.role === 'admin' ||
+    currentUser?.email === 'pedrohenriquecardonaperes@gmail.com';
+
   const loadUsers = async () => {
     setIsLoading(true);
     const communityUsers = await StorageService.getCommunityUsers();
@@ -46,6 +60,48 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
   useEffect(() => {
     loadUsers();
   }, []);
+
+  const handleOpenRenameModal = (u: UserProfile, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTargetUserForRename(u);
+    setNewNameInput(u.displayName || u.username || '');
+    setRenameJustification('Solicitação do Titular de Dados (Art. 18, III LGPD)');
+    setCustomJustification('');
+    setRenameFeedback(null);
+  };
+
+  const handleExecuteRename = async () => {
+    if (!targetUserForRename) return;
+    const targetName = newNameInput.trim();
+    if (!targetName) {
+      setRenameFeedback({ msg: 'Informe o novo nome de exibição.', type: 'error' });
+      return;
+    }
+
+    const justification = renameJustification === 'outros'
+      ? (customJustification.trim() || 'Retificação Cadastral em conformidade com a LGPD e Marco Civil')
+      : renameJustification;
+
+    setIsProcessingRename(true);
+    const result = await StorageService.adminUpdateUserName(
+      targetUserForRename.uid,
+      targetName,
+      justification,
+      currentUser
+    );
+    setIsProcessingRename(false);
+
+    if (result.success && result.user) {
+      setRenameFeedback({ msg: result.message, type: 'success' });
+      await loadUsers();
+      setTimeout(() => {
+        setTargetUserForRename(null);
+        setRenameFeedback(null);
+      }, 1800);
+    } else {
+      setRenameFeedback({ msg: result.message, type: 'error' });
+    }
+  };
 
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
@@ -220,14 +276,174 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                       {u.reputationScore || 100} pts
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-slate-400 group-hover:text-blue-600 transition">
-                    <span>Ver Página</span>
-                    <ChevronRight size={10} />
+                  
+                  <div className="flex items-center gap-2">
+                    {isRealAdmin && (
+                      <button
+                        title="Retificação de Nome (LGPD / Marco Civil)"
+                        onClick={(e) => handleOpenRenameModal(u, e)}
+                        className="px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/80 text-purple-700 dark:text-purple-300 font-bold flex items-center gap-1 border border-purple-200 dark:border-purple-800 transition"
+                      >
+                        <Edit3 size={10} />
+                        <span>Nome (LGPD)</span>
+                      </button>
+                    )}
+                    <div className="flex items-center gap-1 text-slate-400 group-hover:text-blue-600 transition">
+                      <span>Ver Perfil</span>
+                      <ChevronRight size={10} />
+                    </div>
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: RETIFICAÇÃO DE NOME DO USUÁRIO (LGPD / MARCO CIVIL - ADMINISTRADOR) */}
+      {/* ========================================================================= */}
+      {targetUserForRename && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300">
+                  <UserCheck size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-serif-heading font-bold text-slate-900 dark:text-white">
+                    Retificação Cadastral de Nome (LGPD)
+                  </h3>
+                  <p className="text-[10px] text-purple-600 dark:text-purple-400 font-mono">
+                    Art. 18, III LGPD & Marco Civil da Internet (Lei 12.965/2014)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTargetUserForRename(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {renameFeedback && (
+              <div
+                className={`p-3 rounded-lg border text-xs flex items-center gap-2 ${
+                  renameFeedback.type === 'success'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                    : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
+                }`}
+              >
+                {renameFeedback.type === 'success' ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+                <span>{renameFeedback.msg}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Nome Atual:
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value={targetUserForRename.displayName || targetUserForRename.username || targetUserForRename.uid}
+                  className="w-full px-2.5 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-slate-500 font-mono font-bold cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Novo Nome de Exibição / Identificador:
+                </label>
+                <input
+                  type="text"
+                  value={newNameInput}
+                  onChange={(e) => setNewNameInput(e.target.value)}
+                  placeholder="Ex: Carlos Eduardo ou EditorSenior"
+                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-purple-300 dark:border-purple-700 rounded text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  Requisitos: Entre 3 e 50 caracteres alfanuméricos.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Fundamento Legal / Motivo Cadastrado:
+                </label>
+                <select
+                  value={renameJustification}
+                  onChange={(e) => setRenameJustification(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                >
+                  <option value="Solicitação do Titular de Dados (Art. 18, III LGPD)">
+                    Solicitação do Titular de Dados (Art. 18, III LGPD - Retificação Cadastral)
+                  </option>
+                  <option value="Retificação de Prenome / Nome Social (Lei 14.382/2022)">
+                    Retificação de Prenome / Nome Social (Lei 14.382/2022)
+                  </option>
+                  <option value="Correção de Erro Material ou Grafia Inexata">
+                    Correção de Erro Material ou Grafia Inexata
+                  </option>
+                  <option value="Proteção de Identidade e Privacidade do Titular">
+                    Proteção de Identidade e Privacidade do Titular
+                  </option>
+                  <option value="Decisão Administrativa ou Judicial">
+                    Cumprimento de Decisão Administrativa ou Judicial
+                  </option>
+                  <option value="outros">Outra Motivação Específica</option>
+                </select>
+              </div>
+
+              {renameJustification === 'outros' && (
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Descreva o fundamento:
+                  </label>
+                  <input
+                    type="text"
+                    value={customJustification}
+                    onChange={(e) => setCustomJustification(e.target.value)}
+                    placeholder="Descreva a razão e número de protocolo"
+                    className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="bg-purple-50 dark:bg-purple-950/30 p-3 rounded text-[11px] text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 leading-relaxed">
+              <strong>Nota de Conformidade:</strong> A alteração registrará um log imutável de auditoria com seu usuário administrador ({currentUser?.displayName || currentUser?.email}) e emitirá aviso na página de discussão do usuário.
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => setTargetUserForRename(null)}
+                className="px-3 py-1.5 rounded text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleExecuteRename}
+                disabled={isProcessingRename || !newNameInput.trim()}
+                className="px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5"
+              >
+                {isProcessingRename ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Salvando...</span>
+                  </>
+                ) : (
+                  <>
+                    <UserCheck size={14} />
+                    <span>Salvar Retificação</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
