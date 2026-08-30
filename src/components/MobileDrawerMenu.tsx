@@ -24,6 +24,10 @@ import {
   Database,
   Info,
   Sparkles,
+  UserX,
+  Scale,
+  Vote,
+  MessageSquare,
 } from 'lucide-react';
 import { UserProfile, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -263,6 +267,40 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               </button>
 
               <button
+                onClick={() => handleItemClick('promotion-requests')}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition ${
+                  currentView === 'promotion-requests'
+                    ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Vote size={16} className="text-purple-600 dark:text-purple-400" />
+                  <span>Pedidos de Promoção (RFA)</span>
+                </div>
+                <span className="text-[9px] font-bold font-mono px-1 rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
+                  VOTO
+                </span>
+              </button>
+
+              <button
+                onClick={() => handleItemClick('contact-admin')}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition ${
+                  currentView === 'contact-admin'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <MessageSquare size={16} className="text-blue-600 dark:text-blue-400" />
+                  <span>Falar com a Administração</span>
+                </div>
+                <span className="text-[9px] font-bold font-mono px-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                  SUPORTE
+                </span>
+              </button>
+
+              <button
                 onClick={() => handleItemClick('watchlist')}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition ${
                   currentView === 'watchlist'
@@ -343,6 +381,36 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
                   <Layers size={16} className="text-purple-600" />
                   <span>Diretório de Usuários</span>
                 </button>
+
+                {(user.role === 'admin' || user.role === 'moderador' || user.email === 'pedrohenriquecardonaperes@gmail.com') && (
+                  <>
+                    <button
+                      onClick={() => handleItemClick('checkuser')}
+                      className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <UserX size={16} className="text-rose-600 dark:text-rose-400" />
+                        <span>CheckUser (Fantoches)</span>
+                      </div>
+                      <span className="text-[9px] font-bold font-mono px-1 rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
+                        MOD
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => handleItemClick('unblock-requests')}
+                      className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Scale size={16} className="text-purple-600 dark:text-purple-400" />
+                        <span>Recursos de Desbloqueio</span>
+                      </div>
+                      <span className="text-[9px] font-bold font-mono px-1 rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
+                        ADM
+                      </span>
+                    </button>
+                  </>
+                )}
 
                 {user.role === 'admin' && (
                   <button

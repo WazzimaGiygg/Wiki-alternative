@@ -18,6 +18,9 @@ import {
   Sparkles,
   Edit3,
   X,
+  UserX,
+  Scale,
+  Vote,
 } from 'lucide-react';
 import { UserProfile, UserRole } from '../types';
 import { StorageService } from '../services/storageService';
@@ -25,12 +28,20 @@ import { StorageService } from '../services/storageService';
 interface AdminUsersManagementViewProps {
   currentUser: UserProfile | null;
   onNavigateToUser: (identifier: string) => void;
+  onNavigateToCheckUser?: (username: string) => void;
+  onNavigateToUnblockRequests?: () => void;
+  onNavigateToPromotionRequests?: () => void;
+  onNavigateToContactAdmin?: () => void;
   onBack?: () => void;
 }
 
 export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> = ({
   currentUser,
   onNavigateToUser,
+  onNavigateToCheckUser,
+  onNavigateToUnblockRequests,
+  onNavigateToPromotionRequests,
+  onNavigateToContactAdmin,
   onBack,
 }) => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -149,7 +160,43 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+          {onNavigateToCheckUser && (
+            <button
+              onClick={() => onNavigateToCheckUser('Usuario_Suspeito')}
+              className="px-3 py-1.5 rounded bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-bold flex items-center gap-1.5 transition"
+            >
+              <UserX size={13} />
+              <span>Special:CheckUser</span>
+            </button>
+          )}
+          {onNavigateToUnblockRequests && (
+            <button
+              onClick={onNavigateToUnblockRequests}
+              className="px-3 py-1.5 rounded bg-purple-700 hover:bg-purple-800 text-white font-bold flex items-center gap-1.5 transition shadow-xs"
+            >
+              <Scale size={13} />
+              <span>Special:UnblockRequests</span>
+            </button>
+          )}
+          {onNavigateToPromotionRequests && (
+            <button
+              onClick={onNavigateToPromotionRequests}
+              className="px-3 py-1.5 rounded bg-purple-100 dark:bg-purple-900/60 hover:bg-purple-200 dark:hover:bg-purple-800 text-purple-900 dark:text-purple-200 border border-purple-300 dark:border-purple-700 font-bold flex items-center gap-1.5 transition shadow-xs"
+            >
+              <Vote size={13} />
+              <span>Special:PromotionRequests (RFA)</span>
+            </button>
+          )}
+          {onNavigateToContactAdmin && (
+            <button
+              onClick={onNavigateToContactAdmin}
+              className="px-3 py-1.5 rounded bg-blue-100 dark:bg-blue-900/60 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-900 dark:text-blue-200 border border-blue-300 dark:border-blue-700 font-bold flex items-center gap-1.5 transition shadow-xs"
+            >
+              <MessageSquare size={13} />
+              <span>Special:ContactAdmin</span>
+            </button>
+          )}
           <span className="px-3 py-1.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold">
             Total de Usuários: {users.length}
           </span>
@@ -277,7 +324,21 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                     </span>
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    {onNavigateToCheckUser && (currentUser?.role === 'admin' || currentUser?.role === 'moderador' || isRealAdmin) && (
+                      <button
+                        title="Verificar Contas / Fantoches (CheckUser)"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigateToCheckUser(u.username || u.displayName || u.uid);
+                        }}
+                        className="px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 text-rose-700 dark:text-rose-300 font-bold flex items-center gap-1 border border-rose-200 dark:border-rose-800 transition text-[10px]"
+                      >
+                        <UserX size={10} />
+                        <span>CheckUser</span>
+                      </button>
+                    )}
+
                     {isRealAdmin && (
                       <button
                         title="Retificação de Nome (LGPD / Marco Civil)"

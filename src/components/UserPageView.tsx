@@ -31,6 +31,11 @@ import {
   Layers,
   Search,
   Filter,
+  UserCheck,
+  Users,
+  Vote,
+  Scale,
+  UserX,
 } from 'lucide-react';
 import {
   UserProfile,
@@ -56,6 +61,10 @@ interface UserPageViewProps {
   onNavigateToArticle: (id: string) => void;
   onNavigateToPage: (uid: string) => void;
   onNavigateToUser: (identifier: string) => void;
+  onNavigateToContactAdmin?: () => void;
+  onNavigateToPromotionRequests?: () => void;
+  onNavigateToUnblockRequests?: () => void;
+  onNavigateToCheckUser?: (username: string) => void;
   onBack?: () => void;
 }
 
@@ -68,6 +77,10 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   onNavigateToArticle,
   onNavigateToPage,
   onNavigateToUser,
+  onNavigateToContactAdmin,
+  onNavigateToPromotionRequests,
+  onNavigateToUnblockRequests,
+  onNavigateToCheckUser,
   onBack,
 }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -187,6 +200,13 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   useEffect(() => {
     loadUserData();
   }, [targetUserIdentifier]);
+
+  // Sync active tab whenever initialTab prop changes
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Wikitext Render for Bio
   const parsedBio = useMemo(() => {
@@ -616,7 +636,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
             </div>
 
             {/* Ações de Interação Rápida */}
-            <div className="flex items-center gap-1.5 w-full md:w-auto justify-end">
+            <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto justify-end">
               <button
                 onClick={() => {
                   setActiveTab('talk');
@@ -635,6 +655,19 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
               >
                 <Award size={13} className="text-amber-500" />
                 <span className="hidden sm:inline">Conceder Barnstar</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`px-2.5 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition border ${
+                  activeTab === 'admin'
+                    ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
+                    : 'bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                }`}
+                title="Opções Administrativas e Governança"
+              >
+                <Shield size={13} className={activeTab === 'admin' ? 'text-white' : 'text-purple-600 dark:text-purple-400'} />
+                <span>Opções Administrativas</span>
               </button>
 
               {(isOwner || isAdminOrMod) && (
@@ -707,23 +740,21 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
             </span>
           </button>
 
-          {/* Aba de Administração (Exclusiva para Administradores / Moderadores) */}
-          {isAdminOrMod && (
-            <button
-              onClick={() => setActiveTab('admin')}
-              className={`px-4 py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-2 ${
-                activeTab === 'admin'
-                  ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-purple-50/30 dark:bg-purple-950/20'
-                  : 'border-transparent text-purple-600 dark:text-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/30'
-              }`}
-            >
-              <Shield size={14} className="text-purple-500" />
-              <span>Opções Administrativas</span>
-              <span className="bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-[9px] px-1.5 py-0.2 rounded uppercase font-mono font-bold">
-                Admin
-              </span>
-            </button>
-          )}
+          {/* Aba de Opções Administrativas */}
+          <button
+            onClick={() => setActiveTab('admin')}
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-2 ${
+              activeTab === 'admin'
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-purple-50/30 dark:bg-purple-950/20'
+                : 'border-transparent text-purple-700 dark:text-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/30'
+            }`}
+          >
+            <Shield size={14} className="text-purple-500" />
+            <span>Opções Administrativas</span>
+            <span className="bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-[9px] px-1.5 py-0.2 rounded uppercase font-mono font-bold">
+              {isAdminOrMod ? 'Admin' : 'Governança'}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -1293,36 +1324,38 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* ABA 4: OPÇÕES ADMINISTRATIVAS (ADMIN CONTROLS) */}
+      {/* ABA 4: OPÇÕES ADMINISTRATIVAS (ADMIN CONTROLS & GOVERNANÇA) */}
       {/* ========================================================================= */}
-      {activeTab === 'admin' && isAdminOrMod && (
+      {activeTab === 'admin' && (
         <div className="space-y-6">
-          {/* Top Admin Warning Header */}
-          <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-lg p-5 flex items-start gap-3">
-            <Shield size={22} className="text-purple-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h2 className="text-sm font-bold text-purple-900 dark:text-purple-200 font-mono uppercase tracking-wider">
-                Painel de Moderação e Governança Comunitária
-              </h2>
-              <p className="text-xs text-purple-700 dark:text-purple-300 mt-1 leading-relaxed">
-                Você possui permissões administrativas para gerenciar cargos, aplicar advertências, revogar privilégios ou suspender o acesso do usuário <strong>{userProfile.displayName || userProfile.username}</strong> em conformidade com as políticas da enciclopédia e LGPD.
-              </p>
-            </div>
-          </div>
+          {isAdminOrMod ? (
+            <>
+              {/* Top Admin Warning Header */}
+              <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-lg p-5 flex items-start gap-3">
+                <Shield size={22} className="text-purple-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="text-sm font-bold text-purple-900 dark:text-purple-200 font-mono uppercase tracking-wider">
+                    Painel de Moderação e Governança Comunitária
+                  </h2>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1 leading-relaxed">
+                    Você possui permissões administrativas para gerenciar cargos, aplicar advertências, revogar privilégios ou suspender o acesso do usuário <strong>{userProfile.displayName || userProfile.username}</strong> em conformidade com as políticas da enciclopédia e LGPD.
+                  </p>
+                </div>
+              </div>
 
-          {/* Feedback Message */}
-          {adminFeedback && (
-            <div
-              className={`p-3 rounded-lg border text-xs flex items-center gap-2 ${
-                adminFeedback.type === 'success'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                  : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
-              }`}
-            >
-              {adminFeedback.type === 'success' ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
-              <span>{adminFeedback.msg}</span>
-            </div>
-          )}
+              {/* Feedback Message */}
+              {adminFeedback && (
+                <div
+                  className={`p-3 rounded-lg border text-xs flex items-center gap-2 ${
+                    adminFeedback.type === 'success'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
+                  }`}
+                >
+                  {adminFeedback.type === 'success' ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+                  <span>{adminFeedback.msg}</span>
+                </div>
+              )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 0. Retificação Cadastral de Nome (LGPD / Marco Civil - Exclusivo Administrador) */}
@@ -1658,6 +1691,133 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
               </div>
             </div>
           </div>
+            </>
+          ) : (
+            /* Painel Público de Governança & Transparência da Conta */
+            <div className="space-y-6">
+              {/* Header de Governança */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 shadow-xs">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-purple-100 dark:bg-purple-950/60 rounded-xl text-purple-600 dark:text-purple-300 flex-shrink-0">
+                    <Shield size={26} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-base sm:text-lg font-serif-heading font-bold text-slate-900 dark:text-white">
+                        Governança Comunitária & Transparência
+                      </h2>
+                      <span className="text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                        Público
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                      Esta aba consolida os registros de integridade, status comunitário e histórico de auditoria da conta de <strong>{userProfile.displayName || userProfile.username}</strong>. Ações diretas de alteração de cargo, bloqueio e retificação LGPD exigem credenciais de Administrador ou Moderador.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Status Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <div className="text-[10px] uppercase font-bold text-slate-400 font-mono">Cargo Institucional</div>
+                    <div className="text-sm font-bold text-purple-600 dark:text-purple-400 mt-0.5 capitalize">
+                      {roleConfig[userProfile.role]?.label || userProfile.role}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <div className="text-[10px] uppercase font-bold text-slate-400 font-mono">Status de Acesso</div>
+                    <div className="text-sm font-bold mt-0.5">
+                      {userProfile.isBanned ? (
+                        <span className="text-red-600 dark:text-red-400">🚫 Bloqueado</span>
+                      ) : (
+                        <span className="text-emerald-600 dark:text-emerald-400">✓ Regular</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <div className="text-[10px] uppercase font-bold text-slate-400 font-mono">Reputação & Medalhas</div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 flex items-center gap-1.5">
+                      <span>{userProfile.reputationScore || 100} pts</span>
+                      <span className="text-amber-500 font-mono text-xs">({userProfile.barnstars?.length || 0} ⭐)</span>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <div className="text-[10px] uppercase font-bold text-slate-400 font-mono">Advertências</div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                      {userProfile.warningCount || 0} registradas
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ações Oficiais da Comunidade */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 shadow-xs">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white font-mono mb-3 flex items-center gap-2">
+                  <Users size={14} className="text-blue-600" />
+                  <span>Canais de Contato & Recursos Administrativos</span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {onNavigateToContactAdmin && (
+                    <button
+                      onClick={onNavigateToContactAdmin}
+                      className="p-4 rounded-lg bg-blue-50/50 hover:bg-blue-100/70 dark:bg-blue-950/30 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800/70 text-left transition group"
+                    >
+                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-bold text-xs">
+                        <MessageSquare size={15} />
+                        <span>Falar com a Administração</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
+                        Reportar vandalismo, solicitar suporte ou falar com os moderadores em Special:ContactAdmin.
+                      </p>
+                    </button>
+                  )}
+
+                  {onNavigateToPromotionRequests && (
+                    <button
+                      onClick={onNavigateToPromotionRequests}
+                      className="p-4 rounded-lg bg-purple-50/50 hover:bg-purple-100/70 dark:bg-purple-950/30 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800/70 text-left transition group"
+                    >
+                      <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-bold text-xs">
+                        <Vote size={15} />
+                        <span>Pedidos de Promoção (RFA)</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
+                        Solicite elevação de cargo comunitário para Editor Verificado ou Moderador.
+                      </p>
+                    </button>
+                  )}
+
+                  {onNavigateToUnblockRequests && userProfile.isBanned && (
+                    <button
+                      onClick={onNavigateToUnblockRequests}
+                      className="p-4 rounded-lg bg-rose-50/50 hover:bg-rose-100/70 dark:bg-rose-950/30 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/70 text-left transition group"
+                    >
+                      <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-bold text-xs">
+                        <Scale size={15} />
+                        <span>Pedidos de Desbloqueio</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
+                        Acompanhe ou protocole pedidos formais de revisão de suspensões.
+                      </p>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setActiveTab('talk')}
+                    className="p-4 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-left transition group"
+                  >
+                    <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs">
+                      <MessageSquare size={15} className="text-slate-500" />
+                      <span>Discussão do Usuário</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
+                      Deixe uma mensagem pública na página de discussão deste usuário.
+                    </p>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 5. Log de Auditoria do Usuário */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 shadow-xs">

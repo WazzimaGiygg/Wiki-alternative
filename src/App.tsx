@@ -8,6 +8,10 @@ import { WikitextEditor } from './components/WikitextEditor';
 import { SpecialPagesView } from './components/SpecialPagesView';
 import { UserPageView } from './components/UserPageView';
 import { AdminUsersManagementView } from './components/AdminUsersManagementView';
+import { CheckUserView } from './components/CheckUserView';
+import { UnblockRequestsView } from './components/UnblockRequestsView';
+import { PromotionRequestsView } from './components/PromotionRequestsView';
+import { ContactAdminView } from './components/ContactAdminView';
 import { FirebaseAdminDashboard } from './components/FirebaseAdminDashboard';
 import { CreatePageModal } from './components/CreatePageModal';
 import { CookieBanner } from './components/CookieBanner';
@@ -148,6 +152,12 @@ export default function App() {
     setTargetUserIdentifier(identifier);
     setUserPageInitialTab(initialTab);
     setCurrentView('user-page');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToCheckUser = (identifier: string) => {
+    setTargetUserIdentifier(identifier);
+    setCurrentView('checkuser');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -483,6 +493,10 @@ export default function App() {
               onNavigateToArticle={handleSelectArticle}
               onNavigateToPage={handleSelectPage}
               onNavigateToUser={handleNavigateToUser}
+              onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
+              onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
+              onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
+              onNavigateToCheckUser={handleNavigateToCheckUser}
               initialTab="all"
             />
           )}
@@ -495,6 +509,10 @@ export default function App() {
               onNavigateToArticle={handleSelectArticle}
               onNavigateToPage={handleSelectPage}
               onNavigateToUser={handleNavigateToUser}
+              onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
+              onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
+              onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
+              onNavigateToCheckUser={handleNavigateToCheckUser}
               initialTab="watchlist"
             />
           )}
@@ -509,12 +527,55 @@ export default function App() {
               onNavigateToArticle={handleSelectArticle}
               onNavigateToPage={handleSelectPage}
               onNavigateToUser={handleNavigateToUser}
+              onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
+              onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
+              onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
+              onNavigateToCheckUser={handleNavigateToCheckUser}
               onBack={() => handleNavigate('hub')}
             />
           )}
 
           {currentView === 'admin-users' && (
             <AdminUsersManagementView
+              currentUser={user}
+              onNavigateToUser={handleNavigateToUser}
+              onNavigateToCheckUser={handleNavigateToCheckUser}
+              onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
+              onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
+              onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
+              onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'checkuser' && (
+            <CheckUserView
+              currentUser={user}
+              initialTarget={targetUserIdentifier || 'Usuario_Suspeito'}
+              onNavigateToUser={handleNavigateToUser}
+              onNavigateToArticle={handleSelectArticle}
+              onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'unblock-requests' && (
+            <UnblockRequestsView
+              currentUser={user}
+              onNavigateToUser={handleNavigateToUser}
+              onNavigateToCheckUser={handleNavigateToCheckUser}
+              onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'promotion-requests' && (
+            <PromotionRequestsView
+              currentUser={user}
+              onNavigateToUser={handleNavigateToUser}
+              onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'contact-admin' && (
+            <ContactAdminView
               currentUser={user}
               onNavigateToUser={handleNavigateToUser}
               onBack={() => handleNavigate('hub')}
@@ -680,7 +741,11 @@ export default function App() {
       {/* 7. Modals & Overlays */}
       {/* Banned User Alert Overlay */}
       {user?.isBanned && (
-        <BannedOverlay reason={user.banReason} onLogout={handleLogout} />
+        <BannedOverlay
+          reason={user.banReason}
+          currentUser={user}
+          onLogout={handleLogout}
+        />
       )}
 
       {/* First-visit LGPD Term Modal */}

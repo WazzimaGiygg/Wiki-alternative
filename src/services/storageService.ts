@@ -37,6 +37,22 @@ import {
   UserAuditLog,
   UserRole,
   SystemUpdateEntry,
+  SockpuppetCase,
+  CheckUserLogEntry,
+  CheckUserAccountDetails,
+  UnblockRequest,
+  UnblockAppealComment,
+  UnblockRequestStatus,
+  PromotionRequest,
+  PromotionVote,
+  PromotionVoteType,
+  PromotionTargetRole,
+  PromotionRequestStatus,
+  AdminContactTicket,
+  AdminTicketMessage,
+  AdminTicketCategory,
+  AdminTicketStatus,
+  AdminTicketPriority,
 } from '../types';
 import {
   INITIAL_PAGES,
@@ -46,6 +62,12 @@ import {
   INITIAL_USER_TALK_MESSAGES,
   INITIAL_USER_AUDIT_LOGS,
   INITIAL_SYSTEM_UPDATES,
+  INITIAL_SOCKPUPPET_CASES,
+  INITIAL_CHECKUSER_LOGS,
+  MOCK_CHECKUSER_ACCOUNTS,
+  INITIAL_UNBLOCK_REQUESTS,
+  INITIAL_PROMOTION_REQUESTS,
+  INITIAL_ADMIN_TICKETS,
 } from '../data/seedData';
 
 // Configuração oficial do projeto Firebase
@@ -89,6 +111,12 @@ const STORAGE_KEYS = {
   USER_TALK_MESSAGES: 'wikizero_user_talk_messages_v3',
   USER_AUDIT_LOGS: 'wikizero_user_audit_logs_v3',
   SYSTEM_UPDATES: 'wikizero_system_updates_v3',
+  SOCKPUPPET_CASES: 'wikizero_sockpuppet_cases_v3',
+  CHECKUSER_LOGS: 'wikizero_checkuser_logs_v3',
+  CHECKUSER_ACCOUNTS: 'wikizero_checkuser_accounts_v3',
+  UNBLOCK_REQUESTS: 'wikizero_unblock_requests_v3',
+  PROMOTION_REQUESTS: 'wikizero_promotion_requests_v3',
+  ADMIN_TICKETS: 'wikizero_admin_tickets_v3',
 };
 
 const INITIAL_TALK_THREADS: TalkThread[] = [
@@ -208,6 +236,24 @@ function initializeLocalStorage() {
     } catch {
       localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(INITIAL_SYSTEM_UPDATES));
     }
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.SOCKPUPPET_CASES)) {
+    localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify(INITIAL_SOCKPUPPET_CASES));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS)) {
+    localStorage.setItem(STORAGE_KEYS.CHECKUSER_LOGS, JSON.stringify(INITIAL_CHECKUSER_LOGS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS)) {
+    localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify(MOCK_CHECKUSER_ACCOUNTS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.UNBLOCK_REQUESTS)) {
+    localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify(INITIAL_UNBLOCK_REQUESTS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.PROMOTION_REQUESTS)) {
+    localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(INITIAL_PROMOTION_REQUESTS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS)) {
+    localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(INITIAL_ADMIN_TICKETS));
   }
 }
 
@@ -1798,6 +1844,1336 @@ export const StorageService = {
   async resetSystemUpdatesToDefault(): Promise<SystemUpdateEntry[]> {
     localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(INITIAL_SYSTEM_UPDATES));
     return INITIAL_SYSTEM_UPDATES;
+  },
+
+  // === CHECKUSER & SOCKPUPPET INVESTIGATION (EXCLUSIVO PARA MODERADORES E ADMINS) ===
+  async getSockpuppetCases(): Promise<SockpuppetCase[]> {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.SOCKPUPPET_CASES);
+    return raw ? JSON.parse(raw) : INITIAL_SOCKPUPPET_CASES;
+  },
+
+  async saveSockpuppetCase(spiCase: SockpuppetCase): Promise<SockpuppetCase> {
+    const cases = await this.getSockpuppetCases();
+    const existingIndex = cases.findIndex((c) => c.id === spiCase.id || c.caseNumber === spiCase.caseNumber);
+    
+    if (existingIndex >= 0) {
+      cases[existingIndex] = { ...cases[existingIndex], ...spiCase };
+    } else {
+      cases.unshift(spiCase);
+    }
+
+    localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify(cases));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'sockpuppet_cases', spiCase.id), {
+          ...spiCase,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Firestore saveSockpuppetCase background sync error:', err);
+      }
+    }
+
+    return spiCase;
+  },
+
+  async deleteSockpuppetCase(caseId: string): Promise<boolean> {
+    const cases = await this.getSockpuppetCases();
+    const filtered = cases.filter((c) => c.id !== caseId);
+    localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify(filtered));
+
+    if (firebaseActive && db) {
+      try {
+        await deleteDoc(doc(db, 'sockpuppet_cases', caseId));
+      } catch (err) {
+        console.warn('Firestore deleteSockpuppetCase error:', err);
+      }
+    }
+    return true;
+  },
+
+  async getCheckUserLogs(): Promise<CheckUserLogEntry[]> {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS);
+    return raw ? JSON.parse(raw) : INITIAL_CHECKUSER_LOGS;
+  },
+
+  async logCheckUserQuery(entry: {
+    target: string;
+    targetType: 'username' | 'ip' | 'cidr';
+    reason: string;
+    performedBy: string;
+    performedByRole: string;
+    resultsFound: number;
+  }): Promise<CheckUserLogEntry> {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS);
+    const logs: CheckUserLogEntry[] = raw ? JSON.parse(raw) : INITIAL_CHECKUSER_LOGS;
+
+    const newLog: CheckUserLogEntry = {
+      id: 'culog-' + Date.now(),
+      target: entry.target.trim(),
+      targetType: entry.targetType,
+      reason: entry.reason.trim(),
+      performedBy: entry.performedBy,
+      performedByRole: entry.performedByRole,
+      timestamp: new Date().toISOString(),
+      resultsFound: entry.resultsFound,
+    };
+
+    logs.unshift(newLog);
+    localStorage.setItem(STORAGE_KEYS.CHECKUSER_LOGS, JSON.stringify(logs));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'checkuser_logs', newLog.id), {
+          ...newLog,
+          createdAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Firestore logCheckUserQuery sync error:', err);
+      }
+    }
+
+    return newLog;
+  },
+
+  async getAllCheckUserAccounts(): Promise<Record<string, CheckUserAccountDetails>> {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS);
+    const accounts: Record<string, CheckUserAccountDetails> = raw ? JSON.parse(raw) : MOCK_CHECKUSER_ACCOUNTS;
+
+    // Ensure all community users have a CheckUser details profile
+    const communityUsers = await this.getCommunityUsers();
+    let updated = false;
+
+    communityUsers.forEach((u) => {
+      if (!accounts[u.uid]) {
+        // Generate baseline IP and User Agent based on user profile
+        const isSpam = u.username.toLowerCase().includes('suspeito') || u.username.toLowerCase().includes('vandalo') || u.username.toLowerCase().includes('fantoche');
+        accounts[u.uid] = {
+          uid: u.uid,
+          displayName: u.displayName || u.username,
+          username: u.username,
+          email: u.email,
+          role: u.role,
+          isBanned: u.isBanned || false,
+          banReason: u.banReason,
+          isSockpuppet: u.username.toLowerCase().includes('alt') || u.username.toLowerCase().includes('fantoche'),
+          sockpuppetOf: isSpam ? 'Usuario_Suspeito' : undefined,
+          createdAt: u.createdAt,
+          lastActive: u.lastActive,
+          reputationScore: u.reputationScore,
+          ipAddresses: [
+            {
+              ip: isSpam ? '177.136.24.12' : `179.184.${Math.floor(Math.random() * 100)}.${Math.floor(Math.random() * 250)}`,
+              isp: isSpam ? 'Claro Fibra / AS28573' : 'Vivo Fibra Brasil',
+              location: 'São Paulo, SP, Brasil',
+              lastSeen: u.lastActive,
+              usageCount: 15,
+            },
+          ],
+          userAgents: [
+            {
+              browser: 'Chrome 127.0.6533.119',
+              os: 'Linux x86_64',
+              device: 'Desktop / PC',
+              raw: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/127.0.6533.119',
+              lastSeen: u.lastActive,
+            },
+          ],
+          editedArticles: [],
+        };
+        updated = true;
+      }
+    });
+
+    if (updated) {
+      localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify(accounts));
+    }
+
+    return accounts;
+  },
+
+  async getCheckUserAccountDetails(usernameOrUid: string): Promise<CheckUserAccountDetails | null> {
+    const accounts: Record<string, CheckUserAccountDetails> = await this.getAllCheckUserAccounts();
+    const clean = usernameOrUid.toLowerCase().trim();
+
+    // Check by UID
+    if (accounts[usernameOrUid]) return accounts[usernameOrUid];
+
+    // Check by username or displayName
+    const allAccountsList: CheckUserAccountDetails[] = Object.values(accounts);
+    const found = allAccountsList.find(
+      (a: CheckUserAccountDetails) =>
+        a.username.toLowerCase() === clean ||
+        a.displayName.toLowerCase() === clean ||
+        a.uid.toLowerCase() === clean ||
+        a.email.toLowerCase() === clean
+    );
+
+    return found || null;
+  },
+
+  async performCheckUserInvestigation(
+    target: string,
+    targetType: 'username' | 'ip' | 'cidr',
+    reason: string,
+    performedBy: UserProfile
+  ): Promise<{
+    matchedAccounts: CheckUserAccountDetails[];
+    relatedIps: string[];
+    correlationScore: number;
+    detectedSockpuppets: string[];
+    evidenceNotes: string[];
+    queryLog: CheckUserLogEntry;
+  }> {
+    const cleanTarget = target.trim();
+    const accounts: Record<string, CheckUserAccountDetails> = await this.getAllCheckUserAccounts();
+    const allAccountsList: CheckUserAccountDetails[] = Object.values(accounts);
+
+    let matchedAccounts: CheckUserAccountDetails[] = [];
+    const relatedIpsSet = new Set<string>();
+    const detectedSockpuppetsSet = new Set<string>();
+    const evidenceNotes: string[] = [];
+
+    if (targetType === 'username') {
+      const targetUser = allAccountsList.find(
+        (a: CheckUserAccountDetails) =>
+          a.username.toLowerCase() === cleanTarget.toLowerCase() ||
+          a.displayName.toLowerCase() === cleanTarget.toLowerCase() ||
+          a.uid.toLowerCase() === cleanTarget.toLowerCase()
+      );
+
+      if (targetUser) {
+        matchedAccounts.push(targetUser);
+        targetUser.ipAddresses.forEach((ip) => relatedIpsSet.add(ip.ip));
+
+        // Find other accounts sharing these IPs or similar subnets
+        const targetIps = targetUser.ipAddresses.map((i) => i.ip);
+        const targetSubnets = targetIps.map((ip) => ip.split('.').slice(0, 3).join('.'));
+        const targetUserAgents = targetUser.userAgents.map((ua) => ua.raw);
+
+        allAccountsList.forEach((acc: CheckUserAccountDetails) => {
+          if (acc.uid !== targetUser.uid) {
+            const hasDirectIp = acc.ipAddresses.some((ip) => targetIps.includes(ip.ip));
+            const hasSubnetMatch = acc.ipAddresses.some((ip) =>
+              targetSubnets.some((sub) => ip.ip.startsWith(sub))
+            );
+            const hasUaMatch = acc.userAgents.some((ua) => targetUserAgents.includes(ua.raw));
+            const hasFlaggedSockpuppet = acc.sockpuppetOf?.toLowerCase() === targetUser.username.toLowerCase();
+
+            if (hasDirectIp || hasSubnetMatch || hasFlaggedSockpuppet || (hasUaMatch && hasSubnetMatch)) {
+              matchedAccounts.push(acc);
+              acc.ipAddresses.forEach((ip) => relatedIpsSet.add(ip.ip));
+
+              if (hasDirectIp || hasFlaggedSockpuppet) {
+                detectedSockpuppetsSet.add(acc.username);
+              }
+            }
+          }
+        });
+
+        // Generate evidence notes
+        if (targetIps.length > 0) {
+          evidenceNotes.push(`Alvo verificado possui ${targetIps.length} endereço(s) IP registrado(s): ${targetIps.join(', ')}.`);
+        }
+        if (detectedSockpuppetsSet.size > 0) {
+          evidenceNotes.push(`Identificadas ${detectedSockpuppetsSet.size} conta(s) com correspondência direta de rede/IP ou confissão técnica: ${Array.from(detectedSockpuppetsSet).join(', ')}.`);
+        } else {
+          evidenceNotes.push('Nenhuma correlação crítica imediata de endereço IP exclusivo identificada nesta consulta.');
+        }
+      }
+    } else if (targetType === 'ip') {
+      allAccountsList.forEach((acc: CheckUserAccountDetails) => {
+        const matches = acc.ipAddresses.some((ip) => ip.ip === cleanTarget);
+        if (matches) {
+          matchedAccounts.push(acc);
+          relatedIpsSet.add(cleanTarget);
+          acc.ipAddresses.forEach((ip) => relatedIpsSet.add(ip.ip));
+        }
+      });
+      evidenceNotes.push(`Busca por endereço IP exato "${cleanTarget}" encontrou ${matchedAccounts.length} conta(s) associada(s).`);
+    } else if (targetType === 'cidr') {
+      const baseSubnet = cleanTarget.replace('/24', '').replace('/16', '').trim();
+      const subnetPrefix = baseSubnet.split('.').slice(0, 3).join('.');
+
+      allAccountsList.forEach((acc: CheckUserAccountDetails) => {
+        const matches = acc.ipAddresses.some((ip) => ip.ip.startsWith(subnetPrefix));
+        if (matches) {
+          matchedAccounts.push(acc);
+          acc.ipAddresses.forEach((ip) => relatedIpsSet.add(ip.ip));
+        }
+      });
+      evidenceNotes.push(`Busca por faixa CIDR "${cleanTarget}" (sub-rede ${subnetPrefix}.0/24) localizou ${matchedAccounts.length} conta(s).`);
+    }
+
+    // Correlation calculation
+    let correlationScore = 0;
+    if (matchedAccounts.length >= 2) {
+      correlationScore = 85;
+      if (detectedSockpuppetsSet.size > 0) correlationScore = 98;
+    } else if (matchedAccounts.length === 1) {
+      correlationScore = 15;
+    }
+
+    // Save query log
+    const queryLog = await this.logCheckUserQuery({
+      target: cleanTarget,
+      targetType,
+      reason,
+      performedBy: performedBy.displayName || performedBy.username || performedBy.email.split('@')[0],
+      performedByRole: performedBy.role,
+      resultsFound: matchedAccounts.length,
+    });
+
+    // Also log in UserAuditLog if username
+    this.logUserAuditAction(
+      cleanTarget,
+      cleanTarget,
+      'checkuser_query',
+      `Consulta CheckUser realizada (Tipo: ${targetType}). Motivo: "${reason}". Resultados: ${matchedAccounts.length} conta(s).`,
+      performedBy
+    );
+
+    return {
+      matchedAccounts,
+      relatedIps: Array.from(relatedIpsSet),
+      correlationScore,
+      detectedSockpuppets: Array.from(detectedSockpuppetsSet),
+      evidenceNotes,
+      queryLog,
+    };
+  },
+
+  async flagAccountAsSockpuppet(
+    targetUid: string,
+    masterUsername: string,
+    adminProfile: UserProfile
+  ): Promise<void> {
+    // Update community users list
+    const users = await this.getCommunityUsers();
+    const user = users.find((u) => u.uid === targetUid);
+    if (user) {
+      user.isBanned = true;
+      user.banType = 'permanente';
+      user.banReason = `Conta fantoche confirmada (Sockpuppet de ${masterUsername}).`;
+      
+      const badgeTemplate = `{{Fantoche|${masterUsername}}}\n`;
+      if (!user.bio?.includes('{{Fantoche')) {
+        user.bio = badgeTemplate + (user.bio || 'Conta bloqueada indefinidamente por uso ilícito de contas múltiplas.');
+      }
+      
+      await this.updateCommunityUser(user);
+    }
+
+    // Update CheckUser accounts cache
+    const accounts = await this.getAllCheckUserAccounts();
+    if (accounts[targetUid]) {
+      accounts[targetUid].isBanned = true;
+      accounts[targetUid].isSockpuppet = true;
+      accounts[targetUid].sockpuppetOf = masterUsername;
+      accounts[targetUid].banReason = `Fantoche (Sockpuppet) de ${masterUsername}.`;
+      localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify(accounts));
+    }
+
+    // Add user audit log
+    this.logUserAuditAction(
+      targetUid,
+      user ? user.username : targetUid,
+      'sockpuppet_flagged',
+      `Conta identificada e marcada formalmente como fantoche (Sockpuppet) de ${masterUsername}. Predefinição {{Fantoche}} aplicada.`,
+      adminProfile
+    );
+
+    // Send talk page message
+    if (user) {
+      this.addUserTalkMessage(
+        targetUid,
+        user.username,
+        {
+          titulo: `🛑 Notificação de Bloqueio por Fantochada (Sockpuppetry)`,
+          conteudo: `Sua conta foi identificada por verificação técnica CheckUser como um fantoche (sockpuppet) associado à conta principal [[User:${masterUsername}|${masterUsername}]], violando as políticas da WikiZero contra evasão de sanções e falsificação de consenso. Esta conta foi suspensa permanentemente.`,
+          tipo: 'aviso_admin',
+        },
+        adminProfile
+      );
+    }
+  },
+
+  async unflagAccountAsSockpuppet(targetUid: string, adminProfile: UserProfile): Promise<void> {
+    const users = await this.getCommunityUsers();
+    const user = users.find((u) => u.uid === targetUid);
+    if (user) {
+      user.isBanned = false;
+      user.banReason = undefined;
+      user.banType = undefined;
+      user.bio = (user.bio || '').replace(/\{\{Fantoche\|.*?\}\}\n?/g, '');
+      await this.updateCommunityUser(user);
+    }
+
+    const accounts = await this.getAllCheckUserAccounts();
+    if (accounts[targetUid]) {
+      accounts[targetUid].isBanned = false;
+      accounts[targetUid].isSockpuppet = false;
+      accounts[targetUid].sockpuppetOf = undefined;
+      accounts[targetUid].banReason = undefined;
+      localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify(accounts));
+    }
+
+    this.logUserAuditAction(
+      targetUid,
+      user ? user.username : targetUid,
+      'sockpuppet_unflagged',
+      'Remoção de marcação de fantoche e desbanimento da conta após apuração ou recurso aceito.',
+      adminProfile
+    );
+  },
+
+  async bulkBanSockpuppets(
+    targetUids: string[],
+    masterUsername: string,
+    reason: string,
+    adminProfile: UserProfile
+  ): Promise<number> {
+    let count = 0;
+    for (const uid of targetUids) {
+      await this.flagAccountAsSockpuppet(uid, masterUsername, adminProfile);
+      count++;
+    }
+    return count;
+  },
+
+  // === UNBLOCK REQUESTS (PEDIDOS DE DESBLOQUEIO DE CONTAS) ===
+  async getUnblockRequests(): Promise<UnblockRequest[]> {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.UNBLOCK_REQUESTS);
+    if (!raw) return INITIAL_UNBLOCK_REQUESTS;
+    try {
+      const parsed: UnblockRequest[] = JSON.parse(raw);
+      return parsed;
+    } catch {
+      return INITIAL_UNBLOCK_REQUESTS;
+    }
+  },
+
+  async getUnblockRequestById(id: string): Promise<UnblockRequest | null> {
+    const list = await this.getUnblockRequests();
+    return list.find((req) => req.id === id) || null;
+  },
+
+  async getUnblockRequestsForUser(userUidOrUsername: string): Promise<UnblockRequest[]> {
+    const list = await this.getUnblockRequests();
+    const clean = userUidOrUsername.toLowerCase().trim();
+    return list.filter(
+      (req) =>
+        req.userUid.toLowerCase() === clean ||
+        req.username.toLowerCase() === clean ||
+        (req.email && req.email.toLowerCase() === clean)
+    );
+  },
+
+  async createUnblockRequest(
+    requestData: Omit<UnblockRequest, 'id' | 'requestedAt' | 'status' | 'comments'> & {
+      id?: string;
+      requestedAt?: string;
+    }
+  ): Promise<UnblockRequest> {
+    const list = await this.getUnblockRequests();
+    const newRequest: UnblockRequest = {
+      id: requestData.id || `unb-${Date.now().toString().slice(-4)}`,
+      userUid: requestData.userUid,
+      username: requestData.username,
+      displayName: requestData.displayName || requestData.username,
+      email: requestData.email,
+      userRoleAtBan: requestData.userRoleAtBan || 'leitor',
+      blockReason: requestData.blockReason || 'Suspensão por violação de conduta.',
+      blockedBy: requestData.blockedBy || 'Administração',
+      blockedAt: requestData.blockedAt || new Date().toISOString(),
+      requestedAt: requestData.requestedAt || new Date().toISOString(),
+      category: requestData.category || 'outro',
+      appealJustification: requestData.appealJustification.trim(),
+      commitmentToGuidelines: requestData.commitmentToGuidelines.trim(),
+      ipAddress: requestData.ipAddress,
+      status: 'pendente',
+      urgency: requestData.urgency || 'media',
+      comments: [],
+      linkedSockpuppetCaseId: requestData.linkedSockpuppetCaseId,
+      checkUserSummary: requestData.checkUserSummary,
+    };
+
+    list.unshift(newRequest);
+    localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'unblock_requests', newRequest.id), {
+          ...newRequest,
+          timestamp: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Firestore createUnblockRequest background sync error:', err);
+      }
+    }
+
+    this.logUserAuditAction(
+      newRequest.userUid,
+      newRequest.username,
+      'unblock_request_submitted',
+      `Solicitação de desbloqueio #${newRequest.id} submetida pelo usuário. Categoria: ${newRequest.category}.`,
+      null
+    );
+
+    return newRequest;
+  },
+
+  async updateUnblockRequest(
+    id: string,
+    updates: Partial<UnblockRequest>
+  ): Promise<UnblockRequest | null> {
+    const list = await this.getUnblockRequests();
+    const index = list.findIndex((req) => req.id === id);
+    if (index === -1) return null;
+
+    const updated = {
+      ...list[index],
+      ...updates,
+    };
+
+    list[index] = updated;
+    localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'unblock_requests', id), {
+          ...updated,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Firestore updateUnblockRequest error:', err);
+      }
+    }
+
+    return updated;
+  },
+
+  async evaluateUnblockRequest(
+    id: string,
+    decision: 'unblock_full' | 'unblock_probationary' | 'rejected' | 'requested_more_info',
+    notes: string,
+    reviewer: UserProfile
+  ): Promise<{ success: boolean; message: string; updatedRequest?: UnblockRequest }> {
+    const req = await this.getUnblockRequestById(id);
+    if (!req) return { success: false, message: 'Solicitação não encontrada.' };
+
+    const reviewerName = reviewer.displayName || reviewer.username || reviewer.email.split('@')[0];
+    const reviewerRole = reviewer.role || 'moderador';
+    const nowIso = new Date().toISOString();
+
+    let newStatus: UnblockRequestStatus = 'em_analise';
+    let successMessage = '';
+
+    if (decision === 'unblock_full') {
+      newStatus = 'aprovado';
+      // 1. Unban user in profiles
+      await this.unbanUser(req.userUid, reviewer);
+      // 2. Unflag from CheckUser if exists
+      await this.unflagSockpuppet(req.userUid, reviewer);
+
+      // 3. Post notification to user's talk page
+      this.addUserTalkMessage(
+        req.userUid,
+        req.username,
+        {
+          titulo: `✅ Solicitação de Desbloqueio #${req.id} APROVADA`,
+          conteudo: `Sua solicitação de recurso foi avaliada e '''APROVADA''' pelo moderador '''${reviewerName}'''.\n\n'''Parecer da Moderação:'''\n${notes.trim()}\n\nSuas permissões editoriais foram integralmente restauradas. Seja bem-vindo de volta à WikiZero!`,
+          tipo: 'aviso_admin',
+        },
+        reviewer
+      );
+
+      this.logUserAuditAction(
+        req.userUid,
+        req.username,
+        'unblock_request_evaluated',
+        `Recurso #${req.id} APROVADO com desbloqueio total por ${reviewerName}. Parecer: ${notes}`,
+        reviewer
+      );
+
+      successMessage = `Conta de ${req.username} desbloqueada com sucesso! Permissões restabelecidas.`;
+    } else if (decision === 'unblock_probationary') {
+      newStatus = 'aprovado';
+      // Unban and apply probationary permissions
+      await this.unbanUser(req.userUid, reviewer);
+      await this.updateUserPermissions(
+        req.userUid,
+        {
+          canEdit: true,
+          canCreate: false,
+          canTalk: true,
+          canDelete: false,
+          canGrantBarnstars: false,
+        },
+        reviewer
+      );
+
+      this.addUserTalkMessage(
+        req.userUid,
+        req.username,
+        {
+          titulo: `🟡 Desbloqueio Condicional / Probatório #${req.id}`,
+          conteudo: `Seu pedido de desbloqueio foi aceito sob '''Regime Probatório supervisionado'''.\n\n'''Parecer e Condições:'''\n${notes.trim()}\n\nVocê poderá editar artigos existentes e participar de discussões, mas a criação de novas páginas permanece temporariamente restrita.`,
+          tipo: 'aviso_admin',
+        },
+        reviewer
+      );
+
+      this.logUserAuditAction(
+        req.userUid,
+        req.username,
+        'unblock_request_evaluated',
+        `Recurso #${req.id} APROVADO sob regime probatório por ${reviewerName}. Parecer: ${notes}`,
+        reviewer
+      );
+
+      successMessage = `Conta de ${req.username} desbloqueada sob período probatório supervisionado.`;
+    } else if (decision === 'rejected') {
+      newStatus = 'recusado';
+
+      this.addUserTalkMessage(
+        req.userUid,
+        req.username,
+        {
+          titulo: `❌ Solicitação de Desbloqueio #${req.id} INDEFERIDA`,
+          conteudo: `Sua solicitação de desbloqueio foi avaliada e '''INDEFERIDA''' pelo corpo de moderação (${reviewerName}).\n\n'''Fundamentação do Indeferimento:'''\n${notes.trim()}\n\nConforme as políticas da WikiZero, um novo recurso poderá ser protocolado após decorrido o prazo regulamentar.`,
+          tipo: 'aviso_admin',
+        },
+        reviewer
+      );
+
+      this.logUserAuditAction(
+        req.userUid,
+        req.username,
+        'unblock_request_evaluated',
+        `Recurso #${req.id} INDEFERIDO por ${reviewerName}. Motivo: ${notes}`,
+        reviewer
+      );
+
+      successMessage = `Solicitação de desbloqueio indeferida. Bloqueio mantido.`;
+    } else if (decision === 'requested_more_info') {
+      newStatus = 'em_analise';
+
+      this.addUserTalkMessage(
+        req.userUid,
+        req.username,
+        {
+          titulo: `🔍 Solicitação de Esclarecimentos - Recurso #${req.id}`,
+          conteudo: `O moderador '''${reviewerName}''' analisou sua solicitação e requisitou os seguintes esclarecimentos antes do veredito final:\n\n''"${notes.trim()}"''\n\nPor favor, responda a este tópico ou adicione sua tréplica no formulário de recurso.`,
+          tipo: 'aviso_admin',
+        },
+        reviewer
+      );
+
+      this.logUserAuditAction(
+        req.userUid,
+        req.username,
+        'unblock_request_evaluated',
+        `Solicitados esclarecimentos adicionais para o recurso #${req.id} por ${reviewerName}.`,
+        reviewer
+      );
+
+      successMessage = `Pedido marcado como "Em Análise" e solicitação de esclarecimentos enviada ao usuário.`;
+    }
+
+    const updated = await this.updateUnblockRequest(id, {
+      status: newStatus,
+      resolutionDecision: decision,
+      resolutionNotes: notes.trim(),
+      reviewedBy: reviewerName,
+      reviewedByRole: reviewerRole,
+      reviewedAt: nowIso,
+    });
+
+    return {
+      success: true,
+      message: successMessage,
+      updatedRequest: updated || undefined,
+    };
+  },
+
+  async addCommentToUnblockRequest(
+    requestId: string,
+    text: string,
+    author: UserProfile,
+    isInternalNote: boolean = true
+  ): Promise<UnblockAppealComment | null> {
+    const req = await this.getUnblockRequestById(requestId);
+    if (!req) return null;
+
+    const newComment: UnblockAppealComment = {
+      id: 'comm-' + Date.now(),
+      author: author.displayName || author.username || author.email.split('@')[0],
+      authorRole: author.role || 'moderador',
+      authorUid: author.uid,
+      text: text.trim(),
+      timestamp: new Date().toISOString(),
+      isInternalModeratorNote: isInternalNote,
+    };
+
+    const updatedComments = [...(req.comments || []), newComment];
+    await this.updateUnblockRequest(requestId, { comments: updatedComments });
+    return newComment;
+  },
+
+  // === PROMOTION REQUESTS (PEDIDOS DE PROMOÇÃO / RFA COM VOTAÇÃO DE ATÉ 10 VOTOS) ===
+  async getPromotionRequests(): Promise<PromotionRequest[]> {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.PROMOTION_REQUESTS);
+    if (!raw) return INITIAL_PROMOTION_REQUESTS;
+    try {
+      const parsed: PromotionRequest[] = JSON.parse(raw);
+      return parsed;
+    } catch {
+      return INITIAL_PROMOTION_REQUESTS;
+    }
+  },
+
+  async getPromotionRequestById(id: string): Promise<PromotionRequest | null> {
+    const list = await this.getPromotionRequests();
+    return list.find((req) => req.id === id) || null;
+  },
+
+  async savePromotionRequest(req: PromotionRequest): Promise<PromotionRequest> {
+    const list = await this.getPromotionRequests();
+    const index = list.findIndex((r) => r.id === req.id);
+    if (index >= 0) {
+      list[index] = req;
+    } else {
+      list.unshift(req);
+    }
+    localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'promotion_requests', req.id), {
+          ...req,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Firestore savePromotionRequest background error:', err);
+      }
+    }
+    return req;
+  },
+
+  async createPromotionRequest(data: {
+    candidateUid: string;
+    candidateUsername: string;
+    candidateDisplayName: string;
+    candidateEmail?: string;
+    currentRole: UserRole;
+    targetRole: PromotionTargetRole;
+    statement: string;
+    contributionsSummary: string;
+    isSelfNomination?: boolean;
+    nominatedBy?: string;
+    nominatedByUid?: string;
+    requiredApprovalRate?: number;
+  }, creator: UserProfile): Promise<{ success: boolean; message: string; request?: PromotionRequest }> {
+    if (creator.isBanned) {
+      return { success: false, message: 'Usuários bloqueados não podem criar pedidos de promoção.' };
+    }
+
+    const list = await this.getPromotionRequests();
+    
+    // Check if candidate already has an active voting
+    const activeExisting = list.find(
+      (r) =>
+        r.candidateUid === data.candidateUid &&
+        r.targetRole === data.targetRole &&
+        r.status === 'em_votacao'
+    );
+    if (activeExisting) {
+      return {
+        success: false,
+        message: `Já existe uma candidatura em votação ativa para este usuário no cargo de ${data.targetRole}.`,
+      };
+    }
+
+    const newId = `rfa-${Date.now()}`;
+    const requiredRate = data.requiredApprovalRate || (data.targetRole === 'admin' ? 75 : 60);
+
+    const newRequest: PromotionRequest = {
+      id: newId,
+      candidateUid: data.candidateUid,
+      candidateUsername: data.candidateUsername,
+      candidateDisplayName: data.candidateDisplayName,
+      candidateEmail: data.candidateEmail,
+      currentRole: data.currentRole,
+      targetRole: data.targetRole,
+      nominatedBy: data.nominatedBy || creator.displayName || creator.username,
+      nominatedByUid: data.nominatedByUid || creator.uid,
+      isSelfNomination: data.isSelfNomination ?? (data.candidateUid === creator.uid),
+      statement: data.statement.trim(),
+      contributionsSummary: data.contributionsSummary.trim(),
+      requestedAt: new Date().toISOString(),
+      status: 'em_votacao',
+      maxVotes: 10,
+      votes: [],
+      requiredApprovalRate: requiredRate,
+    };
+
+    await this.savePromotionRequest(newRequest);
+
+    // Audit log
+    this.logUserAuditAction(
+      data.candidateUid,
+      data.candidateDisplayName,
+      'promotion_created',
+      `Nova candidatura comunitária para promoção a ${data.targetRole.toUpperCase()} iniciada (Limite: 10 votos). Proponente: ${newRequest.nominatedBy}.`,
+      creator
+    );
+
+    // Notify candidate on Talk page if nominated by another user
+    if (!newRequest.isSelfNomination) {
+      this.addUserTalkMessage(
+        data.candidateUid,
+        data.candidateDisplayName,
+        {
+          titulo: `🏛️ Nomeação para ${data.targetRole === 'admin' ? 'Administrador' : 'Moderador'} da WikiZero`,
+          conteudo: `Você foi formalmente indicado por '''${newRequest.nominatedBy}''' para o cargo de '''${
+            data.targetRole === 'admin' ? 'Administrador (Sysop)' : 'Moderador'
+          }'''. A votação comunitária de até 10 votos já está aberta na página [[Special:PromotionRequests|Pedidos de Promoção]].`,
+          tipo: 'geral',
+        },
+        creator
+      );
+    }
+
+    return {
+      success: true,
+      message: 'Candidatura registrada com sucesso! A votação comunitária de até 10 votos está aberta.',
+      request: newRequest,
+    };
+  },
+
+  async castPromotionVote(
+    requestId: string,
+    vote: PromotionVoteType,
+    reason: string,
+    voter: UserProfile
+  ): Promise<{ success: boolean; message: string; updatedRequest?: PromotionRequest }> {
+    if (!voter || voter.isGuest) {
+      return { success: false, message: 'É necessário estar autenticado com uma conta registrada para votar.' };
+    }
+    if (voter.isBanned) {
+      return { success: false, message: 'Usuários com sanções ativas ou bloqueados não possuem direito a voto.' };
+    }
+
+    const cleanReason = (reason || '').trim();
+    if (cleanReason.length < 8) {
+      return {
+        success: false,
+        message: 'O motivo do voto é obrigatório e deve conter ao menos 8 caracteres explicando sua justificativa.',
+      };
+    }
+
+    const req = await this.getPromotionRequestById(requestId);
+    if (!req) {
+      return { success: false, message: 'Pedido de promoção não encontrado.' };
+    }
+
+    if (req.status !== 'em_votacao') {
+      return { success: false, message: 'Esta votação já se encontra encerrada e não aceita novos votos.' };
+    }
+
+    // Check if voter is the candidate themselves
+    if (voter.uid === req.candidateUid && vote !== 'neutro') {
+      return {
+        success: false,
+        message: 'O próprio candidato não pode votar a favor ou contra em sua própria eleição (apenas abstenção neutra é permitida).',
+      };
+    }
+
+    const existingVoteIndex = req.votes.findIndex(
+      (v) => v.voterUid === voter.uid || (v.voterUsername && v.voterUsername.toLowerCase() === voter.username.toLowerCase())
+    );
+
+    const isUpdating = existingVoteIndex >= 0;
+
+    // If new vote and already has 10 votes, reject
+    if (!isUpdating && req.votes.length >= req.maxVotes) {
+      return {
+        success: false,
+        message: `Esta votação já atingiu o quórum máximo estrito de ${req.maxVotes} votos comunitários.`,
+      };
+    }
+
+    const voterName = voter.displayName || voter.username || voter.email.split('@')[0];
+    const voteEntry: PromotionVote = {
+      id: isUpdating ? req.votes[existingVoteIndex].id : 'pvote-' + Date.now(),
+      voterUid: voter.uid,
+      voterUsername: voter.username,
+      voterDisplayName: voterName,
+      voterRole: voter.role,
+      vote,
+      reason: cleanReason,
+      timestamp: new Date().toISOString(),
+    };
+
+    let updatedVotes = [...req.votes];
+    if (isUpdating) {
+      updatedVotes[existingVoteIndex] = voteEntry;
+    } else {
+      updatedVotes.push(voteEntry);
+    }
+
+    const updatedRequest: PromotionRequest = {
+      ...req,
+      votes: updatedVotes,
+    };
+
+    await this.savePromotionRequest(updatedRequest);
+
+    // Audit log
+    this.logUserAuditAction(
+      req.candidateUid,
+      req.candidateDisplayName,
+      'promotion_voted',
+      `Voto computado em RFA (${updatedVotes.length}/${req.maxVotes}): ${voterName} votou ${
+        vote === 'a_favor' ? 'A FAVOR' : vote === 'contra' ? 'CONTRA' : 'NEUTRO'
+      }. Motivo: "${cleanReason.slice(0, 60)}${cleanReason.length > 60 ? '...' : ''}"`,
+      voter
+    );
+
+    const voteLabel = vote === 'a_favor' ? 'a favor' : vote === 'contra' ? 'contra' : 'neutro';
+    return {
+      success: true,
+      message: isUpdating
+        ? `Seu voto e justificativa foram atualizados com sucesso (${updatedVotes.length}/${req.maxVotes} votos).`
+        : `Seu voto ${voteLabel} foi registrado com sucesso (${updatedVotes.length}/${req.maxVotes} votos comunitários computados).`,
+      updatedRequest,
+    };
+  },
+
+  async concludePromotionRequest(
+    requestId: string,
+    decision: 'aprovada' | 'rejeitada',
+    resolutionNotes: string,
+    executor: UserProfile
+  ): Promise<{ success: boolean; message: string; updatedRequest?: PromotionRequest }> {
+    const isBureaucrat =
+      executor.role === 'admin' || executor.email === 'pedrohenriquecardonaperes@gmail.com';
+
+    if (!isBureaucrat) {
+      return {
+        success: false,
+        message: 'Apenas Administradores e Burocratas podem homologar ou indeferir pedidos de promoção.',
+      };
+    }
+
+    const req = await this.getPromotionRequestById(requestId);
+    if (!req) {
+      return { success: false, message: 'Pedido de promoção não encontrado.' };
+    }
+
+    const notes = (resolutionNotes || '').trim() || (decision === 'aprovada'
+      ? `Candidatura homologada após deliberação comunitária (${req.votes.filter(v => v.vote === 'a_favor').length} a favor de ${req.votes.length} votos).`
+      : 'Candidatura indeferida por não atingir quórum ou taxa de aprovação necessária.');
+
+    const updatedRequest: PromotionRequest = {
+      ...req,
+      status: decision,
+      closedAt: new Date().toISOString(),
+      closedBy: executor.displayName || executor.username,
+      closedByRole: executor.role,
+      resolutionNotes: notes,
+    };
+
+    // If approved, update candidate role!
+    if (decision === 'aprovada') {
+      await this.updateUserRole(req.candidateUid, req.targetRole, executor);
+
+      // Award official promotion barnstar
+      const barnstarTitle =
+        req.targetRole === 'admin'
+          ? 'Medalha do Estatuto de Administrador (Sysop)'
+          : 'Medalha do Estatuto de Moderador';
+      
+      const barnstarDesc =
+        req.targetRole === 'admin'
+          ? 'Concedida em reconhecimento à homologação pelo quórum comunitário como Administrador da WikiZero.'
+          : 'Concedida em reconhecimento à homologação pelo quórum comunitário como Moderador da WikiZero.';
+
+      await this.awardBarnstar(
+        req.candidateUid,
+        {
+          title: barnstarTitle,
+          description: barnstarDesc,
+          icon: req.targetRole === 'admin' ? '👑' : '🛡️',
+        },
+        executor
+      );
+
+      // Send congratulations message on user talk page
+      this.addUserTalkMessage(
+        req.candidateUid,
+        req.candidateDisplayName,
+        {
+          titulo: `🎉 Parabéns! Promoção a ${req.targetRole === 'admin' ? 'Administrador' : 'Moderador'} Homologada`,
+          conteudo: `Prezado(a) '''${req.candidateDisplayName}''',\n\nÉ com grande satisfação que informamos que sua candidatura ao estatuto de '''${
+            req.targetRole === 'admin' ? 'Administrador (Sysop)' : 'Moderador'
+          }''' foi formalmente '''APROVADA E HOMOLOGADA''' pelo corpo de burocratas da WikiZero após deliberação comunitária.\n\n'''Resultado da Votação:''' ${
+            req.votes.filter((v) => v.vote === 'a_favor').length
+          } votos a favor, ${req.votes.filter((v) => v.vote === 'contra').length} contra e ${
+            req.votes.filter((v) => v.vote === 'neutro').length
+          } neutros.\n\n'''Parecer da Homologação:''' ${notes}\n\nSuas novas ferramentas já foram habilitadas na plataforma. Faça bom uso dos novos poderes e continue zelando pela integridade do nosso conhecimento livre!`,
+          tipo: 'boas_vindas',
+        },
+        executor
+      );
+    } else {
+      // Send encouragement message on talk page
+      this.addUserTalkMessage(
+        req.candidateUid,
+        req.candidateDisplayName,
+        {
+          titulo: `📋 Notificação de Encerramento de Candidatura (${req.targetRole.toUpperCase()})`,
+          conteudo: `Prezado(a) '''${req.candidateDisplayName}''',\n\nSua recente candidatura ao estatuto de ${req.targetRole} foi encerrada sem homologação no momento.\n\n'''Parecer:''' ${notes}\n\nAgradecemos profundamente sua dedicação à WikiZero e encorajamos a continuidade de suas contribuições para submissão de nova candidatura no futuro.`,
+          tipo: 'aviso_admin',
+        },
+        executor
+      );
+    }
+
+    await this.savePromotionRequest(updatedRequest);
+
+    // Audit log
+    this.logUserAuditAction(
+      req.candidateUid,
+      req.candidateDisplayName,
+      'promotion_concluded',
+      `Candidatura a ${req.targetRole.toUpperCase()} finalizada com status [${decision.toUpperCase()}]. Homologador: ${executor.displayName || executor.username}. Parecer: ${notes}`,
+      executor
+    );
+
+    return {
+      success: true,
+      message: decision === 'aprovada'
+        ? `Promoção a ${req.targetRole.toUpperCase()} homologada com sucesso! O cargo do usuário foi atualizado.`
+        : 'Candidatura finalizada e indeferida.',
+      updatedRequest,
+    };
+  },
+
+  async deletePromotionRequest(requestId: string): Promise<boolean> {
+    const list = await this.getPromotionRequests();
+    const filtered = list.filter((r) => r.id !== requestId);
+    localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(filtered));
+
+    if (firebaseActive && db) {
+      try {
+        await deleteDoc(doc(db, 'promotion_requests', requestId));
+      } catch (err) {
+        console.warn('Firestore deletePromotionRequest error:', err);
+      }
+    }
+    return true;
+  },
+
+  // === ADMIN CONTACT TICKETS (FALE COM A ADMINISTRAÇÃO / CENTRAL DE AJUDA & DENÚNCIAS) ===
+  async getAdminTickets(): Promise<AdminContactTicket[]> {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS);
+    if (!raw) return INITIAL_ADMIN_TICKETS;
+    try {
+      const parsed: AdminContactTicket[] = JSON.parse(raw);
+      return parsed;
+    } catch {
+      return INITIAL_ADMIN_TICKETS;
+    }
+  },
+
+  async getAdminTicketById(id: string): Promise<AdminContactTicket | null> {
+    const list = await this.getAdminTickets();
+    return list.find((t) => t.id === id) || null;
+  },
+
+  async saveAdminTicket(ticket: AdminContactTicket): Promise<AdminContactTicket> {
+    const list = await this.getAdminTickets();
+    const index = list.findIndex((t) => t.id === ticket.id);
+    if (index >= 0) {
+      list[index] = ticket;
+    } else {
+      list.unshift(ticket);
+    }
+    localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'admin_tickets', ticket.id), {
+          ...ticket,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.warn('Firestore saveAdminTicket background error:', err);
+      }
+    }
+    return ticket;
+  },
+
+  async createAdminTicket(
+    data: {
+      subject: string;
+      category: AdminTicketCategory;
+      priority: AdminTicketPriority;
+      description: string;
+      relatedArticleTitle?: string;
+      relatedArticleId?: string;
+      evidenceLinks?: string[];
+      guestName?: string;
+      guestEmail?: string;
+    },
+    creator?: UserProfile | null
+  ): Promise<{ success: boolean; message: string; ticket?: AdminContactTicket }> {
+    const isGuest = !creator || creator.isGuest;
+    const cleanSubject = data.subject.trim();
+    const cleanDesc = data.description.trim();
+
+    if (cleanSubject.length < 5) {
+      return { success: false, message: 'O assunto do chamado deve conter ao menos 5 caracteres.' };
+    }
+    if (cleanDesc.length < 15) {
+      return { success: false, message: 'A descrição e detalhes do chamado devem conter ao menos 15 caracteres.' };
+    }
+
+    const ticketId = `ticket-${Date.now()}`;
+    const userUid = isGuest ? `guest-${Date.now().toString(36)}` : creator.uid;
+    const username = isGuest
+      ? (data.guestName ? data.guestName.trim().replace(/\s+/g, '_') : 'Anonimo_' + Math.floor(Math.random() * 9000 + 1000))
+      : creator.username;
+    const displayName = isGuest
+      ? (data.guestName?.trim() || 'Visitante Anônimo')
+      : (creator.displayName || creator.username);
+    const email = isGuest ? data.guestEmail?.trim() : creator.email;
+    const role: UserRole = isGuest ? 'convidado' : creator.role;
+
+    const initialMessage: AdminTicketMessage = {
+      id: `msg-${Date.now()}`,
+      senderUid: userUid,
+      senderName: displayName,
+      senderRole: role,
+      isStaff: role === 'admin' || role === 'moderador',
+      message: cleanDesc,
+      timestamp: new Date().toISOString(),
+    };
+
+    const newTicket: AdminContactTicket = {
+      id: ticketId,
+      subject: cleanSubject,
+      category: data.category,
+      priority: data.priority,
+      status: 'aberto',
+      userUid,
+      userUsername: username,
+      userDisplayName: displayName,
+      userEmail: email,
+      userRole: role,
+      isGuestSubmission: isGuest,
+      relatedArticleTitle: data.relatedArticleTitle?.trim() || undefined,
+      relatedArticleId: data.relatedArticleId?.trim() || undefined,
+      description: cleanDesc,
+      evidenceLinks: data.evidenceLinks?.filter((l) => l.trim().length > 0),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      assignedAdmin: 'WazzimaGiygg',
+      assignedAdminUid: 'user-wazzima',
+      messages: [initialMessage],
+    };
+
+    await this.saveAdminTicket(newTicket);
+
+    // Audit log if creator is registered
+    if (creator && !creator.isGuest) {
+      this.logUserAuditAction(
+        creator.uid,
+        creator.displayName || creator.username,
+        'other',
+        `Abertura de chamado para a Administração [#${ticketId.slice(-6)}]: "${cleanSubject.slice(0, 50)}..." [Categoria: ${data.category.toUpperCase()}]`,
+        creator
+      );
+    }
+
+    return {
+      success: true,
+      message: 'Seu chamado foi enviado à equipe de administração da WikiZero com sucesso! Você receberá atualizações nesta central.',
+      ticket: newTicket,
+    };
+  },
+
+  async addAdminTicketMessage(
+    ticketId: string,
+    messageText: string,
+    sender: UserProfile
+  ): Promise<{ success: boolean; message: string; updatedTicket?: AdminContactTicket }> {
+    const cleanText = (messageText || '').trim();
+    if (cleanText.length < 3) {
+      return { success: false, message: 'A mensagem deve conter ao menos 3 caracteres.' };
+    }
+
+    const ticket = await this.getAdminTicketById(ticketId);
+    if (!ticket) {
+      return { success: false, message: 'Chamado não encontrado.' };
+    }
+
+    const isStaff =
+      sender.role === 'admin' ||
+      sender.role === 'moderador' ||
+      sender.email === 'pedrohenriquecardonaperes@gmail.com';
+
+    const newMessage: AdminTicketMessage = {
+      id: `msg-${Date.now()}`,
+      senderUid: sender.uid,
+      senderName: sender.displayName || sender.username || sender.email.split('@')[0],
+      senderRole: sender.role,
+      isStaff,
+      message: cleanText,
+      timestamp: new Date().toISOString(),
+    };
+
+    // If staff answers an open ticket, update status to 'respondido' or 'em_analise'
+    let newStatus = ticket.status;
+    if (isStaff && ticket.status === 'aberto') {
+      newStatus = 'respondido';
+    } else if (!isStaff && ticket.status === 'respondido') {
+      newStatus = 'em_analise';
+    }
+
+    const updatedTicket: AdminContactTicket = {
+      ...ticket,
+      status: newStatus,
+      updatedAt: new Date().toISOString(),
+      messages: [...ticket.messages, newMessage],
+    };
+
+    await this.saveAdminTicket(updatedTicket);
+
+    // If staff answered, notify the user talk page if registered
+    if (isStaff && ticket.userUid && !ticket.isGuestSubmission) {
+      this.addUserTalkMessage(
+        ticket.userUid,
+        ticket.userDisplayName,
+        {
+          titulo: `💬 Resposta da Administração no Chamado #${ticket.id.slice(-6)}`,
+          conteudo: `Olá '''${ticket.userDisplayName}''',\n\nA equipe de administração da WikiZero enviou uma nova resposta ao seu chamado '''"${ticket.subject}"''':\n\n> ''${cleanText}''\n\nVocê pode acompanhar ou dar continuidade à conversa na página [[Special:ContactAdmin|Falar com a Administração]].`,
+          tipo: 'aviso_admin',
+        },
+        sender
+      );
+    }
+
+    return {
+      success: true,
+      message: 'Mensagem enviada com sucesso.',
+      updatedTicket,
+    };
+  },
+
+  async updateAdminTicketStatus(
+    ticketId: string,
+    status: AdminTicketStatus,
+    resolutionSummary: string | undefined,
+    admin: UserProfile
+  ): Promise<{ success: boolean; message: string; updatedTicket?: AdminContactTicket }> {
+    const isStaff =
+      admin.role === 'admin' ||
+      admin.role === 'moderador' ||
+      admin.email === 'pedrohenriquecardonaperes@gmail.com';
+
+    if (!isStaff) {
+      return { success: false, message: 'Apenas moderadores e administradores podem atualizar o status de chamados.' };
+    }
+
+    const ticket = await this.getAdminTicketById(ticketId);
+    if (!ticket) {
+      return { success: false, message: 'Chamado não encontrado.' };
+    }
+
+    const now = new Date().toISOString();
+    const isClosing = status === 'resolvido' || status === 'arquivado';
+
+    const updatedTicket: AdminContactTicket = {
+      ...ticket,
+      status,
+      updatedAt: now,
+      closedAt: isClosing ? now : undefined,
+      resolutionSummary: resolutionSummary?.trim() || ticket.resolutionSummary,
+    };
+
+    await this.saveAdminTicket(updatedTicket);
+
+    // System audit
+    this.logUserAuditAction(
+      ticket.userUid,
+      ticket.userDisplayName,
+      'other',
+      `Status do chamado #${ticket.id.slice(-6)} alterado para [${status.toUpperCase()}] por ${admin.displayName || admin.username}. ${resolutionSummary ? `Resolução: ${resolutionSummary}` : ''}`,
+      admin
+    );
+
+    return {
+      success: true,
+      message: `Status do chamado alterado para "${status}" com sucesso.`,
+      updatedTicket,
+    };
+  },
+
+  async assignAdminTicket(
+    ticketId: string,
+    adminUid: string,
+    adminName: string,
+    assigner: UserProfile
+  ): Promise<{ success: boolean; message: string; updatedTicket?: AdminContactTicket }> {
+    const ticket = await this.getAdminTicketById(ticketId);
+    if (!ticket) return { success: false, message: 'Chamado não encontrado.' };
+
+    const updatedTicket: AdminContactTicket = {
+      ...ticket,
+      assignedAdmin: adminName,
+      assignedAdminUid: adminUid,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await this.saveAdminTicket(updatedTicket);
+    return {
+      success: true,
+      message: `Chamado atribuído a ${adminName}.`,
+      updatedTicket,
+    };
+  },
+
+  async deleteAdminTicket(ticketId: string, admin: UserProfile): Promise<boolean> {
+    const isStaff =
+      admin.role === 'admin' ||
+      admin.role === 'moderador' ||
+      admin.email === 'pedrohenriquecardonaperes@gmail.com';
+
+    if (!isStaff) return false;
+
+    const list = await this.getAdminTickets();
+    const filtered = list.filter((t) => t.id !== ticketId);
+    localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(filtered));
+
+    if (firebaseActive && db) {
+      try {
+        await deleteDoc(doc(db, 'admin_tickets', ticketId));
+      } catch (err) {
+        console.warn('Firestore deleteAdminTicket error:', err);
+      }
+    }
+    return true;
   },
 
   async clearLocalCache(): Promise<void> {

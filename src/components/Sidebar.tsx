@@ -21,6 +21,10 @@ import {
   LifeBuoy,
   ExternalLink,
   Layers,
+  UserX,
+  Scale,
+  Vote,
+  MessageSquare,
 } from 'lucide-react';
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -226,6 +230,86 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Users size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
               {!isCollapsed && <span className="truncate">Diretório de Usuários</span>}
+            </button>
+
+            <button
+              onClick={() => onNavigate('checkuser')}
+              title="Verificador de Contas (Special:CheckUser - Fantoches)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'checkuser'
+                  ? 'bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <UserX size={15} className="text-rose-600 dark:text-rose-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">CheckUser (Fantoches)</span>
+                  <span className="text-[8px] bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-mono font-bold px-1 rounded-xs">
+                    MOD
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
+              onClick={() => onNavigate('unblock-requests')}
+              title="Avaliação de Pedidos de Desbloqueio (Special:UnblockRequests)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'unblock-requests'
+                  ? 'bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Scale size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Recursos de Desbloqueio</span>
+                  <span className="text-[8px] bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-mono font-bold px-1 rounded-xs">
+                    ADM
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
+              onClick={() => onNavigate('promotion-requests')}
+              title="Pedidos de Promoção para Moderador e Administrador (Special:PromotionRequests - RFA)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'promotion-requests'
+                  ? 'bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Vote size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Pedidos de Promoção (RFA)</span>
+                  <span className="text-[8px] bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-mono font-bold px-1 rounded-xs">
+                    VOTAÇÃO
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
+              onClick={() => onNavigate('contact-admin')}
+              title="Fale com a Administração (Special:ContactAdmin - Denúncias e Suporte)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'contact-admin'
+                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <MessageSquare size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Falar com Administração</span>
+                  <span className="text-[8px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono font-bold px-1 rounded-xs">
+                    OFICIAL
+                  </span>
+                </div>
+              )}
             </button>
 
             <button

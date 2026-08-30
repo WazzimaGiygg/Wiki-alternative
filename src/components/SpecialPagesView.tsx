@@ -18,6 +18,10 @@ import {
   Hash,
   Download,
   BookOpen,
+  MessageSquare,
+  Vote,
+  Scale,
+  UserX,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -29,6 +33,10 @@ interface SpecialPagesViewProps {
   onNavigateToArticle: (articleId: string) => void;
   onNavigateToPage: (pageUid: string) => void;
   onNavigateToUser?: (username: string) => void;
+  onNavigateToContactAdmin?: () => void;
+  onNavigateToPromotionRequests?: () => void;
+  onNavigateToUnblockRequests?: () => void;
+  onNavigateToCheckUser?: (username?: string) => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -39,6 +47,10 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToArticle,
   onNavigateToPage,
   onNavigateToUser,
+  onNavigateToContactAdmin,
+  onNavigateToPromotionRequests,
+  onNavigateToUnblockRequests,
+  onNavigateToCheckUser,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -159,6 +171,85 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
         >
           <Download size={13} /> Exportar Dump JSON
         </button>
+      </div>
+
+      {/* Admin & Community Special Portals Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+        {onNavigateToContactAdmin && (
+          <button
+            onClick={onNavigateToContactAdmin}
+            className="p-3 rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-blue-600 text-white shrink-0">
+              <MessageSquare size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-blue-900 dark:text-blue-200 truncate group-hover:underline">
+                Special:ContactAdmin
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Fale com a Administração
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToPromotionRequests && (
+          <button
+            onClick={onNavigateToPromotionRequests}
+            className="p-3 rounded-lg border border-purple-200 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100/70 dark:hover:bg-purple-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-purple-600 text-white shrink-0">
+              <Vote size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-purple-900 dark:text-purple-200 truncate group-hover:underline">
+                Special:PromotionRequests
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Pedidos de Promoção (RFA)
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToUnblockRequests && (
+          <button
+            onClick={onNavigateToUnblockRequests}
+            className="p-3 rounded-lg border border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/70 dark:hover:bg-amber-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-amber-600 text-white shrink-0">
+              <Scale size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-amber-900 dark:text-amber-200 truncate group-hover:underline">
+                Special:UnblockRequests
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Recursos de Desbloqueio
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToCheckUser && (
+          <button
+            onClick={() => onNavigateToCheckUser()}
+            className="p-3 rounded-lg border border-rose-200 dark:border-rose-800/60 bg-rose-50/50 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-rose-600 text-white shrink-0">
+              <UserX size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-rose-900 dark:text-rose-200 truncate group-hover:underline">
+                Special:CheckUser
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Verificador de Contas
+              </div>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* Navigation Sub-Tabs */}
