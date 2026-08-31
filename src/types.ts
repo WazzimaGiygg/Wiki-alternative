@@ -85,6 +85,7 @@ export interface UserProfile {
   banExpiresAt?: string;
   banType?: 'permanente' | 'temporario' | 'advertencia';
   role: UserRole;
+  group?: string;
   bio?: string; // Wikitext supported!
   location?: string;
   website?: string;
@@ -270,10 +271,15 @@ export interface ArticleRatingData {
 }
 
 export interface WatchlistItem {
-  articleId: string;
-  articleTitle: string;
-  pageUid: string;
-  dataAdicionado: string;
+  id?: string;
+  userId: string;
+  pageId: string;
+  createdAt: string;
+  // Propriedades legadas de retrocompatibilidade
+  articleId?: string;
+  articleTitle?: string;
+  pageUid?: string;
+  dataAdicionado?: string;
 }
 
 export interface RecentChangeEntry {
@@ -571,5 +577,36 @@ export interface UpdateTemplateInput {
   authorUid?: string;
   authorName?: string;
   category?: string;
+}
+
+// ==========================================
+// SISTEMA DE PERMISSÕES E RBAC
+// ==========================================
+export * from './types/Permissions';
+export * from './types/Watchlist';
+
+
+export interface PageVersion {
+  id?: string;
+  pageId?: string;
+  versionNumber: number;
+  content: string;
+  userName: string;
+  userId: string;
+  timestamp: string; // ISO string ou Firestore timestamp formatado
+  comment: string;   // Resumo da edição / motivo da alteração
+  previousVersion: number | null;
+}
+
+// Alias para compatibilidade direta com a nomenclatura Version
+export type Version = PageVersion;
+
+export interface SaveVersionInput {
+  pageId: string;
+  content: string;
+  userId: string;
+  userName: string;
+  comment: string;
+  previousVersion?: number | null;
 }
 

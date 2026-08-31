@@ -255,13 +255,73 @@ export class PageService {
         ...newPage,
         _serverTimestamp: serverTimestamp(),
       });
+
+      // Se a página foi criada no namespace 'main', cria automaticamente a página correspondente em 'talk' se ainda não existir
+      if (namespace === 'main') {
+        this.ensureTalkPageExists(title, data.authorUid || currentUser?.uid, data.authorName || currentUser?.displayName).catch(
+          (talkErr) => console.warn('[PageService] Aviso ao criar página de discussão correspondente:', talkErr)
+        );
+      }
+
       return newPage;
     } catch (error) {
       console.warn('[PageService] Erro ao gravar página no Firestore, fallback para cache local:', error);
       if (error instanceof Error && error.message.includes('permission')) {
         handleFirestoreError(error, OperationType.CREATE, `${COLLECTION_NAME}/${pageId}`);
       }
+
+      // Tenta criar página de discussão no cache local também
+      if (namespace === 'main') {
+        this.ensureTalkPageExists(title, data.authorUid || currentUser?.uid, data.authorName || currentUser?.displayName).catch(() => {});
+      }
+
       return newPage;
+    }
+  }
+
+  /**
+   * Garante que uma página de discussão 'talk:{title}' exista ao criar um artigo no namespace 'main'.
+   */
+  public static async ensureTalkPageExists(
+    mainTitle: string,
+    authorUid?: string,
+    authorName?: string
+  ): Promise<Page | null> {
+    const talkPageId = this.generatePageId('talk', mainTitle);
+    const existing = await this.getPage('talk', mainTitle);
+    if (existing) {
+      return existing;
+    }
+
+    const now = new Date().toISOString();
+    const initialTalkContent = `== Discussão sobre ${mainTitle} ==\nEsta é a página de discussão para debater melhorias, fontes e edições no artigo [[${mainTitle}]].\n\n* Por favor, mantenha o diálogo cordial e assine suas mensagens.\n* Utilize tópicos claros para propor alterações.\n`;
+
+    const talkPage: Page = {
+      id: talkPageId,
+      namespace: 'talk',
+      title: mainTitle,
+      content: initialTalkContent,
+      categories: ['Páginas de discussão'],
+      authorUid: authorUid || 'system',
+      authorName: authorName || 'Sistema WikiZero',
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+    };
+
+    this.saveToLocalCache(talkPage);
+
+    try {
+      const db = getDb();
+      const docRef = doc(db, COLLECTION_NAME, talkPageId);
+      await setDoc(docRef, {
+        ...talkPage,
+        _serverTimestamp: serverTimestamp(),
+      });
+      return talkPage;
+    } catch (err) {
+      console.warn('[PageService] Não foi possível persistir talk page no Firestore:', err);
+      return talkPage;
     }
   }
 
@@ -380,6 +440,25 @@ export class PageService {
     return localPages.filter((p) =>
       p.categories?.some((c) => c.toLowerCase() === cleanCategory.toLowerCase())
     );
+  }
+
+  /**
+   * Retorna todas as páginas registradas na enciclopédia.
+   */
+  public static async getAllPages(): Promise<Page[]> {
+    try {
+      const db = getDb();
+      const snap = await getDocs(collection(db, COLLECTION_NAME));
+      if (!snap.empty) {
+        const pages = snap.docs.map((d) => d.data() as Page);
+        pages.forEach((p) => this.saveToLocalCache(p));
+        return pages;
+      }
+    } catch (error) {
+      console.warn('[PageService] Erro ao buscar todas as páginas no Firestore, usando cache:', error);
+    }
+
+    return this.getFromLocalCache();
   }
 
   /**

@@ -2,51 +2,97 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // Funções auxiliares de autenticação e RBAC
     function isAuthenticated() {
       return request.auth != null;
     }
     
+    function userDocExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && request.auth.token.email == 'pedrohenriquecardonaperes@gmail.com';
+    }
+    
     function isAdmin() {
       return isAuthenticated() && (
-        request.auth.token.email == 'pedrohenriquecardonaperes@gmail.com' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        isSuperAdmin() ||
+        (userDocExists() && (
+          getUserData().group == 'admin' ||
+          getUserData().role == 'admin'
+        ))
       );
     }
     
-    function isModerator() {
+    function isEditor() {
       return isAuthenticated() && (
         isAdmin() ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'moderador'
+        (userDocExists() && (
+          getUserData().group in ['editor', 'admin'] ||
+          getUserData().role in ['editor', 'moderador', 'admin']
+        ))
+      );
+    }
+    
+    function isRegistered() {
+      return isAuthenticated();
+    }
+    
+    function isUserInGroup(allowedGroups) {
+      return isAuthenticated() && (
+        isAdmin() ||
+        (userDocExists() && (
+          getUserData().group in allowedGroups ||
+          getUserData().role in allowedGroups
+        )) ||
+        // Usuário registrado padrão
+        ('registered' in allowedGroups && isAuthenticated())
       );
     }
 
-    // Coleções de tópicos da Wiki
+    // Coleções de tópicos e artigos legados da Wiki
     match /documentos/{pageUid} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isRegistered();
       
-      // Artigos dentro da coleção
       match /inevitavel/{articleId} {
         allow read: if true;
-        allow write: if isAuthenticated();
-        allow delete: if isModerator();
+        allow create: if isRegistered();
+        allow update: if isUserInGroup(['registered', 'editor', 'admin']);
+        allow delete: if isAdmin();
       }
     }
 
     // Coleção de Páginas com Namespaces e Categorias
     match /pages/{pageId} {
       allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.title is string && request.resource.data.namespace is string;
-      allow update: if isAuthenticated();
-      allow delete: if isModerator();
+      // Criação permitida para qualquer usuário registrado
+      allow create: if isRegistered() && request.resource.data.title is string && request.resource.data.namespace is string;
+      // Edição permitida para 'registered', 'editor' e 'admin'
+      allow update: if isUserInGroup(['registered', 'editor', 'admin']);
+      // Exclusão restrita estritamente a 'admin'
+      allow delete: if isAdmin();
+
+      // Subcoleção de Histórico de Versões (Revisões do Artigo)
+      match /versions/{versionId} {
+        allow read: if true;
+        allow create: if isRegistered() && request.resource.data.versionNumber is number;
+        allow update: if isEditor();
+        allow delete: if isAdmin();
+      }
     }
 
-    // Coleção de Predefinições / Templates
+    // Coleção de Predefinições / Templates (requer grupo 'editor' ou 'admin')
     match /templates/{templateId} {
       allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.name is string && request.resource.data.content is string;
-      allow update: if isAuthenticated();
-      allow delete: if isModerator();
+      allow create: if isEditor() && request.resource.data.name is string && request.resource.data.content is string;
+      allow update: if isEditor();
+      allow delete: if isAdmin();
     }
 
     // Perfis de usuários
@@ -57,20 +103,28 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Lista de banimentos
+    // Lista de banimentos (gestão por editores e administradores)
     match /banned_users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isModerator();
+      allow write: if isEditor();
     }
 
     // Logs de auditoria administrativa
     match /audit_logs/{logId} {
-      allow read: if isModerator();
-      allow create: if isModerator();
+      allow read: if isEditor();
+      allow create: if isEditor();
       allow update, delete: if isAdmin();
     }
 
-    // Coleções gerais
+    // Coleção de Lista de Vigilância (Watchlist)
+    match /watchlist/{itemId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Regra fallback
     match /{document=**} {
       allow read: if true;
       allow write: if isAuthenticated();

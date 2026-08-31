@@ -73,6 +73,23 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["id", "name", "content"]
+    },
+    "PageVersion": {
+      "title": "PageVersion",
+      "description": "Revisões e versões históricas de uma página (MediaWiki style)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "pageId": { "type": "string" },
+        "versionNumber": { "type": "number" },
+        "content": { "type": "string" },
+        "userName": { "type": "string" },
+        "userId": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "comment": { "type": "string" },
+        "previousVersion": { "type": ["number", "null"] }
+      },
+      "required": ["versionNumber", "content", "userName", "userId", "timestamp", "comment"]
     }
   },
   "firestore": {
@@ -91,6 +108,10 @@
     "/pages/{pageId}": {
       "schema": "Page",
       "description": "Páginas da enciclopédia organizadas por namespaces e categorias"
+    },
+    "/pages/{pageId}/versions/{versionId}": {
+      "schema": "PageVersion",
+      "description": "Subcoleção de versões históricas e revisões de cada página"
     },
     "/templates/{templateId}": {
       "schema": "Template",
