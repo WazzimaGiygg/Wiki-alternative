@@ -288,14 +288,17 @@ export default function App() {
     setCookieConsent(saved);
   };
 
-  const handleAcceptLgpd = (birthdate?: string) => {
-    StorageService.saveLgpdTermsAccepted(birthdate);
-    setShowLgpdModal(false);
+  const handleAcceptLgpd = (birthdate: string) => {
+    const res = StorageService.saveLgpdTermsAccepted(birthdate);
+    if (res.success) {
+      setShowLgpdModal(false);
+      const u = StorageService.getCurrentUser();
+      setUser(u);
+    }
   };
 
   const handleDeclineLgpd = () => {
-    alert('Para utilizar os recursos colaborativos da WikiZero, o aceite dos termos LGPD é requerido.');
-    setShowLgpdModal(false);
+    // Keep modal in blocking barrier state
   };
 
   const handleRevokeConsent = () => {
@@ -497,6 +500,7 @@ export default function App() {
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
+              onNavigateToUsersList={() => handleNavigate('admin-users')}
               initialTab="all"
             />
           )}
@@ -513,6 +517,7 @@ export default function App() {
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
+              onNavigateToUsersList={() => handleNavigate('admin-users')}
               initialTab="watchlist"
             />
           )}
@@ -748,10 +753,15 @@ export default function App() {
         />
       )}
 
-      {/* First-visit LGPD Term Modal */}
+      {/* First-visit LGPD Term Modal & Age Verification Gate */}
       <LgpdConsentModal
         isOpen={showLgpdModal}
-        onClose={() => setShowLgpdModal(false)}
+        isAlreadyAccepted={StorageService.isLgpdTermsAccepted()}
+        onClose={() => {
+          if (StorageService.isLgpdTermsAccepted()) {
+            setShowLgpdModal(false);
+          }
+        }}
         onAccept={handleAcceptLgpd}
         onDecline={handleDeclineLgpd}
       />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { UserCheck, Download, Trash2, RotateCcw, X, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { UserCheck, Download, Trash2, RotateCcw, X, ShieldAlert, CheckCircle2, Calendar } from 'lucide-react';
 import { UserProfile, CookieConsent } from '../types';
+import { StorageService } from '../services/storageService';
 
 interface MyDataModalProps {
   isOpen: boolean;
@@ -21,8 +22,17 @@ export const MyDataModal: React.FC<MyDataModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const ageInfo = StorageService.getUserAgeInfo();
+
   const exportData = {
     titular: user || { modo: 'Convidado / Anônimo' },
+    verificacaoIdade: {
+      idadeVerificada: ageInfo.isAccepted,
+      faixaEtariaPermitida: ageInfo.age > 14 ? 'Maior de 14 anos (Conforme)' : 'Pendente / Não confirmada',
+      idadeCalculada: ageInfo.age || undefined,
+      dataNascimentoRegistrada: ageInfo.birthdate || undefined,
+      baseLegal: 'Art. 14 da LGPD (Lei nº 13.709/2018)',
+    },
     consentimentoCookies: consent || { status: 'padrão' },
     direitosGarantidos: [
       'Art. 18, I - Confirmação da existência de tratamento',
@@ -89,14 +99,31 @@ export const MyDataModal: React.FC<MyDataModalProps> = ({
                 <span className="text-slate-500">UID:</span>
                 <span className="text-blue-600 dark:text-blue-400 truncate max-w-[200px]">{user.uid}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/60 pb-1">
                 <span className="text-slate-500">Perfil:</span>
                 <span className="uppercase text-slate-900 dark:text-white font-bold">{user.role}</span>
               </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Faixa Etária (LGPD Art. 14):</span>
+                <span className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 font-sans">
+                  <CheckCircle2 size={12} />
+                  {ageInfo.age > 0 ? `${ageInfo.age} anos (> 14 anos - Aprovado)` : 'Idade Verificada (> 14 anos)'}
+                </span>
+              </div>
             </div>
           ) : (
-            <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs">
-              Navegando em modo visitante. Apenas dados de sessão local estão armazenados neste dispositivo.
+            <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs">
+              <div className="flex justify-between items-center font-mono text-[11px]">
+                <span className="text-slate-500">Modo de Navegação:</span>
+                <span className="font-bold text-slate-700 dark:text-slate-300">Visitante / Anônimo</span>
+              </div>
+              <div className="flex justify-between items-center font-mono text-[11px]">
+                <span className="text-slate-500">Verificação de Idade:</span>
+                <span className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 font-sans">
+                  <CheckCircle2 size={12} />
+                  {ageInfo.age > 0 ? `${ageInfo.age} anos (> 14 anos)` : 'Maior que 14 anos'}
+                </span>
+              </div>
             </div>
           )}
 

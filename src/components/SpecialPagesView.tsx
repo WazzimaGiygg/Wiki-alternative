@@ -22,6 +22,7 @@ import {
   Vote,
   Scale,
   UserX,
+  Users,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -37,6 +38,7 @@ interface SpecialPagesViewProps {
   onNavigateToPromotionRequests?: () => void;
   onNavigateToUnblockRequests?: () => void;
   onNavigateToCheckUser?: (username?: string) => void;
+  onNavigateToUsersList?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -51,6 +53,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToPromotionRequests,
   onNavigateToUnblockRequests,
   onNavigateToCheckUser,
+  onNavigateToUsersList,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -174,7 +177,26 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
       </div>
 
       {/* Admin & Community Special Portals Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
+        {onNavigateToUsersList && (
+          <button
+            onClick={onNavigateToUsersList}
+            className="p-3 rounded-lg border border-purple-200 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100/70 dark:hover:bg-purple-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-purple-600 text-white shrink-0">
+              <Users size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-purple-900 dark:text-purple-200 truncate group-hover:underline">
+                Special:ListUsers
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Lista de Usuários Cadastrados
+              </div>
+            </div>
+          </button>
+        )}
+
         {onNavigateToContactAdmin && (
           <button
             onClick={onNavigateToContactAdmin}

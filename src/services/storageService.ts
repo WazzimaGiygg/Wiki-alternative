@@ -101,6 +101,8 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'wikizero_notifs_v3',
   CONSENT: 'wikizero_cookie_consent_v3',
   LGPD_TERMS: 'wikizero_lgpd_accepted_v3',
+  BIRTHDATE: 'wikizero_user_birthdate_v3',
+  USER_AGE: 'wikizero_user_age_v3',
   DRAFT: 'wikizero_editor_draft_v3',
   THEME: 'wikizero_theme_v3',
   RECENT_CHANGES: 'wikizero_recent_changes_v3',
@@ -590,23 +592,76 @@ export const StorageService = {
     return fullConsent;
   },
 
-  isLgpdTermsAccepted(): boolean {
-    return localStorage.getItem(STORAGE_KEYS.LGPD_TERMS) === 'true';
+  calculateAge(birthdateStr?: string | null): number {
+    if (!birthdateStr) return 0;
+    const parts = birthdateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        const birthDate = new Date(year, month, day);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        return Math.max(0, age);
+      }
+    }
+    const parsed = new Date(birthdateStr);
+    if (isNaN(parsed.getTime())) return 0;
+    const today = new Date();
+    let age = today.getFullYear() - parsed.getFullYear();
+    const m = today.getMonth() - parsed.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < parsed.getDate())) {
+      age--;
+    }
+    return Math.max(0, age);
   },
 
-  saveLgpdTermsAccepted(birthdate?: string) {
+  isLgpdTermsAccepted(): boolean {
+    const isAccepted = localStorage.getItem(STORAGE_KEYS.LGPD_TERMS) === 'true';
+    const birthdate = localStorage.getItem(STORAGE_KEYS.BIRTHDATE);
+    if (!isAccepted || !birthdate) return false;
+    const age = this.calculateAge(birthdate);
+    return age > 14;
+  },
+
+  getUserAgeInfo(): { isAccepted: boolean; birthdate: string | null; age: number } {
+    const isAccepted = this.isLgpdTermsAccepted();
+    const birthdate = localStorage.getItem(STORAGE_KEYS.BIRTHDATE);
+    const age = this.calculateAge(birthdate);
+    return { isAccepted, birthdate, age };
+  },
+
+  saveLgpdTermsAccepted(birthdate: string): { success: boolean; age: number; message?: string } {
+    const age = this.calculateAge(birthdate);
+    if (age <= 14) {
+      return {
+        success: false,
+        age,
+        message: 'Acesso restrito: A idade informada deve ser estritamente maior que 14 anos conforme os termos da WikiZero e LGPD.',
+      };
+    }
     localStorage.setItem(STORAGE_KEYS.LGPD_TERMS, 'true');
+    localStorage.setItem(STORAGE_KEYS.BIRTHDATE, birthdate);
+    localStorage.setItem(STORAGE_KEYS.USER_AGE, String(age));
     const user = this.getCurrentUser();
     if (user) {
       user.dataConsentimento = new Date().toISOString();
       user.birthdate = birthdate;
       this.saveUser(user);
     }
+    return { success: true, age };
   },
 
   revokeConsent() {
     localStorage.removeItem(STORAGE_KEYS.LGPD_TERMS);
     localStorage.removeItem(STORAGE_KEYS.CONSENT);
+    localStorage.removeItem(STORAGE_KEYS.BIRTHDATE);
+    localStorage.removeItem(STORAGE_KEYS.USER_AGE);
   },
 
   // === EDITOR DRAFTS ===
