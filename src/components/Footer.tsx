@@ -16,6 +16,7 @@ import {
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { FooterBadges } from './FooterBadges';
+import { formatExternalUrl } from '../utils/linkUtils';
 
 interface FooterProps {
   onNavigate: (view: ViewMode) => void;
@@ -106,7 +107,7 @@ export const Footer: React.FC<FooterProps> = ({
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
             <a
-              href="https://support.wazzimagiygg.com/"
+              href={formatExternalUrl("https://support.wazzimagiygg.com/")}
               target="_blank"
               rel="noopener noreferrer"
               title="Central Oficial de Suporte, Atendimento e Abertura de Tickets dos Serviços WazzimaGiygg"
@@ -149,7 +150,7 @@ export const Footer: React.FC<FooterProps> = ({
               <Heart size={11} className="text-rose-500" /> {t('sidebar.donations')}
             </button>
             <a
-              href="https://github.com/WazzimaGiygg/Wiki-alternative"
+              href={formatExternalUrl("https://github.com/WazzimaGiygg/Wiki-alternative")}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-slate-900 dark:hover:text-white flex items-center gap-1 underline underline-offset-2 font-medium"
@@ -157,7 +158,7 @@ export const Footer: React.FC<FooterProps> = ({
               GitHub <ExternalLink size={10} />
             </a>
             <a
-              href="https://wazzimagiygg.com/averdade/"
+              href={formatExternalUrl("https://wazzimagiygg.com/averdade/")}
               target="_blank"
               rel="noopener noreferrer"
               title="Dossiê e Investigação dos abusos da Wikipédia contra o usuário WazzimaGiygg"
@@ -176,7 +177,7 @@ export const Footer: React.FC<FooterProps> = ({
             <p>
               O texto está disponível sob a licença{' '}
               <a
-                href="https://creativecommons.org/licenses/by-sa/4.0/"
+                href={formatExternalUrl("https://creativecommons.org/licenses/by-sa/4.0/")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
@@ -185,7 +186,7 @@ export const Footer: React.FC<FooterProps> = ({
               </a>
               {' '}e{' '}
               <a
-                href="https://www.gnu.org/licenses/gpl-3.0.html"
+                href={formatExternalUrl("https://www.gnu.org/licenses/gpl-3.0.html")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
@@ -197,7 +198,7 @@ export const Footer: React.FC<FooterProps> = ({
             <p className="text-slate-500 dark:text-slate-500">
               WikiZero Enciclopédia Aberta © 2026. Infraestrutura e Banco de Dados alimentados por{' '}
               <a
-                href="https://firebase.google.com/products/firestore"
+                href={formatExternalUrl("https://firebase.google.com/products/firestore")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-amber-600 dark:text-amber-400 hover:underline font-semibold"
@@ -206,7 +207,7 @@ export const Footer: React.FC<FooterProps> = ({
               </a>
               {' '}• Domínio via{' '}
               <a
-                href="https://www.godaddy.com"
+                href={formatExternalUrl("https://www.godaddy.com")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
@@ -215,7 +216,7 @@ export const Footer: React.FC<FooterProps> = ({
               </a>
               {' '}• Central de Suporte & Tickets:{' '}
               <a
-                href="https://support.wazzimagiygg.com/"
+                href={formatExternalUrl("https://support.wazzimagiygg.com/")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"

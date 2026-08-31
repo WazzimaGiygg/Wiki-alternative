@@ -1,4 +1,5 @@
 import { ExtensionManager } from '../core/ExtensionManager';
+import { formatExternalUrl } from './linkUtils';
 
 export interface TocItem {
   id: string;
@@ -618,13 +619,17 @@ export function formatInline(text: string, inlineMap?: Map<string, string>): str
   // External Links: [https://url.com Texto do Link] or [https://url.com]
   res = res.replace(/\[(https?:\/\/[^\s\]]+)(?:\s+([^\]]+))?\]/g, (_m, url, title) => {
     const label = title ? title.trim() : url;
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5">${escapeHtml(label)} <span class="text-[10px] text-slate-400">↗</span></a>`;
+    const redirectUrl = formatExternalUrl(url);
+    return `<a href="${redirectUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5">${escapeHtml(label)} <span class="text-[10px] text-slate-400">↗</span></a>`;
   });
 
   // Plain URLs (e.g. https://domain.com) not already inside href
   res = res.replace(
     /(?<!href=")(https?:\/\/[^\s<>"']+)/gi,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5">$1 <span class="text-[10px] text-slate-400">↗</span></a>'
+    (_m, url) => {
+      const redirectUrl = formatExternalUrl(url);
+      return `<a href="${redirectUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5">${url} <span class="text-[10px] text-slate-400">↗</span></a>`;
+    }
   );
 
   // Restore inline placeholders if map provided
@@ -987,7 +992,7 @@ function renderCitationTemplate(content: string): string {
 
   const authorPart = autor ? `<strong>${escapeHtml(autor)}</strong>. ` : '';
   const titlePart = url
-    ? `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 font-semibold hover:underline">“${escapeHtml(titulo)}”</a>. `
+    ? `<a href="${formatExternalUrl(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 font-semibold hover:underline">“${escapeHtml(titulo)}”</a>. `
     : `“${escapeHtml(titulo)}”. `;
   const datePart = data ? `Publicado em ${escapeHtml(data)}. ` : '';
   const accessPart = acessodata ? `<span class="text-slate-400 text-[10px]">Acesso em ${escapeHtml(acessodata)}.</span>` : '';

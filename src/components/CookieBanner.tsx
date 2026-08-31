@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Cookie, ShieldCheck, Check, X, Settings2 } from 'lucide-react';
 import { CookieConsent } from '../types';
+import { formatExternalUrl } from '../utils/linkUtils';
 
 interface CookieBannerProps {
   onAcceptAll: () => void;
@@ -38,7 +39,7 @@ export const CookieBanner: React.FC<CookieBannerProps> = ({
               <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
                 Utilizamos cookies estritamente necessários para autenticação segura e métricas anônimas em conformidade com a{' '}
                 <a
-                  href="https://wazzimagiygg.com/LGPD"
+                  href={formatExternalUrl("https://wazzimagiygg.com/LGPD")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 dark:text-blue-400 font-semibold underline"

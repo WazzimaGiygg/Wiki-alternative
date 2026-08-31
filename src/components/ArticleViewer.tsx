@@ -38,6 +38,7 @@ import {
   ArticleRatingData,
 } from '../types';
 import { parseWikitext, TocItem } from '../utils/wikitextParser';
+import { formatExternalUrl } from '../utils/linkUtils';
 import { ArticleHistoryView } from './ArticleHistoryView';
 import { TalkPageView } from './TalkPageView';
 import { WhatLinksHereView } from './WhatLinksHereView';
@@ -118,6 +119,19 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         const wikiTarget = target.getAttribute('data-wiki-target');
         if (wikiTarget) {
           onNavigateToArticleByTitle(wikiTarget);
+        }
+        return;
+      }
+
+      // Safeguard for any external link click
+      const anchor = (e.target as HTMLElement).closest('a');
+      if (anchor && !anchor.hasAttribute('data-wiki-target')) {
+        const href = anchor.getAttribute('href');
+        if (href && /^https?:\/\//i.test(href)) {
+          const redirectUrl = formatExternalUrl(href);
+          anchor.setAttribute('href', redirectUrl);
+          anchor.setAttribute('target', '_blank');
+          anchor.setAttribute('rel', 'noopener noreferrer');
         }
       }
     };

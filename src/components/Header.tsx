@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { formatExternalUrl } from '../utils/linkUtils';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -123,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="hidden sm:inline">GNU GPL v3.0</span>
           <span className="hidden md:inline text-slate-600">|</span>
           <a
-            href="https://github.com/WazzimaGiygg/Wiki-alternative"
+            href={formatExternalUrl("https://github.com/WazzimaGiygg/Wiki-alternative")}
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-blue-400 flex items-center gap-1 text-slate-300"

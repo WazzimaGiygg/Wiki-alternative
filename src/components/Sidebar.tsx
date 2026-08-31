@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { formatExternalUrl } from '../utils/linkUtils';
 
 interface SidebarProps {
   currentView: ViewMode;
@@ -401,7 +402,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <a
-              href="https://support.wazzimagiygg.com/"
+              href={formatExternalUrl("https://support.wazzimagiygg.com/")}
               target="_blank"
               rel="noopener noreferrer"
               title="Central de Suporte e Abertura de Tickets WazzimaGiygg: https://support.wazzimagiygg.com/"

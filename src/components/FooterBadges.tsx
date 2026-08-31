@@ -1,8 +1,9 @@
 import React from 'react';
+import { formatExternalUrl } from '../utils/linkUtils';
 
 export const GoogleAIStudioBadge: React.FC = () => (
   <a
-    href="https://aistudio.google.com/"
+    href={formatExternalUrl("https://aistudio.google.com/")}
     target="_blank"
     rel="noopener noreferrer"
     title="Powered by Google AI Studio - Tecnologia de Inteligência Artificial Google Gemini"
@@ -37,7 +38,7 @@ export const GoogleAIStudioBadge: React.FC = () => (
 
 export const CreativeCommonsBadge: React.FC = () => (
   <a
-    href="https://creativecommons.org/licenses/by-sa/4.0/"
+    href={formatExternalUrl("https://creativecommons.org/licenses/by-sa/4.0/")}
     target="_blank"
     rel="noopener noreferrer"
     title="Conteúdo licenciado sob Creative Commons Atribuição-CompartilhaIgual (CC BY-SA 4.0)"
@@ -67,7 +68,7 @@ export const CreativeCommonsBadge: React.FC = () => (
 
 export const DeepSeekIABadge: React.FC = () => (
   <a
-    href="https://www.deepseek.com/"
+    href={formatExternalUrl("https://www.deepseek.com/")}
     target="_blank"
     rel="noopener noreferrer"
     title="Powered by DeepSeek IA - Modelos de Raciocínio e Inteligência Artificial Aberta"
@@ -100,7 +101,7 @@ export const DeepSeekIABadge: React.FC = () => (
 
 export const GitHubBadge: React.FC = () => (
   <a
-    href="https://github.com/WazzimaGiygg/Wiki-alternative"
+    href={formatExternalUrl("https://github.com/WazzimaGiygg/Wiki-alternative")}
     target="_blank"
     rel="noopener noreferrer"
     title="Código-fonte aberto e repositório oficial no GitHub: WazzimaGiygg/Wiki-alternative"
@@ -127,7 +128,7 @@ export const GitHubBadge: React.FC = () => (
 
 export const WazzimaDossierBadge: React.FC = () => (
   <a
-    href="https://wazzimagiygg.com/averdade/"
+    href={formatExternalUrl("https://wazzimagiygg.com/averdade/")}
     target="_blank"
     rel="noopener noreferrer"
     title="Investigação e Dossiê dos abusos da Wikipédia contra WazzimaGiygg: https://wazzimagiygg.com/averdade/"
@@ -152,7 +153,7 @@ export const WazzimaDossierBadge: React.FC = () => (
 
 export const FirebaseBadge: React.FC = () => (
   <a
-    href="https://firebase.google.com/products/firestore"
+    href={formatExternalUrl("https://firebase.google.com/products/firestore")}
     target="_blank"
     rel="noopener noreferrer"
     title="Banco de Dados e Infraestrutura Cloud fornecidos por Google Firebase Firestore"
@@ -194,7 +195,7 @@ export const FirebaseBadge: React.FC = () => (
 
 export const GoDaddyBadge: React.FC = () => (
   <a
-    href="https://www.godaddy.com"
+    href={formatExternalUrl("https://www.godaddy.com")}
     target="_blank"
     rel="noopener noreferrer"
     title="Domínio oficial registrado e adquirido via GoDaddy: https://www.godaddy.com"
@@ -243,7 +244,7 @@ export const LgpdMarcoCivilBadge: React.FC<{ onClick?: () => void }> = ({ onClic
 
 export const WazzimaSupportBadge: React.FC = () => (
   <a
-    href="https://support.wazzimagiygg.com/"
+    href={formatExternalUrl("https://support.wazzimagiygg.com/")}
     target="_blank"
     rel="noopener noreferrer"
     title="Central de Suporte, Tickets e Atendimento dos Serviços WazzimaGiygg: https://support.wazzimagiygg.com/"

@@ -18,6 +18,7 @@ import {
   LifeBuoy,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle } from '../types';
+import { formatExternalUrl } from '../utils/linkUtils';
 
 interface InformativeViewsProps {
   user: UserProfile | null;
@@ -110,7 +111,7 @@ export const SecurityView: React.FC<InformativeViewsProps> = ({ user }) => {
               </div>
             </div>
             <a
-              href="https://support.wazzimagiygg.com/"
+              href={formatExternalUrl("https://support.wazzimagiygg.com/")}
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition flex items-center gap-1.5 whitespace-nowrap self-stretch sm:self-auto justify-center"
@@ -187,7 +188,7 @@ export const DonationView: React.FC<InformativeViewsProps> = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
             <a
-              href="https://support.wazzimagiygg.com/"
+              href={formatExternalUrl("https://support.wazzimagiygg.com/")}
               target="_blank"
               rel="noopener noreferrer"
               className="p-3 rounded bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/80 hover:border-indigo-500 transition flex items-center justify-between group"
@@ -203,7 +204,7 @@ export const DonationView: React.FC<InformativeViewsProps> = () => {
             </a>
 
             <a
-              href="https://github.com/WazzimaGiygg/Wiki-alternative"
+              href={formatExternalUrl("https://github.com/WazzimaGiygg/Wiki-alternative")}
               target="_blank"
               rel="noopener noreferrer"
               className="p-3 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 transition flex items-center justify-between group"
@@ -260,7 +261,7 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = () => {
 
           <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">3. Seus Direitos (Art. 18 da LGPD) e Abertura de Tickets</h3>
           <p>
-            Você pode exercer a qualquer momento seus direitos de acesso, retificação, portabilidade e revogação de consentimento através do botão "Meus Dados" no menu de navegação ou abrindo um chamado direto com a equipe de privacidade na <a href="https://support.wazzimagiygg.com/" target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 font-bold underline">Central de Tickets WazzimaGiygg</a>.
+            Você pode exercer a qualquer momento seus direitos de acesso, retificação, portabilidade e revogação de consentimento através do botão "Meus Dados" no menu de navegação ou abrindo um chamado direto com a equipe de privacidade na <a href={formatExternalUrl("https://support.wazzimagiygg.com/")} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 font-bold underline">Central de Tickets WazzimaGiygg</a>.
           </p>
 
           <div className="p-3 rounded bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/70 flex items-center justify-between gap-3 mt-2">
@@ -271,7 +272,7 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = () => {
               </span>
             </div>
             <a
-              href="https://support.wazzimagiygg.com/"
+              href={formatExternalUrl("https://support.wazzimagiygg.com/")}
               target="_blank"
               rel="noopener noreferrer"
               className="px-2.5 py-1 text-xs font-semibold rounded bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center gap-1 shadow-xs whitespace-nowrap"

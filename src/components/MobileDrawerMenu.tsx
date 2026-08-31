@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { formatExternalUrl } from '../utils/linkUtils';
 
 interface MobileDrawerMenuProps {
   isOpen: boolean;
@@ -350,7 +351,7 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
             </span>
             <div className="space-y-1">
               <a
-                href="https://support.wazzimagiygg.com/"
+                href={formatExternalUrl("https://support.wazzimagiygg.com/")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/70 text-indigo-700 dark:text-indigo-300 font-bold hover:bg-indigo-100 transition"
@@ -363,7 +364,7 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               </a>
 
               <a
-                href="https://wazzimagiygg.com/averdade/"
+                href={formatExternalUrl("https://wazzimagiygg.com/averdade/")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/70 text-amber-800 dark:text-amber-300 font-bold hover:bg-amber-100 transition"
