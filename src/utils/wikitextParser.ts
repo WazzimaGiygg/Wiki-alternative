@@ -1,3 +1,5 @@
+import { ExtensionManager } from '../core/ExtensionManager';
+
 export interface TocItem {
   id: string;
   text: string;
@@ -13,9 +15,15 @@ export interface ParseResult {
 }
 
 export function parseWikitext(
-  wikitext: string,
-  _onWikiLinkClick?: (target: string) => void
+  rawWikitext: string,
+  _onWikiLinkClick?: (target: string) => void,
+  articleTitle?: string
 ): ParseResult {
+  // Aplica filtros registrados por extensões antes de iniciar o parsing do Wikitext
+  const wikitext = ExtensionManager.getInstance()
+    .getHooks()
+    .applyFilters<string>('render:wikitext', rawWikitext || '', articleTitle);
+
   if (!wikitext || !wikitext.trim()) {
     return {
       html: '<p class="text-slate-400 dark:text-slate-500 italic py-4">Sem conteúdo disponível.</p>',
@@ -443,8 +451,13 @@ export function parseWikitext(
     finalHtml = finalHtml.split(placeholder).join(inlineHtml);
   });
 
+  // Aplica filtros de pós-processamento HTML registrados por extensões
+  const filteredHtml = ExtensionManager.getInstance()
+    .getHooks()
+    .applyFilters<string>('render:html', finalHtml, { toc, references, categories, articleTitle });
+
   return {
-    html: finalHtml,
+    html: filteredHtml,
     toc,
     references,
     categories,
