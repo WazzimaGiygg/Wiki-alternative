@@ -480,3 +480,96 @@ export type ViewMode =
   | 'site-updates'
   | 'beta'
   | 'offline';
+
+// ==========================================
+// SISTEMA DE NAMESPACES, PÁGINAS E TEMPLATES
+// ==========================================
+
+export type PageNamespace =
+  | 'main'
+  | 'talk'
+  | 'user'
+  | 'user_talk'
+  | 'project'
+  | 'project_talk'
+  | 'file'
+  | 'file_talk'
+  | 'mediawiki'
+  | 'mediawiki_talk'
+  | 'template'
+  | 'template_talk'
+  | 'help'
+  | 'help_talk'
+  | 'category'
+  | 'category_talk'
+  | 'portal'
+  | 'draft'
+  | 'special'
+  | (string & {});
+
+export interface Page {
+  id: string;
+  namespace: PageNamespace;
+  title: string;
+  content: string;
+  categories: string[];
+  templateName?: string;
+  templateParams?: Record<string, string>;
+  authorUid?: string;
+  authorName?: string;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+export interface CreatePageInput {
+  namespace: PageNamespace;
+  title: string;
+  content: string;
+  categories?: string[];
+  templateName?: string;
+  templateParams?: Record<string, string>;
+  authorUid?: string;
+  authorName?: string;
+}
+
+export interface UpdatePageInput {
+  content?: string;
+  categories?: string[];
+  templateName?: string | null;
+  templateParams?: Record<string, string>;
+  authorUid?: string;
+  authorName?: string;
+}
+
+export interface WikiTemplate {
+  id: string;
+  name: string;
+  content: string; // Suporta marcação {{{param}}} e {{{param|default}}}
+  description: string;
+  authorUid?: string;
+  authorName?: string;
+  createdAt: string;
+  updatedAt: string;
+  parameters?: string[];
+  category?: string;
+}
+
+export interface CreateTemplateInput {
+  name: string;
+  content: string;
+  description: string;
+  authorUid?: string;
+  authorName?: string;
+  category?: string;
+}
+
+export interface UpdateTemplateInput {
+  name?: string;
+  content?: string;
+  description?: string;
+  authorUid?: string;
+  authorName?: string;
+  category?: string;
+}
+

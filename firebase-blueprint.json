@@ -42,6 +42,37 @@
         "categoria": { "type": "string" }
       },
       "required": ["id", "pageUid", "titulo"]
+    },
+    "Page": {
+      "title": "Page",
+      "description": "Páginas do WikiZero organizadas por Namespaces (main, talk, user, template, etc.) e Categorias",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "namespace": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "categories": { "type": "array" },
+        "templateName": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "version": { "type": "number" }
+      },
+      "required": ["id", "namespace", "title", "content"]
+    },
+    "Template": {
+      "title": "Template",
+      "description": "Predefinições de conteúdo com suporte a substituição de parâmetros {{{param}}}",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "content": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "content"]
     }
   },
   "firestore": {
@@ -56,6 +87,14 @@
     "/documentos/{pageUid}/inevitavel/{articleId}": {
       "schema": "WikiArticle",
       "description": "Artigos da enciclopédia"
+    },
+    "/pages/{pageId}": {
+      "schema": "Page",
+      "description": "Páginas da enciclopédia organizadas por namespaces e categorias"
+    },
+    "/templates/{templateId}": {
+      "schema": "Template",
+      "description": "Predefinições e modelos de conteúdo para renderização dinâmica"
     },
     "/banned_users/{userId}": {
       "schema": "UserProfile",
