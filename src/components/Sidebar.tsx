@@ -27,6 +27,7 @@ import {
   MessageSquare,
   Upload,
   Image as ImageIcon,
+  Gavel,
 } from 'lucide-react';
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -326,6 +327,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="truncate">Pedidos de Promoção (RFA)</span>
                   <span className="text-[8px] bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-mono font-bold px-1 rounded-xs">
                     VOTAÇÃO
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
+              onClick={() => onNavigate('arbitration')}
+              title="Conselho de Arbitragem (Special:Arbitration - Julgamento de Usuários, Moderadores e Administradores)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'arbitration'
+                  ? 'bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Gavel size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate font-semibold">Conselho de Arbitragem</span>
+                  <span className="text-[8px] bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-mono font-bold px-1 rounded-xs">
+                    ARBCOM
                   </span>
                 </div>
               )}

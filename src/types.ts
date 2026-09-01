@@ -478,6 +478,7 @@ export type ViewMode =
   | 'unblock-requests'
   | 'promotion-requests'
   | 'contact-admin'
+  | 'arbitration'
   | 'security'
   | 'donation'
   | 'privacy'
@@ -489,6 +490,115 @@ export type ViewMode =
   | 'upload'
   | 'file-page'
   | 'files-list';
+
+// ==========================================
+// SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)
+// ==========================================
+
+export type ArbitrationCaseTargetType = 'usuario' | 'moderador' | 'administrador';
+
+export type ArbitrationCaseCategory =
+  | 'abuso_admin'
+  | 'abuso_moderador'
+  | 'conflito_comunitario'
+  | 'guerra_edicao_cronica'
+  | 'assedio_conduta'
+  | 'revisao_bloqueio_indevido'
+  | 'quebra_de_sigilo_lgpd'
+  | 'outro';
+
+export type ArbitrationCaseStatus =
+  | 'aberto'
+  | 'em_instrucao'
+  | 'deliberacao'
+  | 'concluido'
+  | 'rejeitado';
+
+export type ArbitrationRulingRemedy =
+  | 'absolvicao'
+  | 'advertencia_formal'
+  | 'bloqueio_temporario'
+  | 'bloqueio_indefinido'
+  | 'perda_direitos_moderador'
+  | 'perda_direitos_admin'
+  | 'ajustamento_conduta'
+  | 'desconsiderado';
+
+export interface ArbitrationDeliberation {
+  id: string;
+  arbitratorName: string;
+  arbitratorUid: string;
+  vote: 'acolher' | 'rejeitar' | 'sancionar' | 'absolver' | 'abster';
+  statement: string; // Justificativa fundamentada do voto do árbitro
+  recommendedRemedy?: ArbitrationRulingRemedy;
+  timestamp: string;
+}
+
+export interface ArbitrationComment {
+  id: string;
+  author: string;
+  authorRole: UserRole | string;
+  authorUid?: string;
+  content: string;
+  timestamp: string;
+  isTestimony?: boolean; // Depoimento ou testemunho formal
+}
+
+export interface ArbitrationRuling {
+  remedyType: ArbitrationRulingRemedy;
+  rulingSummary: string;
+  sanctionDurationDays?: number;
+  votesInFavor: number;
+  votesAgainst: number;
+  votesAbstain?: number;
+  closedByArbitrator: string;
+  closedAt: string;
+  formalFindings: string[]; // Conclusões de fato e direito
+}
+
+export interface ArbitrationCase {
+  id: string;
+  caseNumber: string; // Ex: ARB-PT-2026-001
+  langCode: string; // Ex: 'pt', 'en', 'es', 'fr', etc.
+  title: string;
+  targetType: ArbitrationCaseTargetType;
+  targetUsername: string;
+  targetUserDisplayName?: string;
+  targetUserUid?: string;
+  targetUserRole?: UserRole;
+  requesterUsername: string;
+  requesterDisplayName: string;
+  requesterUid: string;
+  requesterRole: UserRole;
+  category: ArbitrationCaseCategory;
+  summary: string;
+  evidenceWikitext: string;
+  requestedRemedy: string;
+  defenseStatement?: string;
+  status: ArbitrationCaseStatus;
+  urgency: 'alta' | 'media' | 'baixa';
+  createdAt: string;
+  updatedAt?: string;
+  closedAt?: string;
+  deliberations: ArbitrationDeliberation[];
+  comments: ArbitrationComment[];
+  finalRuling?: ArbitrationRuling;
+  relatedArticleTitles?: string[];
+}
+
+export interface ArbitrationCommitteeMember {
+  id: string;
+  langCode: string;
+  username: string;
+  displayName: string;
+  role: 'Presidente do Conselho' | 'Árbitro Titular' | 'Árbitro Suplente';
+  mandateStart: string;
+  mandateEnd: string;
+  status: 'ativo' | 'licenca' | 'renunciou';
+  casesJudged: number;
+  bio?: string;
+  avatarUrl?: string;
+}
 
 // ==========================================
 // SISTEMA DE FICHEIROS, IMAGENS E MÍDIAS

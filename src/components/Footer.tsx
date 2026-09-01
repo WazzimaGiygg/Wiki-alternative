@@ -12,6 +12,7 @@ import {
   LifeBuoy,
   Smartphone,
   Monitor,
+  Gavel,
 } from 'lucide-react';
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -122,6 +123,14 @@ export const Footer: React.FC<FooterProps> = ({
               className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-medium"
             >
               <History size={11} className="text-cyan-500" /> {t('sidebar.recent_changes')}
+            </button>
+            <button
+              onClick={() => onNavigate('arbitration')}
+              title="Conselho de Arbitragem da WikiZero — Julgamento de ações de Usuários, Moderadores e Administradores"
+              className="hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-1 font-semibold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800/60 transition"
+            >
+              <Gavel size={11} className="text-purple-600 dark:text-purple-400" />
+              <span>Conselho de Arbitragem (ArbCom)</span>
             </button>
             <button
               onClick={() => onNavigate('privacy')}

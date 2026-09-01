@@ -25,6 +25,7 @@ import {
   Users,
   Upload,
   Image as ImageIcon,
+  Gavel,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -43,6 +44,7 @@ interface SpecialPagesViewProps {
   onNavigateToUsersList?: () => void;
   onNavigateToUpload?: () => void;
   onNavigateToFilesList?: () => void;
+  onNavigateToArbitration?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -60,6 +62,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToUsersList,
   onNavigateToUpload,
   onNavigateToFilesList,
+  onNavigateToArbitration,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -293,6 +296,25 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Recursos de Desbloqueio
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToArbitration && (
+          <button
+            onClick={onNavigateToArbitration}
+            className="p-3 rounded-lg border border-purple-300 dark:border-purple-800/80 bg-purple-100/60 dark:bg-purple-950/40 hover:bg-purple-200/60 dark:hover:bg-purple-900/50 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-purple-700 text-white shrink-0">
+              <Gavel size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-purple-950 dark:text-purple-200 truncate group-hover:underline">
+                Special:Arbitration
+              </div>
+              <div className="text-[10px] text-slate-600 dark:text-slate-400 truncate">
+                Conselho de Arbitragem (ArbCom)
               </div>
             </div>
           </button>

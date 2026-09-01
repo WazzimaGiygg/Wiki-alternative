@@ -468,7 +468,7 @@ export const FilePageView: React.FC<FilePageViewProps> = ({
       </div>
 
       {/* OFFICIAL LICENSING BOX */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs mb-8">
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs mb-8 space-y-4">
         <div className="flex items-start gap-3.5">
           <div className="p-2.5 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 shrink-0 mt-0.5">
             <Scale className="w-5 h-5" />
@@ -500,6 +500,14 @@ export const FilePageView: React.FC<FilePageViewProps> = ({
               </div>
             )}
           </div>
+        </div>
+
+        {/* WikiZero Independence Badge */}
+        <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-850/80 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-400">
+          <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+          <span>
+            <strong>Conformidade Editorial WikiZero:</strong> Este ficheiro possui origem independente auditada, sem vínculos com o Wikimedia Commons ou espelhamento da Wikipédia.
+          </span>
         </div>
       </div>
 

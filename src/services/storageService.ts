@@ -53,6 +53,15 @@ import {
   AdminTicketCategory,
   AdminTicketStatus,
   AdminTicketPriority,
+  ArbitrationCase,
+  ArbitrationCaseCategory,
+  ArbitrationCaseStatus,
+  ArbitrationCaseTargetType,
+  ArbitrationComment,
+  ArbitrationDeliberation,
+  ArbitrationRuling,
+  ArbitrationRulingRemedy,
+  ArbitrationCommitteeMember,
 } from '../types';
 import {
   INITIAL_PAGES,
@@ -68,6 +77,8 @@ import {
   INITIAL_UNBLOCK_REQUESTS,
   INITIAL_PROMOTION_REQUESTS,
   INITIAL_ADMIN_TICKETS,
+  INITIAL_ARBITRATION_CASES,
+  INITIAL_ARBITRATION_MEMBERS,
 } from '../data/seedData';
 
 // Configuração oficial do projeto Firebase
@@ -119,6 +130,8 @@ const STORAGE_KEYS = {
   UNBLOCK_REQUESTS: 'wikizero_unblock_requests_v3',
   PROMOTION_REQUESTS: 'wikizero_promotion_requests_v3',
   ADMIN_TICKETS: 'wikizero_admin_tickets_v3',
+  ARBITRATION_CASES: 'wikizero_arbitration_cases_v3',
+  ARBITRATION_MEMBERS: 'wikizero_arbitration_members_v3',
 };
 
 const INITIAL_TALK_THREADS: TalkThread[] = [
@@ -220,19 +233,29 @@ function initializeLocalStorage() {
   if (!localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES)) {
     localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(INITIAL_SYSTEM_UPDATES));
   } else {
-    // If exists, make sure newest seed items are present
+    // If exists, make sure newest seed items are present and synced
     try {
       const existing: SystemUpdateEntry[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES) || '[]');
-      const existingIds = new Set(existing.map((u) => u.id));
+      const existingMap = new Map(existing.map((u) => [u.id, u]));
       let changed = false;
       for (const item of INITIAL_SYSTEM_UPDATES) {
-        if (!existingIds.has(item.id)) {
+        if (!existingMap.has(item.id)) {
           existing.push(item);
           changed = true;
+        } else {
+          // If title/highlights were enriched, update them
+          const curr = existingMap.get(item.id)!;
+          if (curr.title !== item.title || curr.highlights.length !== item.highlights.length) {
+            Object.assign(curr, item);
+            changed = true;
+          }
         }
       }
-      if (changed) {
+      if (changed || existing.length > 0) {
         existing.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        existing.forEach((item, index) => {
+          item.isLatest = index === 0;
+        });
         localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(existing));
       }
     } catch {
@@ -256,6 +279,46 @@ function initializeLocalStorage() {
   }
   if (!localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS)) {
     localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(INITIAL_ADMIN_TICKETS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.ARBITRATION_CASES)) {
+    localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(INITIAL_ARBITRATION_CASES));
+  } else {
+    try {
+      const existing: ArbitrationCase[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARBITRATION_CASES) || '[]');
+      const existingIds = new Set(existing.map((c) => c.id));
+      let changed = false;
+      for (const item of INITIAL_ARBITRATION_CASES) {
+        if (!existingIds.has(item.id)) {
+          existing.push(item);
+          changed = true;
+        }
+      }
+      if (changed) {
+        localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(existing));
+      }
+    } catch {
+      localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(INITIAL_ARBITRATION_CASES));
+    }
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.ARBITRATION_MEMBERS)) {
+    localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(INITIAL_ARBITRATION_MEMBERS));
+  } else {
+    try {
+      const existing: ArbitrationCommitteeMember[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARBITRATION_MEMBERS) || '[]');
+      const existingIds = new Set(existing.map((m) => m.id));
+      let changed = false;
+      for (const item of INITIAL_ARBITRATION_MEMBERS) {
+        if (!existingIds.has(item.id)) {
+          existing.push(item);
+          changed = true;
+        }
+      }
+      if (changed) {
+        localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(existing));
+      }
+    } catch {
+      localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(INITIAL_ARBITRATION_MEMBERS));
+    }
   }
 }
 
@@ -3229,6 +3292,316 @@ export const StorageService = {
       }
     }
     return true;
+  },
+
+  // ========================================================
+  // CONSELHO DE ARBITRAGEM (ARBCOM) - MÉTODOS DE ARMAZENAMENTO
+  // ========================================================
+
+  async getArbitrationCases(langCode?: string): Promise<ArbitrationCase[]> {
+    initializeLocalStorage();
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'arbitration_cases'));
+        if (!snap.empty) {
+          const list: ArbitrationCase[] = [];
+          snap.forEach((d) => list.push(d.data() as ArbitrationCase));
+          localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(list));
+          if (langCode && langCode !== 'all') {
+            return list.filter((c) => c.langCode.toLowerCase() === langCode.toLowerCase());
+          }
+          return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
+      } catch (err) {
+        console.warn('Firestore getArbitrationCases error, fallback to localStorage:', err);
+      }
+    }
+
+    const local: ArbitrationCase[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.ARBITRATION_CASES) || '[]'
+    );
+    if (langCode && langCode !== 'all') {
+      return local
+        .filter((c) => c.langCode.toLowerCase() === langCode.toLowerCase())
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+    return local.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  async getArbitrationCaseById(caseId: string): Promise<ArbitrationCase | null> {
+    const list = await this.getArbitrationCases();
+    return list.find((c) => c.id === caseId) || null;
+  },
+
+  async saveArbitrationCase(arbCase: ArbitrationCase): Promise<void> {
+    const list = await this.getArbitrationCases();
+    const idx = list.findIndex((c) => c.id === arbCase.id);
+    if (idx >= 0) {
+      list[idx] = arbCase;
+    } else {
+      list.unshift(arbCase);
+    }
+    localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'arbitration_cases', arbCase.id), arbCase);
+      } catch (err) {
+        console.warn('Firestore saveArbitrationCase error:', err);
+      }
+    }
+  },
+
+  async createArbitrationCase(
+    input: Omit<
+      ArbitrationCase,
+      'id' | 'caseNumber' | 'createdAt' | 'deliberations' | 'comments' | 'status'
+    >
+  ): Promise<{ success: boolean; message: string; createdCase?: ArbitrationCase }> {
+    if (!input.title || !input.title.trim()) {
+      return { success: false, message: 'O título do processo é obrigatório.' };
+    }
+    if (!input.targetUsername || !input.targetUsername.trim()) {
+      return { success: false, message: 'O nome do usuário, moderador ou administrador alvo é obrigatório.' };
+    }
+    if (!input.summary || !input.summary.trim()) {
+      return { success: false, message: 'O resumo dos fatos é obrigatório.' };
+    }
+    if (!input.evidenceWikitext || !input.evidenceWikitext.trim()) {
+      return { success: false, message: 'O dossiê de provas / evidências é obrigatório.' };
+    }
+
+    const lang = (input.langCode || 'pt').toUpperCase();
+    const currentYear = new Date().getFullYear();
+    const existingCases = await this.getArbitrationCases(input.langCode);
+    const seq = String(existingCases.length + 1).padStart(3, '0');
+    const caseNumber = `ARB-${lang}-${currentYear}-${seq}`;
+    const id = `arb-case-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+
+    const newCase: ArbitrationCase = {
+      ...input,
+      id,
+      caseNumber,
+      status: 'aberto',
+      createdAt: new Date().toISOString(),
+      deliberations: [],
+      comments: [],
+    };
+
+    await this.saveArbitrationCase(newCase);
+
+    // Audit log
+    await this.addAuditLogEntry({
+      userId: input.requesterUid || 'anon',
+      userName: input.requesterUsername || 'Anônimo',
+      action: 'ticket_created',
+      target: `Conselho de Arbitragem: ${caseNumber}`,
+      details: `Petição protocolada contra [${input.targetType.toUpperCase()}] ${input.targetUsername} (${input.category})`,
+    });
+
+    return {
+      success: true,
+      message: `Processo de Arbitragem ${caseNumber} protocolado com sucesso!`,
+      createdCase: newCase,
+    };
+  },
+
+  async addArbitrationDeliberation(
+    caseId: string,
+    deliberation: Omit<ArbitrationDeliberation, 'id' | 'timestamp'>
+  ): Promise<{ success: boolean; message: string; updatedCase?: ArbitrationCase }> {
+    const arbCase = await this.getArbitrationCaseById(caseId);
+    if (!arbCase) return { success: false, message: 'Processo não encontrado.' };
+
+    const newDeliberation: ArbitrationDeliberation = {
+      ...deliberation,
+      id: `delib-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      timestamp: new Date().toISOString(),
+    };
+
+    const existingIdx = arbCase.deliberations.findIndex(
+      (d) => d.arbitratorUid === deliberation.arbitratorUid || d.arbitratorName === deliberation.arbitratorName
+    );
+
+    let updatedDelibs = [...arbCase.deliberations];
+    if (existingIdx >= 0) {
+      updatedDelibs[existingIdx] = newDeliberation;
+    } else {
+      updatedDelibs.push(newDeliberation);
+    }
+
+    const updatedCase: ArbitrationCase = {
+      ...arbCase,
+      deliberations: updatedDelibs,
+      status: arbCase.status === 'aberto' ? 'em_instrucao' : arbCase.status,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await this.saveArbitrationCase(updatedCase);
+    return {
+      success: true,
+      message: 'Voto e manifestação do árbitro registrados com sucesso.',
+      updatedCase,
+    };
+  },
+
+  async addArbitrationComment(
+    caseId: string,
+    comment: Omit<ArbitrationComment, 'id' | 'timestamp'>
+  ): Promise<{ success: boolean; message: string; updatedCase?: ArbitrationCase }> {
+    const arbCase = await this.getArbitrationCaseById(caseId);
+    if (!arbCase) return { success: false, message: 'Processo não encontrado.' };
+
+    const newComment: ArbitrationComment = {
+      ...comment,
+      id: `comm-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      timestamp: new Date().toISOString(),
+    };
+
+    const updatedCase: ArbitrationCase = {
+      ...arbCase,
+      comments: [...arbCase.comments, newComment],
+      updatedAt: new Date().toISOString(),
+    };
+
+    await this.saveArbitrationCase(updatedCase);
+    return {
+      success: true,
+      message: 'Manifestação anexada aos autos do processo.',
+      updatedCase,
+    };
+  },
+
+  async submitArbitrationDefense(
+    caseId: string,
+    defenseStatement: string
+  ): Promise<{ success: boolean; message: string; updatedCase?: ArbitrationCase }> {
+    const arbCase = await this.getArbitrationCaseById(caseId);
+    if (!arbCase) return { success: false, message: 'Processo não encontrado.' };
+
+    const updatedCase: ArbitrationCase = {
+      ...arbCase,
+      defenseStatement,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await this.saveArbitrationCase(updatedCase);
+    return {
+      success: true,
+      message: 'Manifestação de defesa juntada aos autos com sucesso.',
+      updatedCase,
+    };
+  },
+
+  async updateArbitrationCaseStatus(
+    caseId: string,
+    status: ArbitrationCaseStatus,
+    adminOrArbUser?: UserProfile
+  ): Promise<{ success: boolean; message: string; updatedCase?: ArbitrationCase }> {
+    const arbCase = await this.getArbitrationCaseById(caseId);
+    if (!arbCase) return { success: false, message: 'Processo não encontrado.' };
+
+    const updatedCase: ArbitrationCase = {
+      ...arbCase,
+      status,
+      updatedAt: new Date().toISOString(),
+      closedAt: (status === 'concluido' || status === 'rejeitado') ? new Date().toISOString() : arbCase.closedAt,
+    };
+
+    await this.saveArbitrationCase(updatedCase);
+    return {
+      success: true,
+      message: `Status do processo alterado para "${status}".`,
+      updatedCase,
+    };
+  },
+
+  async concludeArbitrationCase(
+    caseId: string,
+    ruling: ArbitrationRuling
+  ): Promise<{ success: boolean; message: string; updatedCase?: ArbitrationCase }> {
+    const arbCase = await this.getArbitrationCaseById(caseId);
+    if (!arbCase) return { success: false, message: 'Processo não encontrado.' };
+
+    const updatedCase: ArbitrationCase = {
+      ...arbCase,
+      status: 'concluido',
+      finalRuling: ruling,
+      closedAt: ruling.closedAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    await this.saveArbitrationCase(updatedCase);
+
+    // Audit log
+    await this.addAuditLogEntry({
+      userId: ruling.closedByArbitrator,
+      userName: ruling.closedByArbitrator,
+      action: 'ticket_resolved',
+      target: `Acórdão ArbCom: ${arbCase.caseNumber}`,
+      details: `Processo concluído com decisão de [${ruling.remedyType.toUpperCase()}]. Placar: ${ruling.votesInFavor} a favor / ${ruling.votesAgainst} contra.`,
+    });
+
+    return {
+      success: true,
+      message: `Acórdão final do Conselho publicado e processo ${arbCase.caseNumber} arquivado como julgado!`,
+      updatedCase,
+    };
+  },
+
+  async getArbitrationMembers(langCode?: string): Promise<ArbitrationCommitteeMember[]> {
+    initializeLocalStorage();
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'arbitration_members'));
+        if (!snap.empty) {
+          const list: ArbitrationCommitteeMember[] = [];
+          snap.forEach((d) => list.push(d.data() as ArbitrationCommitteeMember));
+          localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(list));
+          if (langCode && langCode !== 'all') {
+            return list.filter((m) => m.langCode.toLowerCase() === langCode.toLowerCase());
+          }
+          return list;
+        }
+      } catch (err) {
+        console.warn('Firestore getArbitrationMembers error:', err);
+      }
+    }
+
+    const local: ArbitrationCommitteeMember[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.ARBITRATION_MEMBERS) || '[]'
+    );
+    if (langCode && langCode !== 'all') {
+      return local.filter((m) => m.langCode.toLowerCase() === langCode.toLowerCase());
+    }
+    return local;
+  },
+
+  async addArbitrationMember(
+    member: Omit<ArbitrationCommitteeMember, 'id'>
+  ): Promise<{ success: boolean; message: string; createdMember?: ArbitrationCommitteeMember }> {
+    const list = await this.getArbitrationMembers();
+    const id = `arb-${member.langCode}-${Date.now()}`;
+    const newMember: ArbitrationCommitteeMember = {
+      ...member,
+      id,
+    };
+    list.push(newMember);
+    localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'arbitration_members', id), newMember);
+      } catch (err) {
+        console.warn('Firestore addArbitrationMember error:', err);
+      }
+    }
+
+    return {
+      success: true,
+      message: `Árbitro ${member.displayName} adicionado ao Conselho do idioma ${member.langCode.toUpperCase()}.`,
+      createdMember: newMember,
+    };
   },
 
   async clearLocalCache(): Promise<void> {

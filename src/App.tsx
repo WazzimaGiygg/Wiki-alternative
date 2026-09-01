@@ -31,6 +31,7 @@ import { SiteUpdatesView } from './components/SiteUpdatesView';
 import { FileUploadView } from './components/FileUploadView';
 import { FilePageView } from './components/FilePageView';
 import { FilesGalleryView } from './components/FilesGalleryView';
+import { ArbitrationCommitteeView } from './components/ArbitrationCommitteeView';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileSearchModal } from './components/MobileSearchModal';
@@ -543,6 +544,7 @@ export default function App() {
               onNavigateToUsersList={() => handleNavigate('admin-users')}
               onNavigateToUpload={() => handleNavigateToUpload()}
               onNavigateToFilesList={() => handleNavigate('files-list')}
+              onNavigateToArbitration={() => handleNavigate('arbitration')}
               initialTab="all"
             />
           )}
@@ -562,6 +564,7 @@ export default function App() {
               onNavigateToUsersList={() => handleNavigate('admin-users')}
               onNavigateToUpload={() => handleNavigateToUpload()}
               onNavigateToFilesList={() => handleNavigate('files-list')}
+              onNavigateToArbitration={() => handleNavigate('arbitration')}
               initialTab="watchlist"
             />
           )}
@@ -658,6 +661,15 @@ export default function App() {
               currentUser={user}
               onNavigateToUser={handleNavigateToUser}
               onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'arbitration' && (
+            <ArbitrationCommitteeView
+              user={user}
+              onNavigateToUser={handleNavigateToUser}
+              onNavigateToArticle={handleSelectArticle}
+              onLoginClick={() => setShowLgpdModal(true)}
             />
           )}
 

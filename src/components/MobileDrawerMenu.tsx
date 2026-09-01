@@ -31,6 +31,7 @@ import {
   Users,
   Upload,
   Image as ImageIcon,
+  Gavel,
 } from 'lucide-react';
 import { UserProfile, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -330,6 +331,23 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
                 </div>
                 <span className="text-[9px] font-bold font-mono px-1 rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
                   VOTO
+                </span>
+              </button>
+
+              <button
+                onClick={() => handleItemClick('arbitration')}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition ${
+                  currentView === 'arbitration'
+                    ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Gavel size={16} className="text-purple-600 dark:text-purple-400" />
+                  <span>Conselho de Arbitragem</span>
+                </div>
+                <span className="text-[9px] font-bold font-mono px-1 rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
+                  ARBCOM
                 </span>
               </button>
 

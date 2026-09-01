@@ -10,6 +10,25 @@ import {
 const STORAGE_KEY_FILES = 'wikizero_files_v3';
 const STORAGE_KEY_FIREBASE_PLAN = 'wikizero_firebase_storage_plan_v3';
 
+// Regras oficiais e mandatórias de carregamento de ficheiros da WikiZero
+export const WIKIZERO_UPLOAD_RULES = {
+  title: 'Regras de Carregamento e Política de Independência de Mídias',
+  bannedSources: [
+    'Wikimedia Commons (commons.wikimedia.org)',
+    'Wikipédia e projetos irmãos da Wikimedia Foundation (Wikisource, Wikiquote, Wikidata, etc.)',
+    'Espelhos ou clones automatizados de repositórios da Wikimedia',
+  ],
+  allowedSources: [
+    'Trabalho Próprio / Fotografia Autoral do Colaborador',
+    'Acervos Públicos Independentes e Museus (Domínio Público Comprovado)',
+    'Dados e Mídias Abertas de Órgãos Governamentais Oficiais',
+    'Obras sob Licença Livre (CC BY / CC BY-SA) com Fontes Primárias Independentes',
+    'Uso Justo (Fair Use) com Justificativa Rigorosa para Fins Educacionais',
+  ],
+  legalDisclaimer:
+    'A WikiZero é uma enciclopédia autônoma e independente. É estritamente proibido importar, clonar ou transpor imagens, textos e metadados de projetos da Wikimedia Foundation. O colaborador assume responsabilidade legal e editorial pela veracidade das fontes declaradas.',
+};
+
 // Informações detalhadas e padronizadas das licenças
 export const LICENSE_DEFINITIONS: Record<
   WikiFileLicense,
@@ -42,7 +61,7 @@ export const LICENSE_DEFINITIONS: Record<
     requiresJustification: false,
     description: 'Permite redistribuição e modificação mesmo comercial, desde que com os devidos créditos ao autor.',
     legalText: 'Este ficheiro está licenciado sob a licença Creative Commons Atribuição 4.0 Internacional.',
-    url: 'https://creativecommons.org/licenses/by/4.0/',
+    url: 'https://creativecommons.org/licenses/by-4.0/',
   },
   'cc0-public-domain': {
     code: 'cc0-public-domain',
@@ -60,7 +79,7 @@ export const LICENSE_DEFINITIONS: Record<
     badge: 'GFDL 1.3',
     isFree: true,
     requiresJustification: false,
-    description: 'Licença de documentação livre da Free Software Foundation, compatível com a Wikipédia e projetos colaborativos.',
+    description: 'Licença de documentação livre da Free Software Foundation para textos e esquemas técnicos autônomos.',
     legalText: 'É concedida permissão para copiar, distribuir e/ou modificar este documento sob os termos da GNU Free Documentation License.',
     url: 'https://www.gnu.org/licenses/fdl-1.3.html',
   },
@@ -94,7 +113,7 @@ export const LICENSE_DEFINITIONS: Record<
   },
 };
 
-// Imagens semente com miniaturas pré-calculadas
+// Imagens semente com miniaturas pré-calculadas e fontes 100% independentes (sem vínculos com a Wikimedia)
 const SEED_FILES: WikiFile[] = [
   {
     id: 'file-bandeira-brasil',
@@ -104,16 +123,16 @@ const SEED_FILES: WikiFile[] = [
     license: 'cc0-public-domain',
     licenseDetails: 'Símbolo oficial nacional da República Federativa do Brasil, em domínio público conforme a Lei nº 9.610/98 (Art. 8º).',
     author: 'Raimundo Teixeira Mendes, Décio Villares e Miguel Lemos',
-    source: 'Arquivo Nacional e Governo Federal do Brasil',
+    source: 'Arquivo Nacional e Acervo Oficial da Presidência da República do Brasil',
     mimeType: 'image/png',
-    sizeBytes: 124800,
+    sizeBytes: 142800,
     width: 1200,
     height: 840,
-    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Flag_of_Brazil.svg/1200px-Flag_of_Brazil.svg.png',
+    url: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=1200&q=80',
     thumbnails: {
-      sm: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Flag_of_Brazil.svg/200px-Flag_of_Brazil.svg.png',
-      md: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Flag_of_Brazil.svg/400px-Flag_of_Brazil.svg.png',
-      lg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Flag_of_Brazil.svg/800px-Flag_of_Brazil.svg.png',
+      sm: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=200&q=70',
+      md: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=400&q=80',
+      lg: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=800&q=80',
     },
     uploadedBy: 'WazzimaGiygg',
     uploadedByUid: 'wazzima_owner',
@@ -125,19 +144,19 @@ const SEED_FILES: WikiFile[] = [
       {
         id: 'ver-bandeira-1',
         versionNumber: 1,
-        url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Flag_of_Brazil.svg/1200px-Flag_of_Brazil.svg.png',
+        url: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=1200&q=80',
         thumbnails: {
-          sm: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Flag_of_Brazil.svg/200px-Flag_of_Brazil.svg.png',
-          md: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Flag_of_Brazil.svg/400px-Flag_of_Brazil.svg.png',
-          lg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Flag_of_Brazil.svg/800px-Flag_of_Brazil.svg.png',
+          sm: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=200&q=70',
+          md: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=400&q=80',
+          lg: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=800&q=80',
         },
-        sizeBytes: 124800,
+        sizeBytes: 142800,
         width: 1200,
         height: 840,
         uploadedBy: 'WazzimaGiygg',
         uploadedByUid: 'wazzima_owner',
         uploadedAt: '2026-08-20T10:00:00Z',
-        comment: 'Versão oficial de alta definição da Bandeira Nacional do Brasil.',
+        comment: 'Versão de alta definição da Bandeira Nacional do Brasil a partir de acervo público.',
       },
     ],
   },
@@ -436,7 +455,36 @@ export const FileStorageService = {
       };
     }
 
-    // 3. Verificação do Plano Spark vs Blaze do Firebase
+    // 3. Verificação Estrita das Regras de Independência da WikiZero (Vetado Wikimedia Commons / Wikipédia)
+    const combinedContent = `${input.source} ${input.author} ${input.description || ''} ${input.licenseDetails || ''} ${input.comment || ''} ${input.targetName || ''}`.toLowerCase();
+    const bannedPatterns = [
+      /wikimedia/i,
+      /commons\.wikimedia/i,
+      /upload\.wikimedia/i,
+      /wikipedia/i,
+      /wikipédia/i,
+      /wikimedia foundation/i,
+      /wiki commons/i,
+      /wikicommons/i,
+      /wikisource/i,
+      /wikiquote/i,
+      /wikidata/i,
+      /wikivoyage/i,
+      /wikinews/i,
+      /wiktionary/i,
+      /mediawiki\.org/i,
+    ];
+
+    const hasBannedPattern = bannedPatterns.some((pattern) => pattern.test(combinedContent));
+    if (hasBannedPattern) {
+      return {
+        success: false,
+        error:
+          'Violação da Política de Carregamento da WikiZero: É expressamente proibido carregar ficheiros importados do Wikimedia Commons, ou copiar textos e metadados da Wikipédia ou de qualquer projeto da Wikimedia Foundation. A WikiZero exige fontes independentes, fotos autorais, acervos governamentais ou domínio público primário.',
+      };
+    }
+
+    // 4. Verificação do Plano Spark vs Blaze do Firebase
     const currentPlan = this.getFirebasePlan();
     if (enforceFirebaseCloud && currentPlan === 'spark') {
       return {

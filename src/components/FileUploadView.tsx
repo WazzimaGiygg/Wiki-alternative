@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Upload,
   Image as ImageIcon,
@@ -17,9 +17,12 @@ import {
   Cloud,
   HardDrive,
   ExternalLink,
+  ShieldAlert,
+  Ban,
+  FileWarning,
 } from 'lucide-react';
 import { UserProfile, WikiFileLicense, UploadFileInput, WikiFile } from '../types';
-import { FileStorageService, LICENSE_DEFINITIONS } from '../services/fileStorageService';
+import { FileStorageService, LICENSE_DEFINITIONS, WIKIZERO_UPLOAD_RULES } from '../services/fileStorageService';
 
 interface FileUploadViewProps {
   user: UserProfile | null;
@@ -53,6 +56,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
   const [source, setSource] = useState<string>('Trabalho próprio');
   const [categoriesText, setCategoriesText] = useState<string>('Ficheiros da WikiZero');
   const [uploadComment, setUploadComment] = useState<string>('Envio inicial do ficheiro');
+  const [agreedToIndependentPolicy, setAgreedToIndependentPolicy] = useState<boolean>(false);
 
   // Firebase Storage Plan State (Spark vs Blaze)
   const [firebasePlan, setFirebasePlan] = useState<'spark' | 'blaze'>(() => FileStorageService.getFirebasePlan());
@@ -71,6 +75,24 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
       setTargetName(initialTargetName.replace(/^(?:Arquivo|Ficheiro|File|Imagem|Image):/i, '').replace(/\s+/g, '_'));
     }
   }, [initialTargetName]);
+
+  // Real-time Wikimedia / Wikipedia violation detector
+  const detectedBannedSource = useMemo(() => {
+    const text = `${source} ${author} ${description} ${licenseDetails} ${targetName}`.toLowerCase();
+    const banned = [
+      'wikimedia',
+      'commons.wikimedia',
+      'upload.wikimedia',
+      'wikipedia',
+      'wikipédia',
+      'wikimedia foundation',
+      'wiki commons',
+      'wikicommons',
+      'wikidata',
+      'wikisource',
+    ];
+    return banned.find((b) => text.includes(b)) || null;
+  }, [source, author, description, licenseDetails, targetName]);
 
   const handlePlanToggle = (plan: 'spark' | 'blaze') => {
     setFirebasePlan(plan);
@@ -155,6 +177,21 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
       return;
     }
 
+    // Verificação de Regras de Não Uso da Wikimedia / Wikipédia
+    if (detectedBannedSource) {
+      setErrorMessage(
+        'Upload Recusado: Detectada menção ou origem vinculada à Wikimedia Commons / Wikipédia. A política da WikiZero proíbe expressamente a importação de imagens ou textos desses repositórios.'
+      );
+      return;
+    }
+
+    if (!agreedToIndependentPolicy) {
+      setErrorMessage(
+        'É obrigatório declarar ciência e conformidade com a Política de Independência de Conteúdo e Não Importação da Wikimedia Commons/Wikipédia.'
+      );
+      return;
+    }
+
     if (license === 'fair-use' && (!fairUseJustification || fairUseJustification.trim().length < 15)) {
       setErrorMessage('Para a licença de Uso Justo (Fair Use), é obrigatório fornecer uma justificativa detalhada de uso aceitável (mínimo 15 caracteres).');
       return;
@@ -227,7 +264,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
             <span>Carregamento de Ficheiros</span>
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            Envie imagens e documentos multimídia para uso nos artigos da WikiZero.
+            Envie imagens e documentos multimídia autônomos para os artigos da WikiZero.
           </p>
         </div>
 
@@ -238,6 +275,67 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
           <ImageIcon className="w-4 h-4 text-slate-500" />
           <span>Ver Galeria de Ficheiros</span>
         </button>
+      </div>
+
+      {/* PAINEL DE REGRAS MANDATÓRIAS (PROIBIÇÃO DE WIKIMEDIA COMMONS & WIKIPÉDIA) */}
+      <div className="mb-6 rounded-xl border-2 border-rose-300 dark:border-rose-900/70 bg-gradient-to-br from-rose-50/70 via-white to-amber-50/50 dark:from-rose-950/30 dark:via-slate-900 dark:to-amber-950/20 p-5 shadow-xs">
+        <div className="flex items-start gap-3.5">
+          <div className="p-2.5 rounded-lg bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 shrink-0 mt-0.5 border border-rose-200 dark:border-rose-800">
+            <ShieldAlert className="w-6 h-6" />
+          </div>
+          <div className="space-y-2 flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-bold text-rose-950 dark:text-rose-200 uppercase tracking-wider font-mono flex items-center gap-2">
+                <span>Diretrizes e Regras Rígidas de Carregamento</span>
+                <span className="px-2 py-0.5 text-[10px] rounded-full bg-rose-200 dark:bg-rose-900 text-rose-900 dark:text-rose-100 font-sans font-bold">
+                  Política Editorial Estrita
+                </span>
+              </h2>
+            </div>
+
+            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              Para preservar a total soberania, originalidade e independência da WikiZero, estabelecem-se as seguintes regras vinculativas para todos os utilizadores:
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-xs">
+              <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-850/80 border border-rose-200 dark:border-rose-900/50 space-y-1">
+                <div className="font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1.5 font-mono text-[11px] uppercase">
+                  <Ban className="w-4 h-4 text-rose-600" /> Proibição de Wikimedia Commons
+                </div>
+                <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-snug">
+                  É <strong>estritamente proibido</strong> importar, espelhar ou enviar imagens, ilustrações ou arquivos copiados diretamente do <em>Wikimedia Commons</em> (<code className="font-mono text-[10px]">commons.wikimedia.org</code>).
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-850/80 border border-rose-200 dark:border-rose-900/50 space-y-1">
+                <div className="font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1.5 font-mono text-[11px] uppercase">
+                  <Ban className="w-4 h-4 text-rose-600" /> Proibição de Dados da Wikipédia
+                </div>
+                <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-snug">
+                  É <strong>vedado</strong> copiar descrições, metadados, fichas ou conteúdos textuais da <em>Wikipédia</em> ou de outros projetos da <em>Wikimedia Foundation</em>. Todas as informações devem ser autônomas.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-850/80 border border-emerald-200 dark:border-emerald-900/50 space-y-1">
+                <div className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 font-mono text-[11px] uppercase">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Fontes e Acervos Permitidos
+                </div>
+                <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-snug">
+                  São permitidos: fotografias autorais (trabalho próprio), acervos de domínio público de órgãos governamentais/museus, dados abertos oficiais e mídias sob licenças livres com fonte primária comprovada.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-850/80 border border-indigo-200 dark:border-indigo-900/50 space-y-1">
+                <div className="font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5 font-mono text-[11px] uppercase">
+                  <Shield className="w-4 h-4 text-indigo-600" /> Responsabilidade do Usuário
+                </div>
+                <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-snug">
+                  O autor do upload assume integral responsabilidade legal e editorial pela veracidade das fontes, direitos autorais declarados e observância da Lei nº 9.610/98.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* FIREBASE PLAN BANNER (SPARK VS BLAZE NOTIFICATION) */}
@@ -293,7 +391,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
                 Ficheiro enviado com sucesso!
               </h2>
               <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-1">
-                O arquivo <strong className="font-mono">{successFile.name}</strong> foi registrado e as miniaturas em diferentes tamanhos (150px, 320px, 800px) foram geradas.
+                O arquivo <strong className="font-mono">{successFile.name}</strong> foi registrado e as miniaturas em diferentes tamanhos (150px, 320px, 800px) foram geradas em conformidade com as políticas da WikiZero.
               </p>
 
               {/* Wikitext Syntax Box */}
@@ -328,6 +426,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
                     setPreviewUrl(null);
                     setTargetName('');
                     setDescription('');
+                    setAgreedToIndependentPolicy(false);
                   }}
                   className="px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition"
                 >
@@ -346,6 +445,21 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
           <div className="flex-1 text-xs">
             <span className="font-bold block mb-1">Erro no Processamento:</span>
             <p className="leading-relaxed font-sans">{errorMessage}</p>
+          </div>
+        </div>
+      )}
+
+      {/* DETECÇÃO EM TEMPO REAL DE ORIGEM PROIBIDA (COMMONS / WIKIPEDIA) */}
+      {detectedBannedSource && (
+        <div className="mb-6 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 p-4 text-rose-900 dark:text-rose-200 flex items-start gap-3 shadow-xs">
+          <Ban className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+          <div className="flex-1 text-xs">
+            <span className="font-bold block mb-1">
+              ⚠️ Violação de Política: Origem Proibida Detectada ({detectedBannedSource})
+            </span>
+            <p className="leading-relaxed font-sans">
+              Você inseriu termos ou links associados ao <strong>Wikimedia Commons</strong> ou à <strong>Wikipédia</strong>. As regras da WikiZero vetam expressamente mídias importadas dessas fontes. Por favor, utilize fotografias autorais, fontes abertas independentes ou arquivos do acervo público.
+            </p>
           </div>
         </div>
       )}
@@ -463,7 +577,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="Descreva o que a imagem retrata, contexto histórico, local e especificações relevantes..."
+              placeholder="Descreva o que a imagem retrata de forma autônoma (não copie de artigos da Wikipédia)..."
               className="w-full p-3 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none leading-relaxed"
             />
           </div>
@@ -487,171 +601,191 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider font-mono flex items-center gap-2">
               <span className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs">
-                3
-              </span>
-              <span>Licenciamento e Atribuição Legal</span>
-            </h2>
-            <span className="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase font-mono tracking-wider">
-              Obrigatório
+              3
             </span>
-          </div>
+            <span>Licenciamento e Atribuição Legal</span>
+          </h2>
+          <span className="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase font-mono tracking-wider">
+            Obrigatório
+          </span>
+        </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-              Selecione a Licença de Direitos Autorais <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(Object.keys(LICENSE_DEFINITIONS) as WikiFileLicense[]).map((licKey) => {
-                const lic = LICENSE_DEFINITIONS[licKey];
-                const isSelected = license === licKey;
+        <div>
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+            Selecione a Licença de Direitos Autorais <span className="text-red-500">*</span>
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {(Object.keys(LICENSE_DEFINITIONS) as WikiFileLicense[]).map((licKey) => {
+              const lic = LICENSE_DEFINITIONS[licKey];
+              const isSelected = license === licKey;
 
-                return (
-                  <label
-                    key={licKey}
-                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition select-none ${
-                      isSelected
-                        ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-600'
-                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/40 dark:bg-slate-850/40'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="license"
-                      value={licKey}
-                      checked={isSelected}
-                      onChange={() => setLicense(licKey)}
-                      className="mt-1 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                          {lic.label}
-                        </span>
-                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold uppercase shrink-0 ${lic.isFree ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'}`}>
-                          {lic.badge}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
-                        {lic.description}
-                      </p>
+              return (
+                <label
+                  key={licKey}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition select-none ${
+                    isSelected
+                      ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-600'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/40 dark:bg-slate-855/40'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="license"
+                    value={licKey}
+                    checked={isSelected}
+                    onChange={() => setLicense(licKey)}
+                    className="mt-1 text-blue-600 focus:ring-blue-500"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {lic.label}
+                      </span>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-bold uppercase shrink-0 ${lic.isFree ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'}`}>
+                        {lic.badge}
+                      </span>
                     </div>
-                  </label>
-                );
-              })}
-            </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                      {lic.description}
+                    </p>
+                  </div>
+                </label>
+              );
+            })}
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                Autor / Criador Original <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Nome do fotógrafo, artista ou detentor dos direitos"
-                required
-                className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-                Fonte / Origem da Obra <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
-                placeholder="URL da publicação, livro, arquivo ou 'Trabalho próprio'"
-                required
-                className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+              Autor / Criador Original <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="Nome do fotógrafo, artista ou detentor dos direitos"
+              required
+              className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
           </div>
-
-          {/* Justificativa de Fair Use (Condicional) */}
-          {license === 'fair-use' && (
-            <div className="p-3.5 rounded-lg border border-amber-300 dark:border-amber-700/80 bg-amber-50/50 dark:bg-amber-950/20 animate-in fade-in duration-150">
-              <label className="block text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-1">
-                Justificativa Obrigatória de Uso Justo (Fair Use) <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={fairUseJustification}
-                onChange={(e) => setFairUseJustification(e.target.value)}
-                rows={2}
-                placeholder="Explique por que esta imagem com direitos reservados é necessária para o artigo e por que não há alternativa livre equivalente..."
-                required
-                className="w-full p-2.5 text-xs rounded border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-850 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-amber-500 focus:outline-none"
-              />
-              <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">
-                A WikiZero respeita rigorosamente a Lei de Direitos Autorais (Lei 9.610/98) e convenções internacionais de fair use.
-              </p>
-            </div>
-          )}
 
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-              Notas Adicionais de Licença / Detalhes Legais
+              Fonte / Origem da Obra <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              value={licenseDetails}
-              onChange={(e) => setLicenseDetails(e.target.value)}
-              placeholder="Ex: Foto registrada sob protocolo #12345 no Acervo Público..."
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              placeholder="Ex: Trabalho próprio, Acervo Público Estadual, etc. (Não use Wikimedia)"
+              required
               className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
         </div>
 
-        {/* 4. COMENTÁRIO DE ENVIO E SUBMIT */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="w-full sm:w-1/2">
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
-              Resumo / Comentário do Envio
+        {/* Justificativa de Fair Use (Condicional) */}
+        {license === 'fair-use' && (
+          <div className="p-3.5 rounded-lg border border-amber-300 dark:border-amber-700/80 bg-amber-50/50 dark:bg-amber-950/20 animate-in fade-in duration-150">
+            <label className="block text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-1">
+              Justificativa Obrigatória de Uso Justo (Fair Use) <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={uploadComment}
-              onChange={(e) => setUploadComment(e.target.value)}
-              placeholder="Ex: Upload inicial da fotografia em alta resolução"
-              className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            <textarea
+              value={fairUseJustification}
+              onChange={(e) => setFairUseJustification(e.target.value)}
+              rows={2}
+              placeholder="Explique por que esta imagem com direitos reservados é necessária para o artigo e por que não há alternativa livre equivalente..."
+              required
+              className="w-full p-2.5 text-xs rounded border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-850 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
+            <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">
+              A WikiZero respeita rigorosamente a Lei de Direitos Autorais (Lei 9.610/98) e convenções internacionais de fair use.
+            </p>
           </div>
+        )}
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <button
-              type="button"
-              onClick={onNavigateToGallery}
-              className="px-4 py-2.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isUploading || !selectedFile}
-              className={`px-6 py-2.5 text-xs font-bold rounded-lg text-white transition flex items-center gap-2 shadow-sm ${
-                isUploading || !selectedFile
-                  ? 'bg-slate-400 dark:bg-slate-700 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {isUploading ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Processando & Gerando Miniaturas...</span>
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4" />
-                  <span>Carregar Ficheiro</span>
-                </>
-              )}
-            </button>
-          </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+            Notas Adicionais de Licença / Detalhes Legais
+          </label>
+          <input
+            type="text"
+            value={licenseDetails}
+            onChange={(e) => setLicenseDetails(e.target.value)}
+            placeholder="Ex: Foto registrada sob protocolo #12345 no Acervo Público..."
+            className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
         </div>
-      </form>
-    </div>
+
+        {/* 4. TERMO DE CONFORMIDADE OBRIGATÓRIO (DECLARAÇÃO DE INDEPENDÊNCIA) */}
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700/80">
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={agreedToIndependentPolicy}
+              onChange={(e) => setAgreedToIndependentPolicy(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            />
+            <div className="text-xs text-slate-800 dark:text-slate-200 leading-snug">
+              <span className="font-bold text-rose-700 dark:text-rose-400 block mb-0.5">
+                Declaração Mandatória de Autonomia e Não Importação:
+              </span>
+              <span>
+                Declaro formalmente sob responsabilidade legal que este ficheiro e suas informações <strong>NÃO foram importados do Wikimedia Commons</strong>, da <strong>Wikipédia</strong> ou de qualquer entidade da Wikimedia Foundation. Atesto que os créditos, fonte primária e licença são fidedignos e autônomos conforme as regras da WikiZero.
+              </span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* 5. COMENTÁRIO DE ENVIO E SUBMIT */}
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="w-full sm:w-1/2">
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+            Resumo / Comentário do Envio
+          </label>
+          <input
+            type="text"
+            value={uploadComment}
+            onChange={(e) => setUploadComment(e.target.value)}
+            placeholder="Ex: Upload inicial da fotografia em alta resolução"
+            className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <button
+            type="button"
+            onClick={onNavigateToGallery}
+            className="px-4 py-2.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isUploading || !selectedFile || !agreedToIndependentPolicy || !!detectedBannedSource}
+            className={`px-6 py-2.5 text-xs font-bold rounded-lg text-white transition flex items-center gap-2 shadow-sm ${
+              isUploading || !selectedFile || !agreedToIndependentPolicy || !!detectedBannedSource
+                ? 'bg-slate-400 dark:bg-slate-700 cursor-not-allowed opacity-75'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {isUploading ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>Processando & Gerando Miniaturas...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                <span>Carregar Ficheiro</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
   );
 };
