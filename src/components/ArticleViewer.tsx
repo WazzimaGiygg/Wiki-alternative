@@ -29,6 +29,8 @@ import {
   ThumbsUp,
   Folder,
   Send,
+  FileDown,
+  FileText,
 } from 'lucide-react';
 import {
   WikiArticle,
@@ -44,6 +46,7 @@ import { ArticleHistoryView } from './ArticleHistoryView';
 import { TalkPageView } from './TalkPageView';
 import { WhatLinksHereView } from './WhatLinksHereView';
 import { MobileArticleTOC } from './MobileArticleTOC';
+import { PdfExportModal } from './PdfExportModal';
 import { StorageService } from '../services/storageService';
 
 interface ArticleViewerProps {
@@ -93,6 +96,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const [selectedRating, setSelectedRating] = useState<number>(5);
   const [ratingComment, setRatingComment] = useState('');
   const [hasRated, setHasRated] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -338,6 +342,15 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             }`}
           >
             {isPlayingAudio ? <VolumeX size={13} /> : <Volume2 size={13} />}
+          </button>
+
+          <button
+            onClick={() => setShowPdfModal(true)}
+            title="Exportar Artigo para Documento PDF"
+            className="px-2 py-1 rounded border border-rose-200 dark:border-rose-900/60 bg-rose-50/80 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition flex items-center gap-1 font-semibold text-xs shadow-xs"
+          >
+            <FileDown size={13} className="text-rose-600 dark:text-rose-400" />
+            <span className="hidden sm:inline">Exportar PDF</span>
           </button>
 
           <button
@@ -604,6 +617,21 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               <span className="font-bold text-emerald-600 dark:text-emerald-400">GNU General Public License v3.0</span>
             </div>
           </div>
+
+          {/* Export Article Box */}
+          <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex items-center justify-between gap-3">
+            <div>
+              <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">Exportação Editorial</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">Baixe este artigo em formato PDF para leitura offline, impressão ou arquivamento.</span>
+            </div>
+            <button
+              onClick={() => setShowPdfModal(true)}
+              className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs shrink-0"
+            >
+              <FileDown size={13} />
+              <span>Exportar PDF</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -611,7 +639,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       {activeTab === 'article' && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
           {/* Article Content Pane (3 columns) */}
-          <article className="lg:col-span-3 bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-7 shadow-xs space-y-6">
+          <article ref={contentRef} className="lg:col-span-3 bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-7 shadow-xs space-y-6">
             {/* Article Header */}
             <header className="border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -901,6 +929,14 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                     <Sparkles size={11} /> Metadados da Página
                   </button>
                 </li>
+                <li className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    onClick={() => setShowPdfModal(true)}
+                    className="text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 w-full text-left font-semibold"
+                  >
+                    <FileDown size={11} /> Exportar como PDF
+                  </button>
+                </li>
               </ul>
             </div>
 
@@ -928,6 +964,17 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           onToggleSpeech={toggleSpeech}
           onToggleWatch={handleToggleWatchlist}
           onShare={handleShare}
+        />
+      )}
+
+      {/* PDF Export Modal */}
+      {showPdfModal && (
+        <PdfExportModal
+          article={article}
+          pageName={page?.titulo || 'WikiZero'}
+          articleContentRef={contentRef}
+          isOpen={showPdfModal}
+          onClose={() => setShowPdfModal(false)}
         />
       )}
     </div>

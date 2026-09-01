@@ -29,10 +29,12 @@ import {
   Link2,
   Copy,
   Check,
+  FileDown,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
 import { buildUidPermalink } from '../utils/urlRouter';
+import { PdfExportModal } from './PdfExportModal';
 
 interface SpecialPagesViewProps {
   articles: WikiArticle[];
@@ -75,6 +77,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>(() => StorageService.getWatchlist());
   const [copiedShortcut, setCopiedShortcut] = useState<string | null>(null);
+  const [selectedArticleForPdf, setSelectedArticleForPdf] = useState<WikiArticle | null>(null);
 
   const handleCopyShortcut = (uid: string) => {
     const permalink = buildUidPermalink(uid);
@@ -508,6 +511,14 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
 
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => setSelectedArticleForPdf(art)}
+                    title="Exportar este artigo para PDF"
+                    className="p-1.5 rounded border border-rose-200 dark:border-rose-900/60 bg-rose-50/60 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition"
+                  >
+                    <FileDown size={14} />
+                  </button>
+
+                  <button
                     onClick={() => handleToggleWatch(art)}
                     title={StorageService.isWatched(art.id) ? 'Remover da Lista de Páginas Vigiadas' : 'Vigiar este artigo'}
                     className={`p-1.5 rounded transition ${
@@ -521,7 +532,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
 
                   <button
                     onClick={() => onNavigateToArticle(art.id)}
-                    className="px-2.5 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition flex items-center gap-1"
+                    className="px-2.5 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition flex items-center gap-1 font-semibold"
                   >
                     Ler <ArrowRight size={11} />
                   </button>
@@ -799,6 +810,16 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* PDF Export Modal */}
+      {selectedArticleForPdf && (
+        <PdfExportModal
+          article={selectedArticleForPdf}
+          pageName={pages.find((p) => p.uid === selectedArticleForPdf.pageUid)?.titulo || 'WikiZero'}
+          isOpen={!!selectedArticleForPdf}
+          onClose={() => setSelectedArticleForPdf(null)}
+        />
       )}
     </div>
   );

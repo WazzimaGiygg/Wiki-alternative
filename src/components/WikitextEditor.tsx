@@ -24,12 +24,14 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
+  FileDown,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WikiArticle, WikiPage, UserProfile } from '../types';
 import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
 import { SaveReasonModal } from './SaveReasonModal';
+import { PdfExportModal } from './PdfExportModal';
 import { htmlToWikitext } from '../utils/wikitextConverters';
 
 interface WikitextEditorProps {
@@ -81,6 +83,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [isSaving, setIsSaving] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
@@ -326,6 +329,16 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 <Eye size={12} /> Prévia
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setShowPdfModal(true)}
+              className="px-2 py-1 rounded border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition text-xs font-semibold flex items-center gap-1 shadow-xs"
+              title="Exportar rascunho/artigo para PDF"
+            >
+              <FileDown size={13} className="text-rose-600 dark:text-rose-400" />
+              <span className="hidden sm:inline">Exportar PDF</span>
+            </button>
 
             <button
               type="button"
@@ -684,6 +697,15 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => setShowPdfModal(true)}
+              className="px-3 py-1.5 text-xs font-semibold rounded border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition flex items-center gap-1 shadow-xs"
+            >
+              <FileDown size={13} className="text-rose-600 dark:text-rose-400" />
+              <span>Exportar PDF</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleOpenSaveModal}
               disabled={isSaving}
               className="px-4 py-1.5 text-xs font-semibold rounded bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1.5 flex-shrink-0 disabled:opacity-50 shadow-xs"
@@ -694,6 +716,27 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           </div>
         </div>
       </div>
+
+      {/* PDF Export Modal for Draft / Editing Article */}
+      {showPdfModal && (
+        <PdfExportModal
+          article={{
+            id: initialArticle?.id || 'draft-article',
+            titulo: titulo || 'Artigo Sem Título',
+            descricao: descricao,
+            categoria: categoria || 'Geral',
+            pageUid: pageUid || 'geral',
+            idioma: idioma || 'Português',
+            autor: user?.displayName || user?.username || 'Editor WikiZero',
+            dataCriacao: initialArticle?.dataCriacao || new Date().toISOString(),
+            dataModificacao: new Date().toISOString(),
+            versao: initialArticle?.versao || 1,
+          }}
+          pageName={pages.find((p) => p.uid === pageUid)?.titulo || 'WikiZero'}
+          isOpen={showPdfModal}
+          onClose={() => setShowPdfModal(false)}
+        />
+      )}
     </div>
   );
 };
