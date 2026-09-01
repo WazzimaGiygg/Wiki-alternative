@@ -47,6 +47,12 @@ import {
   ArticleHistoryItem,
   DeviceMode,
 } from './types';
+import {
+  getUidFromUrl,
+  setBrowserUid,
+  getCanonicalUid,
+  resolveNavigationUid,
+} from './utils/urlRouter';
 
 export default function App() {
   // === STATE MANAGEMENT ===
@@ -103,7 +109,80 @@ export default function App() {
     }
   }, [isDark]);
 
-  // Load initial data
+  // Navigate to any page/article/view/user/file by UID
+  const handleNavigateByUid = (rawUid: string, mode: 'push' | 'replace' = 'push') => {
+    if (!rawUid || !rawUid.trim()) {
+      handleNavigate('hub');
+      return;
+    }
+
+    const target = resolveNavigationUid(rawUid, articles, pages);
+
+    switch (target.type) {
+      case 'article':
+        setSelectedArticleId(target.articleId);
+        StorageService.incrementArticleViews(target.articleId);
+        setCurrentView('article');
+        break;
+
+      case 'article-title':
+        handleNavigateToArticleByTitle(target.title);
+        break;
+
+      case 'page':
+        handleSelectPage(target.pageUid);
+        break;
+
+      case 'view':
+        handleNavigate(target.view);
+        break;
+
+      case 'user':
+        handleNavigateToUser(target.username, target.initialTab || 'profile');
+        break;
+
+      case 'file':
+        handleNavigateToFile(target.fileName);
+        break;
+
+      case 'upload':
+        handleNavigateToUpload(target.targetName);
+        break;
+
+      case 'checkuser':
+        handleNavigateToCheckUser(target.target);
+        break;
+
+      case 'arbitration-case':
+        setCurrentView('arbitration');
+        break;
+
+      case 'create-page':
+        setShowCreatePageModal(true);
+        break;
+
+      case 'editor':
+        if (target.articleId) {
+          const art = articles.find((a) => a.id === target.articleId);
+          if (art) {
+            handleOpenEditorForEdit(art);
+          } else {
+            handleOpenNewEditor();
+          }
+        } else {
+          handleOpenNewEditor(target.pageUid);
+        }
+        break;
+
+      default:
+        setCurrentView('hub');
+        break;
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Load initial data and resolve URL query ?uid=
   useEffect(() => {
     const loadData = async () => {
       const p = await StorageService.getPages();
@@ -123,30 +202,128 @@ export default function App() {
       if (!lgpdAccepted) {
         setShowLgpdModal(true);
       }
+
+      // Check URL for ?uid= on first boot
+      const initialUid = getUidFromUrl();
+      if (initialUid) {
+        const target = resolveNavigationUid(initialUid, a, p);
+        switch (target.type) {
+          case 'article':
+            setSelectedArticleId(target.articleId);
+            StorageService.incrementArticleViews(target.articleId);
+            setCurrentView('article');
+            break;
+          case 'article-title':
+            const matchArt = await StorageService.getArticleByTitle(target.title);
+            if (matchArt) {
+              setSelectedArticleId(matchArt.id);
+              StorageService.incrementArticleViews(matchArt.id);
+              setCurrentView('article');
+            } else {
+              setEditingArticle({
+                id: '',
+                pageUid: p[0]?.uid || 'wikizero_info',
+                titulo: target.title,
+                descricao: `= ${target.title} =\nEste artigo ainda não foi escrito. Seja o primeiro a contribuir com seu conhecimento!`,
+                categoria: 'Geral',
+                idioma: 'Português',
+                dataCriacao: new Date().toISOString(),
+              });
+              setCurrentView('editor');
+            }
+            break;
+          case 'page':
+            setSelectedPageUid(target.pageUid);
+            const pageArticles = a.filter((item) => item.pageUid === target.pageUid);
+            if (pageArticles.length > 0) {
+              setSelectedArticleId(pageArticles[0].id);
+              setCurrentView('article');
+            } else {
+              setCurrentView('editor');
+            }
+            break;
+          case 'view':
+            setCurrentView(target.view);
+            break;
+          case 'user':
+            setTargetUserIdentifier(target.username);
+            setUserPageInitialTab(target.initialTab || 'profile');
+            setCurrentView('user-page');
+            break;
+          case 'file':
+            setSelectedFileName(target.fileName);
+            setCurrentView('file-page');
+            break;
+          case 'upload':
+            setUploadInitialTargetName(target.targetName || '');
+            setCurrentView('upload');
+            break;
+          case 'checkuser':
+            setTargetUserIdentifier(target.target);
+            setCurrentView('checkuser');
+            break;
+          case 'arbitration-case':
+            setCurrentView('arbitration');
+            break;
+          case 'create-page':
+            setShowCreatePageModal(true);
+            break;
+          case 'editor':
+            setCurrentView('editor');
+            break;
+          default:
+            break;
+        }
+      }
     };
     loadData();
   }, []);
 
-  // Listen to hash changes for deep linking
+  // Listen to browser Back/Forward (popstate) and hash changes for deep linking
   useEffect(() => {
-    const handleHash = () => {
-      const hash = window.location.hash;
-      if (hash.startsWith('#wiki:')) {
-        const title = decodeURIComponent(hash.substring(6));
-        handleNavigateToArticleByTitle(title);
-      } else if (hash.startsWith('#file:') || hash.startsWith('#arquivo:') || hash.startsWith('#ficheiro:')) {
-        const parts = hash.split(':');
-        const fname = decodeURIComponent(parts.slice(1).join(':'));
-        handleNavigateToFile(fname);
-      } else if (hash.startsWith('#upload:')) {
-        const fname = decodeURIComponent(hash.substring(8));
-        handleNavigateToUpload(fname);
+    const handleUrlChange = () => {
+      const uid = getUidFromUrl();
+      if (uid) {
+        handleNavigateByUid(uid, 'replace');
+      } else {
+        setCurrentView('hub');
       }
     };
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, [articles]);
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, [articles, pages]);
+
+  // Keep browser URL query string ?uid= synchronized with current application view and state
+  useEffect(() => {
+    if (pages.length === 0 && articles.length === 0) return;
+    const currentActiveArticle = currentView === 'article'
+      ? (articles.find((a) => a.id === selectedArticleId) || articles[0])
+      : null;
+
+    const canonicalUid = getCanonicalUid(currentView, {
+      selectedArticle: currentActiveArticle,
+      selectedPageUid,
+      targetUserIdentifier,
+      selectedFileName,
+      uploadInitialTargetName,
+    });
+
+    setBrowserUid(canonicalUid, 'replace');
+  }, [
+    currentView,
+    selectedArticleId,
+    selectedPageUid,
+    targetUserIdentifier,
+    selectedFileName,
+    uploadInitialTargetName,
+    articles,
+    pages,
+  ]);
 
   // === HANDLERS ===
   const handleToggleTheme = () => {
@@ -256,9 +433,45 @@ export default function App() {
 
   const handleSearchSubmit = () => {
     if (!searchQuery.trim()) return;
-    const directMatch = articles.find((a) => a.titulo.toLowerCase().includes(searchQuery.toLowerCase()));
+    const query = searchQuery.trim();
+
+    // Check if query is a UID parameter, prefix, or special route
+    if (
+      query.startsWith('?') ||
+      /^uid=/i.test(query) ||
+      /^(?:Special|User|File|Arquivo|Case|Page|CheckUser):/i.test(query) ||
+      query.startsWith('@')
+    ) {
+      handleNavigateByUid(query);
+      return;
+    }
+
+    // Direct match on article ID (e.g. art-1, art-wiki-001)
+    const matchById = articles.find((a) => a.id.toLowerCase() === query.toLowerCase());
+    if (matchById) {
+      handleSelectArticle(matchById.id);
+      return;
+    }
+
+    // Direct match on page collection UID (e.g. ferrovias)
+    const matchPage = pages.find(
+      (p) => p.uid.toLowerCase() === query.toLowerCase() || p.titulo.toLowerCase() === query.toLowerCase()
+    );
+    if (matchPage) {
+      handleSelectPage(matchPage.uid);
+      return;
+    }
+
+    // Direct or partial match on article title
+    const directMatch = articles.find((a) => a.titulo.toLowerCase() === query.toLowerCase());
     if (directMatch) {
       handleSelectArticle(directMatch.id);
+      return;
+    }
+
+    const partialMatch = articles.find((a) => a.titulo.toLowerCase().includes(query.toLowerCase()));
+    if (partialMatch) {
+      handleSelectArticle(partialMatch.id);
     } else {
       setCurrentView('hub');
     }

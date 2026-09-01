@@ -38,6 +38,7 @@ import {
   ArticleRatingData,
 } from '../types';
 import { parseWikitext, TocItem } from '../utils/wikitextParser';
+import { buildUidPermalink } from '../utils/urlRouter';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { ArticleHistoryView } from './ArticleHistoryView';
 import { TalkPageView } from './TalkPageView';
@@ -79,6 +80,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const [fontSize, setFontSize] = useState<number>(15);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedUid, setCopiedUid] = useState(false);
   const [showToc, setShowToc] = useState(true);
   const [activeTab, setActiveTab] = useState<
     'article' | 'talk' | 'source' | 'history' | 'what-links-here' | 'info'
@@ -177,6 +179,13 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleCopyUid = () => {
+    const permalink = buildUidPermalink(article.id);
+    navigator.clipboard.writeText(permalink);
+    setCopiedUid(true);
+    setTimeout(() => setCopiedUid(false), 2500);
   };
 
   const handlePrint = () => {
@@ -284,7 +293,19 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         </div>
 
         {/* High Density Toolbar Controls */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
+          {/* UID Permalink Button */}
+          <button
+            onClick={handleCopyUid}
+            title={`Copiar Link Permanente UID (?uid=${article.id})`}
+            className="px-2 py-1 rounded border border-blue-200 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition flex items-center gap-1 font-mono text-[11px] font-bold shadow-xs"
+          >
+            <Link2 size={12} className="text-blue-500" />
+            <span className="hidden sm:inline">UID:</span>
+            <span>{article.id}</span>
+            {copiedUid ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} className="text-slate-400" />}
+          </button>
+
           {/* Watchlist Star Toggle */}
           <button
             onClick={handleToggleWatchlist}
@@ -498,9 +519,61 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       {/* Tab: Info */}
       {activeTab === 'info' && (
         <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 shadow-xs space-y-4 text-xs">
-          <h3 className="font-bold text-sm text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2">
-            Metadados e Informações Técnicas
+          <h3 className="font-bold text-sm text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
+            <span>Metadados e Informações Técnicas</span>
+            <span className="font-mono text-xs font-normal text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+              ?uid={article.id}
+            </span>
           </h3>
+
+          {/* UID & Navigation Deep Links Card */}
+          <div className="p-3.5 rounded-lg border border-blue-200 dark:border-blue-850 bg-blue-50/40 dark:bg-blue-950/30 space-y-2.5">
+            <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-200">
+              <Link2 size={14} className="text-blue-600" />
+              <span>Navegação & Links Permanentes (UID)</span>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              Você pode acessar diretamente este artigo a qualquer momento digitando <code>?uid=</code> na barra de endereços do navegador:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <div className="p-2 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-400 font-mono block">UID Primário (ID)</span>
+                  <code className="font-bold text-blue-600 dark:text-blue-400">?uid={article.id}</code>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(buildUidPermalink(article.id));
+                    setCopiedUid(true);
+                    setTimeout(() => setCopiedUid(false), 2000);
+                  }}
+                  className="p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300"
+                  title="Copiar link"
+                >
+                  <Copy size={12} />
+                </button>
+              </div>
+
+              <div className="p-2 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-400 font-mono block">UID Semântico (Título)</span>
+                  <code className="font-bold text-slate-700 dark:text-slate-300">?uid={article.titulo.replace(/\s+/g, '_')}</code>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(buildUidPermalink(article.titulo.replace(/\s+/g, '_')));
+                    setCopiedUid(true);
+                    setTimeout(() => setCopiedUid(false), 2000);
+                  }}
+                  className="p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300"
+                  title="Copiar link"
+                >
+                  <Copy size={12} />
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
               <span className="text-[10px] text-slate-400 uppercase font-mono block">Título do Artigo</span>

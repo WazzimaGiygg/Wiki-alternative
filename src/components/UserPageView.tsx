@@ -36,6 +36,8 @@ import {
   Vote,
   Scale,
   UserX,
+  Link2,
+  Copy,
 } from 'lucide-react';
 import {
   UserProfile,
@@ -51,6 +53,7 @@ import {
 } from '../types';
 import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
+import { buildUidPermalink } from '../utils/urlRouter';
 
 interface UserPageViewProps {
   targetUserIdentifier: string; // uid or username
@@ -86,6 +89,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState<'profile' | 'talk' | 'contributions' | 'admin'>(initialTab);
   const [isLoading, setIsLoading] = useState(true);
+  const [copiedUid, setCopiedUid] = useState(false);
 
   // Profile Edit State
   const [isEditingBio, setIsEditingBio] = useState(false);
@@ -637,6 +641,23 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
 
             {/* Ações de Interação Rápida */}
             <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto justify-end">
+              {/* UID Permalink Button */}
+              <button
+                onClick={() => {
+                  const permalink = buildUidPermalink(`User:${userProfile.displayName || userProfile.username || userProfile.uid}`);
+                  navigator.clipboard.writeText(permalink);
+                  setCopiedUid(true);
+                  setTimeout(() => setCopiedUid(false), 2000);
+                }}
+                title={`Copiar Link Permanente UID (?uid=User:${userProfile.displayName || userProfile.username || userProfile.uid})`}
+                className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded text-xs font-semibold flex items-center gap-1.5 transition font-mono"
+              >
+                <Link2 size={13} className="text-blue-500" />
+                <span className="hidden sm:inline">UID:</span>
+                <span>User:{userProfile.displayName || userProfile.username}</span>
+                {copiedUid ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} className="text-slate-400" />}
+              </button>
+
               <button
                 onClick={() => {
                   setActiveTab('talk');

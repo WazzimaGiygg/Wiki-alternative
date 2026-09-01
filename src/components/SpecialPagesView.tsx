@@ -26,9 +26,13 @@ import {
   Upload,
   Image as ImageIcon,
   Gavel,
+  Link2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
+import { buildUidPermalink } from '../utils/urlRouter';
 
 interface SpecialPagesViewProps {
   articles: WikiArticle[];
@@ -70,6 +74,14 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>(() => StorageService.getWatchlist());
+  const [copiedShortcut, setCopiedShortcut] = useState<string | null>(null);
+
+  const handleCopyShortcut = (uid: string) => {
+    const permalink = buildUidPermalink(uid);
+    navigator.clipboard.writeText(permalink);
+    setCopiedShortcut(uid);
+    setTimeout(() => setCopiedShortcut(null), 2000);
+  };
 
   // Calculate Orphan pages (articles with 0 incoming links)
   const orphanArticles = useMemo(() => {
@@ -338,6 +350,47 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
             </div>
           </button>
         )}
+      </div>
+
+      {/* UID Quick Navigation Cheatsheet & Guide */}
+      <div className="p-3.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30 text-xs space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-200">
+            <Link2 size={14} className="text-blue-600" />
+            <span>Navegação Direta por ?uid= na Barra de Endereços</span>
+          </div>
+          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">Deep Linking Ativo</span>
+        </div>
+        <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+          Você pode navegar para qualquer lugar da WikiZero adicionando o parâmetro <code>?uid=</code> diretamente na URL do navegador ou pesquisando no campo de busca. Clique em um atalho para copiar seu link permanente:
+        </p>
+        <div className="flex items-center gap-2 flex-wrap text-[11px]">
+          {[
+            { label: 'Páginas Especiais', uid: 'Special:SpecialPages' },
+            { label: 'Mudanças Recentes', uid: 'Special:RecentChanges' },
+            { label: 'Conselho ArbCom', uid: 'Special:Arbitration' },
+            { label: 'Carregar Arquivo', uid: 'Special:Upload' },
+            { label: 'Galeria de Ficheiros', uid: 'Special:Files' },
+            { label: 'Verificador CheckUser', uid: 'Special:CheckUser' },
+            { label: 'Coleção Ferrovias', uid: 'ferrovias' },
+            { label: 'Artigo Linha 7', uid: 'art-1' },
+          ].map((item) => (
+            <button
+              key={item.uid}
+              onClick={() => handleCopyShortcut(item.uid)}
+              className="px-2.5 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-400 text-slate-700 dark:text-slate-300 flex items-center gap-1 font-mono transition text-[10px]"
+              title={`Copiar ?uid=${item.uid}`}
+            >
+              <span>{item.label}:</span>
+              <code className="text-blue-600 dark:text-blue-400 font-bold">?uid={item.uid}</code>
+              {copiedShortcut === item.uid ? (
+                <Check size={11} className="text-emerald-500 ml-1" />
+              ) : (
+                <Copy size={11} className="text-slate-400 ml-1" />
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Navigation Sub-Tabs */}

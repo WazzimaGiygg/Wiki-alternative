@@ -28,6 +28,7 @@ import {
 import { WikiFile, WikiFileVersion, UserProfile, WikiArticle } from '../types';
 import { FileStorageService, LICENSE_DEFINITIONS } from '../services/fileStorageService';
 import { parseWikitext } from '../utils/wikitextParser';
+import { buildUidPermalink } from '../utils/urlRouter';
 
 interface FilePageViewProps {
   fileName: string;
@@ -218,6 +219,27 @@ export const FilePageView: React.FC<FilePageViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* UID Permalink Button */}
+          <button
+            onClick={() => {
+              const permalink = buildUidPermalink(`File:${file.name}`);
+              navigator.clipboard.writeText(permalink);
+              setCopiedKey('uid-permalink');
+              setTimeout(() => setCopiedKey(null), 2000);
+            }}
+            title={`Copiar Link Permanente UID (?uid=File:${file.name})`}
+            className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition flex items-center gap-1.5 font-mono shadow-xs"
+          >
+            <Link2 className="w-3.5 h-3.5 text-blue-600" />
+            <span className="hidden sm:inline">UID:</span>
+            <span>File:{file.name}</span>
+            {copiedKey === 'uid-permalink' ? (
+              <Check className="w-3.5 h-3.5 text-emerald-600" />
+            ) : (
+              <Copy className="w-3.5 h-3.5 text-slate-400" />
+            )}
+          </button>
+
           <button
             onClick={() => setShowNewVersionModal(true)}
             className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition flex items-center gap-1.5 shadow-xs"
