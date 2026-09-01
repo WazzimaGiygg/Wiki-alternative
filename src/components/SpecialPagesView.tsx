@@ -23,6 +23,8 @@ import {
   Scale,
   UserX,
   Users,
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -39,6 +41,8 @@ interface SpecialPagesViewProps {
   onNavigateToUnblockRequests?: () => void;
   onNavigateToCheckUser?: (username?: string) => void;
   onNavigateToUsersList?: () => void;
+  onNavigateToUpload?: () => void;
+  onNavigateToFilesList?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -54,6 +58,8 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToUnblockRequests,
   onNavigateToCheckUser,
   onNavigateToUsersList,
+  onNavigateToUpload,
+  onNavigateToFilesList,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -177,7 +183,45 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
       </div>
 
       {/* Admin & Community Special Portals Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
+        {onNavigateToUpload && (
+          <button
+            onClick={onNavigateToUpload}
+            className="p-3 rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-blue-600 text-white shrink-0">
+              <Upload size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-blue-900 dark:text-blue-200 truncate group-hover:underline">
+                Special:Upload
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Carregar Ficheiro/Imagem
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToFilesList && (
+          <button
+            onClick={onNavigateToFilesList}
+            className="p-3 rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-indigo-600 text-white shrink-0">
+              <ImageIcon size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-indigo-900 dark:text-indigo-200 truncate group-hover:underline">
+                Special:Files
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Galeria de Ficheiros
+              </div>
+            </div>
+          </button>
+        )}
+
         {onNavigateToUsersList && (
           <button
             onClick={onNavigateToUsersList}
@@ -191,7 +235,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
                 Special:ListUsers
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                Lista de Usuários Cadastrados
+                Lista de Usuários
               </div>
             </div>
           </button>

@@ -28,6 +28,9 @@ import {
   OfflineModeView,
 } from './components/InformativeViews';
 import { SiteUpdatesView } from './components/SiteUpdatesView';
+import { FileUploadView } from './components/FileUploadView';
+import { FilePageView } from './components/FilePageView';
+import { FilesGalleryView } from './components/FilesGalleryView';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileSearchModal } from './components/MobileSearchModal';
@@ -62,6 +65,8 @@ export default function App() {
   const [editingArticle, setEditingArticle] = useState<WikiArticle | null>(null);
   const [targetUserIdentifier, setTargetUserIdentifier] = useState<string>('WazzimaGiygg');
   const [userPageInitialTab, setUserPageInitialTab] = useState<'profile' | 'talk' | 'contributions' | 'admin'>('profile');
+  const [selectedFileName, setSelectedFileName] = useState<string>('Logo_WikiZero.svg');
+  const [uploadInitialTargetName, setUploadInitialTargetName] = useState<string>('');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
@@ -128,8 +133,16 @@ export default function App() {
       if (hash.startsWith('#wiki:')) {
         const title = decodeURIComponent(hash.substring(6));
         handleNavigateToArticleByTitle(title);
+      } else if (hash.startsWith('#file:') || hash.startsWith('#arquivo:') || hash.startsWith('#ficheiro:')) {
+        const parts = hash.split(':');
+        const fname = decodeURIComponent(parts.slice(1).join(':'));
+        handleNavigateToFile(fname);
+      } else if (hash.startsWith('#upload:')) {
+        const fname = decodeURIComponent(hash.substring(8));
+        handleNavigateToUpload(fname);
       }
     };
+    handleHash();
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
   }, [articles]);
@@ -146,6 +159,33 @@ export default function App() {
     }
     setCurrentView(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToFile = (fileName: string) => {
+    const sanitized = fileName.replace(/^(?:Arquivo|Ficheiro|File|Imagem|Image):/i, '').replace(/\s+/g, '_');
+    setSelectedFileName(sanitized);
+    setCurrentView('file-page');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToUpload = (targetName?: string) => {
+    if (targetName) {
+      const sanitized = targetName.replace(/^(?:Arquivo|Ficheiro|File|Imagem|Image):/i, '').replace(/\s+/g, '_');
+      setUploadInitialTargetName(sanitized);
+    } else {
+      setUploadInitialTargetName('');
+    }
+    setCurrentView('upload');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNotify = (message: string, type: 'success' | 'warning' | 'info' = 'info') => {
+    StorageService.addNotification({
+      title: type === 'success' ? '✅ Sucesso' : type === 'warning' ? '⚠️ Atenção' : 'ℹ️ Informação',
+      message,
+      type,
+    });
+    setNotifications(StorageService.getNotifications());
   };
 
   const handleNavigateToUser = (identifier: string, initialTab: 'profile' | 'talk' | 'contributions' | 'admin' = 'profile') => {
@@ -501,6 +541,8 @@ export default function App() {
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
               onNavigateToUsersList={() => handleNavigate('admin-users')}
+              onNavigateToUpload={() => handleNavigateToUpload()}
+              onNavigateToFilesList={() => handleNavigate('files-list')}
               initialTab="all"
             />
           )}
@@ -518,7 +560,39 @@ export default function App() {
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
               onNavigateToUsersList={() => handleNavigate('admin-users')}
+              onNavigateToUpload={() => handleNavigateToUpload()}
+              onNavigateToFilesList={() => handleNavigate('files-list')}
               initialTab="watchlist"
+            />
+          )}
+
+          {currentView === 'upload' && (
+            <FileUploadView
+              user={user}
+              initialTargetName={uploadInitialTargetName}
+              onNavigateToFile={handleNavigateToFile}
+              onNavigateToGallery={() => handleNavigate('files-list')}
+              onNotify={handleNotify}
+            />
+          )}
+
+          {currentView === 'file-page' && (
+            <FilePageView
+              fileName={selectedFileName || 'Logo_WikiZero.svg'}
+              articles={articles}
+              user={user}
+              onNavigateToArticle={handleSelectArticle}
+              onNavigateToUpload={handleNavigateToUpload}
+              onNavigateToGallery={() => handleNavigate('files-list')}
+              onNotify={handleNotify}
+            />
+          )}
+
+          {currentView === 'files-list' && (
+            <FilesGalleryView
+              user={user}
+              onNavigateToFile={handleNavigateToFile}
+              onNavigateToUpload={() => handleNavigateToUpload()}
             />
           )}
 

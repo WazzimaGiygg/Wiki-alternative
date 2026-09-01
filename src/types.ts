@@ -485,7 +485,84 @@ export type ViewMode =
   | 'mydata'
   | 'site-updates'
   | 'beta'
-  | 'offline';
+  | 'offline'
+  | 'upload'
+  | 'file-page'
+  | 'files-list';
+
+// ==========================================
+// SISTEMA DE FICHEIROS, IMAGENS E MÍDIAS
+// ==========================================
+
+export type WikiFileLicense =
+  | 'cc-by-sa-4.0'
+  | 'cc-by-4.0'
+  | 'cc0-public-domain'
+  | 'gfdl'
+  | 'fair-use'
+  | 'own-work'
+  | 'copyrighted-permission';
+
+export interface WikiFileVersion {
+  id: string;
+  versionNumber: number;
+  url: string;
+  thumbnails: {
+    sm: string;
+    md: string;
+    lg: string;
+  };
+  sizeBytes: number;
+  width: number;
+  height: number;
+  uploadedBy: string;
+  uploadedByUid?: string;
+  uploadedAt: string;
+  comment: string;
+}
+
+export interface WikiFile {
+  id: string;
+  name: string; // Ex: Bandeira_do_Brasil.png
+  title: string; // Ex: Arquivo:Bandeira_do_Brasil.png
+  description: string; // Descrição em wikitext
+  license: WikiFileLicense;
+  licenseDetails?: string;
+  fairUseJustification?: string;
+  author: string;
+  source: string;
+  mimeType: string;
+  sizeBytes: number;
+  width: number;
+  height: number;
+  url: string;
+  thumbnails: {
+    sm: string; // ~150px
+    md: string; // ~320px
+    lg: string; // ~800px
+  };
+  uploadedBy: string;
+  uploadedByUid?: string;
+  uploadedAt: string;
+  updatedAt?: string;
+  storageProvider: 'firebase_storage' | 'local_fallback';
+  firebasePlan?: 'spark' | 'blaze';
+  history: WikiFileVersion[];
+  categories: string[];
+}
+
+export interface UploadFileInput {
+  file: File;
+  targetName: string;
+  description: string;
+  license: WikiFileLicense;
+  licenseDetails?: string;
+  fairUseJustification?: string;
+  author: string;
+  source: string;
+  categories?: string[];
+  comment?: string;
+}
 
 // ==========================================
 // SISTEMA DE NAMESPACES, PÁGINAS E TEMPLATES

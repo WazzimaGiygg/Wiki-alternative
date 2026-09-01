@@ -25,6 +25,8 @@ import {
   Scale,
   Vote,
   MessageSquare,
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -195,6 +197,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Star size={15} className="text-amber-500 flex-shrink-0" fill={currentView === 'watchlist' ? 'currentColor' : 'none'} />
               {!isCollapsed && <span className="truncate">Páginas Vigiadas</span>}
+            </button>
+          </nav>
+        </div>
+
+        {/* Section: Ficheiros & Mídias */}
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+          {!isCollapsed && (
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center gap-1 font-mono">
+              <span>Ficheiros & Mídias</span>
+            </h3>
+          )}
+          <nav className="space-y-0.5">
+            <button
+              onClick={() => onNavigate('upload')}
+              title="Carregar Ficheiro (Special:Upload)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'upload'
+                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Upload size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Carregar Ficheiro</span>}
+            </button>
+
+            <button
+              onClick={() => onNavigate('files-list')}
+              title="Galeria de Ficheiros (Special:Files)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'files-list'
+                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <ImageIcon size={15} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Galeria de Ficheiros</span>}
             </button>
           </nav>
         </div>

@@ -1,5 +1,6 @@
 import { ExtensionManager } from '../core/ExtensionManager';
 import { formatExternalUrl } from './linkUtils';
+import { FileStorageService } from '../services/fileStorageService';
 
 export interface TocItem {
   id: string;
@@ -726,30 +727,82 @@ function renderInfobox(content: string, inlineMap?: Map<string, string>): string
 
 function renderMediaWikiImage(content: string, inlineMap?: Map<string, string>): string {
   const parts = content.split('|').map((p) => p.trim());
-  const imageUrl = parts[0];
+  const rawTarget = parts[0];
   let caption = '';
   let align = 'right'; // default float right in Wikipedia
-  let width = 'max-w-xs';
+  let widthClass = 'max-w-xs';
+  let isThumb = false;
+  let customWidthPx: number | null = null;
+  let altText = '';
 
   for (let i = 1; i < parts.length; i++) {
-    const p = parts[i].toLowerCase();
-    if (p === 'thumb' || p === 'miniatura' || p === 'frame') {
-      // is thumb
-    } else if (p === 'left' || p === 'esquerda') {
+    const p = parts[i];
+    const pLower = p.toLowerCase();
+    if (pLower === 'thumb' || pLower === 'miniatura' || pLower === 'frame') {
+      isThumb = true;
+    } else if (pLower === 'left' || pLower === 'esquerda') {
       align = 'left';
-    } else if (p === 'right' || p === 'direita') {
+    } else if (pLower === 'right' || pLower === 'direita') {
       align = 'right';
-    } else if (p === 'center' || p === 'centro') {
+    } else if (pLower === 'center' || pLower === 'centro') {
       align = 'center';
-    } else if (/^\d+px$/.test(p)) {
-      // width
-      const num = parseInt(p, 10);
-      if (num < 200) width = 'max-w-[180px]';
-      else if (num < 350) width = 'max-w-xs';
-      else width = 'max-w-md';
+    } else if (pLower === 'none') {
+      align = 'none';
+    } else if (/^\d+px$/.test(pLower)) {
+      const num = parseInt(pLower, 10);
+      customWidthPx = num;
+      if (num < 200) widthClass = 'max-w-[180px]';
+      else if (num < 350) widthClass = 'max-w-xs';
+      else if (num < 600) widthClass = 'max-w-md';
+      else widthClass = 'max-w-xl';
+    } else if (pLower.startsWith('alt=')) {
+      altText = p.substring(4).trim();
     } else {
-      caption = parts[i];
+      caption = p;
     }
+  }
+
+  // Tenta resolver o ficheiro no catálogo local da WikiZero
+  const cleanFileName = rawTarget
+    .replace(/^(?:Arquivo|Ficheiro|File|Imagem|Image):/i, '')
+    .trim();
+
+  const registeredFile = FileStorageService.getFileByNameSync(cleanFileName);
+
+  let imageUrl = rawTarget;
+  let isRegistered = false;
+  let fileDisplayName = cleanFileName;
+
+  if (registeredFile) {
+    isRegistered = true;
+    fileDisplayName = registeredFile.name;
+    // Seleciona a miniatura mais apropriada
+    if (customWidthPx && customWidthPx <= 200) {
+      imageUrl = registeredFile.thumbnails?.sm || registeredFile.url;
+    } else if (customWidthPx && customWidthPx <= 450) {
+      imageUrl = registeredFile.thumbnails?.md || registeredFile.url;
+    } else if (customWidthPx && customWidthPx <= 850) {
+      imageUrl = registeredFile.thumbnails?.lg || registeredFile.url;
+    } else {
+      imageUrl = registeredFile.thumbnails?.md || registeredFile.url;
+    }
+  } else if (!rawTarget.startsWith('http://') && !rawTarget.startsWith('https://') && !rawTarget.startsWith('data:image/')) {
+    // Arquivo referenciado por nome mas que ainda não foi enviado
+    return `
+      <div class="wiki-image-missing not-prose my-3 p-3 rounded-lg border-2 border-dashed border-amber-300 dark:border-amber-700/70 bg-amber-50/60 dark:bg-amber-950/20 text-xs flex items-center justify-between gap-3 shadow-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-base">🖼️</span>
+          <div>
+            <span class="font-semibold text-amber-900 dark:text-amber-300">Ficheiro não encontrado:</span>
+            <span class="font-mono text-amber-700 dark:text-amber-400 ml-1">[[Arquivo:${escapeHtml(cleanFileName)}]]</span>
+          </div>
+        </div>
+        <a href="#upload:${encodeURIComponent(cleanFileName)}" data-wiki-target="Especial:Upload" class="px-2.5 py-1 text-[11px] font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded shadow-xs transition inline-flex items-center gap-1">
+          <span>Carregar agora</span>
+          <span>↗</span>
+        </a>
+      </div>
+    `;
   }
 
   const floatClass =
@@ -757,12 +810,62 @@ function renderMediaWikiImage(content: string, inlineMap?: Map<string, string>):
       ? 'mx-auto my-4 text-center'
       : align === 'left'
       ? 'float-none sm:float-left sm:mr-5 mb-4 my-2'
+      : align === 'none'
+      ? 'my-3 inline-block'
       : 'float-none sm:float-right sm:ml-5 mb-4 my-2';
 
+  const fileTarget = `Arquivo:${fileDisplayName}`;
+  const effectiveAlt = altText || caption || fileDisplayName;
+
+  const imageElement = `
+    <img
+      src="${escapeHtml(imageUrl)}"
+      alt="${escapeHtml(effectiveAlt)}"
+      class="w-full h-auto rounded object-cover border border-slate-200 dark:border-slate-700/60 transition group-hover:opacity-95"
+      loading="lazy"
+    />
+  `;
+
+  const wrappedImage = `
+    <a
+      href="#file:${encodeURIComponent(fileDisplayName)}"
+      data-wiki-target="${escapeHtml(fileTarget)}"
+      class="wiki-file-link block group relative cursor-pointer"
+      title="Ver detalhes do ficheiro ${escapeHtml(fileTarget)}"
+    >
+      ${imageElement}
+      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded pointer-events-none"></div>
+    </a>
+  `;
+
+  const magnifyIcon = isRegistered
+    ? `
+      <a
+        href="#file:${encodeURIComponent(fileDisplayName)}"
+        data-wiki-target="${escapeHtml(fileTarget)}"
+        class="inline-flex items-center justify-center w-4 h-4 ml-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition"
+        title="Ampliar / Ver detalhes do ficheiro"
+      >
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+        </svg>
+      </a>
+    `
+    : '';
+
   return `
-    <figure class="wiki-image-thumb not-prose ${floatClass} ${width} border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg shadow-xs">
-      <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(caption || 'Imagem')}" class="w-full h-auto rounded object-cover border border-slate-200 dark:border-slate-700/60" loading="lazy" />
-      ${caption ? `<figcaption class="text-[11px] text-slate-600 dark:text-slate-400 mt-1.5 leading-snug font-sans">${formatInline(caption, inlineMap)}</figcaption>` : ''}
+    <figure class="wiki-image-thumb not-prose ${floatClass} ${widthClass} border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900 p-2 rounded-lg shadow-xs">
+      ${wrappedImage}
+      ${
+        caption || isThumb
+          ? `
+        <figcaption class="text-[11px] text-slate-600 dark:text-slate-400 mt-1.5 leading-snug font-sans flex items-start justify-between gap-1">
+          <div class="flex-1">${caption ? formatInline(caption, inlineMap) : `<span class="italic text-slate-400">${escapeHtml(fileDisplayName)}</span>`}</div>
+          ${magnifyIcon}
+        </figcaption>
+      `
+          : ''
+      }
     </figure>
   `;
 }
