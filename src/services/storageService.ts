@@ -80,16 +80,12 @@ import {
   INITIAL_ARBITRATION_CASES,
   INITIAL_ARBITRATION_MEMBERS,
 } from '../data/seedData';
+import { ACTIVE_FIREBASE_CONFIG } from '../config/firebaseCustomConfig';
 
-// Configuração oficial do projeto Firebase
+// Configuração ativa do Firebase derivada do arquivo de configuração do desenvolvedor (src/config/firebaseCustomConfig.ts)
 export const firebaseConfig = {
-  projectId: "wzzm-ce3fc",
-  appId: "1:249427877153:web:a423c9abb1ef0016deb260",
-  apiKey: "AIzaSyAL_MsRuFE8BGjOZU8MK-4n25iJllS-Nmc",
-  authDomain: "wzzm-ce3fc.firebaseapp.com",
-  firestoreDatabaseId: "ai-studio-wikizeroenciclop-0a14dc90-3ab3-47bc-8306-ca5bc2953699",
-  storageBucket: "wzzm-ce3fc.firebasestorage.app",
-  messagingSenderId: "249427877153",
+  ...ACTIVE_FIREBASE_CONFIG.firebaseConfig,
+  firestoreDatabaseId: ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId,
 };
 
 let db: ReturnType<typeof getFirestore> | null = null;
@@ -97,8 +93,9 @@ let auth: ReturnType<typeof getAuth> | null = null;
 let firebaseActive = false;
 
 try {
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  db = getFirestore(app);
+  const app = getApps().length ? getApps()[0] : initializeApp(ACTIVE_FIREBASE_CONFIG.firebaseConfig);
+  const dbId = ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId;
+  db = dbId && dbId !== '(default)' ? getFirestore(app, dbId) : getFirestore(app);
   auth = getAuth(app);
   firebaseActive = true;
 } catch (e) {
@@ -1760,11 +1757,16 @@ export const StorageService = {
   getFirebaseStatus() {
     return {
       active: firebaseActive,
+      environmentLabel: ACTIVE_FIREBASE_CONFIG.environmentLabel,
       projectId: firebaseConfig.projectId,
       firestoreDatabaseId: firebaseConfig.firestoreDatabaseId || '(default)',
       authDomain: firebaseConfig.authDomain,
       storageBucket: firebaseConfig.storageBucket,
+      appId: firebaseConfig.appId,
+      messagingSenderId: firebaseConfig.messagingSenderId,
       apiKeyMasked: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.slice(0, 8)}...${firebaseConfig.apiKey.slice(-4)}` : 'Não configurada',
+      configFileLocation: 'src/config/firebaseCustomConfig.ts',
+      options: ACTIVE_FIREBASE_CONFIG.options,
     };
   },
 

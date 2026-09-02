@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import firebaseConfig from '../../firebase-applet-config.json';
+import { ACTIVE_FIREBASE_CONFIG } from '../config/firebaseCustomConfig';
 
 export enum OperationType {
   CREATE = 'create',
@@ -60,7 +60,7 @@ let authInstance: ReturnType<typeof getAuth> | null = null;
 
 export function getFirebaseApp() {
   if (!appInstance) {
-    appInstance = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    appInstance = getApps().length > 0 ? getApp() : initializeApp(ACTIVE_FIREBASE_CONFIG.firebaseConfig);
   }
   return appInstance;
 }
@@ -68,7 +68,8 @@ export function getFirebaseApp() {
 export function getDb() {
   if (!dbInstance) {
     const app = getFirebaseApp();
-    dbInstance = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+    const dbId = ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId;
+    dbInstance = dbId && dbId !== '(default)' ? getFirestore(app, dbId) : getFirestore(app);
   }
   return dbInstance;
 }
@@ -84,3 +85,4 @@ export function getAuthSafe() {
   }
   return authInstance;
 }
+

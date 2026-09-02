@@ -41,7 +41,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
   onNavigateToArticle,
   onBack,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'collections' | 'sync' | 'security' | 'raw'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'devconfig' | 'collections' | 'sync' | 'security' | 'raw'>('overview');
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; latencyMs?: number } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -199,6 +199,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
       <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 mb-6 overflow-x-auto pb-0.5">
         {[
           { id: 'overview', label: 'Visão Geral & Parâmetros', icon: Server },
+          { id: 'devconfig', label: 'Configuração do Desenvolvedor (Arquivo)', icon: HardDrive },
           { id: 'collections', label: 'Explorador de Coleções', icon: Layers },
           { id: 'sync', label: 'Sincronização & Backup', icon: UploadCloud },
           { id: 'security', label: 'Regras de Segurança (Rules)', icon: Shield },
@@ -236,8 +237,8 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
               </div>
               <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">Conectado</p>
-              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-mono">
-                Firestore Engine v12.18
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-mono truncate">
+                {firebaseStatus.environmentLabel || 'Produção Ativa'}
               </p>
             </div>
 
@@ -271,10 +272,15 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
 
           {/* Configuration Parameters Panel */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 shadow-xs">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-              <Server size={16} className="text-amber-600" />
-              Parâmetros de Conexão com GCP / Firebase
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Server size={16} className="text-amber-600" />
+                Parâmetros de Conexão com GCP / Firebase
+              </h3>
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                Arquivo: <code className="text-amber-600 dark:text-amber-400">{firebaseStatus.configFileLocation}</code>
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
               <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded border border-slate-200 dark:border-slate-700">
@@ -328,6 +334,88 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: DEVELOPER CONFIG FILE GUIDE */}
+      {activeTab === 'devconfig' && (
+        <div className="space-y-6">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 shadow-xs">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <HardDrive size={16} className="text-amber-600" />
+                  Arquivo de Configuração do Programador
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  O programador da Wiki pode alterar as credenciais, o identificador do banco de dados e as opções adicionais editando o arquivo dedicado:
+                </p>
+              </div>
+              <div className="px-3 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-mono text-xs rounded border border-amber-300 dark:border-amber-800">
+                src/config/firebaseCustomConfig.ts
+              </div>
+            </div>
+
+            {/* Informações Atuais */}
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-lg border border-slate-200 dark:border-slate-700 mb-6">
+              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">
+                Identificação do Banco de Dados Atual em Execução:
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs font-mono">
+                <div className="bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-400 block text-[10px]">RÓTULO / AMBIENTE</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">{firebaseStatus.environmentLabel || 'Principal'}</span>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-400 block text-[10px]">FIRESTORE DATABASE ID</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">{firebaseStatus.firestoreDatabaseId}</span>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-400 block text-[10px]">STORAGE BUCKET</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{firebaseStatus.storageBucket}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Como alterar o banco de dados */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                Como alterar o Banco de Dados do Firebase:
+              </h4>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Abra o arquivo <code className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded font-mono text-amber-600">src/config/firebaseCustomConfig.ts</code> e modifique a constante <code className="font-mono font-bold">ACTIVE_FIREBASE_CONFIG</code>.
+              </p>
+
+              <pre className="p-4 bg-slate-950 text-slate-200 rounded-lg text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800">
+{`// src/config/firebaseCustomConfig.ts
+export const ACTIVE_FIREBASE_CONFIG = {
+  environmentLabel: "WikiZero - Produção",
+  
+  // Altere aqui qual banco de dados do Firestore você deseja usar:
+  // Use "(default)" para o banco padrão ou o ID específico do seu banco
+  firestoreDatabaseId: "${firebaseStatus.firestoreDatabaseId}",
+
+  // Credenciais do projeto Firebase
+  firebaseConfig: {
+    apiKey: "${firebaseStatus.apiKeyMasked}",
+    authDomain: "${firebaseStatus.authDomain}",
+    projectId: "${firebaseStatus.projectId}",
+    storageBucket: "${firebaseStatus.storageBucket}",
+    messagingSenderId: "${firebaseStatus.messagingSenderId || '249427877153'}",
+    appId: "${firebaseStatus.appId || '1:249427877153:web:0e4297294794a5aadeb260'}",
+  },
+
+  // Opções adicionais de inicialização
+  options: {
+    enableAutoSync: true,
+    enableOfflinePersistence: true,
+    pingHealthCheckIntervalMs: 60000,
+    developerNotes: "Configuração do banco de dados",
+  },
+};`}
+              </pre>
             </div>
           </div>
         </div>
