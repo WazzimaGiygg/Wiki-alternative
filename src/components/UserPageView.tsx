@@ -905,6 +905,111 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                 />
               </div>
             )}
+
+            {/* Seção de Rastreabilidade & Alterações em Tempo Real */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 sm:p-6 shadow-xs mt-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white font-mono flex items-center gap-2">
+                    <History size={15} className="text-blue-600 dark:text-blue-400" />
+                    <span>Rastreio & Histórico de Alterações</span>
+                  </h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                    {contributions.length} {contributions.length === 1 ? 'registro' : 'registros'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const permalink = buildUidPermalink(`User:${userProfile.displayName || userProfile.username || userProfile.uid}`);
+                      navigator.clipboard.writeText(permalink);
+                      setCopiedUid(true);
+                      setTimeout(() => setCopiedUid(false), 2000);
+                    }}
+                    className="text-[11px] font-mono text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    title="Copiar link público permanente desta página de usuário"
+                  >
+                    <Link2 size={12} />
+                    <span>{copiedUid ? 'Copiado!' : 'Link Público'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Qualquer alteração de rastreio, criação de verbete ou revisão feita por este usuário é inserida e disponibilizada publicamente nesta página. Qualquer pessoa com o link pode visualizar este histórico.
+              </p>
+
+              {contributions.length === 0 ? (
+                <div className="py-6 text-center text-slate-400 text-xs bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-200 dark:border-slate-700">
+                  <FileText size={24} className="mx-auto mb-1.5 opacity-40 text-slate-400" />
+                  <p>Nenhuma alteração registrada até o momento.</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Assim que o usuário editar ou criar verbetes, as ações de rastreio aparecerão aqui automaticamente.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {contributions.slice(0, 5).map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-blue-50/40 dark:hover:bg-slate-800/80 rounded-lg border border-slate-100 dark:border-slate-800 transition flex items-start justify-between gap-3"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase rounded font-mono mt-0.5 ${
+                          item.type === 'create'
+                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
+                        }`}>
+                          {item.type === 'create' ? 'Novo' : 'Edição'}
+                        </span>
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => onNavigateToArticle(item.articleId)}
+                            className="text-xs font-bold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 text-left transition cursor-pointer"
+                          >
+                            {item.articleTitle}
+                          </button>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                            {item.summary}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0 font-mono text-[11px]">
+                        <div className="text-slate-400">
+                          {new Date(item.date).toLocaleDateString('pt-BR')}
+                        </div>
+                        {item.deltaBytes !== undefined && (
+                          <span
+                            className={`text-[10px] font-bold ${
+                              item.deltaBytes > 0
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : item.deltaBytes < 0
+                                ? 'text-red-500'
+                                : 'text-slate-400'
+                            }`}
+                          >
+                            {item.deltaBytes > 0 ? `+${item.deltaBytes}` : item.deltaBytes} bytes
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {contributions.length > 5 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('contributions')}
+                      className="w-full py-2 text-center text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-900/40 transition flex items-center justify-center gap-1.5 mt-2 cursor-pointer"
+                    >
+                      <History size={13} />
+                      <span>Ver todas as {contributions.length} alterações na aba de histórico</span>
+                      <ChevronRight size={13} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Coluna Lateral: Userboxes & Condecorações (Barnstars) */}

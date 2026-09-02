@@ -99,6 +99,20 @@ export interface UserProfile {
   createdAt: string;
   lastActive?: string;
   warningCount?: number;
+  editsCount?: number;
+  recentActivity?: UserActivityLogEntry[];
+}
+
+export interface UserActivityLogEntry {
+  id: string;
+  type: 'create' | 'edit' | 'revert' | 'admin';
+  articleId?: string;
+  articleTitle: string;
+  pageUid?: string;
+  date: string;
+  summary: string;
+  deltaBytes?: number;
+  isMinor?: boolean;
 }
 
 export interface UserTalkMessage {

@@ -168,6 +168,119 @@ Colaborador assíduo com foco na história do transporte paulista e expansão da
     ],
   },
   {
+    uid: 'user-mafersao-1100',
+    username: 'Mafersão Fantasma da Série 1100',
+    displayName: 'Mafersão Fantasma da Série 1100',
+    email: 'fantasma1100@ferrovia.wikizero.org',
+    role: 'editor',
+    isGuest: false,
+    isBanned: false,
+    reputationScore: 850,
+    editsCount: 142,
+    warningCount: 0,
+    location: 'São Paulo - Ferrovia Santos-Jundiaí',
+    createdAt: '2026-01-20T10:00:00Z',
+    lastActive: '2026-08-31T18:45:00Z',
+    permissions: {
+      canEdit: true,
+      canCreate: true,
+      canTalk: true,
+      canDelete: false,
+      canGrantBarnstars: true,
+    },
+    bio: `{{Infobox
+| Nome = Mafersão Fantasma da Série 1100
+| Ocupação = Pesquisador Ferroviário & Editor Histórico
+| Especialidade = Trens Elétricos, EFSJ, Mafersa & Série 1100
+| Status = Guardião da Memória Ferroviária
+| Membro Desde = Janeiro de 2026
+}}
+
+= Mafersão Fantasma da Série 1100 =
+Pesquisador e editor dedicado à preservação da memória ferroviária paulista e brasileira, com ênfase nos lendários trens-unidade elétricos (TUE) fabricados pela '''Mafersa''' e '''Budd Company''', em especial a icônica '''Série 1100''' da Estrada de Ferro Santos a Jundiaí (EFSJ) e CPTM.
+
+== Apresentação & Propósito ==
+Bem-vindo(a) à minha página pública na '''WikiZero'''! Este espaço documenta meu histórico de edições, rastreio de contribuições e artigos sobre frotas históricas de trens suburbanos e metropolitanos de aço inoxidável.
+
+== Rastreio de Atividades ==
+* '''Foco Editorial:''' Frotas Mafersa (Série 1100, 1400, 1600 e 1700), história da Linha 7-Rubi e ferrovia Santos-Jundiaí.
+* '''Status de Rastreabilidade:''' Todas as alterações e contribuições constam no histórico da WikiZero e podem ser verificadas por qualquer colaborador através deste link permanente.
+
+== Caixas de Usuário ==
+{{Userbox|🚂|Especialista em Trens Mafersa e Budd Company}}
+{{Userbox|⚡|Pesquisador do lendário TUE Série 1100 (O Fantasma dos Trilhos)}}
+{{Userbox|📐|Engenharia Ferroviária e Truques de Aço Inox}}
+{{Userbox|📜|Preservação Histórica e Documentação Aberta}}`,
+    userboxes: [
+      {
+        id: 'ub-maf-1',
+        title: '🚂 TUE Série 1100',
+        text: 'Especialista na lendária frota Mafersa/Budd de 1956 da antiga EFSJ',
+        icon: '🚂',
+        bgClass: 'bg-amber-50 dark:bg-amber-950/40',
+        borderClass: 'border-amber-200 dark:border-amber-800',
+      },
+      {
+        id: 'ub-maf-2',
+        title: '🛠️ Engenharia Mafersa',
+        text: 'Documentador técnico de tração elétrica a 3000V DC e caixas de aço inox',
+        icon: '🛠️',
+        bgClass: 'bg-slate-100 dark:bg-slate-800',
+        borderClass: 'border-slate-300 dark:border-slate-700',
+      },
+      {
+        id: 'ub-maf-3',
+        title: '📜 Guardião da Memória',
+        text: 'Preservação da história dos transportes sobre trilhos do Brasil',
+        icon: '📜',
+        bgClass: 'bg-blue-50 dark:bg-blue-950/40',
+        borderClass: 'border-blue-200 dark:border-blue-800',
+      },
+    ],
+    barnstars: [
+      {
+        id: 'bs-maf-1',
+        title: '🚂 Medalha do Ferroviário de Ouro',
+        description: 'Pela dedicação ímpar e documentação histórica da Série 1100 e frotas de aço inoxidável da Mafersa.',
+        icon: '🚂',
+        awardedBy: 'WazzimaGiygg',
+        awardedAt: '2026-03-15T14:30:00Z',
+      },
+      {
+        id: 'bs-maf-2',
+        title: '⭐ Estrela do Editor Incansável',
+        description: 'Por mais de 100 edições de verificação e inclusão de fontes primárias sobre o material rodante paulista.',
+        icon: '⭐',
+        awardedBy: 'Metrofilo_SP',
+        awardedAt: '2026-06-20T11:00:00Z',
+      },
+    ],
+    recentActivity: [
+      {
+        id: 'act-maf-1',
+        type: 'edit',
+        articleId: 'art-metro-02',
+        articleTitle: 'Frota de Trens e Material Rodante',
+        pageUid: 'metro_sp',
+        date: '2026-08-31T18:45:00Z',
+        summary: 'Inclusão detalhada dos motores de tração General Electric e truques da Série 1100',
+        deltaBytes: 640,
+        isMinor: false,
+      },
+      {
+        id: 'act-maf-2',
+        type: 'create',
+        articleId: 'art-cptm-1100',
+        articleTitle: 'TUE Série 1100 (Budd/Mafersa)',
+        pageUid: 'ferrovias',
+        date: '2026-08-15T10:20:00Z',
+        summary: 'Criação inicial do verbete histórico sobre os TUEs Série 1100 da Estrada de Ferro Santos a Jundiaí',
+        deltaBytes: 3120,
+        isMinor: false,
+      },
+    ],
+  },
+  {
     uid: 'user-metrofilosp',
     username: 'Metrofilo_SP',
     displayName: 'Metrofilo_SP',
@@ -1018,9 +1131,93 @@ O Metrô de São Paulo opera com diversas frotas de composições de 6 a 7 carro
 
 == Veja Também ==
 * [[História do Metrô de São Paulo|Voltar para a história geral do Metrô]]
+* [[TUE Série 1100 (Budd/Mafersa)|TUE Série 1100 (O Fantasma dos Trilhos)]]
 
 [[Categoria:Transportes]]
 [[Categoria:Engenharia]]`,
+    historico: [
+      {
+        id: 'h-metro-02-2',
+        data: '2026-08-31T18:45:00Z',
+        autor: 'Mafersão Fantasma da Série 1100',
+        autorEmail: 'fantasma1100@ferrovia.wikizero.org',
+        resumo: 'Inclusão da correlação histórica com a tecnologia Budd/Mafersa e ligação à Série 1100',
+        tamanho: 1420,
+        deltaBytes: 310,
+        versao: 2,
+        isMinor: false,
+        conteudo: '',
+      },
+    ],
+  },
+  {
+    id: 'art-cptm-1100',
+    pageUid: 'ferrovias',
+    titulo: 'TUE Série 1100 (Budd/Mafersa)',
+    categoria: 'Frota & Engenharia Ferroviária',
+    idioma: 'Português',
+    autor: 'Mafersão Fantasma da Série 1100',
+    autorEmail: 'fantasma1100@ferrovia.wikizero.org',
+    dataCriacao: '2026-08-15T10:20:00Z',
+    dataEdicao: '2026-08-31T18:45:00Z',
+    visualizacoes: 630,
+    versao: 2,
+    tags: ['Série 1100', 'Mafersa', 'Budd Company', 'EFSJ', 'CPTM', 'Trens'],
+    resumo: 'História técnica e operacional do lendário TUE Série 1100 fabricado pela Mafersa sob licença da Budd Company.',
+    descricao: `{{Infobox
+| Nome = TUE Série 1100
+| Fabricante = Budd Company / Mafersa
+| Ano de Fabricação = 1956 - 1957
+| Operadora Original = Estrada de Ferro Santos a Jundiaí (EFSJ)
+| Última Operadora = CPTM (Linha 7-Rubi)
+| Bitola = 1.600 mm (Larga)
+| Sistema de Tração = 3.000 V DC - Chopper / Reostático
+| Composição = 3 e 6 carros
+| Estrutura = Aço Inoxidável Soldado Shotweld
+}}
+
+= TUE Série 1100 (Budd/Mafersa) =
+A '''Série 1100''' foi uma das séries de trens-unidade elétricos (TUE) mais emblemáticas do transporte ferroviário do Brasil. Conhecido pelos ferroviários e entusiastas como o ''"Fantasma da Série 1100"'' ou simplesmente ''"Mafersão"'', marcou época pela sua durabilidade quase indestrutível com caixas de aço inoxidável austenítico estrutural fabricadas pela '''Mafersa''' sob patente da '''Budd Company''' americana.<ref>Associação Brasileira de Preservação Ferroviária (ABPF). ''Memória Histórica da Tração Elétrica na Santos-Jundiaí'', 2024.</ref>
+
+== Origem e Fabricação ==
+Encomendados na década de 1950 pelo Ministério da Viação e Obras Públicas para os serviços suburbanos da antiga Estrada de Ferro Santos a Jundiaí, os primeiros carros foram importados desmontados dos Estados Unidos e montados pela Mafersa em São Paulo. Foi o marco inicial da tecnologia ''Shotweld'' de solda por resistência elétrica em aço inox no Brasil.
+
+== Modernização e Operação na CPTM ==
+Entre 1996 e 1998, as unidades foram modernizadas nas oficinas da CPTM e consórcios industriais, recebendo novas frentes de fibra de vidro aerodinâmicas e sistemas atualizados de frenagem e sinalização ATC. Operaram com admirável confiabilidade até sua aposentadoria oficial em 2018 na Linha 7-Rubi.
+
+== Veja Também ==
+* [[Frota de Trens e Material Rodante|Frotas do Metrô e Trens Paulistas]]
+* [[História do Metrô de São Paulo|Histórico do Transporte Metropolitano]]
+
+[[Categoria:Material Rodante]]
+[[Categoria:Ferrovias]]
+[[Categoria:História dos Transportes]]`,
+    historico: [
+      {
+        id: 'h-1100-2',
+        data: '2026-08-31T18:45:00Z',
+        autor: 'Mafersão Fantasma da Série 1100',
+        autorEmail: 'fantasma1100@ferrovia.wikizero.org',
+        resumo: 'Expansão dos dados técnicos sobre o processo Shotweld e modernização da CPTM',
+        tamanho: 2890,
+        deltaBytes: 640,
+        versao: 2,
+        isMinor: false,
+        conteudo: '',
+      },
+      {
+        id: 'h-1100-1',
+        data: '2026-08-15T10:20:00Z',
+        autor: 'Mafersão Fantasma da Série 1100',
+        autorEmail: 'fantasma1100@ferrovia.wikizero.org',
+        resumo: 'Criação do verbete histórico TUE Série 1100',
+        tamanho: 2250,
+        deltaBytes: 2250,
+        versao: 1,
+        isMinor: false,
+        conteudo: '',
+      },
+    ],
   },
   {
     id: 'art-wiki-01',

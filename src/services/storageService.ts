@@ -9,6 +9,7 @@ import {
   deleteDoc,
   serverTimestamp,
   query,
+  where,
   orderBy,
 } from 'firebase/firestore';
 import {
@@ -23,6 +24,7 @@ import {
   WikiPage,
   WikiArticle,
   UserProfile,
+  UserActivityLogEntry,
   NotificationItem,
   CookieConsent,
   RecentChangeEntry,
@@ -494,6 +496,23 @@ export const StorageService = {
       }
     }
 
+    // Inserir alteração de rastreio na página do usuário
+    try {
+      const effectiveUser = user || this.getCurrentUser();
+      const authorIdent = effectiveUser || article.autor;
+      await this.recordUserTrackingActivity(authorIdent, {
+        type: existingIndex >= 0 ? 'edit' : 'create',
+        articleId: article.id,
+        articleTitle: article.titulo,
+        pageUid: article.pageUid,
+        summary: editSummary || (existingIndex >= 0 ? 'Edição de conteúdo e fontes' : 'Criação do verbete'),
+        deltaBytes: existingIndex >= 0 ? (articleData.descricao.length - (articles[existingIndex]?.descricao?.length || 0)) : articleData.descricao.length,
+        isMinor: !!isMinor,
+      });
+    } catch (trackErr) {
+      console.warn('[StorageService] Error recording user tracking activity on saveArticle:', trackErr);
+    }
+
     return article;
   },
 
@@ -582,8 +601,10 @@ export const StorageService = {
       userProfile.banReason = 'Violação das políticas de uso da comunidade WikiZero.';
     }
 
-    this.saveUser(userProfile);
-    return userProfile;
+    // Criar e disponibilizar publicamente a página de usuário caso ainda não exista
+    const publicProfile = await this.ensureUserPage(userProfile);
+    this.saveUser(publicProfile);
+    return publicProfile;
   },
 
   async logout(): Promise<void> {
@@ -1112,30 +1133,308 @@ export const StorageService = {
     }
   },
 
+  /**
+   * Garante que uma página de usuário exista no sistema e esteja disponível publicamente.
+   * Se não existir no localStorage nem no Firestore, o próprio sistema a cria imediatamente.
+   */
+  async ensureUserPage(user: Partial<UserProfile> & { uid: string }): Promise<UserProfile> {
+    const users = await this.getCommunityUsers();
+    const cleanId = (user.displayName || user.username || user.uid).toLowerCase().trim();
+    const cleanNormalized = cleanId.replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    // 1. Verificar se já existe nos usuários locais
+    let existing = users.find((u) => {
+      const uName = (u.displayName || u.username || '').toLowerCase().trim();
+      const uNorm = uName.replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return (
+        u.uid.toLowerCase() === user.uid.toLowerCase() ||
+        uName === cleanId ||
+        uNorm === cleanNormalized ||
+        (u.username && u.username.toLowerCase() === cleanId) ||
+        (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase())
+      );
+    });
+
+    // 2. Verificar se já existe no Firestore na coleção 'userpage'
+    if (!existing && firebaseActive && db) {
+      try {
+        const docSnap = await getDoc(doc(db, 'userpage', user.uid));
+        if (docSnap.exists()) {
+          existing = docSnap.data() as UserProfile;
+        } else if (user.displayName || user.username) {
+          const q = query(
+            collection(db, 'userpage'),
+            where('displayName', '==', user.displayName || user.username)
+          );
+          const querySnap = await getDocs(q);
+          if (!querySnap.empty) {
+            existing = querySnap.docs[0].data() as UserProfile;
+          }
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao consultar Firestore userpage:', err);
+      }
+    }
+
+    const now = new Date().toISOString();
+    const createdDateFormatted = new Date().toLocaleDateString('pt-BR');
+    const authorName = user.displayName || user.username || 'Editor WikiZero';
+
+    if (!existing) {
+      const defaultBio = `= ${authorName} =
+Editor(a) e colaborador(a) da enciclopédia livre '''WikiZero'''.
+
+== Apresentação ==
+Esta é a página oficial do(a) usuário(a) '''${authorName}'''.
+Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
+
+== Rastreio & Atividades Comunitárias ==
+* '''Status do Usuário:''' Ativo(a)
+* '''Rastreabilidade:''' Todas as alterações de rastreio, edições e verbetes criados são automaticamente inseridos nesta página de usuário pública.
+* '''Link Permanente Público:''' Disponível para consulta por qualquer usuário através do link [[User:${authorName}]].
+
+== Caixas de Usuário ==
+{{Userbox|🌐|Colaborador(a) da WikiZero Enciclopédia Aberta}}
+{{Userbox|✏️|Editor(a) com rastreamento ativo de edições}}
+{{Userbox|🛡️|Comprometido(a) com a veracidade das informações}}`;
+
+      const newUserPage: UserProfile = {
+        uid: user.uid,
+        username: user.username || authorName.replace(/\s+/g, '_'),
+        displayName: authorName,
+        email: user.email || '',
+        photoURL: user.photoURL,
+        role: user.role || 'editor',
+        isGuest: false,
+        isBanned: false,
+        reputationScore: 100,
+        editsCount: 0,
+        warningCount: 0,
+        location: user.location || 'Brasil',
+        createdAt: user.createdAt || now,
+        lastActive: now,
+        permissions: user.permissions || {
+          canEdit: true,
+          canCreate: true,
+          canTalk: true,
+          canDelete: user.role === 'admin' || user.role === 'moderador',
+          canGrantBarnstars: true,
+        },
+        bio: user.bio || defaultBio,
+        userboxes: user.userboxes || [
+          {
+            id: `ub-${Date.now()}-1`,
+            title: '🌐 WikiZero',
+            text: 'Membro registrado e verificado na comunidade',
+            icon: '🌐',
+            bgClass: 'bg-blue-50 dark:bg-blue-950/40',
+            borderClass: 'border-blue-200 dark:border-blue-800',
+          },
+          {
+            id: `ub-${Date.now()}-2`,
+            title: '✏️ Rastreio Ativo',
+            text: 'Edições e revisões auditadas e públicas',
+            icon: '✏️',
+            bgClass: 'bg-emerald-50 dark:bg-emerald-950/40',
+            borderClass: 'border-emerald-200 dark:border-emerald-800',
+          },
+        ],
+        barnstars: user.barnstars || [],
+        recentActivity: user.recentActivity || [],
+      };
+
+      await this.saveCommunityUser(newUserPage);
+
+      // Persistir no Firestore na coleção 'userpage'
+      if (firebaseActive && db) {
+        try {
+          await setDoc(doc(db, 'userpage', newUserPage.uid), newUserPage, { merge: true });
+        } catch (err) {
+          console.warn('[StorageService] Erro ao sincronizar nova userpage no Firestore:', err);
+        }
+      }
+
+      return newUserPage;
+    } else {
+      const updated: UserProfile = {
+        ...existing,
+        ...user,
+        displayName: existing.displayName || user.displayName || authorName,
+        bio: existing.bio || user.bio,
+        lastActive: now,
+        recentActivity: existing.recentActivity || [],
+      };
+
+      await this.saveCommunityUser(updated);
+
+      if (firebaseActive && db) {
+        try {
+          await setDoc(doc(db, 'userpage', updated.uid), updated, { merge: true });
+        } catch (err) {
+          console.warn('[StorageService] Erro ao atualizar userpage no Firestore:', err);
+        }
+      }
+
+      return updated;
+    }
+  },
+
+  /**
+   * Insere um registro de alteração/rastreio diretamente na página de usuário do autor.
+   */
+  async recordUserTrackingActivity(
+    userOrAuthor: UserProfile | string,
+    activity: {
+      type: 'create' | 'edit' | 'revert' | 'admin';
+      articleId?: string;
+      articleTitle: string;
+      pageUid?: string;
+      summary: string;
+      deltaBytes?: number;
+      isMinor?: boolean;
+    }
+  ): Promise<void> {
+    const authorName =
+      typeof userOrAuthor === 'string'
+        ? userOrAuthor
+        : userOrAuthor.displayName || userOrAuthor.username || userOrAuthor.email || 'Colaborador WikiZero';
+
+    let profile = await this.getUserProfile(authorName);
+
+    if (!profile) {
+      const cleanNorm = authorName.toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const generatedUid =
+        typeof userOrAuthor === 'object' && userOrAuthor.uid
+          ? userOrAuthor.uid
+          : `user-${cleanNorm.replace(/[^a-z0-9]/g, '-') || 'editor'}`;
+
+      profile = await this.ensureUserPage({
+        uid: generatedUid,
+        displayName: authorName,
+        username: authorName.replace(/\s+/g, '_'),
+        email: typeof userOrAuthor === 'object' ? userOrAuthor.email || '' : '',
+        role: typeof userOrAuthor === 'object' ? userOrAuthor.role || 'editor' : 'editor',
+        isGuest: false,
+        isBanned: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    const now = new Date().toISOString();
+    const newEntry: UserActivityLogEntry = {
+      id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      type: activity.type,
+      articleId: activity.articleId,
+      articleTitle: activity.articleTitle,
+      pageUid: activity.pageUid,
+      date: now,
+      summary: activity.summary,
+      deltaBytes: activity.deltaBytes,
+      isMinor: activity.isMinor,
+    };
+
+    const currentActivities = profile.recentActivity || [];
+    const updatedActivities = [newEntry, ...currentActivities.slice(0, 49)];
+
+    const updatedProfile: UserProfile = {
+      ...profile,
+      editsCount: (profile.editsCount || 0) + 1,
+      reputationScore: (profile.reputationScore || 100) + (activity.isMinor ? 2 : 5),
+      lastActive: now,
+      recentActivity: updatedActivities,
+    };
+
+    await this.saveCommunityUser(updatedProfile);
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'userpage', updatedProfile.uid), updatedProfile, { merge: true });
+      } catch (err) {
+        console.warn('[StorageService] Erro ao gravar rastreio no Firestore userpage:', err);
+      }
+    }
+  },
+
   async getUserProfile(uidOrUsername: string): Promise<UserProfile | null> {
     if (!uidOrUsername) return null;
-    const users = await this.getCommunityUsers();
     const cleanId = uidOrUsername.toLowerCase().trim();
+    const cleanNormalized = cleanId.replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    // Match by uid, username, or displayName
-    const found = users.find(
-      (u) =>
+    // 1. Procurar nos usuários comunitários locais
+    const users = await this.getCommunityUsers();
+    const found = users.find((u) => {
+      const uName = (u.displayName || u.username || '').toLowerCase().trim();
+      const uNorm = uName.replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return (
         u.uid.toLowerCase() === cleanId ||
+        uName === cleanId ||
+        uNorm === cleanNormalized ||
         (u.username && u.username.toLowerCase() === cleanId) ||
-        (u.displayName && u.displayName.toLowerCase() === cleanId)
-    );
+        (u.email && u.email.toLowerCase() === cleanId)
+      );
+    });
 
     if (found) return found;
 
-    // Check if it's the current logged in user
+    // 2. Verificar se é o usuário atualmente logado
     const currentUser = this.getCurrentUser();
     if (
       currentUser &&
       (currentUser.uid.toLowerCase() === cleanId ||
-        currentUser.displayName?.toLowerCase() === cleanId ||
+        currentUser.displayName?.toLowerCase().trim() === cleanId ||
+        currentUser.displayName?.toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '') === cleanNormalized ||
         currentUser.email?.toLowerCase() === cleanId)
     ) {
       return currentUser;
+    }
+
+    // 3. Consultar no Firestore na coleção 'userpage'
+    if (firebaseActive && db) {
+      try {
+        const docSnap = await getDoc(doc(db, 'userpage', uidOrUsername));
+        if (docSnap.exists()) {
+          const profile = docSnap.data() as UserProfile;
+          await this.saveCommunityUser(profile);
+          return profile;
+        }
+
+        const q = query(
+          collection(db, 'userpage'),
+          where('displayName', '==', uidOrUsername.replace(/[+_]/g, ' ').trim())
+        );
+        const querySnap = await getDocs(q);
+        if (!querySnap.empty) {
+          const profile = querySnap.docs[0].data() as UserProfile;
+          await this.saveCommunityUser(profile);
+          return profile;
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao buscar userpage no Firestore:', err);
+      }
+    }
+
+    // 4. Criação automática da página de usuário se acessada via link público ou se for autor de edições
+    const articles = await this.getArticles();
+    const hasEditsOrArticles = articles.some((a) => {
+      const aAuthor = (a.autor || '').toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const hAuthor = a.historico?.some((h) => (h.autor || '').toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '') === cleanNormalized);
+      return aAuthor === cleanNormalized || hAuthor;
+    });
+
+    if (hasEditsOrArticles || (cleanId.length > 1 && !cleanId.includes(':'))) {
+      const properName = uidOrUsername.replace(/[+_]/g, ' ').trim();
+      const generatedUid = `user-${cleanNormalized.replace(/[^a-z0-9]/g, '-') || 'editor'}`;
+      const autoCreated = await this.ensureUserPage({
+        uid: generatedUid,
+        displayName: properName,
+        username: properName.replace(/\s+/g, '_'),
+        email: `${cleanNormalized.replace(/[^a-z0-9]/g, '')}@comunidade.wikizero.org`,
+        role: 'editor',
+        isGuest: false,
+        isBanned: false,
+        createdAt: new Date().toISOString(),
+      });
+      return autoCreated;
     }
 
     return null;
@@ -1143,22 +1442,39 @@ export const StorageService = {
 
   async saveCommunityUser(user: UserProfile): Promise<UserProfile> {
     const users = await this.getCommunityUsers();
-    const index = users.findIndex((u) => u.uid === user.uid);
+    const index = users.findIndex(
+      (u) =>
+        u.uid === user.uid ||
+        (u.displayName && user.displayName && u.displayName.toLowerCase() === user.displayName.toLowerCase())
+    );
 
     let updatedUsers: UserProfile[];
     if (index >= 0) {
       updatedUsers = [...users];
-      updatedUsers[index] = user;
+      updatedUsers[index] = { ...updatedUsers[index], ...user };
     } else {
       updatedUsers = [user, ...users];
     }
 
     localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(updatedUsers));
 
-    // Also update current user if modifying self
+    // Atualizar usuário local se for o próprio
     const currentUser = this.getCurrentUser();
-    if (currentUser && currentUser.uid === user.uid) {
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    if (
+      currentUser &&
+      (currentUser.uid === user.uid ||
+        (currentUser.displayName && user.displayName && currentUser.displayName.toLowerCase() === user.displayName.toLowerCase()))
+    ) {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify({ ...currentUser, ...user }));
+    }
+
+    // Sincronizar na coleção 'userpage' do Firestore
+    if (firebaseActive && db && user.uid) {
+      try {
+        await setDoc(doc(db, 'userpage', user.uid), user, { merge: true });
+      } catch (err) {
+        console.warn('[StorageService] Erro ao sincronizar userpage no Firestore:', err);
+      }
     }
 
     return user;
@@ -1705,6 +2021,8 @@ export const StorageService = {
   }[]> {
     const articles = await this.getArticles();
     const cleanName = username.toLowerCase().trim();
+    const cleanNorm = cleanName.replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
     const contributions: {
       type: 'create' | 'edit';
       articleId: string;
@@ -1716,36 +2034,69 @@ export const StorageService = {
       isMinor?: boolean;
     }[] = [];
 
+    const seenKeys = new Set<string>();
+
     articles.forEach((art) => {
-      if (art.autor && art.autor.toLowerCase().includes(cleanName)) {
-        contributions.push({
-          type: 'create',
-          articleId: art.id,
-          articleTitle: art.titulo,
-          pageUid: art.pageUid,
-          date: art.dataCriacao,
-          summary: art.resumo || 'Criação inicial do verbete',
-          deltaBytes: (art.descricao || '').length,
-        });
+      const artAutor = (art.autor || '').toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (artAutor && (artAutor.includes(cleanNorm) || cleanNorm.includes(artAutor))) {
+        const key = `create-${art.id}-${art.dataCriacao}`;
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          contributions.push({
+            type: 'create',
+            articleId: art.id,
+            articleTitle: art.titulo,
+            pageUid: art.pageUid,
+            date: art.dataCriacao,
+            summary: art.resumo || 'Criação inicial do verbete',
+            deltaBytes: (art.descricao || '').length,
+          });
+        }
       }
 
       if (art.historico && art.historico.length > 0) {
         art.historico.forEach((h) => {
-          if (h.autor && h.autor.toLowerCase().includes(cleanName)) {
-            contributions.push({
-              type: 'edit',
-              articleId: art.id,
-              articleTitle: art.titulo,
-              pageUid: art.pageUid,
-              date: h.data,
-              summary: h.resumo || 'Edição de conteúdo e fontes',
-              deltaBytes: h.deltaBytes,
-              isMinor: h.isMinor,
-            });
+          const hAutor = (h.autor || '').toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (hAutor && (hAutor.includes(cleanNorm) || cleanNorm.includes(hAutor))) {
+            const key = `edit-${art.id}-${h.data}`;
+            if (!seenKeys.has(key)) {
+              seenKeys.add(key);
+              contributions.push({
+                type: 'edit',
+                articleId: art.id,
+                articleTitle: art.titulo,
+                pageUid: art.pageUid,
+                date: h.data,
+                summary: h.resumo || 'Edição de conteúdo e fontes',
+                deltaBytes: h.deltaBytes,
+                isMinor: h.isMinor,
+              });
+            }
           }
         });
       }
     });
+
+    // Mesclar também com recentActivity salvo diretamente no perfil do usuário
+    const userProfile = await this.getUserProfile(username);
+    if (userProfile?.recentActivity && userProfile.recentActivity.length > 0) {
+      userProfile.recentActivity.forEach((act) => {
+        const key = `${act.type}-${act.articleId || act.articleTitle}-${act.date}`;
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          contributions.push({
+            type: act.type === 'create' ? 'create' : 'edit',
+            articleId: act.articleId || '',
+            articleTitle: act.articleTitle,
+            pageUid: act.pageUid || '',
+            date: act.date,
+            summary: act.summary,
+            deltaBytes: act.deltaBytes,
+            isMinor: act.isMinor,
+          });
+        }
+      });
+    }
 
     // Sort descending by date
     return contributions.sort(

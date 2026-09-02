@@ -387,7 +387,8 @@ export function resolveNavigationUid(
     const tab = (subTab === 'talk' || subTab === 'contributions' || subTab === 'admin')
       ? subTab
       : 'profile';
-    return { type: 'user', username: targetUser.replace(/_/g, ' '), initialTab: tab };
+    const cleanUsername = targetUser.replace(/[+_]/g, ' ').trim();
+    return { type: 'user', username: cleanUsername, initialTab: tab };
   }
 
   // 4. File namespace prefix or file extensions: File:..., Arquivo:..., Ficheiro:...

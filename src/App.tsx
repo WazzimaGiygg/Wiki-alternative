@@ -198,6 +198,13 @@ export default function App() {
       setNotifications(n);
       setCookieConsent(c);
 
+      // Garantir que a página pública do usuário logado exista e esteja sincronizada
+      if (u && !u.isGuest) {
+        StorageService.ensureUserPage(u).then((verified) => {
+          setUser(verified);
+        }).catch((e) => console.warn('[App] ensureUserPage error on boot:', e));
+      }
+
       // Trigger LGPD term modal if not yet accepted
       if (!lgpdAccepted) {
         setShowLgpdModal(true);
