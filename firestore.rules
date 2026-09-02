@@ -2,21 +2,29 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Funções auxiliares de autenticação e RBAC
+    // ==========================================
+    // FUNÇÕES AUXILIARES
+    // ==========================================
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    function isSignedIn() {
-      return request.auth != null;
+    function isNotBanned() {
+      return isAuthenticated() && 
+        !exists(/databases/$(database)/documents/banned_users/$(request.auth.uid));
+    }
+
+    // ✅ CORRIGIDO: Agora verifica banimento
+    function isRegistered() {
+      return isAuthenticated() && isNotBanned();
     }
 
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return isAuthenticated() && isNotBanned() && request.auth.uid == userId;
     }
     
     function userDocExists() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      return isRegistered() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
     
     function getUserData() {
@@ -28,7 +36,7 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return isAuthenticated() && (
+      return isAuthenticated() && isNotBanned() && (
         isSuperAdmin() ||
         (userDocExists() && (
           getUserData().group == 'admin' ||
@@ -38,7 +46,7 @@ service cloud.firestore {
     }
     
     function isEditor() {
-      return isAuthenticated() && (
+      return isRegistered() && (
         isAdmin() ||
         (userDocExists() && (
           getUserData().group in ['editor', 'admin'] ||
@@ -47,23 +55,22 @@ service cloud.firestore {
       );
     }
     
-    function isRegistered() {
-      return isAuthenticated();
-    }
-    
     function isUserInGroup(allowedGroups) {
-      return isAuthenticated() && (
+      return isRegistered() && (
         isAdmin() ||
         (userDocExists() && (
           getUserData().group in allowedGroups ||
           getUserData().role in allowedGroups
         )) ||
-        // Usuário registrado padrão
-        ('registered' in allowedGroups && isAuthenticated())
+        ('registered' in allowedGroups && isRegistered())
       );
     }
 
-    // Coleções de tópicos e artigos legados da Wiki
+    // ==========================================
+    // COLEÇÕES
+    // ==========================================
+
+    // Coleção de artigos (versão legada)
     match /documentos/{pageUid} {
       allow read: if true;
       allow write: if isRegistered();
@@ -76,17 +83,14 @@ service cloud.firestore {
       }
     }
 
-    // Coleção de Páginas com Namespaces e Categorias
+    // Coleção principal de páginas ✅ CORRIGIDO
     match /pages/{pageId} {
       allow read: if true;
-      // Criação permitida para qualquer usuário registrado
-      allow create: if isRegistered() && request.resource.data.title is string && request.resource.data.namespace is string;
-      // Edição permitida para 'registered', 'editor' e 'admin'
+      // ✅ AGORA permite criar sem namespace obrigatório
+      allow create: if isRegistered() && request.resource.data.title is string;
       allow update: if isUserInGroup(['registered', 'editor', 'admin']);
-      // Exclusão restrita estritamente a 'admin'
       allow delete: if isAdmin();
 
-      // Subcoleção de Histórico de Versões (Revisões do Artigo)
       match /versions/{versionId} {
         allow read: if true;
         allow create: if isRegistered() && request.resource.data.versionNumber is number;
@@ -95,7 +99,6 @@ service cloud.firestore {
       }
     }
 
-    // Coleção de Predefinições / Templates (requer grupo 'editor' ou 'admin')
     match /templates/{templateId} {
       allow read: if true;
       allow create: if isEditor() && request.resource.data.name is string && request.resource.data.content is string;
@@ -103,47 +106,44 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Coleção de Páginas de Usuários (Userpage)
+    // Páginas de usuário
     match /userpage/{userId} {
       allow read: if true;
-      allow create, update: if isSignedIn() || isOwner(userId) || isAdmin();
+      allow create, update: if isRegistered() && (isOwner(userId) || isAdmin());
       allow delete: if isOwner(userId) || isAdmin();
     }
 
     // Perfis de usuários
     match /users/{userId} {
       allow read: if true;
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isRegistered() && request.auth.uid == userId;
+      allow update: if isRegistered() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
-    // Lista de banimentos (gestão por editores e administradores)
+    // Lista de banimentos ✅ CORRIGIDO: apenas admins podem gerenciar
     match /banned_users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isEditor();
+      allow write: if isAdmin(); // Apenas admins podem banir/desbanir
     }
 
-    // Logs de auditoria administrativa
     match /audit_logs/{logId} {
       allow read: if isEditor();
       allow create: if isEditor();
       allow update, delete: if isAdmin();
     }
 
-    // Coleção de Lista de Vigilância (Watchlist)
     match /watchlist/{itemId} {
-      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isRegistered() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isRegistered() && request.resource.data.userId == request.auth.uid;
+      allow update: if isRegistered() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isRegistered() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // Regra fallback
     match /{document=**} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isRegistered();
     }
   }
 }
-
