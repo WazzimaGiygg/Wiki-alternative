@@ -90,12 +90,28 @@
         "previousVersion": { "type": ["number", "null"] }
       },
       "required": ["versionNumber", "content", "userName", "userId", "timestamp", "comment"]
+    },
+    "UserPage": {
+      "title": "UserPage",
+      "description": "Página de perfil e espaço de usuário (/userpage)",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "content": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "Documentos de usuários e permissões"
+    },
+    "/userpage/{userId}": {
+      "schema": "UserPage",
+      "description": "Páginas e subpáginas de usuários"
     },
     "/documentos/{pageUid}": {
       "schema": "WikiCollection",

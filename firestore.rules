@@ -6,6 +6,14 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
     
     function userDocExists() {
       return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
@@ -95,6 +103,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Coleção de Páginas de Usuários (Userpage)
+    match /userpage/{userId} {
+      allow get: if true;
+      allow list: if isSignedIn() || true;
+      allow create: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
     // Perfis de usuários
     match /users/{userId} {
       allow read: if true;
@@ -131,3 +148,4 @@ service cloud.firestore {
     }
   }
 }
+

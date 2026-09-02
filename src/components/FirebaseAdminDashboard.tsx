@@ -674,6 +674,14 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
     
     function isAdmin() {
       return isAuthenticated() && (
@@ -687,6 +695,14 @@ service cloud.firestore {
         isAdmin() ||
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'moderador'
       );
+    }
+
+    // Coleção de Páginas de Usuários (Userpage)
+    match /userpage/{userId} {
+      allow get: if true;
+      allow list: if isSignedIn() || true;
+      allow create, update: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     // Coleções de tópicos da Wiki
