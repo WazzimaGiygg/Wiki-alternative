@@ -1363,12 +1363,21 @@ O encarregado pelo tratamento de dados pessoais (DPO) pode ser contatado diretam
 
 export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
+    id: 'upd-notif-3.9.0',
+    title: '🚀 WikiZero v3.9.0 - Login Seguro reCAPTCHA & Governança de Medalhas',
+    message: 'Autenticação com Google e validação humana reCAPTCHA v2, concessão de medalhas restrita a Admins/Moderadores e canal de notificações exclusivo para notas de versão.',
+    date: '02/09/2026',
+    read: false,
+    type: 'success',
+    link: 'site-updates',
+  },
+  {
     id: 'upd-notif-3.8.0',
-    title: '🚀 WikiZero v3.8.0 - Conselho de Arbitragem (ArbCom) por Idioma',
+    title: '⚖️ WikiZero v3.8.0 - Conselho de Arbitragem (ArbCom) por Idioma',
     message: 'Suprema corte comunitária ativa com jurisdições autônomas por idioma, dossiês probatórios e deliberações vinculantes.',
     date: '30/08/2026',
     read: false,
-    type: 'success',
+    type: 'info',
     link: 'site-updates',
   },
   {
@@ -1402,6 +1411,34 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
 
 export const INITIAL_SYSTEM_UPDATES: SystemUpdateEntry[] = [
   {
+    id: 'upd-3.9.0',
+    version: 'v3.9.0',
+    title: 'Login Seguro com Google & reCAPTCHA v2, Governança de Medalhas e Notificações de Versão',
+    date: '2026-09-02T15:00:00Z',
+    category: 'security',
+    author: 'Equipe de Engenharia & Governança WikiZero',
+    authorRole: 'Corpo Técnico & Administradores',
+    summary: 'Novo fluxo de autenticação blindado com validação humana Google reCAPTCHA v2, restrição estrita da concessão de medalhas/barnstars aos papéis de Administrador e Moderador, simplificação da janela de login e canal de notificações dedicado exclusivamente a notas de versão.',
+    badge: 'Segurança & Integridade',
+    isLatest: true,
+    commitHash: 'recaptcha-auth-barnstar-roles-notifs-v390',
+    affectedComponents: [
+      'LoginModal.tsx',
+      'RecaptchaWidget.tsx',
+      'UserPageView.tsx',
+      'Header.tsx',
+      'storageService.ts',
+      'seedData.ts',
+    ],
+    highlights: [
+      'Verificação obrigatória Google reCAPTCHA v2 na janela de autenticação para prevenir ataques de força bruta, criação de bots e edições automatizadas não autorizadas.',
+      'Interface de login simplificada e segura: remoção de botões de perfis comunitários e criação arbitrária manual, consolidando o acesso direto via Conta Google oficial ou modo anônimo verificado.',
+      'Governança rigorosa de condecorações: concessão de medalhas e insígnias (Barnstars) agora restrita formalmente aos papéis de Administrador e Moderador, com bloqueio em camada de serviço e ocultação de controles para editores comuns.',
+      'Feed do sininho de notificações reformulado como canal oficial de Notas de Versão e Atualizações do Sistema (Changelog Oficial), eliminando ruídos operacionais de edições ou mensagens corriqueiras.',
+      'Sincronização instantânea e recarga dinâmica de histórico de atualizações no log de versões da enciclopédia.',
+    ],
+  },
+  {
     id: 'upd-3.8.0',
     version: 'v3.8.0',
     title: 'Conselho de Arbitragem (ArbCom) por Idioma & Sistema de Julgamento Comunitário',
@@ -1411,7 +1448,7 @@ export const INITIAL_SYSTEM_UPDATES: SystemUpdateEntry[] = [
     authorRole: 'Administrador & Burocrata',
     summary: 'Implementação da suprema corte comunitária (Conselho de Arbitragem / ArbCom) com jurisdições autônomas por idioma, dossiês probatórios, deliberações secretas e acórdãos vinculantes.',
     badge: 'ArbCom Oficial',
-    isLatest: true,
+    isLatest: false,
     commitHash: 'arbcom-jurisdiction-pt-en-es-v380',
     affectedComponents: [
       'ArbitrationCommitteeView.tsx',

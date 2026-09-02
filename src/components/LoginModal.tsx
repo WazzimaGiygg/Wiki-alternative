@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Lock, Shield, User, LogIn, Sparkles, Check, AlertTriangle, ShieldCheck } from 'lucide-react';
-import { UserProfile, UserRole } from '../types';
+import { X, Lock, User, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
 import { RecaptchaWidget } from './RecaptchaWidget';
 
@@ -11,23 +11,17 @@ interface LoginModalProps {
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
-  const [activeTab, setActiveTab] = useState<'quick' | 'custom' | 'guest'>('quick');
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [recaptchaError, setRecaptchaError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Custom user fields
-  const [customUsername, setCustomUsername] = useState('');
-  const [customDisplayName, setCustomDisplayName] = useState('');
-  const [customRole, setCustomRole] = useState<UserRole>('editor');
-
   if (!isOpen) return null;
 
   const validateRecaptcha = (): boolean => {
     if (!isRecaptchaVerified || !recaptchaToken) {
-      setRecaptchaError('Por favor, confirme que você não é um robô antes de fazer login.');
+      setRecaptchaError('Por favor, confirme que você não é um robô no campo de verificação abaixo.');
       return false;
     }
     setRecaptchaError(null);
@@ -56,52 +50,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         onLoginSuccess(fallbackUser);
         onClose();
       } catch (fallbackErr) {
-        setLoginError('Não foi possível concluir o login. Tente novamente.');
+        setLoginError('Não foi possível concluir o login com a Conta Google. Tente novamente.');
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Preset Community Account Login
-  const handlePresetLogin = async (uid: string) => {
-    if (!validateRecaptcha()) return;
-
-    setIsLoading(true);
-    setLoginError(null);
-    try {
-      const user = await StorageService.loginAsCommunityUser(uid);
-      onLoginSuccess(user);
-      onClose();
-    } catch (err) {
-      setLoginError('Falha ao autenticar conta comunitária.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Custom Username Login
-  const handleCustomLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateRecaptcha()) return;
-
-    if (!customUsername.trim()) {
-      setLoginError('Por favor, informe um nome de usuário.');
-      return;
-    }
-
-    setIsLoading(true);
-    setLoginError(null);
-    try {
-      const user = await StorageService.loginCustom(
-        customUsername.trim(),
-        customDisplayName.trim() || undefined,
-        customRole
-      );
-      onLoginSuccess(user);
-      onClose();
-    } catch (err) {
-      setLoginError('Falha ao autenticar.');
     } finally {
       setIsLoading(false);
     }
@@ -112,12 +62,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
     if (!validateRecaptcha()) return;
 
     setIsLoading(true);
+    setLoginError(null);
     try {
       const guest = StorageService.createGuestUser();
       onLoginSuccess(guest);
       onClose();
     } catch (err) {
-      setLoginError('Falha ao ingressar como convidado.');
+      setLoginError('Falha ao ingressar no modo convidado.');
     } finally {
       setIsLoading(false);
     }
@@ -159,234 +110,59 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           </div>
         )}
 
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 mb-4 text-xs font-semibold">
+        {/* Primary Login: Google OAuth */}
+        <div className="space-y-3">
           <button
             type="button"
-            onClick={() => setActiveTab('quick')}
-            className={`pb-2 px-3 border-b-2 transition cursor-pointer ${
-              activeTab === 'quick'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            className={`w-full py-3 px-4 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 font-medium text-xs text-slate-800 dark:text-slate-100 flex items-center justify-center gap-3 shadow-xs transition cursor-pointer ${
+              !isRecaptchaVerified ? 'opacity-85' : ''
             }`}
           >
-            Contas Oficiais
+            <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.28 14.27A7.19 7.19 0 0 1 4.9 12c0-.79.14-1.57.38-2.27V6.58H1.25A11.96 11.96 0 0 0 0 12c0 1.92.45 3.74 1.25 5.42l4.03-3.15z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+              />
+            </svg>
+            <span className="font-semibold">Continuar com a Conta Google</span>
           </button>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+            <span className="flex-shrink mx-3 text-[10px] text-slate-400 uppercase font-mono">
+              ou
+            </span>
+            <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+          </div>
+
+          {/* Secondary Option: Guest Anonymous */}
           <button
             type="button"
-            onClick={() => setActiveTab('custom')}
-            className={`pb-2 px-3 border-b-2 transition cursor-pointer ${
-              activeTab === 'custom'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
+            onClick={handleGuestLogin}
+            disabled={isLoading}
+            className="w-full py-2.5 px-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700/80 font-medium text-xs text-slate-700 dark:text-slate-300 flex items-center justify-center gap-2 transition cursor-pointer"
           >
-            Criar / Personalizado
+            <User size={14} className="text-slate-500" />
+            <span>Continuar como Convidado Anônimo</span>
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('guest')}
-            className={`pb-2 px-3 border-b-2 transition cursor-pointer ${
-              activeTab === 'guest'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-            }`}
-          >
-            Convidado
-          </button>
+          <p className="text-[10px] text-slate-400 text-center">
+            O modo convidado registra edições com um identificador de sessão temporário.
+          </p>
         </div>
-
-        {/* TAB 1: Quick / Official Accounts */}
-        {activeTab === 'quick' && (
-          <div className="space-y-3">
-            {/* Google OAuth Button */}
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={isLoading}
-              className={`w-full py-2.5 px-4 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 font-medium text-xs text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2.5 shadow-xs transition cursor-pointer ${
-                !isRecaptchaVerified ? 'opacity-85' : ''
-              }`}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.28 14.27A7.19 7.19 0 0 1 4.9 12c0-.79.14-1.57.38-2.27V6.58H1.25A11.96 11.96 0 0 0 0 12c0 1.92.45 3.74 1.25 5.42l4.03-3.15z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                />
-              </svg>
-              <span>Continuar com Conta Google</span>
-            </button>
-
-            <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
-              <span className="flex-shrink mx-2 text-[10px] text-slate-400 uppercase font-mono">
-                Ou selecione perfil da comunidade
-              </span>
-              <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
-            </div>
-
-            {/* Presets Grid */}
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                onClick={() => handlePresetLogin('user-devteam')}
-                disabled={isLoading}
-                className="p-2.5 rounded-lg border border-purple-200 dark:border-purple-900/60 bg-purple-50/40 dark:bg-purple-950/20 hover:bg-purple-100/60 text-left transition flex items-center justify-between cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-xs">
-                    🛡️
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">DevTeam</h4>
-                    <span className="text-[10px] text-purple-700 dark:text-purple-300 font-mono">
-                      Moderador Oficial • Concede Medalhas
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[11px] font-semibold text-purple-600 dark:text-purple-400">Entrar →</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handlePresetLogin('user-mafersao-1100')}
-                disabled={isLoading}
-                className="p-2.5 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-100/60 text-left transition flex items-center justify-between cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-xs">
-                    🚂
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                      Mafersão Fantasma da Série 1100
-                    </h4>
-                    <span className="text-[10px] text-amber-700 dark:text-amber-300 font-mono">
-                      Editor Histórico Ferroviário
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">Entrar →</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handlePresetLogin('user-editorsp')}
-                disabled={isLoading}
-                className="p-2.5 rounded-lg border border-blue-200 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/20 hover:bg-blue-100/60 text-left transition flex items-center justify-between cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
-                    ✍️
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">EditorSP</h4>
-                    <span className="text-[10px] text-blue-700 dark:text-blue-300 font-mono">
-                      Editor Comunitário Ativo
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">Entrar →</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: Custom Profile */}
-        {activeTab === 'custom' && (
-          <form onSubmit={handleCustomLogin} className="space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Nome de Usuário (Identificador Wiki):
-              </label>
-              <input
-                type="text"
-                required
-                value={customUsername}
-                onChange={(e) => setCustomUsername(e.target.value)}
-                placeholder="Ex: JoãoSilva, FerroviaBrasil..."
-                className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-hidden font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Nome de Exibição Público:
-              </label>
-              <input
-                type="text"
-                value={customDisplayName}
-                onChange={(e) => setCustomDisplayName(e.target.value)}
-                placeholder="Ex: João da Silva"
-                className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-hidden"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Função na Wiki:
-              </label>
-              <select
-                value={customRole}
-                onChange={(e) => setCustomRole(e.target.value as UserRole)}
-                className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-hidden"
-              >
-                <option value="editor">Editor Comunitário</option>
-                <option value="moderador">Moderador (Concede Medalhas & Modera)</option>
-                <option value="admin">Administrador Geral</option>
-              </select>
-            </div>
-
-            <p className="text-[10px] text-slate-400">
-              * Ao fazer login pela primeira vez, sua página pública de usuário será gerada automaticamente com rastreio de edições.
-            </p>
-
-            <button
-              type="submit"
-              disabled={isLoading || !customUsername.trim()}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              <LogIn size={14} />
-              <span>Entrar e Criar Página de Usuário</span>
-            </button>
-          </form>
-        )}
-
-        {/* TAB 3: Guest Login */}
-        {activeTab === 'guest' && (
-          <div className="space-y-4 text-center py-2">
-            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center mx-auto">
-              <User size={24} />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Modo Convidado Anônimo</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
-                Permite navegar e enviar revisões com identificador temporário de IP/Sessão.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleGuestLogin}
-              disabled={isLoading}
-              className="w-full py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <LogIn size={14} />
-              <span>Entrar como Convidado</span>
-            </button>
-          </div>
-        )}
 
         {/* ========================================================================= */}
         {/* MANDATORY RECAPTCHA SECTION */}

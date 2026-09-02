@@ -677,6 +677,19 @@ export const StorageService = {
     if (!hasVersionNotes || notifs.length === 0) {
       notifs = INITIAL_NOTIFICATIONS;
       localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+    } else {
+      // Garantir que novas notas de versão em INITIAL_NOTIFICATIONS sejam incluídas
+      const existingIds = new Set(notifs.map((n) => n.id));
+      let added = false;
+      for (const initNotif of INITIAL_NOTIFICATIONS) {
+        if (!existingIds.has(initNotif.id)) {
+          notifs.unshift(initNotif);
+          added = true;
+        }
+      }
+      if (added) {
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+      }
     }
 
     // Retorna EXCLUSIVAMENTE notificações de atualizações e notas de versão do sistema
