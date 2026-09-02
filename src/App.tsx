@@ -721,6 +721,7 @@ export default function App() {
               onOpenEditorForEdit={handleOpenEditorForEdit}
               onOpenNewEditor={(uid) => handleOpenNewEditor(uid)}
               onCreatePageClick={() => setShowCreatePageModal(true)}
+              onNavigateToUser={handleNavigateToUser}
             />
           )}
 

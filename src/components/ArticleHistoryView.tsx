@@ -23,12 +23,14 @@ interface ArticleHistoryViewProps {
   article: WikiArticle;
   onRestoreRevision?: (historyItem: ArticleHistoryItem) => void;
   onEditArticle?: () => void;
+  onNavigateToUser?: (identifier: string) => void;
 }
 
 export const ArticleHistoryView: React.FC<ArticleHistoryViewProps> = ({
   article,
   onRestoreRevision,
   onEditArticle,
+  onNavigateToUser,
 }) => {
   // Normalize history list
   const rawHistory = article.historico || [];
@@ -290,10 +292,25 @@ export const ArticleHistoryView: React.FC<ArticleHistoryViewProps> = ({
 
                         <span className="text-slate-400">·</span>
 
-                        <span className="text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1">
-                          <User size={12} className="text-blue-500" />
-                          {item.autor}
-                        </span>
+                        {onNavigateToUser ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onNavigateToUser(item.autor);
+                            }}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-bold flex items-center gap-1 hover:underline cursor-pointer transition text-left"
+                            title={`Ver página de usuário de ${item.autor}`}
+                          >
+                            <User size={12} className="text-blue-500" />
+                            <span>{item.autor}</span>
+                          </button>
+                        ) : (
+                          <span className="text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1">
+                            <User size={12} className="text-blue-500" />
+                            {item.autor}
+                          </span>
+                        )}
 
                         <span className="text-slate-400">·</span>
 
@@ -429,9 +446,20 @@ export const ArticleHistoryView: React.FC<ArticleHistoryViewProps> = ({
                 <span>Versão Anterior (Base)</span>
                 <span>v.{oldRevision?.versao || '?'}</span>
               </div>
-              <div className="text-slate-600 dark:text-slate-400">
-                {oldRevision?.data ? new Date(oldRevision.data).toLocaleString('pt-BR') : 'Data não informada'} por{' '}
-                <strong className="text-slate-800 dark:text-slate-200">{oldRevision?.autor}</strong>
+              <div className="text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                <span>{oldRevision?.data ? new Date(oldRevision.data).toLocaleString('pt-BR') : 'Data não informada'} por</span>
+                {onNavigateToUser && oldRevision?.autor ? (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateToUser(oldRevision.autor)}
+                    className="text-slate-800 dark:text-slate-200 font-bold hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer"
+                    title={`Ver página de usuário de ${oldRevision.autor}`}
+                  >
+                    {oldRevision.autor}
+                  </button>
+                ) : (
+                  <strong className="text-slate-800 dark:text-slate-200">{oldRevision?.autor}</strong>
+                )}
               </div>
               <div className="text-slate-700 dark:text-slate-300 italic">
                 "{oldRevision?.resumo || 'Sem descrição'}"
@@ -444,9 +472,20 @@ export const ArticleHistoryView: React.FC<ArticleHistoryViewProps> = ({
                 <span>Versão Mais Recente (Destino)</span>
                 <span>v.{newRevision?.versao || '?'}</span>
               </div>
-              <div className="text-slate-600 dark:text-slate-400">
-                {newRevision?.data ? new Date(newRevision.data).toLocaleString('pt-BR') : 'Data não informada'} por{' '}
-                <strong className="text-slate-800 dark:text-slate-200">{newRevision?.autor}</strong>
+              <div className="text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                <span>{newRevision?.data ? new Date(newRevision.data).toLocaleString('pt-BR') : 'Data não informada'} por</span>
+                {onNavigateToUser && newRevision?.autor ? (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateToUser(newRevision.autor)}
+                    className="text-slate-800 dark:text-slate-200 font-bold hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer"
+                    title={`Ver página de usuário de ${newRevision.autor}`}
+                  >
+                    {newRevision.autor}
+                  </button>
+                ) : (
+                  <strong className="text-slate-800 dark:text-slate-200">{newRevision?.autor}</strong>
+                )}
               </div>
               <div className="text-slate-700 dark:text-slate-300 italic">
                 "{newRevision?.resumo || 'Sem descrição'}"
@@ -534,8 +573,20 @@ export const ArticleHistoryView: React.FC<ArticleHistoryViewProps> = ({
                   {new Date(previewRevision.data).toLocaleString('pt-BR')}
                 </strong>
                 <span className="text-[11px] text-amber-800 dark:text-amber-300">
-                  Autor: <strong>{previewRevision.autor}</strong> · Motivo:{' '}
-                  <em>"{previewRevision.resumo}"</em>
+                  Autor:{' '}
+                  {onNavigateToUser ? (
+                    <button
+                      type="button"
+                      onClick={() => onNavigateToUser(previewRevision.autor)}
+                      className="font-bold hover:underline cursor-pointer text-amber-950 dark:text-amber-100"
+                      title={`Ver página de usuário de ${previewRevision.autor}`}
+                    >
+                      {previewRevision.autor}
+                    </button>
+                  ) : (
+                    <strong>{previewRevision.autor}</strong>
+                  )}{' '}
+                  · Motivo: <em>"{previewRevision.resumo}"</em>
                 </span>
               </div>
             </div>

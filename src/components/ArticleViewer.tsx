@@ -504,6 +504,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           article={article}
           onRestoreRevision={handleRestore}
           onEditArticle={() => onEdit(article)}
+          onNavigateToUser={onNavigateToUser}
         />
       )}
 

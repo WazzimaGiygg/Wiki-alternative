@@ -107,8 +107,7 @@ service cloud.firestore {
     match /userpage/{userId} {
       allow get: if true;
       allow list: if isSignedIn() || true;
-      allow create: if isOwner(userId) || isAdmin();
-      allow update: if isOwner(userId) || isAdmin();
+      allow create, update: if isOwner(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
     }
 

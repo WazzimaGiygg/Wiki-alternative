@@ -37,6 +37,7 @@ interface RecentChangesProps {
   onOpenEditorForEdit: (article: WikiArticle) => void;
   onOpenNewEditor: (defaultUid?: string) => void;
   onCreatePageClick: () => void;
+  onNavigateToUser?: (identifier: string) => void;
 }
 
 export const RecentChanges: React.FC<RecentChangesProps> = ({
@@ -48,6 +49,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
   onOpenEditorForEdit,
   onOpenNewEditor,
   onCreatePageClick,
+  onNavigateToUser,
 }) => {
   const { currentLanguage, t } = useLanguage();
 
@@ -658,10 +660,21 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
 
                         {/* 8. User / Author */}
                         <div className="text-slate-500 dark:text-slate-400 text-[11px] flex items-center gap-1 ml-auto">
-                          <User size={11} />
-                          <span className="font-medium text-slate-700 dark:text-slate-300">
-                            {item.autor}
-                          </span>
+                          <User size={11} className="text-blue-500" />
+                          {onNavigateToUser ? (
+                            <button
+                              type="button"
+                              onClick={() => onNavigateToUser(item.autor)}
+                              className="font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition text-left"
+                              title={`Ver página de usuário de ${item.autor}`}
+                            >
+                              {item.autor}
+                            </button>
+                          ) : (
+                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                              {item.autor}
+                            </span>
+                          )}
                         </div>
 
                         {/* Quick Edit shortcut if article exists */}
