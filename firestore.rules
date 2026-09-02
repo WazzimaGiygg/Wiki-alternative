@@ -14,7 +14,6 @@ service cloud.firestore {
         !exists(/databases/$(database)/documents/banned_users/$(request.auth.uid));
     }
 
-    // ✅ CORRIGIDO: Agora verifica banimento
     function isRegistered() {
       return isAuthenticated() && isNotBanned();
     }
@@ -67,10 +66,25 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // COLEÇÕES
+    // COLEÇÕES - TODAS COM LEITURA PÚBLICA
     // ==========================================
 
-    // Coleção de artigos (versão legada)
+    // ✅ Coleção principal de páginas - leitura pública
+    match /pages/{pageId} {
+      allow read: if true;  // ✅ Qualquer um pode ler
+      allow create: if isRegistered() && request.resource.data.title is string;
+      allow update: if isUserInGroup(['registered', 'editor', 'admin']);
+      allow delete: if isAdmin();
+
+      match /versions/{versionId} {
+        allow read: if true;  // ✅ Qualquer um pode ler histórico
+        allow create: if isRegistered() && request.resource.data.versionNumber is number;
+        allow update: if isEditor();
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ✅ Coleção legada - leitura pública
     match /documentos/{pageUid} {
       allow read: if true;
       allow write: if isRegistered();
@@ -83,56 +97,43 @@ service cloud.firestore {
       }
     }
 
-    // Coleção principal de páginas ✅ CORRIGIDO
-    match /pages/{pageId} {
-      allow read: if true;
-      // ✅ AGORA permite criar sem namespace obrigatório
-      allow create: if isRegistered() && request.resource.data.title is string;
-      allow update: if isUserInGroup(['registered', 'editor', 'admin']);
-      allow delete: if isAdmin();
-
-      match /versions/{versionId} {
-        allow read: if true;
-        allow create: if isRegistered() && request.resource.data.versionNumber is number;
-        allow update: if isEditor();
-        allow delete: if isAdmin();
-      }
-    }
-
+    // ✅ Templates - leitura pública
     match /templates/{templateId} {
-      allow read: if true;
+      allow read: if true;  // ✅ Qualquer um pode ver templates
       allow create: if isEditor() && request.resource.data.name is string && request.resource.data.content is string;
       allow update: if isEditor();
       allow delete: if isAdmin();
     }
 
-    // Páginas de usuário
+    // ✅ Páginas de usuário - leitura pública
     match /userpage/{userId} {
-      allow read: if true;
+      allow read: if true;  // ✅ Qualquer um pode ver perfis públicos
       allow create, update: if isRegistered() && (isOwner(userId) || isAdmin());
       allow delete: if isOwner(userId) || isAdmin();
     }
 
-    // Perfis de usuários
+    // ⚠️ Perfis de usuários - leitura pública (apenas informações não sensíveis)
     match /users/{userId} {
-      allow read: if true;
+      allow read: if true;  // ✅ Qualquer um pode ver dados básicos
       allow create: if isRegistered() && request.auth.uid == userId;
       allow update: if isRegistered() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
-    // Lista de banimentos ✅ CORRIGIDO: apenas admins podem gerenciar
+    // ⚠️ Lista de banimentos - apenas autenticados podem ver
     match /banned_users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin(); // Apenas admins podem banir/desbanir
+      allow read: if isAuthenticated();  // ⚠️ Apenas usuários logados
+      allow write: if isAdmin();
     }
 
+    // ⚠️ Logs de auditoria - apenas editores
     match /audit_logs/{logId} {
       allow read: if isEditor();
       allow create: if isEditor();
       allow update, delete: if isAdmin();
     }
 
+    // ⚠️ Watchlist - apenas o dono pode ver
     match /watchlist/{itemId} {
       allow read: if isRegistered() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isRegistered() && request.resource.data.userId == request.auth.uid;
@@ -140,9 +141,9 @@ service cloud.firestore {
       allow delete: if isRegistered() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // Regra fallback
+    // ✅ Regra fallback - leitura pública, escrita apenas para registrados
     match /{document=**} {
-      allow read: if true;
+      allow read: if true;  // ✅ QUALQUER UM PODE LER TUDO
       allow write: if isRegistered();
     }
   }
