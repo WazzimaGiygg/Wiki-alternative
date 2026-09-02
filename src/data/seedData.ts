@@ -142,7 +142,7 @@ Olá e bem-vindo à minha página de usuário na '''WikiZero'''! Meu foco editor
       canCreate: true,
       canTalk: true,
       canDelete: false,
-      canGrantBarnstars: true,
+      canGrantBarnstars: false,
     },
     bio: `= EditorSP =
 Colaborador assíduo com foco na história do transporte paulista e expansão das referências bibliográficas do acervo.`,
@@ -186,7 +186,7 @@ Colaborador assíduo com foco na história do transporte paulista e expansão da
       canCreate: true,
       canTalk: true,
       canDelete: false,
-      canGrantBarnstars: true,
+      canGrantBarnstars: false,
     },
     bio: `{{Infobox
 | Nome = Mafersão Fantasma da Série 1100
@@ -298,7 +298,7 @@ Bem-vindo(a) à minha página pública na '''WikiZero'''! Este espaço documenta
       canCreate: true,
       canTalk: true,
       canDelete: false,
-      canGrantBarnstars: true,
+      canGrantBarnstars: false,
     },
     bio: `= Metrofilo_SP =
 Engenheiro civil e entusiasta da malha metroferroviária da RMSP. Monitorando obras de expansão das Linhas 2-Verde, 6-Laranja e 17-Ouro.`,
@@ -1363,36 +1363,40 @@ O encarregado pelo tratamento de dados pessoais (DPO) pode ser contatado diretam
 
 export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
-    id: 'notif-arbcom',
-    title: '⚖️ Conselho de Arbitragem (ArbCom) Instalado (v3.8.0)',
-    message: 'O Conselho de Arbitragem independente por idioma já está em operação para julgamento de disputas, conduta editorial e abusos de autoridade.',
-    date: 'Hoje, 10:00',
+    id: 'upd-notif-3.8.0',
+    title: '🚀 WikiZero v3.8.0 - Conselho de Arbitragem (ArbCom) por Idioma',
+    message: 'Suprema corte comunitária ativa com jurisdições autônomas por idioma, dossiês probatórios e deliberações vinculantes.',
+    date: '30/08/2026',
     read: false,
     type: 'success',
+    link: 'site-updates',
   },
   {
-    id: 'notif-1',
-    title: '🎉 Recursos Wikimedia, Fandom e Wikidot Ativos',
-    message: 'Agora você conta com Páginas de Discussão, Páginas Afluentes, Lista de Páginas Vigiadas, Avaliação Comunitária e Referências automáticas.',
-    date: 'Hoje, 16:20',
+    id: 'upd-notif-3.7.0',
+    title: '🛡️ WikiZero v3.7.0 - Ferramenta CheckUser & Investigação SPI',
+    message: 'Auditoria forense de IP/User-Agent e detecção de contas fantoches (sockpuppets) para moderadores e administradores.',
+    date: '20/08/2026',
     read: false,
     type: 'info',
+    link: 'site-updates',
   },
   {
-    id: 'notif-2',
-    title: '⚡ Novo Editor & Predefinições Wiki',
-    message: 'Suporte completo a {{Aviso}}, {{Nota}}, {{Destaque}}, {{Citação}}, notas <ref> e blocos expansíveis [[collapsible]].',
-    date: 'Hoje, 15:40',
-    read: false,
-    type: 'info',
-  },
-  {
-    id: 'notif-3',
-    title: '🔒 Conformidade LGPD Atualizada',
-    message: 'Módulos de portabilidade de dados e termo de consentimento 2.0 ativos.',
-    date: 'Ontem',
+    id: 'upd-notif-3.6.0',
+    title: '⚡ WikiZero v3.6.0 - Suporte a Predefinições & Editor Avançado',
+    message: 'Implementação de predefinições dinâmicas {{Aviso}}, {{Nota}}, {{Destaque}}, notas <ref> e caixas expansíveis.',
+    date: '10/08/2026',
     read: true,
     type: 'info',
+    link: 'site-updates',
+  },
+  {
+    id: 'upd-notif-3.5.0',
+    title: '🔒 WikiZero v3.5.0 - Conformidade LGPD & Portabilidade de Dados',
+    message: 'Termo de consentimento 2.0 ativo, verificação etária e exportação integral de dados em JSON/CSV.',
+    date: '01/08/2026',
+    read: true,
+    type: 'info',
+    link: 'site-updates',
   },
 ];
 

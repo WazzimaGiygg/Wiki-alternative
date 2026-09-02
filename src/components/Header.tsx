@@ -17,6 +17,7 @@ import {
   PlusCircle,
   Globe2,
   ChevronDown,
+  ChevronRight,
   Database,
   Menu,
   Smartphone,
@@ -350,29 +351,40 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Notification Dropdown */}
             {showNotifs && (
-              <div className="absolute right-0 mt-1.5 w-80 bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 shadow-lg py-1 z-50 animate-in fade-in text-xs">
-                <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {t('header.notifications')}
-                    </span>
-                    {unreadCount > 0 && (
-                      <span className="bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] px-1.5 py-0.2 rounded font-bold">
-                        {unreadCount}
+              <div className="absolute right-0 mt-1.5 w-84 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-700 shadow-xl py-1 z-50 animate-in fade-in text-xs">
+                <div className="px-3 py-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Sparkles size={13} className="text-amber-500" />
+                        Notas de Versão do Sistema
                       </span>
-                    )}
+                      {unreadCount > 0 && (
+                        <span className="bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[10px] px-1.5 py-0.2 rounded font-bold">
+                          {unreadCount} nova{unreadCount > 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      Atualizações do sistema e notas de versão oficiais
+                    </p>
                   </div>
-                  <button
-                    onClick={onMarkNotificationsAsRead}
-                    className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
-                  >
-                    <CheckCheck size={12} /> {t('header.mark_all_read')}
-                  </button>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={onMarkNotificationsAsRead}
+                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                      title={t('header.mark_all_read')}
+                    >
+                      <CheckCheck size={12} />
+                    </button>
+                  )}
                 </div>
-                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
                   {notifications.length === 0 ? (
-                    <div className="py-6 text-center text-slate-400 text-xs">
-                      {t('header.no_notifications')}
+                    <div className="py-8 text-center text-slate-400 text-xs px-4">
+                      <Sparkles size={24} className="mx-auto mb-2 opacity-30 text-amber-500" />
+                      <p className="font-semibold text-slate-700 dark:text-slate-300">Nenhuma atualização recente</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Você está na versão mais recente do sistema.</p>
                     </div>
                   ) : (
                     notifications.map((notif) => (
@@ -382,33 +394,48 @@ export const Header: React.FC<HeaderProps> = ({
                           onNotificationClick(notif);
                           setShowNotifs(false);
                         }}
-                        className={`p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition flex items-start gap-2.5 ${
-                          !notif.read ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''
+                        className={`p-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition flex items-start gap-2.5 ${
+                          !notif.read ? 'bg-blue-50/40 dark:bg-blue-950/20' : ''
                         }`}
                       >
                         <div
-                          className={`w-1.5 h-1.5 mt-1.5 rounded-full flex-shrink-0 ${
+                          className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${
                             notif.type === 'success'
-                              ? 'bg-emerald-600'
+                              ? 'bg-emerald-500 shadow-xs shadow-emerald-500/50'
                               : notif.type === 'warning'
                               ? 'bg-amber-500'
                               : 'bg-blue-600'
                           }`}
                         />
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
-                            {notif.title}
-                          </h4>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                          <div className="flex items-center justify-between gap-1">
+                            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
+                              {notif.title}
+                            </h4>
+                            <span className="text-[9px] text-slate-400 font-mono flex-shrink-0">
+                              {notif.date}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed line-clamp-2">
                             {notif.message}
                           </p>
-                          <span className="text-[9px] text-slate-400 mt-1 block font-mono">
-                            {notif.date}
-                          </span>
                         </div>
                       </div>
                     ))
                   )}
+                </div>
+                <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onNavigate('site-updates');
+                      setShowNotifs(false);
+                    }}
+                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center gap-1.5 w-full py-1 cursor-pointer"
+                  >
+                    <span>Ver todas as Notas de Versão do Sistema</span>
+                    <ChevronRight size={13} />
+                  </button>
                 </div>
               </div>
             )}

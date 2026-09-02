@@ -607,6 +607,38 @@ export const StorageService = {
     return publicProfile;
   },
 
+  async loginAsCommunityUser(uid: string): Promise<UserProfile> {
+    const existing = await this.getUserProfile(uid);
+    if (!existing) {
+      throw new Error('Usuário comunitário não encontrado');
+    }
+    const publicProfile = await this.ensureUserPage(existing);
+    this.saveUser(publicProfile);
+    return publicProfile;
+  },
+
+  async loginCustom(username: string, displayName?: string, role: UserRole = 'editor'): Promise<UserProfile> {
+    const cleanUsername = username.trim();
+    const uid = 'user-' + cleanUsername.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+
+    let existing = await this.getUserProfile(uid);
+    if (!existing) {
+      existing = {
+        uid,
+        username: cleanUsername,
+        displayName: displayName || cleanUsername,
+        email: `${cleanUsername.toLowerCase()}@wikizero.org`,
+        role,
+        isGuest: false,
+        isBanned: false,
+        createdAt: new Date().toISOString(),
+      };
+    }
+    const publicProfile = await this.ensureUserPage(existing);
+    this.saveUser(publicProfile);
+    return publicProfile;
+  },
+
   async logout(): Promise<void> {
     if (auth) {
       try {
@@ -635,7 +667,27 @@ export const StorageService = {
   // === NOTIFICATIONS ===
   getNotifications(): NotificationItem[] {
     initializeLocalStorage();
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+    const raw = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
+    let notifs: NotificationItem[] = raw ? JSON.parse(raw) : [];
+
+    // Se estiver vazio ou contiver itens legados não relacionados a atualizações, sincronizar com INITIAL_NOTIFICATIONS
+    const hasVersionNotes = notifs.some(
+      (n) => n.link === 'site-updates' || n.title.includes('v3.') || n.title.toLowerCase().includes('wikizero v')
+    );
+    if (!hasVersionNotes || notifs.length === 0) {
+      notifs = INITIAL_NOTIFICATIONS;
+      localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+    }
+
+    // Retorna EXCLUSIVAMENTE notificações de atualizações e notas de versão do sistema
+    return notifs.filter(
+      (n) =>
+        n.link === 'site-updates' ||
+        n.title.toLowerCase().includes('v3.') ||
+        n.title.toLowerCase().includes('atualização') ||
+        n.title.toLowerCase().includes('versão') ||
+        n.title.toLowerCase().includes('release')
+    );
   },
 
   markNotificationsAsRead(): NotificationItem[] {
@@ -645,12 +697,26 @@ export const StorageService = {
   },
 
   addNotification(notif: Omit<NotificationItem, 'id' | 'date' | 'read'>): NotificationItem[] {
+    // Restrito estritamente a notas de versão e atualizações do sistema
+    const isSystemUpdate =
+      notif.link === 'site-updates' ||
+      notif.title.toLowerCase().includes('v3.') ||
+      notif.title.toLowerCase().includes('atualização') ||
+      notif.title.toLowerCase().includes('versão') ||
+      notif.title.toLowerCase().includes('release');
+
+    if (!isSystemUpdate) {
+      // Ignorar notificações de eventos pontuais no sininho (mantendo o sininho 100% focado em notas de versão)
+      return this.getNotifications();
+    }
+
     const list = this.getNotifications();
     const item: NotificationItem = {
       ...notif,
-      id: `notif-${Date.now()}`,
+      id: `upd-notif-${Date.now()}`,
       date: 'Agora',
       read: false,
+      link: 'site-updates',
     };
     const updated = [item, ...list];
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(updated));
@@ -1218,7 +1284,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
           canCreate: true,
           canTalk: true,
           canDelete: user.role === 'admin' || user.role === 'moderador',
-          canGrantBarnstars: true,
+          canGrantBarnstars: user.role === 'admin' || user.role === 'moderador',
         },
         bio: user.bio || defaultBio,
         userboxes: user.userboxes || [
@@ -1818,6 +1884,12 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     barnstarData: Omit<UserBarnstar, 'id' | 'awardedAt'>,
     adminUser: UserProfile | null
   ): Promise<UserProfile | null> {
+    // Somente administradores e moderadores podem conceder medalhas aos usuários
+    if (!adminUser || (adminUser.role !== 'admin' && adminUser.role !== 'moderador')) {
+      console.warn('[StorageService] Acesso negado: Somente administradores e moderadores podem conceder medalhas a usuários.');
+      return null;
+    }
+
     const user = await this.getUserProfile(targetUid);
     if (!user) return null;
 
@@ -1907,18 +1979,6 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     messages.unshift(newMessage);
     localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify(messages));
-
-    // Send a notification to current notifications if recipient matches
-    const notifs = this.getNotifications();
-    notifs.unshift({
-      id: 'notif-utalk-' + Date.now(),
-      title: `💬 Nova mensagem na sua Discussão: "${msg.titulo}"`,
-      message: `De ${newMessage.senderName}: "${msg.conteudo.slice(0, 80)}${msg.conteudo.length > 80 ? '...' : ''}"`,
-      date: 'Agora',
-      read: false,
-      type: msg.tipo === 'aviso_admin' ? 'warning' : 'info',
-    });
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
 
     return newMessage;
   },
@@ -2279,6 +2339,14 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     const updatedList = updates.map((u) => ({ ...u, isLatest: false }));
     updatedList.unshift(newEntry);
     localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(updatedList));
+
+    // Notificar no sininho a nova nota de versão do sistema
+    this.addNotification({
+      title: `🚀 WikiZero ${newEntry.version} - ${newEntry.title}`,
+      message: newEntry.summary,
+      type: 'success',
+      link: 'site-updates',
+    });
 
     if (firebaseActive && db) {
       try {

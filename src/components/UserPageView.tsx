@@ -141,8 +141,13 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
     canCreate: true,
     canTalk: true,
     canDelete: false,
-    canGrantBarnstars: true,
+    canGrantBarnstars: false,
   });
+
+  // Somente administradores e moderadores possuem permissão para conceder condecorações/medalhas
+  const canGrantBarnstars = Boolean(
+    currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderador')
+  );
 
   // Admin Rename User (LGPD / Marco Civil) State
   const [newDisplayName, setNewDisplayName] = useState('');
@@ -289,6 +294,10 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   // Handle Award Barnstar
   const handleAwardBarnstar = async () => {
     if (!userProfile) return;
+    if (!canGrantBarnstars) {
+      alert('Apenas administradores e moderadores possuem autorização para conceder medalhas na WikiZero.');
+      return;
+    }
     const updated = await StorageService.awardBarnstar(
       userProfile.uid,
       {
@@ -1023,24 +1032,39 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                     Medalhas & Barnstars
                   </h3>
                 </div>
-                <button
-                  onClick={() => setShowBarnstarModal(true)}
-                  className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-0.5"
-                >
-                  <Plus size={11} /> Conceder
-                </button>
+                {canGrantBarnstars ? (
+                  <button
+                    onClick={() => setShowBarnstarModal(true)}
+                    className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <Plus size={11} /> Conceder
+                  </button>
+                ) : (
+                  <span
+                    className="text-[10px] text-slate-400 dark:text-slate-500 font-mono flex items-center gap-1"
+                    title="Somente administradores e moderadores podem conceder medalhas."
+                  >
+                    <Shield size={11} className="text-slate-400" /> Admins & Mods
+                  </span>
+                )}
               </div>
 
               {!userProfile.barnstars || userProfile.barnstars.length === 0 ? (
                 <div className="py-6 text-center text-slate-400 text-xs">
                   <Award size={28} className="mx-auto mb-2 opacity-30 text-amber-500" />
                   <p>Este usuário ainda não recebeu condecorações.</p>
-                  <button
-                    onClick={() => setShowBarnstarModal(true)}
-                    className="mt-2 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline"
-                  >
-                    Seja o primeiro a conceder uma medalha!
-                  </button>
+                  {canGrantBarnstars ? (
+                    <button
+                      onClick={() => setShowBarnstarModal(true)}
+                      className="mt-2 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline cursor-pointer"
+                    >
+                      Conceder uma medalha oficial
+                    </button>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      (As condecorações são atribuídas exclusivamente por administradores e moderadores.)
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1977,9 +2001,9 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: CONCEDER CONDECORAÇÃO (BARNSTAR) */}
+      {/* MODAL: CONCEDER CONDECORAÇÃO (BARNSTAR) - EXCLUSIVO ADMINS E MODS */}
       {/* ========================================================================= */}
-      {showBarnstarModal && (
+      {showBarnstarModal && canGrantBarnstars && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl max-w-lg w-full p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">

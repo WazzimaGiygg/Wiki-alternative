@@ -32,6 +32,7 @@ import { FileUploadView } from './components/FileUploadView';
 import { FilePageView } from './components/FilePageView';
 import { FilesGalleryView } from './components/FilesGalleryView';
 import { ArbitrationCommitteeView } from './components/ArbitrationCommitteeView';
+import { LoginModal } from './components/LoginModal';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileSearchModal } from './components/MobileSearchModal';
@@ -65,6 +66,7 @@ export default function App() {
   const [showCreatePageModal, setShowCreatePageModal] = useState<boolean>(false);
   const [showMyDataModal, setShowMyDataModal] = useState<boolean>(false);
   const [showLanguageModal, setShowLanguageModal] = useState<boolean>(false);
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
   const [currentView, setCurrentView] = useState<ViewMode>('hub');
   const [selectedPageUid, setSelectedPageUid] = useState<string | null>(null);
@@ -485,27 +487,13 @@ export default function App() {
   };
 
   // Auth Handlers
-  const handleLoginClick = async () => {
-    try {
-      const loggedUser = await StorageService.loginWithGoogle();
-      setUser(loggedUser);
-      StorageService.addNotification({
-        title: '🔑 Autenticado com Sucesso',
-        message: `Bem-vindo(a), ${loggedUser.displayName}!`,
-        type: 'success',
-      });
-      setNotifications(StorageService.getNotifications());
-    } catch (err) {
-      console.warn('Google Auth popup failed, using Guest Profile:', err);
-      const guest = StorageService.createGuestUser();
-      setUser(guest);
-      StorageService.addNotification({
-        title: '👤 Modo Convidado Ativo',
-        message: 'Você pode navegar e editar artigos com identificador anônimo.',
-        type: 'info',
-      });
-      setNotifications(StorageService.getNotifications());
-    }
+  const handleLoginClick = () => {
+    setShowLoginModal(true);
+  };
+
+  const handleLoginSuccess = async (loggedUser: UserProfile) => {
+    setUser(loggedUser);
+    await StorageService.ensureUserPage(loggedUser);
   };
 
   const handleLogout = async () => {
@@ -603,13 +591,6 @@ export default function App() {
     setSelectedPageUid(saved.pageUid);
     setEditingArticle(null);
     setCurrentView('article');
-
-    StorageService.addNotification({
-      title: isMinor ? '✏️ Edição Menor Registrada' : '📝 Artigo Publicado',
-      message: `"${saved.titulo}" (${editSummary}) salvo com sucesso!`,
-      type: 'success',
-    });
-    setNotifications(StorageService.getNotifications());
   };
 
   const handleRestoreRevision = async (historyItem: ArticleHistoryItem) => {
@@ -1085,6 +1066,13 @@ export default function App() {
         user={user}
         onClose={() => setShowCreatePageModal(false)}
         onCreate={handleCreatePage}
+      />
+
+      {/* Login Modal with reCAPTCHA verification */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       {/* My Data Portability Modal */}
