@@ -121,6 +121,10 @@
       "schema": "WikiArticle",
       "description": "Artigos da enciclopédia"
     },
+    "/articles/{articleId}": {
+      "schema": "WikiArticle",
+      "description": "Artigos da enciclopédia com sincronização persistente global no Firestore"
+    },
     "/pages/{pageId}": {
       "schema": "Page",
       "description": "Páginas da enciclopédia organizadas por namespaces e categorias"

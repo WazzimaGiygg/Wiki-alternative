@@ -38,7 +38,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
       const user = await StorageService.loginWithGoogle();
       onLoginSuccess(user);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('Bloqueado') || msg.includes('bloqueada') || msg.includes('banida')) {
+        setLoginError(msg);
+        return;
+      }
       console.warn('Google Auth popup failed, using fallback authenticated session:', err);
       // Fallback for iframe sandboxes
       try {
@@ -49,8 +54,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         );
         onLoginSuccess(fallbackUser);
         onClose();
-      } catch (fallbackErr) {
-        setLoginError('Não foi possível concluir o login com a Conta Google. Tente novamente.');
+      } catch (fallbackErr: any) {
+        setLoginError(fallbackErr?.message || 'Não foi possível concluir o login com a Conta Google. Tente novamente.');
       }
     } finally {
       setIsLoading(false);
@@ -64,11 +69,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
     setIsLoading(true);
     setLoginError(null);
     try {
-      const guest = StorageService.createGuestUser();
+      const guest = await StorageService.createGuestUser();
       onLoginSuccess(guest);
       onClose();
-    } catch (err) {
-      setLoginError('Falha ao ingressar no modo convidado.');
+    } catch (err: any) {
+      setLoginError(err?.message || 'Falha ao ingressar no modo convidado.');
     } finally {
       setIsLoading(false);
     }

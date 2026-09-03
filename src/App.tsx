@@ -196,15 +196,27 @@ export default function App() {
 
       setPages(p);
       setArticles(a);
-      setUser(u);
       setNotifications(n);
       setCookieConsent(c);
 
-      // Garantir que a página pública do usuário logado exista e esteja sincronizada
-      if (u && !u.isGuest) {
-        StorageService.ensureUserPage(u).then((verified) => {
-          setUser(verified);
-        }).catch((e) => console.warn('[App] ensureUserPage error on boot:', e));
+      // Verificar banimento do usuário em cache ao carregar
+      if (u) {
+        const banCheck = await StorageService.getUserBanStatus(u.uid, u.email, u.username || u.displayName);
+        if (banCheck.isBanned || u.isBanned) {
+          await StorageService.logout();
+          setUser(null);
+          console.warn('[App] Sessão revogada: usuário bloqueado por decisão administrativa.');
+        } else {
+          setUser(u);
+          // Garantir que a página pública do usuário logado exista e esteja sincronizada
+          if (!u.isGuest) {
+            StorageService.ensureUserPage(u).then((verified) => {
+              setUser(verified);
+            }).catch((e) => console.warn('[App] ensureUserPage error on boot:', e));
+          }
+        }
+      } else {
+        setUser(null);
       }
 
       // Trigger LGPD term modal if not yet accepted
@@ -492,8 +504,25 @@ export default function App() {
   };
 
   const handleLoginSuccess = async (loggedUser: UserProfile) => {
+    const banCheck = await StorageService.getUserBanStatus(
+      loggedUser.uid,
+      loggedUser.email,
+      loggedUser.username || loggedUser.displayName
+    );
+    if (banCheck.isBanned || loggedUser.isBanned) {
+      await StorageService.logout();
+      setUser(null);
+      alert(
+        `Acesso Recusado: Usuários bloqueados não podem realizar login na WikiZero.\n\nMotivo: ${
+          banCheck.reason || loggedUser.banReason || 'Decisão administrativa.'
+        }`
+      );
+      return;
+    }
     setUser(loggedUser);
-    await StorageService.ensureUserPage(loggedUser);
+    if (!loggedUser.isGuest) {
+      await StorageService.ensureUserPage(loggedUser);
+    }
   };
 
   const handleLogout = async () => {

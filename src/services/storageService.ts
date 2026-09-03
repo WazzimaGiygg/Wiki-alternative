@@ -18,6 +18,7 @@ import {
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
+  signInAnonymously,
   User,
 } from 'firebase/auth';
 import {
@@ -327,13 +328,47 @@ export const StorageService = {
   // === PAGES / TOPICS ===
   async getPages(): Promise<WikiPage[]> {
     initializeLocalStorage();
-    const localPages: WikiPage[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.PAGES) || '[]');
+    let localPages: WikiPage[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.PAGES) || '[]');
+
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'documentos'));
+        if (!snap.empty) {
+          const remotePages: WikiPage[] = [];
+          snap.forEach((d) => {
+            const data = d.data();
+            remotePages.push({
+              uid: data.uid || d.id,
+              titulo: data.titulo || data.nome || d.id,
+              descricao: data.descricao || '',
+              categoria: data.categoria || 'Geral',
+              criadoEm: data.criadoEm?.toDate ? data.criadoEm.toDate().toISOString() : (data.criadoEm || new Date().toISOString()),
+              status: data.status || 'ativo',
+              articleCount: 0,
+            });
+          });
+
+          // Mesclar páginas locais com as remotas do Firestore
+          const pageMap = new Map<string, WikiPage>();
+          localPages.forEach((p) => pageMap.set(p.uid.toLowerCase(), p));
+          remotePages.forEach((p) => {
+            const existing = pageMap.get(p.uid.toLowerCase());
+            pageMap.set(p.uid.toLowerCase(), { ...(existing || {}), ...p });
+          });
+          localPages = Array.from(pageMap.values());
+          localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(localPages));
+        }
+      } catch (err) {
+        console.warn('[StorageService] Aviso ao sincronizar páginas do Firestore, usando cache local:', err);
+      }
+    }
+
     const articles = await this.getArticles();
 
     // Recompute article counts
     const updated = localPages.map((page) => ({
       ...page,
-      articleCount: articles.filter((a) => a.pageUid === page.uid).length,
+      articleCount: articles.filter((a) => a.pageUid.toLowerCase() === page.uid.toLowerCase()).length,
     }));
 
     return updated;
@@ -378,8 +413,92 @@ export const StorageService = {
   // === ARTICLES ===
   async getArticles(): Promise<WikiArticle[]> {
     initializeLocalStorage();
-    const articles: WikiArticle[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARTICLES) || '[]');
-    return articles;
+    let localArticles: WikiArticle[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARTICLES) || '[]');
+
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'articles'));
+        if (!snap.empty) {
+          const remoteArticles: WikiArticle[] = [];
+          snap.forEach((d) => {
+            const data = d.data();
+            remoteArticles.push({
+              id: data.id || d.id,
+              pageUid: data.pageUid || 'geral',
+              titulo: data.titulo || 'Sem título',
+              descricao: data.descricao || '',
+              resumo: data.resumo || (data.descricao ? data.descricao.slice(0, 140) + '...' : ''),
+              categoria: data.categoria || 'Geral',
+              idioma: data.idioma || 'Português',
+              autor: data.autor || 'Colaborador WikiZero',
+              autorEmail: data.autorEmail || undefined,
+              autorUid: data.autorUid || undefined,
+              dataCriacao: data.dataCriacao || new Date().toISOString(),
+              dataEdicao: data.dataEdicao || data.dataCriacao || new Date().toISOString(),
+              visualizacoes: typeof data.visualizacoes === 'number' ? data.visualizacoes : 1,
+              versao: typeof data.versao === 'number' ? data.versao : 1,
+              tags: Array.isArray(data.tags) ? data.tags : [],
+              historico: Array.isArray(data.historico) ? data.historico : [],
+            });
+          });
+
+          // Mesclar: os artigos do Firestore são a fonte de verdade em nuvem
+          const articleMap = new Map<string, WikiArticle>();
+          // 1. Popula com locais
+          localArticles.forEach((a) => articleMap.set(a.id, a));
+          // 2. Sobrepõe com os artigos do Firestore
+          remoteArticles.forEach((a) => articleMap.set(a.id, a));
+
+          localArticles = Array.from(articleMap.values());
+          // Ordenar cronologicamente por edição/criação decrescente
+          localArticles.sort((a, b) => {
+            const timeA = new Date(a.dataEdicao || a.dataCriacao).getTime();
+            const timeB = new Date(b.dataEdicao || b.dataCriacao).getTime();
+            return timeB - timeA;
+          });
+
+          localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(localArticles));
+        } else if (localArticles.length > 0) {
+          // Se a coleção 'articles' do Firestore ainda não foi semeada, salvar artigos iniciais no Firestore
+          this.seedArticlesToFirestore(localArticles).catch((e) =>
+            console.warn('[StorageService] Erro ao semear artigos no Firestore:', e)
+          );
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao carregar artigos do Firestore, usando cache local:', err);
+      }
+    }
+
+    return localArticles;
+  },
+
+  async seedArticlesToFirestore(articles: WikiArticle[]): Promise<void> {
+    if (!firebaseActive || !db) return;
+    for (const art of articles) {
+      try {
+        await setDoc(doc(db, 'articles', art.id), {
+          id: art.id,
+          pageUid: art.pageUid,
+          titulo: art.titulo,
+          descricao: art.descricao,
+          resumo: art.resumo || '',
+          categoria: art.categoria || 'Geral',
+          idioma: art.idioma || 'Português',
+          autor: art.autor || 'Colaborador WikiZero',
+          autorEmail: art.autorEmail || null,
+          autorUid: art.autorUid || 'system',
+          dataCriacao: art.dataCriacao || new Date().toISOString(),
+          dataEdicao: art.dataEdicao || art.dataCriacao || new Date().toISOString(),
+          visualizacoes: art.visualizacoes || 1,
+          versao: art.versao || 1,
+          tags: art.tags || [],
+          historico: (art.historico || []).slice(0, 30),
+          atualizadoEm: serverTimestamp(),
+        });
+      } catch {
+        // Ignora falhas individuais na semeadura inicial em segundo plano
+      }
+    }
   },
 
   async getArticlesByPage(pageUid: string): Promise<WikiArticle[]> {
@@ -478,21 +597,58 @@ export const StorageService = {
 
     localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(articles));
 
-    // Try Firestore sync if available
+    // Persistência e Sincronização em Tempo Real no Firestore
     if (firebaseActive && db) {
       try {
-        await setDoc(doc(db, 'documentos', article.pageUid, 'inevitavel', article.id), {
+        const firestorePayload = {
+          id: article.id,
+          pageUid: article.pageUid,
           titulo: article.titulo,
           descricao: article.descricao,
-          resumo: article.resumo,
-          categoria: article.categoria,
-          idioma: article.idioma,
-          autor: article.autor,
+          resumo: article.resumo || '',
+          categoria: article.categoria || 'Geral',
+          idioma: article.idioma || 'Português',
+          autor: article.autor || 'Colaborador WikiZero',
+          autorEmail: article.autorEmail || null,
           autorUid: article.autorUid || 'anon',
+          dataCriacao: article.dataCriacao,
+          dataEdicao: article.dataEdicao,
+          visualizacoes: article.visualizacoes || 1,
+          versao: article.versao || 1,
+          tags: article.tags || [],
+          historico: (article.historico || []).slice(0, 50),
+          atualizadoEm: serverTimestamp(),
+        };
+
+        // 1. Coleção principal /articles/{id} para leitura rápida global
+        await setDoc(doc(db, 'articles', article.id), firestorePayload);
+
+        // 2. Coleção estruturada por tópico /documentos/{pageUid}/inevitavel/{id}
+        await setDoc(doc(db, 'documentos', article.pageUid, 'inevitavel', article.id), {
+          ...firestorePayload,
           atualizadoEm: serverTimestamp(),
         });
+
+        // 3. Coleção unificada de páginas do sistema /pages/{id}
+        await setDoc(
+          doc(db, 'pages', `main:${article.id}`),
+          {
+            id: `main:${article.id}`,
+            namespace: 'main',
+            title: article.titulo,
+            content: article.descricao,
+            categories: article.categoria ? [article.categoria] : ['Geral'],
+            authorName: article.autor,
+            version: article.versao || 1,
+            updatedAt: article.dataEdicao,
+            createdAt: article.dataCriacao,
+          },
+          { merge: true }
+        );
+
+        console.info(`[StorageService] Artigo "${article.titulo}" sincronizado com sucesso no Firebase Firestore.`);
       } catch (err) {
-        console.warn('Firestore saveArticle sync error:', err);
+        console.error('[StorageService] Erro ao sincronizar artigo no Firestore:', err);
       }
     }
 
@@ -524,7 +680,9 @@ export const StorageService = {
 
     if (firebaseActive && db && article) {
       try {
+        await deleteDoc(doc(db, 'articles', article.id));
         await deleteDoc(doc(db, 'documentos', article.pageUid, 'inevitavel', article.id));
+        await deleteDoc(doc(db, 'pages', `main:${article.id}`));
       } catch (e) {
         console.warn('Firestore delete sync error:', e);
       }
@@ -538,6 +696,14 @@ export const StorageService = {
     if (art) {
       art.visualizacoes = (art.visualizacoes || 0) + 1;
       localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(articles));
+
+      if (firebaseActive && db) {
+        try {
+          await setDoc(doc(db, 'articles', id), { visualizacoes: art.visualizacoes }, { merge: true });
+        } catch {
+          // Silencioso em caso de contadores de visualização rápidos
+        }
+      }
     }
   },
 
@@ -560,8 +726,37 @@ export const StorageService = {
     localStorage.removeItem(STORAGE_KEYS.USER);
   },
 
-  createGuestUser(): UserProfile {
-    const guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
+  async createGuestUser(): Promise<UserProfile> {
+    let guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
+
+    // Tentar autenticar anonimamente no Firebase Auth para vincular ao Firestore
+    if (auth) {
+      try {
+        const anonCred = await signInAnonymously(auth);
+        if (anonCred?.user?.uid) {
+          guestId = anonCred.user.uid;
+        }
+      } catch (anonErr) {
+        console.warn('[StorageService] signInAnonymously indisponível ou desativado, operando com ID local:', anonErr);
+      }
+    }
+
+    // Verificar se o ID anônimo ou IP está bloqueado
+    const banStatus = await this.getUserBanStatus(guestId);
+    if (banStatus.isBanned) {
+      if (auth) {
+        try {
+          await signOut(auth);
+        } catch {
+          // Ignora
+        }
+      }
+      this.clearUser();
+      throw new Error(
+        `Acesso Bloqueado: Usuários bloqueados não podem realizar login ou editar na WikiZero. Motivo: ${banStatus.reason || 'Bloqueio de acesso.'}`
+      );
+    }
+
     const guest: UserProfile = {
       uid: guestId,
       email: `${guestId}@convidado.wikizero.com`,
@@ -583,6 +778,20 @@ export const StorageService = {
     const result = await signInWithPopup(auth, provider);
     const u = result.user;
 
+    // Verificar banimento ANTES de autorizar a sessão
+    const banStatus = await this.getUserBanStatus(u.uid, u.email || undefined, u.displayName || undefined);
+    if (banStatus.isBanned) {
+      try {
+        await signOut(auth);
+      } catch {
+        // Ignora
+      }
+      this.clearUser();
+      throw new Error(
+        `Acesso Bloqueado: Esta conta está bloqueada na WikiZero. Motivo: ${banStatus.reason || 'Violação das políticas comunitárias.'}. O login foi recusado.`
+      );
+    }
+
     const userProfile: UserProfile = {
       uid: u.uid,
       email: u.email || '',
@@ -593,13 +802,6 @@ export const StorageService = {
       role: 'editor',
       createdAt: new Date().toISOString(),
     };
-
-    // Check ban list
-    const isBanned = await this.checkIfUserIsBanned(u.uid);
-    if (isBanned) {
-      userProfile.isBanned = true;
-      userProfile.banReason = 'Violação das políticas de uso da comunidade WikiZero.';
-    }
 
     // Criar e disponibilizar publicamente a página de usuário caso ainda não exista
     const publicProfile = await this.ensureUserPage(userProfile);
@@ -612,6 +814,16 @@ export const StorageService = {
     if (!existing) {
       throw new Error('Usuário comunitário não encontrado');
     }
+
+    // Checar banimento
+    const banStatus = await this.getUserBanStatus(uid, existing.email, existing.username || existing.displayName);
+    if (banStatus.isBanned || existing.isBanned) {
+      this.clearUser();
+      throw new Error(
+        `Acesso Bloqueado: A conta "${existing.displayName || existing.username}" está bloqueada na WikiZero. Motivo: ${banStatus.reason || existing.banReason || 'Violação das políticas comunitárias.'}. O login foi recusado.`
+      );
+    }
+
     const publicProfile = await this.ensureUserPage(existing);
     this.saveUser(publicProfile);
     return publicProfile;
@@ -621,7 +833,23 @@ export const StorageService = {
     const cleanUsername = username.trim();
     const uid = 'user-' + cleanUsername.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
 
+    // Checar banimento
+    const banStatus = await this.getUserBanStatus(uid, `${cleanUsername.toLowerCase()}@wikizero.org`, cleanUsername);
+    if (banStatus.isBanned) {
+      this.clearUser();
+      throw new Error(
+        `Acesso Bloqueado: A conta "${cleanUsername}" está bloqueada na WikiZero. Motivo: ${banStatus.reason || 'Violação das políticas comunitárias.'}. O login foi recusado.`
+      );
+    }
+
     let existing = await this.getUserProfile(uid);
+    if (existing && existing.isBanned) {
+      this.clearUser();
+      throw new Error(
+        `Acesso Bloqueado: A conta "${cleanUsername}" está bloqueada na WikiZero. Motivo: ${existing.banReason || 'Violação das políticas comunitárias.'}. O login foi recusado.`
+      );
+    }
+
     if (!existing) {
       existing = {
         uid,
@@ -650,18 +878,93 @@ export const StorageService = {
     this.clearUser();
   },
 
-  async checkIfUserIsBanned(uid: string): Promise<boolean> {
-    // Simulated check or firestore query
-    if (uid === 'banned_test_user') return true;
+  async getUserBanStatus(
+    uid: string,
+    email?: string,
+    username?: string
+  ): Promise<{ isBanned: boolean; reason?: string; banType?: string; expiresAt?: string }> {
+    if (!uid) return { isBanned: false };
+
+    // 1. Simulação para conta de teste bloqueada
+    if (uid === 'banned_test_user') {
+      return {
+        isBanned: true,
+        reason: 'Conta de teste bloqueada administrativamente por violação das diretrizes.',
+        banType: 'permanente',
+      };
+    }
+
+    // 2. Consulta em tempo real na coleção banned_users do Firestore
     if (firebaseActive && db) {
       try {
+        // Checar por UID
         const banDoc = await getDoc(doc(db, 'banned_users', uid));
-        return banDoc.exists();
-      } catch {
-        return false;
+        if (banDoc.exists()) {
+          const data = banDoc.data();
+          return {
+            isBanned: true,
+            reason: data.reason || data.banReason || 'Conta suspensa por decisão administrativa.',
+            banType: data.banType || 'permanente',
+            expiresAt: data.banExpiresAt || data.expiresAt,
+          };
+        }
+
+        // Checar documento em users/{uid} se flag isBanned estiver ativa
+        const userDoc = await getDoc(doc(db, 'users', uid));
+        if (userDoc.exists() && userDoc.data()?.isBanned) {
+          const data = userDoc.data();
+          return {
+            isBanned: true,
+            reason: data.banReason || 'Conta suspensa por decisão administrativa.',
+            banType: data.banType || 'permanente',
+            expiresAt: data.banExpiresAt,
+          };
+        }
+
+        // Checar por email se fornecido
+        if (email) {
+          const emailDoc = await getDoc(doc(db, 'banned_users', email.toLowerCase().trim()));
+          if (emailDoc.exists()) {
+            const data = emailDoc.data();
+            return {
+              isBanned: true,
+              reason: data.reason || data.banReason || 'Email associado a conta bloqueada.',
+              banType: data.banType || 'permanente',
+            };
+          }
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao consultar banimento no Firestore:', err);
       }
     }
-    return false;
+
+    // 3. Checar banco local e usuários da comunidade
+    try {
+      const communityUsers = await this.getCommunityUsers();
+      const match = communityUsers.find(
+        (u) =>
+          u.uid === uid ||
+          (email && u.email && u.email.toLowerCase() === email.toLowerCase()) ||
+          (username && (u.username === username || u.displayName === username))
+      );
+      if (match && match.isBanned) {
+        return {
+          isBanned: true,
+          reason: match.banReason || 'Conta bloqueada por infração das regras comunitárias.',
+          banType: match.banType || 'permanente',
+          expiresAt: match.banExpiresAt,
+        };
+      }
+    } catch {
+      // Ignora erro de leitura local
+    }
+
+    return { isBanned: false };
+  },
+
+  async checkIfUserIsBanned(uid: string, email?: string, username?: string): Promise<boolean> {
+    const status = await this.getUserBanStatus(uid, email, username);
+    return status.isBanned;
   },
 
   // === NOTIFICATIONS ===
@@ -1765,6 +2068,29 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     await this.saveCommunityUser(updated);
 
+    // Persistir no Firestore na coleção banned_users se for bloqueio efetivo
+    if (firebaseActive && db && banType !== 'advertencia') {
+      try {
+        await setDoc(doc(db, 'banned_users', uid), {
+          uid,
+          reason,
+          banType,
+          banExpiresAt: banExpiresAt || null,
+          bannedAt: serverTimestamp(),
+          bannedBy: adminUser?.displayName || adminUser?.username || 'admin',
+          isBanned: true,
+        });
+      } catch (err) {
+        console.warn('[StorageService] Erro ao sincronizar banimento no Firestore banned_users:', err);
+      }
+    }
+
+    // Se o usuário banido estiver atualmente com a sessão aberta nesta máquina, derrubar a sessão
+    const currentSession = this.getCurrentUser();
+    if (currentSession && (currentSession.uid === uid || currentSession.email === user.email)) {
+      this.clearUser();
+    }
+
     const desc =
       banType === 'permanente'
         ? `Bloqueio permanente aplicado. Motivo: ${reason}`
@@ -1821,6 +2147,15 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     };
 
     await this.saveCommunityUser(updated);
+
+    // Remover registro de banimento no Firestore banned_users
+    if (firebaseActive && db) {
+      try {
+        await deleteDoc(doc(db, 'banned_users', uid));
+      } catch (err) {
+        console.warn('[StorageService] Erro ao remover banimento no Firestore banned_users:', err);
+      }
+    }
 
     this.logUserAuditAction(
       user.uid,

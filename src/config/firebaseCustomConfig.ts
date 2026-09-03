@@ -64,12 +64,13 @@ export const ACTIVE_FIREBASE_CONFIG: FirebaseCustomSettings = {
   firestoreDatabaseId: baseAppletConfig.firestoreDatabaseId || "(default)",
 
   firebaseConfig: {
-    apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
-    authDomain: "wzzm-ce3fc.firebaseapp.com",
-    projectId: "wzzm-ce3fc",
-    storageBucket: "wzzm-ce3fc.appspot.com",
-    messagingSenderId: "249427877153",
-    appId: "1:249427877153:web:0e4297294794a5aadeb260",
+    apiKey: baseAppletConfig.apiKey,
+    authDomain: baseAppletConfig.authDomain,
+    projectId: baseAppletConfig.projectId,
+    storageBucket: baseAppletConfig.storageBucket,
+    messagingSenderId: baseAppletConfig.messagingSenderId,
+    appId: baseAppletConfig.appId,
+    measurementId: baseAppletConfig.measurementId || undefined,
   },
 
   options: {
