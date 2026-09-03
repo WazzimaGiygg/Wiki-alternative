@@ -298,6 +298,19 @@ export default function App() {
       }
     };
     loadData();
+
+    // Inscrição em tempo real com o Firestore para sincronização entre múltiplos navegadores e sessões anônimas
+    const unsubArticles = StorageService.subscribeToArticles((updatedArticles) => {
+      setArticles(updatedArticles);
+    });
+    const unsubPages = StorageService.subscribeToPages((updatedPages) => {
+      setPages(updatedPages);
+    });
+
+    return () => {
+      unsubArticles();
+      unsubPages();
+    };
   }, []);
 
   // Listen to browser Back/Forward (popstate) and hash changes for deep linking
@@ -742,22 +755,48 @@ export default function App() {
             />
           )}
 
-          {currentView === 'article' && activeArticle && (
-            <ArticleViewer
-              article={activeArticle}
-              page={activePage}
-              user={user}
-              allArticles={articles}
-              allPages={pages}
-              onEdit={handleOpenEditorForEdit}
-              onDelete={handleDeleteArticle}
-              onNavigateToPage={handleSelectPage}
-              onNavigateToArticleByTitle={handleNavigateToArticleByTitle}
-              onNavigateToArticleById={handleSelectArticle}
-              onNavigateToUser={handleNavigateToUser}
-              onBack={() => handleNavigate('hub')}
-              onRestoreRevision={handleRestoreRevision}
-            />
+          {currentView === 'article' && (
+            activeArticle ? (
+              <ArticleViewer
+                article={activeArticle}
+                page={activePage}
+                user={user}
+                allArticles={articles}
+                allPages={pages}
+                onEdit={handleOpenEditorForEdit}
+                onDelete={handleDeleteArticle}
+                onNavigateToPage={handleSelectPage}
+                onNavigateToArticleByTitle={handleNavigateToArticleByTitle}
+                onNavigateToArticleById={handleSelectArticle}
+                onNavigateToUser={handleNavigateToUser}
+                onBack={() => handleNavigate('hub')}
+                onRestoreRevision={handleRestoreRevision}
+              />
+            ) : (
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center max-w-xl mx-auto my-12 space-y-4">
+                <div className="text-4xl">📄</div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white font-serif-heading">
+                  Nenhum Artigo Encontrado
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Não há artigos carregados no banco de dados para visualização neste momento. Você pode iniciar uma nova publicação agora mesmo!
+                </p>
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => handleNavigate('hub')}
+                    className="px-4 py-2 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 text-xs font-semibold"
+                  >
+                    Ir para a Página Inicial
+                  </button>
+                  <button
+                    onClick={() => handleOpenNewEditor()}
+                    className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold"
+                  >
+                    Escrever Artigo
+                  </button>
+                </div>
+              </div>
+            )
           )}
 
           {currentView === 'special-pages' && (

@@ -262,100 +262,118 @@ export const WikiHub: React.FC<WikiHubProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {filteredPages.map((page) => {
-            const pageArticles = articles.filter((a) => {
-              const matchesUid = a.pageUid === page.uid;
-              const matchesLang =
-                selectedLanguageFilter === 'all' ||
-                (a.idioma || 'pt').toLowerCase().startsWith(selectedLanguageFilter.toLowerCase());
-              return matchesUid && matchesLang;
-            });
+        {filteredPages.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center my-4 space-y-3">
+            <div className="text-3xl text-slate-400">📚</div>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              Nenhuma coleção cadastrada no banco de dados
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+              O banco de dados Firestore está pronto para receber seus documentos e tópicos de enciclopédia.
+            </p>
+            <button
+              onClick={onCreatePageClick}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
+            >
+              <Plus size={13} /> Criar Primeira Coleção
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {filteredPages.map((page) => {
+              const pageArticles = articles.filter((a) => {
+                const matchesUid = a.pageUid === page.uid;
+                const matchesLang =
+                  selectedLanguageFilter === 'all' ||
+                  (a.idioma || 'pt').toLowerCase().startsWith(selectedLanguageFilter.toLowerCase());
+                return matchesUid && matchesLang;
+              });
 
-            return (
-              <div
-                key={page.uid}
-                className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded p-3.5 shadow-xs hover:border-blue-500 dark:hover:border-blue-600 transition flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{page.icon || '📄'}</span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
-                        {page.categoria}
+              return (
+                <div
+                  key={page.uid}
+                  className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded p-3.5 shadow-xs hover:border-blue-500 dark:hover:border-blue-600 transition flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{page.icon || '📄'}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
+                          {page.categoria}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        uid: {page.uid}
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono text-slate-400">
-                      uid: {page.uid}
-                    </span>
-                  </div>
 
-                  <h3
-                    onClick={() => onSelectPage(page.uid)}
-                    className="text-sm font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer font-serif-heading transition leading-snug"
-                  >
-                    {page.titulo}
-                  </h3>
-
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed font-sans">
-                    {page.descricao}
-                  </p>
-
-                  {/* Subcollection articles preview list */}
-                  <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block font-mono">
-                      {t('hub.articles_count')} ({pageArticles.length}):
-                    </span>
-                    {pageArticles.slice(0, 3).map((art) => {
-                      const artLang = getLanguageByCode(art.idioma || 'pt');
-                      return (
-                        <div
-                          key={art.id}
-                          onClick={() => onSelectArticle(art.id)}
-                          className="text-[11px] text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer flex items-center justify-between gap-1.5 py-0.5 truncate group"
-                        >
-                          <div className="flex items-center gap-1.5 truncate">
-                            <span className="text-blue-600 text-[9px]">▪</span>
-                            <span className="truncate">{art.titulo}</span>
-                          </div>
-                          <span className="text-[9px] px-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-blue-500 flex-shrink-0 font-mono">
-                            {artLang.flag} {artLang.code}
-                          </span>
-                        </div>
-                      );
-                    })}
-                    {pageArticles.length === 0 && (
-                      <span className="text-[11px] text-slate-400 italic">
-                        {t('hub.empty_collection')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-slate-400">
-                    {pageArticles.length} {t('hub.articles_count')}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => onCreateArticleClick(page.uid)}
-                      title="Adicionar artigo nesta coleção"
-                      className="px-2 py-1 rounded text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1 border border-slate-200 dark:border-slate-700"
-                    >
-                      <Plus size={11} /> Artigo
-                    </button>
-                    <button
+                    <h3
                       onClick={() => onSelectPage(page.uid)}
-                      className="p-1 rounded bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition border border-blue-200 dark:border-blue-800"
+                      className="text-sm font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer font-serif-heading transition leading-snug"
                     >
-                      <ArrowRight size={13} />
-                    </button>
+                      {page.titulo}
+                    </h3>
+
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed font-sans">
+                      {page.descricao}
+                    </p>
+
+                    {/* Subcollection articles preview list */}
+                    <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block font-mono">
+                        {t('hub.articles_count')} ({pageArticles.length}):
+                      </span>
+                      {pageArticles.slice(0, 3).map((art) => {
+                        const artLang = getLanguageByCode(art.idioma || 'pt');
+                        return (
+                          <div
+                            key={art.id}
+                            onClick={() => onSelectArticle(art.id)}
+                            className="text-[11px] text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer flex items-center justify-between gap-1.5 py-0.5 truncate group"
+                          >
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span className="text-blue-600 text-[9px]">▪</span>
+                              <span className="truncate">{art.titulo}</span>
+                            </div>
+                            <span className="text-[9px] px-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-blue-500 flex-shrink-0 font-mono">
+                              {artLang.flag} {artLang.code}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {pageArticles.length === 0 && (
+                        <span className="text-[11px] text-slate-400 italic">
+                          {t('hub.empty_collection')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-slate-400">
+                      {pageArticles.length} {t('hub.articles_count')}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => onCreateArticleClick(page.uid)}
+                        title="Adicionar artigo nesta coleção"
+                        className="px-2 py-1 rounded text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1 border border-slate-200 dark:border-slate-700"
+                      >
+                        <Plus size={11} /> Artigo
+                      </button>
+                      <button
+                        onClick={() => onSelectPage(page.uid)}
+                        className="p-1 rounded bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition border border-blue-200 dark:border-blue-800"
+                      >
+                        <ArrowRight size={13} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* System Changelog & Updates Quick Access Banner */}

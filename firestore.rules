@@ -131,11 +131,81 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ⚠️ Logs de auditoria - apenas editores
+    // ⚠️ Logs de auditoria
     match /audit_logs/{logId} {
-      allow read: if isEditor();
-      allow create: if isEditor();
+      allow read: if true;
+      allow create: if (request.auth == null || isNotBanned());
       allow update, delete: if isAdmin();
+    }
+
+    // ✅ Discussões de usuário
+    match /user_talk_messages/{messageId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+
+    // ✅ Notificações do sistema e usuários
+    match /notifications/{notificationId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+
+    // ✅ Notas de versão e atualizações do sistema
+    match /system_updates/{updateId} {
+      allow read: if true;
+      allow write: if (request.auth == null || isNotBanned());
+    }
+
+    // ✅ Pedidos de desbloqueio de contas
+    match /unblock_requests/{requestId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+
+    // ✅ Pedidos de promoção (RfA)
+    match /promotion_requests/{requestId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+
+    // ✅ Central de ajuda e tickets da administração
+    match /admin_tickets/{ticketId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+
+    // ✅ Casos e membros do Conselho de Arbitragem (ArbCom)
+    match /arbitration_cases/{caseId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+    match /arbitration_members/{memberId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+
+    // ✅ Investigações de sockpuppet e CheckUser
+    match /sockpuppet_cases/{caseId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+    match /checkuser_logs/{logId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+    match /checkuser_accounts/{accountId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
     }
 
     // ⚠️ Watchlist - apenas o dono pode ver
@@ -144,6 +214,26 @@ service cloud.firestore {
       allow create: if isRegistered() && request.resource.data.userId == request.auth.uid;
       allow update: if isRegistered() && (resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if isRegistered() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ✅ Discussões e tópicos de discussão comunitária
+    match /talk_threads/{threadId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+
+    // ✅ Avaliações comunitárias de artigos
+    match /ratings/{articleId} {
+      allow read: if true;
+      allow write: if (request.auth == null || isNotBanned());
+    }
+
+    // ✅ Mudanças e logs recentes
+    match /recent_changes/{changeId} {
+      allow read: if true;
+      allow create: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
     }
 
     // ✅ Regra fallback - leitura pública, escrita apenas para registrados

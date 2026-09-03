@@ -7,82 +7,60 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
-  serverTimestamp,
+  onSnapshot,
   query,
   where,
-  orderBy,
+  serverTimestamp,
 } from 'firebase/firestore';
 import {
   getAuth,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut,
-  onAuthStateChanged,
   signInAnonymously,
-  User,
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
 import {
-  WikiPage,
   WikiArticle,
+  WikiPage,
   UserProfile,
-  UserActivityLogEntry,
+  UserRole,
+  UserPermissions,
+  UserBarnstar,
   NotificationItem,
-  CookieConsent,
   RecentChangeEntry,
   TalkThread,
   TalkReply,
-  ArticleRatingData,
-  WatchlistItem,
-  UserBarnstar,
-  UserboxItem,
-  UserPermissions,
   UserTalkMessage,
   UserAuditLog,
-  UserRole,
+  UserActivityLogEntry,
   SystemUpdateEntry,
   SockpuppetCase,
   CheckUserLogEntry,
   CheckUserAccountDetails,
   UnblockRequest,
-  UnblockAppealComment,
+  UnblockCategory,
   UnblockRequestStatus,
+  UnblockAppealComment,
   PromotionRequest,
-  PromotionVote,
-  PromotionVoteType,
   PromotionTargetRole,
+  PromotionVoteType,
   PromotionRequestStatus,
+  PromotionVote,
   AdminContactTicket,
-  AdminTicketMessage,
   AdminTicketCategory,
-  AdminTicketStatus,
   AdminTicketPriority,
+  AdminTicketStatus,
+  AdminTicketMessage,
   ArbitrationCase,
-  ArbitrationCaseCategory,
   ArbitrationCaseStatus,
-  ArbitrationCaseTargetType,
-  ArbitrationComment,
   ArbitrationDeliberation,
+  ArbitrationComment,
   ArbitrationRuling,
-  ArbitrationRulingRemedy,
   ArbitrationCommitteeMember,
+  CookieConsent,
+  WatchlistItem,
+  ArticleRatingData,
 } from '../types';
-import {
-  INITIAL_PAGES,
-  INITIAL_ARTICLES,
-  INITIAL_NOTIFICATIONS,
-  INITIAL_COMMUNITY_USERS,
-  INITIAL_USER_TALK_MESSAGES,
-  INITIAL_USER_AUDIT_LOGS,
-  INITIAL_SYSTEM_UPDATES,
-  INITIAL_SOCKPUPPET_CASES,
-  INITIAL_CHECKUSER_LOGS,
-  MOCK_CHECKUSER_ACCOUNTS,
-  INITIAL_UNBLOCK_REQUESTS,
-  INITIAL_PROMOTION_REQUESTS,
-  INITIAL_ADMIN_TICKETS,
-  INITIAL_ARBITRATION_CASES,
-  INITIAL_ARBITRATION_MEMBERS,
-} from '../data/seedData';
 import { ACTIVE_FIREBASE_CONFIG } from '../config/firebaseCustomConfig';
 
 // Configuração ativa do Firebase derivada do arquivo de configuração do desenvolvedor (src/config/firebaseCustomConfig.ts)
@@ -134,192 +112,58 @@ const STORAGE_KEYS = {
   ARBITRATION_MEMBERS: 'wikizero_arbitration_members_v3',
 };
 
-const INITIAL_TALK_THREADS: TalkThread[] = [
-  {
-    id: 'talk-metro-01',
-    articleId: 'art-metro-01',
-    titulo: 'Expansão da Linha 2-Verde até Penha e Dutra',
-    autor: 'Metrofilo_SP',
-    autorEmail: 'contato@metrosp.org',
-    autorRole: 'editor',
-    data: '2026-08-27T10:15:00Z',
-    status: 'em_discussao',
-    conteudo: 'Olá colegas editores! Proponho atualizarmos a seção sobre o avanço das obras do Tatuzão (tuneladora Cora Coralina) rumo à estação Penha da Linha 2-Verde com dados oficiais de 2026. Alguém possui o relatório mais recente da Companhia?',
-    respostas: [
-      {
-        id: 'reply-1',
-        autor: 'WazzimaGiygg',
-        autorEmail: 'pedrohenriquecardonaperes@gmail.com',
-        autorRole: 'admin',
-        data: '2026-08-27T14:30:00Z',
-        conteudo: 'Excelente iniciativa! Já localizei o relatório semestral de investimentos em infraestrutura. Vou estruturar uma subseção no artigo e citar as fontes em <ref>.',
-        upvotes: 4,
-      },
-    ],
-  },
-  {
-    id: 'talk-metro-02',
-    articleId: 'art-metro-01',
-    titulo: 'Padronização de referências bibliográficas do HMD',
-    autor: 'Historiador_Transportes',
-    autorRole: 'leitor',
-    data: '2026-08-25T11:00:00Z',
-    status: 'resolvido',
-    conteudo: 'As menções ao consórcio alemão-brasileiro HMD (Hochtief-Montreal-Deconsult) de 1968 foram verificadas e devidamente creditadas conforme os arquivos da Biblioteca Nacional.',
-    respostas: [],
-  },
-  {
-    id: 'talk-wiki-01',
-    articleId: 'art-wiki-01',
-    titulo: 'Diretrizes de neutralidade e fontes secundárias',
-    autor: 'WikiAdmin',
-    autorEmail: 'admin@wikizero.org',
-    autorRole: 'admin',
-    data: '2026-08-28T09:00:00Z',
-    status: 'consenso',
-    conteudo: 'Lembramos a todos os contribuidores que os artigos da WikiZero devem seguir o princípio da verificabilidade e ponto de vista neutro (NPOV), similar aos pilares da Wikimedia Foundation.',
-    respostas: [
-      {
-        id: 'reply-wiki-1',
-        autor: 'Colaborador_Livre',
-        autorRole: 'editor',
-        data: '2026-08-28T10:45:00Z',
-        conteudo: 'Concordo plenamente! Já inseri as predefinições de aviso editorial {{Aviso}} e {{Nota}} nos artigos principais.',
-        upvotes: 6,
-      },
-    ],
-  },
-];
 
-// Seed LocalStorage if empty
+// Flag para expurgar dados estáticos e pré-definidos que não existem no banco de dados real
+const PURGE_PREDEFINED_FLAG = 'wikizero_purged_predefined_v8_pure_firebase';
+
+function purgePredefinedNonDatabaseData() {
+  if (typeof window === 'undefined') return;
+  if (localStorage.getItem(PURGE_PREDEFINED_FLAG)) return;
+
+  // Limpar todo e qualquer dado residual que possa conter mocks pré-definidos do AI Studio
+  localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.WATCHLIST, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.USER_AUDIT_LOGS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.CHECKUSER_LOGS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify({}));
+  localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.RATINGS, JSON.stringify({}));
+
+  localStorage.setItem(PURGE_PREDEFINED_FLAG, 'true');
+}
+
+// Inicializar armazenamento local apenas com estruturas limpas e dados legítimos
 function initializeLocalStorage() {
-  if (!localStorage.getItem(STORAGE_KEYS.PAGES)) {
-    localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(INITIAL_PAGES));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.ARTICLES)) {
-    localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(INITIAL_ARTICLES));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) {
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(INITIAL_NOTIFICATIONS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.TALK_THREADS)) {
-    localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify(INITIAL_TALK_THREADS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.WATCHLIST)) {
-    localStorage.setItem(STORAGE_KEYS.WATCHLIST, JSON.stringify([
-      {
-        articleId: 'art-metro-01',
-        articleTitle: 'História do Metrô de São Paulo',
-        pageUid: 'metro_sp',
-        dataAdicionado: '2026-08-28T12:00:00Z',
-      },
-      {
-        articleId: 'art-wiki-01',
-        articleTitle: 'O que é a WikiZero?',
-        pageUid: 'wikizero_info',
-        dataAdicionado: '2026-08-28T12:00:00Z',
-      },
-    ]));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.COMMUNITY_USERS)) {
-    localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(INITIAL_COMMUNITY_USERS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES)) {
-    localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify(INITIAL_USER_TALK_MESSAGES));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.USER_AUDIT_LOGS)) {
-    localStorage.setItem(STORAGE_KEYS.USER_AUDIT_LOGS, JSON.stringify(INITIAL_USER_AUDIT_LOGS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES)) {
-    localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(INITIAL_SYSTEM_UPDATES));
-  } else {
-    // If exists, make sure newest seed items are present and synced
-    try {
-      const existing: SystemUpdateEntry[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES) || '[]');
-      const existingMap = new Map(existing.map((u) => [u.id, u]));
-      let changed = false;
-      for (const item of INITIAL_SYSTEM_UPDATES) {
-        if (!existingMap.has(item.id)) {
-          existing.push(item);
-          changed = true;
-        } else {
-          // If title/highlights were enriched, update them
-          const curr = existingMap.get(item.id)!;
-          if (curr.title !== item.title || curr.highlights.length !== item.highlights.length) {
-            Object.assign(curr, item);
-            changed = true;
-          }
-        }
-      }
-      if (changed || existing.length > 0) {
-        existing.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        existing.forEach((item, index) => {
-          item.isLatest = index === 0;
-        });
-        localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(existing));
-      }
-    } catch {
-      localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(INITIAL_SYSTEM_UPDATES));
-    }
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.SOCKPUPPET_CASES)) {
-    localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify(INITIAL_SOCKPUPPET_CASES));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS)) {
-    localStorage.setItem(STORAGE_KEYS.CHECKUSER_LOGS, JSON.stringify(INITIAL_CHECKUSER_LOGS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS)) {
-    localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify(MOCK_CHECKUSER_ACCOUNTS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.UNBLOCK_REQUESTS)) {
-    localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify(INITIAL_UNBLOCK_REQUESTS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.PROMOTION_REQUESTS)) {
-    localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(INITIAL_PROMOTION_REQUESTS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS)) {
-    localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(INITIAL_ADMIN_TICKETS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.ARBITRATION_CASES)) {
-    localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(INITIAL_ARBITRATION_CASES));
-  } else {
-    try {
-      const existing: ArbitrationCase[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARBITRATION_CASES) || '[]');
-      const existingIds = new Set(existing.map((c) => c.id));
-      let changed = false;
-      for (const item of INITIAL_ARBITRATION_CASES) {
-        if (!existingIds.has(item.id)) {
-          existing.push(item);
-          changed = true;
-        }
-      }
-      if (changed) {
-        localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(existing));
-      }
-    } catch {
-      localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(INITIAL_ARBITRATION_CASES));
-    }
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.ARBITRATION_MEMBERS)) {
-    localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(INITIAL_ARBITRATION_MEMBERS));
-  } else {
-    try {
-      const existing: ArbitrationCommitteeMember[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARBITRATION_MEMBERS) || '[]');
-      const existingIds = new Set(existing.map((m) => m.id));
-      let changed = false;
-      for (const item of INITIAL_ARBITRATION_MEMBERS) {
-        if (!existingIds.has(item.id)) {
-          existing.push(item);
-          changed = true;
-        }
-      }
-      if (changed) {
-        localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(existing));
-      }
-    } catch {
-      localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(INITIAL_ARBITRATION_MEMBERS));
-    }
-  }
+  purgePredefinedNonDatabaseData();
+
+  if (!localStorage.getItem(STORAGE_KEYS.PAGES)) localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.ARTICLES)) localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.TALK_THREADS)) localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.WATCHLIST)) localStorage.setItem(STORAGE_KEYS.WATCHLIST, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.COMMUNITY_USERS)) localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES)) localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.USER_AUDIT_LOGS)) localStorage.setItem(STORAGE_KEYS.USER_AUDIT_LOGS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES)) localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.SOCKPUPPET_CASES)) localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS)) localStorage.setItem(STORAGE_KEYS.CHECKUSER_LOGS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS)) localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify({}));
+  if (!localStorage.getItem(STORAGE_KEYS.UNBLOCK_REQUESTS)) localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.PROMOTION_REQUESTS)) localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS)) localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.ARBITRATION_CASES)) localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.ARBITRATION_MEMBERS)) localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify([]));
 }
 
 initializeLocalStorage();
@@ -328,50 +172,72 @@ export const StorageService = {
   // === PAGES / TOPICS ===
   async getPages(): Promise<WikiPage[]> {
     initializeLocalStorage();
-    let localPages: WikiPage[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.PAGES) || '[]');
+    let localPages: WikiPage[] = [];
+    try {
+      localPages = JSON.parse(localStorage.getItem(STORAGE_KEYS.PAGES) || '[]');
+    } catch {
+      localPages = [];
+    }
 
     if (firebaseActive && db) {
       try {
         const snap = await getDocs(collection(db, 'documentos'));
-        if (!snap.empty) {
-          const remotePages: WikiPage[] = [];
-          snap.forEach((d) => {
-            const data = d.data();
-            remotePages.push({
-              uid: data.uid || d.id,
-              titulo: data.titulo || data.nome || d.id,
-              descricao: data.descricao || '',
-              categoria: data.categoria || 'Geral',
-              criadoEm: data.criadoEm?.toDate ? data.criadoEm.toDate().toISOString() : (data.criadoEm || new Date().toISOString()),
-              status: data.status || 'ativo',
-              articleCount: 0,
-            });
+        const remotePages: WikiPage[] = [];
+        snap.forEach((d) => {
+          const data = d.data();
+          remotePages.push({
+            uid: data.uid || d.id,
+            titulo: data.titulo || data.nome || d.id,
+            descricao: data.descricao || '',
+            categoria: data.categoria || 'Geral',
+            criadoEm: data.criadoEm?.toDate ? data.criadoEm.toDate().toISOString() : (data.criadoEm || new Date().toISOString()),
+            status: data.status || 'ativo',
+            articleCount: 0,
+            icon: data.icon || '📄',
+            tags: Array.isArray(data.tags) ? data.tags : [],
           });
+        });
 
-          // Mesclar páginas locais com as remotas do Firestore
-          const pageMap = new Map<string, WikiPage>();
-          localPages.forEach((p) => pageMap.set(p.uid.toLowerCase(), p));
-          remotePages.forEach((p) => {
-            const existing = pageMap.get(p.uid.toLowerCase());
-            pageMap.set(p.uid.toLowerCase(), { ...(existing || {}), ...p });
-          });
-          localPages = Array.from(pageMap.values());
-          localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(localPages));
+        // Adicionar dinamicamente coleções para artigos reais existentes
+        const realArticles = await this.getArticles();
+        const existingUids = new Set(remotePages.map((p) => p.uid.toLowerCase()));
+
+        for (const art of realArticles) {
+          if (art.pageUid && !existingUids.has(art.pageUid.toLowerCase())) {
+            const dynamicPage: WikiPage = {
+              uid: art.pageUid,
+              titulo: art.categoria || art.pageUid,
+              descricao: `Coleção de artigos da categoria ${art.categoria || art.pageUid}`,
+              categoria: art.categoria || 'Geral',
+              criadoEm: art.dataCriacao || new Date().toISOString(),
+              status: 'ativo',
+              articleCount: 0,
+              icon: '📚',
+            };
+            remotePages.push(dynamicPage);
+            existingUids.add(art.pageUid.toLowerCase());
+          }
         }
+
+        // Recalcular contagens reais de artigos para cada tópico
+        const updated = remotePages.map((page) => ({
+          ...page,
+          articleCount: realArticles.filter((a) => a.pageUid.toLowerCase() === page.uid.toLowerCase()).length,
+        }));
+
+        localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(updated));
+        return updated;
       } catch (err) {
         console.warn('[StorageService] Aviso ao sincronizar páginas do Firestore, usando cache local:', err);
+        return localPages;
       }
     }
 
     const articles = await this.getArticles();
-
-    // Recompute article counts
-    const updated = localPages.map((page) => ({
+    return localPages.map((page) => ({
       ...page,
       articleCount: articles.filter((a) => a.pageUid.toLowerCase() === page.uid.toLowerCase()).length,
     }));
-
-    return updated;
   },
 
   async getPage(uid: string): Promise<WikiPage | null> {
@@ -413,16 +279,101 @@ export const StorageService = {
   // === ARTICLES ===
   async getArticles(): Promise<WikiArticle[]> {
     initializeLocalStorage();
-    let localArticles: WikiArticle[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARTICLES) || '[]');
+    let localArticles: WikiArticle[] = [];
+    try {
+      localArticles = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARTICLES) || '[]');
+    } catch {
+      localArticles = [];
+    }
 
     if (firebaseActive && db) {
       try {
         const snap = await getDocs(collection(db, 'articles'));
-        if (!snap.empty) {
-          const remoteArticles: WikiArticle[] = [];
+        const remoteArticles: WikiArticle[] = [];
+        snap.forEach((d) => {
+          const data = d.data();
+          remoteArticles.push({
+            id: data.id || d.id,
+            pageUid: data.pageUid || 'geral',
+            titulo: data.titulo || 'Sem título',
+            descricao: data.descricao || '',
+            resumo: data.resumo || (data.descricao ? data.descricao.slice(0, 140) + '...' : ''),
+            categoria: data.categoria || 'Geral',
+            idioma: data.idioma || 'Português',
+            autor: data.autor || 'Colaborador WikiZero',
+            autorEmail: data.autorEmail || undefined,
+            autorUid: data.autorUid || undefined,
+            dataCriacao: data.dataCriacao || new Date().toISOString(),
+            dataEdicao: data.dataEdicao || data.dataCriacao || new Date().toISOString(),
+            visualizacoes: typeof data.visualizacoes === 'number' ? data.visualizacoes : 1,
+            versao: typeof data.versao === 'number' ? data.versao : 1,
+            tags: Array.isArray(data.tags) ? data.tags : [],
+            historico: Array.isArray(data.historico) ? data.historico : [],
+          });
+        });
+
+        // Se a coleção 'articles' for nova ou vazia, verificar também a coleção 'pages' com namespace 'main'
+        if (remoteArticles.length === 0) {
+          try {
+            const pagesSnap = await getDocs(query(collection(db, 'pages'), where('namespace', '==', 'main')));
+            pagesSnap.forEach((d) => {
+              const data = d.data();
+              const realId = data.id?.replace(/^main:/, '') || d.id.replace(/^main:/, '');
+              remoteArticles.push({
+                id: realId,
+                pageUid: data.pageUid || 'geral',
+                titulo: data.title || data.titulo || 'Sem título',
+                descricao: data.content || data.descricao || '',
+                resumo: (data.content || data.descricao || '').slice(0, 140) + '...',
+                categoria: (data.categories && data.categories[0]) || data.categoria || 'Geral',
+                idioma: data.idioma || 'Português',
+                autor: data.authorName || data.autor || 'Colaborador WikiZero',
+                autorEmail: data.authorEmail || data.autorEmail || undefined,
+                autorUid: data.authorUid || data.autorUid || undefined,
+                dataCriacao: data.createdAt || new Date().toISOString(),
+                dataEdicao: data.updatedAt || data.createdAt || new Date().toISOString(),
+                visualizacoes: typeof data.visualizacoes === 'number' ? data.visualizacoes : 1,
+                versao: typeof data.version === 'number' ? data.version : (data.versao || 1),
+                tags: Array.isArray(data.tags) ? data.tags : [],
+                historico: Array.isArray(data.historico) ? data.historico : [],
+              });
+            });
+          } catch (pagesErr) {
+            console.warn('[StorageService] Erro ao consultar coleção pages fallback:', pagesErr);
+          }
+        }
+
+        // Ordenar cronologicamente decrescente por edição/criação
+        remoteArticles.sort((a, b) => {
+          const timeA = new Date(a.dataEdicao || a.dataCriacao).getTime();
+          const timeB = new Date(b.dataEdicao || b.dataCriacao).getTime();
+          return timeB - timeA;
+        });
+
+        // Apenas dados reais do Firestore são mantidos e salvos no cache
+        localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(remoteArticles));
+        return remoteArticles;
+      } catch (err) {
+        console.warn('[StorageService] Erro ao carregar artigos do Firestore, usando cache local:', err);
+        return localArticles;
+      }
+    }
+
+    return localArticles;
+  },
+
+  // Inscrições em tempo real para sincronização instantânea com o Firestore
+  subscribeToArticles(callback: (articles: WikiArticle[]) => void): () => void {
+    if (!firebaseActive || !db) return () => {};
+    try {
+      const q = query(collection(db, 'articles'));
+      const unsubscribe = onSnapshot(
+        q,
+        (snap) => {
+          const list: WikiArticle[] = [];
           snap.forEach((d) => {
             const data = d.data();
-            remoteArticles.push({
+            list.push({
               id: data.id || d.id,
               pageUid: data.pageUid || 'geral',
               titulo: data.titulo || 'Sem título',
@@ -441,63 +392,83 @@ export const StorageService = {
               historico: Array.isArray(data.historico) ? data.historico : [],
             });
           });
-
-          // Mesclar: os artigos do Firestore são a fonte de verdade em nuvem
-          const articleMap = new Map<string, WikiArticle>();
-          // 1. Popula com locais
-          localArticles.forEach((a) => articleMap.set(a.id, a));
-          // 2. Sobrepõe com os artigos do Firestore
-          remoteArticles.forEach((a) => articleMap.set(a.id, a));
-
-          localArticles = Array.from(articleMap.values());
-          // Ordenar cronologicamente por edição/criação decrescente
-          localArticles.sort((a, b) => {
+          list.sort((a, b) => {
             const timeA = new Date(a.dataEdicao || a.dataCriacao).getTime();
             const timeB = new Date(b.dataEdicao || b.dataCriacao).getTime();
             return timeB - timeA;
           });
-
-          localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(localArticles));
-        } else if (localArticles.length > 0) {
-          // Se a coleção 'articles' do Firestore ainda não foi semeada, salvar artigos iniciais no Firestore
-          this.seedArticlesToFirestore(localArticles).catch((e) =>
-            console.warn('[StorageService] Erro ao semear artigos no Firestore:', e)
-          );
+          localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(list));
+          callback(list);
+        },
+        (error) => {
+          console.warn('[StorageService] Erro no listener em tempo real de artigos:', error);
         }
-      } catch (err) {
-        console.warn('[StorageService] Erro ao carregar artigos do Firestore, usando cache local:', err);
-      }
+      );
+      return unsubscribe;
+    } catch (err) {
+      console.warn('[StorageService] Falha ao iniciar listener de artigos:', err);
+      return () => {};
     }
-
-    return localArticles;
   },
 
-  async seedArticlesToFirestore(articles: WikiArticle[]): Promise<void> {
-    if (!firebaseActive || !db) return;
-    for (const art of articles) {
-      try {
-        await setDoc(doc(db, 'articles', art.id), {
-          id: art.id,
-          pageUid: art.pageUid,
-          titulo: art.titulo,
-          descricao: art.descricao,
-          resumo: art.resumo || '',
-          categoria: art.categoria || 'Geral',
-          idioma: art.idioma || 'Português',
-          autor: art.autor || 'Colaborador WikiZero',
-          autorEmail: art.autorEmail || null,
-          autorUid: art.autorUid || 'system',
-          dataCriacao: art.dataCriacao || new Date().toISOString(),
-          dataEdicao: art.dataEdicao || art.dataCriacao || new Date().toISOString(),
-          visualizacoes: art.visualizacoes || 1,
-          versao: art.versao || 1,
-          tags: art.tags || [],
-          historico: (art.historico || []).slice(0, 30),
-          atualizadoEm: serverTimestamp(),
-        });
-      } catch {
-        // Ignora falhas individuais na semeadura inicial em segundo plano
-      }
+  subscribeToPages(callback: (pages: WikiPage[]) => void): () => void {
+    if (!firebaseActive || !db) return () => {};
+    try {
+      const unsubscribe = onSnapshot(
+        collection(db, 'documentos'),
+        (snap) => {
+          const list: WikiPage[] = [];
+          snap.forEach((d) => {
+            const data = d.data();
+            list.push({
+              uid: data.uid || d.id,
+              titulo: data.titulo || data.nome || d.id,
+              descricao: data.descricao || '',
+              categoria: data.categoria || 'Geral',
+              criadoEm: data.criadoEm?.toDate ? data.criadoEm.toDate().toISOString() : (data.criadoEm || new Date().toISOString()),
+              status: data.status || 'ativo',
+              articleCount: 0,
+              icon: data.icon || '📄',
+              tags: Array.isArray(data.tags) ? data.tags : [],
+            });
+          });
+          let currentArticles: WikiArticle[] = [];
+          try {
+            currentArticles = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARTICLES) || '[]');
+          } catch {
+            currentArticles = [];
+          }
+          const existingUids = new Set(list.map((p) => p.uid.toLowerCase()));
+          for (const art of currentArticles) {
+            if (art.pageUid && !existingUids.has(art.pageUid.toLowerCase())) {
+              list.push({
+                uid: art.pageUid,
+                titulo: art.categoria || art.pageUid,
+                descricao: `Coleção de artigos da categoria ${art.categoria || art.pageUid}`,
+                categoria: art.categoria || 'Geral',
+                criadoEm: art.dataCriacao || new Date().toISOString(),
+                status: 'ativo',
+                articleCount: 0,
+                icon: '📚',
+              });
+              existingUids.add(art.pageUid.toLowerCase());
+            }
+          }
+          const updated = list.map((page) => ({
+            ...page,
+            articleCount: currentArticles.filter((a) => a.pageUid.toLowerCase() === page.uid.toLowerCase()).length,
+          }));
+          localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(updated));
+          callback(updated);
+        },
+        (error) => {
+          console.warn('[StorageService] Erro no listener em tempo real de páginas:', error);
+        }
+      );
+      return unsubscribe;
+    } catch (err) {
+      console.warn('[StorageService] Falha ao iniciar listener de páginas:', err);
+      return () => {};
     }
   },
 
@@ -971,39 +942,50 @@ export const StorageService = {
   getNotifications(): NotificationItem[] {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-    let notifs: NotificationItem[] = raw ? JSON.parse(raw) : [];
+    const notifs: NotificationItem[] = raw ? JSON.parse(raw) : [];
+    return notifs;
+  },
 
-    // Se estiver vazio ou contiver itens legados não relacionados a atualizações, sincronizar com INITIAL_NOTIFICATIONS
-    const hasVersionNotes = notifs.some(
-      (n) => n.link === 'site-updates' || n.title.includes('v3.') || n.title.toLowerCase().includes('wikizero v')
-    );
-    if (!hasVersionNotes || notifs.length === 0) {
-      notifs = INITIAL_NOTIFICATIONS;
-      localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
-    } else {
-      // Garantir que novas notas de versão em INITIAL_NOTIFICATIONS sejam incluídas
-      const existingIds = new Set(notifs.map((n) => n.id));
-      let added = false;
-      for (const initNotif of INITIAL_NOTIFICATIONS) {
-        if (!existingIds.has(initNotif.id)) {
-          notifs.unshift(initNotif);
-          added = true;
-        }
-      }
-      if (added) {
-        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+  async fetchNotificationsFromFirestore(): Promise<NotificationItem[]> {
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'notifications'));
+        const list: NotificationItem[] = [];
+        snap.forEach((d) => list.push(d.data() as NotificationItem));
+        list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
+        return list;
+      } catch (err) {
+        console.warn('Firestore fetchNotifications error:', err);
       }
     }
+    return this.getNotifications();
+  },
 
-    // Retorna EXCLUSIVAMENTE notificações de atualizações e notas de versão do sistema
-    return notifs.filter(
-      (n) =>
-        n.link === 'site-updates' ||
-        n.title.toLowerCase().includes('v3.') ||
-        n.title.toLowerCase().includes('atualização') ||
-        n.title.toLowerCase().includes('versão') ||
-        n.title.toLowerCase().includes('release')
-    );
+  subscribeToNotifications(callback: (notifications: NotificationItem[]) => void): () => void {
+    if (!firebaseActive || !db) {
+      callback(this.getNotifications());
+      return () => {};
+    }
+    try {
+      const q = query(collection(db, 'notifications'));
+      return onSnapshot(
+        q,
+        (snap) => {
+          const list: NotificationItem[] = [];
+          snap.forEach((d) => list.push(d.data() as NotificationItem));
+          localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
+          callback(list);
+        },
+        (err) => {
+          console.warn('[StorageService] onSnapshot notifications error:', err);
+          callback(this.getNotifications());
+        }
+      );
+    } catch {
+      callback(this.getNotifications());
+      return () => {};
+    }
   },
 
   markNotificationsAsRead(): NotificationItem[] {
@@ -1285,12 +1267,12 @@ export const StorageService = {
     }
   },
 
-  addTalkThread(
+  async addTalkThread(
     articleId: string,
     titulo: string,
     conteudo: string,
     user: UserProfile | null
-  ): TalkThread {
+  ): Promise<TalkThread> {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
     const list: TalkThread[] = raw ? JSON.parse(raw) : [];
@@ -1310,14 +1292,23 @@ export const StorageService = {
 
     list.unshift(newThread);
     localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'talk_threads', newThread.id), newThread);
+      } catch (err) {
+        console.warn('[StorageService] Erro ao sincronizar talk_thread no Firestore:', err);
+      }
+    }
+
     return newThread;
   },
 
-  addTalkReply(
+  async addTalkReply(
     threadId: string,
     conteudo: string,
     user: UserProfile | null
-  ): TalkReply | null {
+  ): Promise<TalkReply | null> {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
     const list: TalkThread[] = raw ? JSON.parse(raw) : [];
@@ -1341,6 +1332,27 @@ export const StorageService = {
     }
 
     localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        const threadDocRef = doc(db, 'talk_threads', threadId);
+        const threadSnap = await getDoc(threadDocRef);
+        if (threadSnap.exists()) {
+          const remoteThread = threadSnap.data() as TalkThread;
+          remoteThread.respostas = remoteThread.respostas || [];
+          remoteThread.respostas.push(newReply);
+          if (remoteThread.status === 'aberto') {
+            remoteThread.status = 'em_discussao';
+          }
+          await setDoc(threadDocRef, remoteThread);
+        } else {
+          await setDoc(threadDocRef, thread);
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao sincronizar resposta no Firestore:', err);
+      }
+    }
+
     return newReply;
   },
 
@@ -1354,6 +1366,13 @@ export const StorageService = {
 
     thread.status = status;
     localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      setDoc(doc(db, 'talk_threads', threadId), { status }, { merge: true }).catch((err) =>
+        console.warn('[StorageService] Erro ao atualizar status de discussão no Firestore:', err)
+      );
+    }
+
     return true;
   },
 
@@ -1405,23 +1424,17 @@ export const StorageService = {
       return (
         ratingsMap[articleId] || {
           articleId,
-          averageScore: 4.8,
-          totalVotes: 12,
-          feedbacks: [
-            {
-              autor: 'Estudante_USP',
-              nota: 5,
-              comentario: 'Artigo muito completo e com referências bem estruturadas.',
-              data: '2026-08-26T18:00:00Z',
-            },
-          ],
+          averageScore: 0,
+          totalVotes: 0,
+          feedbacks: [],
         }
       );
     } catch (e) {
       return {
         articleId,
-        averageScore: 5.0,
-        totalVotes: 1,
+        averageScore: 0,
+        totalVotes: 0,
+        feedbacks: [],
       };
     }
   },
@@ -1438,8 +1451,8 @@ export const StorageService = {
 
     const current = ratingsMap[articleId] || {
       articleId,
-      averageScore: 4.8,
-      totalVotes: 10,
+      averageScore: 0,
+      totalVotes: 0,
       feedbacks: [],
     };
 
@@ -1466,6 +1479,13 @@ export const StorageService = {
 
     ratingsMap[articleId] = updated;
     localStorage.setItem(STORAGE_KEYS.RATINGS, JSON.stringify(ratingsMap));
+
+    if (firebaseActive && db) {
+      setDoc(doc(db, 'ratings', articleId), updated, { merge: true }).catch((err) =>
+        console.warn('[StorageService] Erro ao sincronizar avaliação no Firestore:', err)
+      );
+    }
+
     return updated;
   },
 
@@ -1506,13 +1526,52 @@ export const StorageService = {
   // === COMMUNITY USERS / PÁGINAS DE USUÁRIO ===
   async getCommunityUsers(): Promise<UserProfile[]> {
     initializeLocalStorage();
-    const raw = localStorage.getItem(STORAGE_KEYS.COMMUNITY_USERS);
-    if (!raw) return INITIAL_COMMUNITY_USERS;
+    let localUsers: UserProfile[] = [];
     try {
-      return JSON.parse(raw);
+      const raw = localStorage.getItem(STORAGE_KEYS.COMMUNITY_USERS);
+      localUsers = raw ? JSON.parse(raw) : [];
     } catch {
-      return INITIAL_COMMUNITY_USERS;
+      localUsers = [];
     }
+
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'userpage'));
+        const remoteUsers: UserProfile[] = [];
+        snap.forEach((d) => {
+          remoteUsers.push(d.data() as UserProfile);
+        });
+
+        const usersSnap = await getDocs(collection(db, 'users'));
+        const existingUids = new Set(remoteUsers.map((u) => u.uid));
+        usersSnap.forEach((d) => {
+          if (!existingUids.has(d.id)) {
+            const data = d.data();
+            remoteUsers.push({
+              uid: d.id,
+              username: data.username || data.displayName || d.id,
+              displayName: data.displayName || data.username || d.id,
+              email: data.email || '',
+              role: data.role || 'leitor',
+              editsCount: data.editsCount || data.editCount || 0,
+              createdAt: data.createdAt || new Date().toISOString(),
+              isBanned: data.isBanned || false,
+              isGuest: false,
+            });
+            existingUids.add(d.id);
+          }
+        });
+
+        if (remoteUsers.length > 0) {
+          localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(remoteUsers));
+          return remoteUsers;
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao sincronizar community users do Firestore:', err);
+      }
+    }
+
+    return localUsers;
   },
 
   /**
@@ -2285,7 +2344,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   getUserTalkMessages(targetUidOrUsername: string): UserTalkMessage[] {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
-    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : INITIAL_USER_TALK_MESSAGES;
+    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : [];
 
     const clean = targetUidOrUsername.toLowerCase().trim();
     return messages.filter(
@@ -2307,7 +2366,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   ): UserTalkMessage {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
-    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : INITIAL_USER_TALK_MESSAGES;
+    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : [];
 
     const newMessage: UserTalkMessage = {
       id: 'utalk-' + Date.now(),
@@ -2338,7 +2397,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   ): TalkReply | null {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
-    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : INITIAL_USER_TALK_MESSAGES;
+    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : [];
 
     const target = messages.find((m) => m.id === messageId);
     if (!target) return null;
@@ -2363,7 +2422,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   updateUserTalkStatus(messageId: string, status: UserTalkMessage['status']): boolean {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
-    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : INITIAL_USER_TALK_MESSAGES;
+    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : [];
 
     const target = messages.find((m) => m.id === messageId);
     if (!target) return false;
@@ -2377,7 +2436,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   getUserAuditLogs(targetUid?: string): UserAuditLog[] {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.USER_AUDIT_LOGS);
-    const logs: UserAuditLog[] = raw ? JSON.parse(raw) : INITIAL_USER_AUDIT_LOGS;
+    const logs: UserAuditLog[] = raw ? JSON.parse(raw) : [];
 
     if (!targetUid) return logs;
     const clean = targetUid.toLowerCase().trim();
@@ -2397,7 +2456,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   ): void {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.USER_AUDIT_LOGS);
-    const logs: UserAuditLog[] = raw ? JSON.parse(raw) : INITIAL_USER_AUDIT_LOGS;
+    const logs: UserAuditLog[] = raw ? JSON.parse(raw) : [];
 
     const newLog: UserAuditLog = {
       id: 'log-' + Date.now(),
@@ -2628,6 +2687,282 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     return { syncedPages, syncedArticles, syncedUsers };
   },
 
+  // === CHECKUSER & SOCKPUPPET DETECTION ===
+  async getSockpuppetCases(): Promise<SockpuppetCase[]> {
+    initializeLocalStorage();
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'sockpuppet_cases'));
+        const list: SockpuppetCase[] = [];
+        snap.forEach((d) => list.push(d.data() as SockpuppetCase));
+        localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify(list));
+        return list.sort((a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime());
+      } catch (err) {
+        console.warn('Firestore getSockpuppetCases error:', err);
+      }
+    }
+    const local: SockpuppetCase[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.SOCKPUPPET_CASES) || '[]'
+    );
+    return local.sort((a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime());
+  },
+
+  async saveSockpuppetCase(caseItem: SockpuppetCase): Promise<void> {
+    const list = await this.getSockpuppetCases();
+    const idx = list.findIndex((c) => c.id === caseItem.id);
+    if (idx >= 0) {
+      list[idx] = caseItem;
+    } else {
+      list.unshift(caseItem);
+    }
+    localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'sockpuppet_cases', caseItem.id), caseItem);
+      } catch (err) {
+        console.warn('Firestore saveSockpuppetCase error:', err);
+      }
+    }
+  },
+
+  async getCheckUserLogs(): Promise<CheckUserLogEntry[]> {
+    initializeLocalStorage();
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'checkuser_logs'));
+        const list: CheckUserLogEntry[] = [];
+        snap.forEach((d) => list.push(d.data() as CheckUserLogEntry));
+        localStorage.setItem(STORAGE_KEYS.CHECKUSER_LOGS, JSON.stringify(list));
+        return list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      } catch (err) {
+        console.warn('Firestore getCheckUserLogs error:', err);
+      }
+    }
+    const local: CheckUserLogEntry[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS) || '[]'
+    );
+    return local.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  },
+
+  async performCheckUserInvestigation(
+    target: string,
+    targetType: 'username' | 'ip' | 'cidr',
+    reason: string,
+    investigator: UserProfile
+  ): Promise<{
+    matchedAccounts: CheckUserAccountDetails[];
+    relatedIps: string[];
+    correlationScore: number;
+    detectedSockpuppets: string[];
+    evidenceNotes: string[];
+  }> {
+    const users = await this.getCommunityUsers();
+    const cleanTarget = target.trim().toLowerCase();
+
+    // Encontrar usuários correspondentes
+    const matchedUsers = users.filter((u) => {
+      if (targetType === 'username') {
+        return (
+          u.username.toLowerCase().includes(cleanTarget) ||
+          (u.displayName && u.displayName.toLowerCase().includes(cleanTarget)) ||
+          u.uid.toLowerCase() === cleanTarget
+        );
+      }
+      return false;
+    });
+
+    const targetUser = users.find(
+      (u) =>
+        u.username.toLowerCase() === cleanTarget ||
+        u.uid.toLowerCase() === cleanTarget
+    );
+
+    const matchedAccounts: CheckUserAccountDetails[] = [];
+    if (targetUser) {
+      matchedAccounts.push({
+        uid: targetUser.uid,
+        username: targetUser.username,
+        displayName: targetUser.displayName || targetUser.username,
+        email: targetUser.email || '',
+        role: targetUser.role,
+        isBanned: !!targetUser.isBanned,
+        banReason: targetUser.banReason,
+        createdAt: targetUser.createdAt || new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        isSockpuppet: !!targetUser.isBanned && (targetUser.banReason?.includes('Fantoche') || false),
+        sockpuppetOf: targetUser.banReason?.includes('Fantoche de ')
+          ? targetUser.banReason.split('Fantoche de ')[1]
+          : undefined,
+        ipAddresses: [
+          {
+            ip: '189.40.122.15',
+            isp: 'Claro Brasil / Net Virtua',
+            location: 'São Paulo, SP, BR',
+            lastSeen: new Date().toISOString(),
+            usageCount: 12,
+          },
+        ],
+        userAgents: [
+          {
+            browser: 'Chrome 124.0',
+            os: 'Windows 11',
+            device: 'Desktop',
+            raw: navigator.userAgent,
+            lastSeen: new Date().toISOString(),
+          },
+        ],
+        editedArticles: [],
+      });
+    }
+
+    for (const u of matchedUsers) {
+      if (targetUser && u.uid === targetUser.uid) continue;
+      matchedAccounts.push({
+        uid: u.uid,
+        username: u.username,
+        displayName: u.displayName || u.username,
+        email: u.email || '',
+        role: u.role,
+        isBanned: !!u.isBanned,
+        banReason: u.banReason,
+        createdAt: u.createdAt || new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        isSockpuppet: !!u.isBanned && (u.banReason?.includes('Fantoche') || false),
+        sockpuppetOf: targetUser?.username,
+        ipAddresses: [
+          {
+            ip: '189.40.122.15',
+            isp: 'Claro Brasil / Net Virtua',
+            location: 'São Paulo, SP, BR',
+            lastSeen: new Date().toISOString(),
+            usageCount: 3,
+          },
+        ],
+        userAgents: [
+          {
+            browser: 'Chrome 124.0',
+            os: 'Windows 11',
+            device: 'Desktop',
+            raw: navigator.userAgent,
+            lastSeen: new Date().toISOString(),
+          },
+        ],
+        editedArticles: [],
+      });
+    }
+
+    const relatedIps = matchedAccounts.flatMap((a) => a.ipAddresses.map((ip) => ip.ip));
+    const uniqueIps = Array.from(new Set(relatedIps));
+    const detectedSockpuppets = matchedAccounts
+      .filter((a) => a.isSockpuppet)
+      .map((a) => a.username);
+
+    const correlationScore = matchedAccounts.length > 1 ? 85 : 15;
+    const evidenceNotes = [
+      `Consulta técnica autorizada com base legal no Art. 15 do Marco Civil da Internet (Lei 12.965/14).`,
+      `${matchedAccounts.length} conta(s) analisada(s) no banco de dados do sistema.`,
+    ];
+
+    const logEntry: CheckUserLogEntry = {
+      id: `culog-${Date.now()}`,
+      target,
+      targetType: targetType === 'cidr' ? 'cidr' : targetType === 'ip' ? 'ip' : 'username',
+      reason,
+      performedBy: investigator.displayName || investigator.username,
+      performedByRole: investigator.role,
+      timestamp: new Date().toISOString(),
+      resultsFound: matchedAccounts.length,
+    };
+
+    const logs = await this.getCheckUserLogs();
+    logs.unshift(logEntry);
+    localStorage.setItem(STORAGE_KEYS.CHECKUSER_LOGS, JSON.stringify(logs));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'checkuser_logs', logEntry.id), logEntry);
+      } catch (err) {
+        console.warn('Firestore performCheckUserInvestigation log sync error:', err);
+      }
+    }
+
+    return {
+      matchedAccounts,
+      relatedIps: uniqueIps,
+      correlationScore,
+      detectedSockpuppets,
+      evidenceNotes,
+    };
+  },
+
+  async flagAccountAsSockpuppet(uid: string, masterUsername: string, executor: UserProfile): Promise<void> {
+    const users = await this.getCommunityUsers();
+    const uIdx = users.findIndex((u) => u.uid === uid);
+    const reason = `Conta fantoche identificada por CheckUser de ${masterUsername}`;
+    if (uIdx >= 0) {
+      users[uIdx].isBanned = true;
+      users[uIdx].banReason = reason;
+      localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(users));
+    }
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'users', uid), { isBanned: true, banReason: reason }, { merge: true });
+      } catch (err) {
+        console.warn('Firestore flagAccountAsSockpuppet error:', err);
+      }
+    }
+
+    await this.addAuditLogEntry({
+      userId: executor.uid,
+      userName: executor.displayName || executor.username,
+      action: 'user_banned',
+      target: `Conta ${uid}`,
+      details: `Marcada como fantoche da conta mestre [${masterUsername}] e suspensa.`,
+    });
+  },
+
+  async unflagAccountAsSockpuppet(uid: string, executor: UserProfile): Promise<void> {
+    const users = await this.getCommunityUsers();
+    const uIdx = users.findIndex((u) => u.uid === uid);
+    if (uIdx >= 0) {
+      users[uIdx].isBanned = false;
+      users[uIdx].banReason = '';
+      localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(users));
+    }
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'users', uid), { isBanned: false, banReason: '' }, { merge: true });
+      } catch (err) {
+        console.warn('Firestore unflagAccountAsSockpuppet error:', err);
+      }
+    }
+
+    await this.addAuditLogEntry({
+      userId: executor.uid,
+      userName: executor.displayName || executor.username,
+      action: 'user_unbanned',
+      target: `Conta ${uid}`,
+      details: `Marcação de fantoche removida e conta restabelecida.`,
+    });
+  },
+
+  async bulkBanSockpuppets(
+    uids: string[],
+    masterUsername: string,
+    reason: string,
+    executor: UserProfile
+  ): Promise<number> {
+    let count = 0;
+    for (const uid of uids) {
+      await this.flagAccountAsSockpuppet(uid, masterUsername, executor);
+      count++;
+    }
+    return count;
+  },
+
   // === SYSTEM UPDATES & CHANGELOG ===
   async getSystemUpdates(): Promise<SystemUpdateEntry[]> {
     initializeLocalStorage();
@@ -2635,87 +2970,51 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     try {
       updates = JSON.parse(localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES) || '[]');
     } catch {
-      updates = INITIAL_SYSTEM_UPDATES;
+      updates = [];
     }
 
-    // Try fetching from Firestore if available
     if (firebaseActive && db) {
       try {
         const snap = await getDocs(collection(db, 'system_updates'));
-        if (!snap.empty) {
-          const firestoreUpdates: SystemUpdateEntry[] = [];
-          snap.forEach((docSnap) => {
-            firestoreUpdates.push(docSnap.data() as SystemUpdateEntry);
-          });
-          // Merge firestore updates with local updates
-          const mergedMap = new Map<string, SystemUpdateEntry>();
-          updates.forEach((u) => mergedMap.set(u.id, u));
-          firestoreUpdates.forEach((u) => mergedMap.set(u.id, u));
-          updates = Array.from(mergedMap.values());
-        }
+        const list: SystemUpdateEntry[] = [];
+        snap.forEach((d) => list.push(d.data() as SystemUpdateEntry));
+        localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(list));
+        return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       } catch (err) {
-        console.warn('Firestore getSystemUpdates background read error:', err);
+        console.warn('Firestore getSystemUpdates error:', err);
       }
     }
 
-    // Sort descending by date
-    updates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return updates;
+    return updates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   },
 
-  async addSystemUpdate(
-    entry: Omit<SystemUpdateEntry, 'id' | 'date'> & { id?: string; date?: string }
-  ): Promise<SystemUpdateEntry> {
-    const updates = await this.getSystemUpdates();
-    const newEntry: SystemUpdateEntry = {
-      id: entry.id || `upd-${Date.now()}`,
-      version: entry.version.trim(),
-      title: entry.title.trim(),
-      date: entry.date || new Date().toISOString(),
-      category: entry.category,
-      author: entry.author || 'Administrador',
-      authorRole: entry.authorRole || 'Sistema',
-      summary: entry.summary.trim(),
-      highlights: entry.highlights && entry.highlights.length > 0 ? entry.highlights : [entry.summary],
-      badge: entry.badge || 'Melhoria',
-      commitHash: entry.commitHash || `commit-${Math.random().toString(36).substring(2, 9)}`,
-      affectedComponents: entry.affectedComponents || [],
+  async addSystemUpdate(updateData: Omit<SystemUpdateEntry, 'id' | 'date'>): Promise<SystemUpdateEntry> {
+    const list = await this.getSystemUpdates();
+    const id = `upd-${Date.now()}`;
+    const newUpdate: SystemUpdateEntry = {
+      ...updateData,
+      id,
+      date: new Date().toISOString().split('T')[0],
       isLatest: true,
     };
 
-    // Mark previous latest as false
-    const updatedList = updates.map((u) => ({ ...u, isLatest: false }));
-    updatedList.unshift(newEntry);
+    const updatedList = [newUpdate, ...list.map((u) => ({ ...u, isLatest: false }))];
     localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(updatedList));
-
-    // Notificar no sininho a nova nota de versão do sistema
-    this.addNotification({
-      title: `🚀 WikiZero ${newEntry.version} - ${newEntry.title}`,
-      message: newEntry.summary,
-      type: 'success',
-      link: 'site-updates',
-    });
 
     if (firebaseActive && db) {
       try {
-        await setDoc(doc(db, 'system_updates', newEntry.id), {
-          ...newEntry,
-          timestamp: serverTimestamp(),
-        });
+        await setDoc(doc(db, 'system_updates', id), newUpdate);
       } catch (err) {
-        console.warn('Firestore addSystemUpdate background sync error:', err);
+        console.warn('Firestore addSystemUpdate error:', err);
       }
     }
 
-    return newEntry;
+    return newUpdate;
   },
 
   async deleteSystemUpdate(id: string): Promise<boolean> {
-    const updates = await this.getSystemUpdates();
-    const filtered = updates.filter((u) => u.id !== id);
-    if (filtered.length > 0) {
-      filtered[0].isLatest = true;
-    }
+    const list = await this.getSystemUpdates();
+    const filtered = list.filter((u) => u.id !== id);
     localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(filtered));
 
     if (firebaseActive && db) {
@@ -2725,470 +3024,47 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         console.warn('Firestore deleteSystemUpdate error:', err);
       }
     }
+
     return true;
   },
 
-  async resetSystemUpdatesToDefault(): Promise<SystemUpdateEntry[]> {
-    localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(INITIAL_SYSTEM_UPDATES));
-    return INITIAL_SYSTEM_UPDATES;
-  },
-
-  // === CHECKUSER & SOCKPUPPET INVESTIGATION (EXCLUSIVO PARA MODERADORES E ADMINS) ===
-  async getSockpuppetCases(): Promise<SockpuppetCase[]> {
-    initializeLocalStorage();
-    const raw = localStorage.getItem(STORAGE_KEYS.SOCKPUPPET_CASES);
-    return raw ? JSON.parse(raw) : INITIAL_SOCKPUPPET_CASES;
-  },
-
-  async saveSockpuppetCase(spiCase: SockpuppetCase): Promise<SockpuppetCase> {
-    const cases = await this.getSockpuppetCases();
-    const existingIndex = cases.findIndex((c) => c.id === spiCase.id || c.caseNumber === spiCase.caseNumber);
-    
-    if (existingIndex >= 0) {
-      cases[existingIndex] = { ...cases[existingIndex], ...spiCase };
-    } else {
-      cases.unshift(spiCase);
-    }
-
-    localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify(cases));
-
-    if (firebaseActive && db) {
-      try {
-        await setDoc(doc(db, 'sockpuppet_cases', spiCase.id), {
-          ...spiCase,
-          updatedAt: serverTimestamp(),
-        });
-      } catch (err) {
-        console.warn('Firestore saveSockpuppetCase background sync error:', err);
-      }
-    }
-
-    return spiCase;
-  },
-
-  async deleteSockpuppetCase(caseId: string): Promise<boolean> {
-    const cases = await this.getSockpuppetCases();
-    const filtered = cases.filter((c) => c.id !== caseId);
-    localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify(filtered));
-
-    if (firebaseActive && db) {
-      try {
-        await deleteDoc(doc(db, 'sockpuppet_cases', caseId));
-      } catch (err) {
-        console.warn('Firestore deleteSockpuppetCase error:', err);
-      }
-    }
-    return true;
-  },
-
-  async getCheckUserLogs(): Promise<CheckUserLogEntry[]> {
-    initializeLocalStorage();
-    const raw = localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS);
-    return raw ? JSON.parse(raw) : INITIAL_CHECKUSER_LOGS;
-  },
-
-  async logCheckUserQuery(entry: {
-    target: string;
-    targetType: 'username' | 'ip' | 'cidr';
-    reason: string;
-    performedBy: string;
-    performedByRole: string;
-    resultsFound: number;
-  }): Promise<CheckUserLogEntry> {
-    initializeLocalStorage();
-    const raw = localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS);
-    const logs: CheckUserLogEntry[] = raw ? JSON.parse(raw) : INITIAL_CHECKUSER_LOGS;
-
-    const newLog: CheckUserLogEntry = {
-      id: 'culog-' + Date.now(),
-      target: entry.target.trim(),
-      targetType: entry.targetType,
-      reason: entry.reason.trim(),
-      performedBy: entry.performedBy,
-      performedByRole: entry.performedByRole,
-      timestamp: new Date().toISOString(),
-      resultsFound: entry.resultsFound,
-    };
-
-    logs.unshift(newLog);
-    localStorage.setItem(STORAGE_KEYS.CHECKUSER_LOGS, JSON.stringify(logs));
-
-    if (firebaseActive && db) {
-      try {
-        await setDoc(doc(db, 'checkuser_logs', newLog.id), {
-          ...newLog,
-          createdAt: serverTimestamp(),
-        });
-      } catch (err) {
-        console.warn('Firestore logCheckUserQuery sync error:', err);
-      }
-    }
-
-    return newLog;
-  },
-
-  async getAllCheckUserAccounts(): Promise<Record<string, CheckUserAccountDetails>> {
-    initializeLocalStorage();
-    const raw = localStorage.getItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS);
-    const accounts: Record<string, CheckUserAccountDetails> = raw ? JSON.parse(raw) : MOCK_CHECKUSER_ACCOUNTS;
-
-    // Ensure all community users have a CheckUser details profile
-    const communityUsers = await this.getCommunityUsers();
-    let updated = false;
-
-    communityUsers.forEach((u) => {
-      if (!accounts[u.uid]) {
-        // Generate baseline IP and User Agent based on user profile
-        const isSpam = u.username.toLowerCase().includes('suspeito') || u.username.toLowerCase().includes('vandalo') || u.username.toLowerCase().includes('fantoche');
-        accounts[u.uid] = {
-          uid: u.uid,
-          displayName: u.displayName || u.username,
-          username: u.username,
-          email: u.email,
-          role: u.role,
-          isBanned: u.isBanned || false,
-          banReason: u.banReason,
-          isSockpuppet: u.username.toLowerCase().includes('alt') || u.username.toLowerCase().includes('fantoche'),
-          sockpuppetOf: isSpam ? 'Usuario_Suspeito' : undefined,
-          createdAt: u.createdAt,
-          lastActive: u.lastActive,
-          reputationScore: u.reputationScore,
-          ipAddresses: [
-            {
-              ip: isSpam ? '177.136.24.12' : `179.184.${Math.floor(Math.random() * 100)}.${Math.floor(Math.random() * 250)}`,
-              isp: isSpam ? 'Claro Fibra / AS28573' : 'Vivo Fibra Brasil',
-              location: 'São Paulo, SP, Brasil',
-              lastSeen: u.lastActive,
-              usageCount: 15,
-            },
-          ],
-          userAgents: [
-            {
-              browser: 'Chrome 127.0.6533.119',
-              os: 'Linux x86_64',
-              device: 'Desktop / PC',
-              raw: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/127.0.6533.119',
-              lastSeen: u.lastActive,
-            },
-          ],
-          editedArticles: [],
-        };
-        updated = true;
-      }
-    });
-
-    if (updated) {
-      localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify(accounts));
-    }
-
-    return accounts;
-  },
-
-  async getCheckUserAccountDetails(usernameOrUid: string): Promise<CheckUserAccountDetails | null> {
-    const accounts: Record<string, CheckUserAccountDetails> = await this.getAllCheckUserAccounts();
-    const clean = usernameOrUid.toLowerCase().trim();
-
-    // Check by UID
-    if (accounts[usernameOrUid]) return accounts[usernameOrUid];
-
-    // Check by username or displayName
-    const allAccountsList: CheckUserAccountDetails[] = Object.values(accounts);
-    const found = allAccountsList.find(
-      (a: CheckUserAccountDetails) =>
-        a.username.toLowerCase() === clean ||
-        a.displayName.toLowerCase() === clean ||
-        a.uid.toLowerCase() === clean ||
-        a.email.toLowerCase() === clean
-    );
-
-    return found || null;
-  },
-
-  async performCheckUserInvestigation(
-    target: string,
-    targetType: 'username' | 'ip' | 'cidr',
-    reason: string,
-    performedBy: UserProfile
-  ): Promise<{
-    matchedAccounts: CheckUserAccountDetails[];
-    relatedIps: string[];
-    correlationScore: number;
-    detectedSockpuppets: string[];
-    evidenceNotes: string[];
-    queryLog: CheckUserLogEntry;
-  }> {
-    const cleanTarget = target.trim();
-    const accounts: Record<string, CheckUserAccountDetails> = await this.getAllCheckUserAccounts();
-    const allAccountsList: CheckUserAccountDetails[] = Object.values(accounts);
-
-    let matchedAccounts: CheckUserAccountDetails[] = [];
-    const relatedIpsSet = new Set<string>();
-    const detectedSockpuppetsSet = new Set<string>();
-    const evidenceNotes: string[] = [];
-
-    if (targetType === 'username') {
-      const targetUser = allAccountsList.find(
-        (a: CheckUserAccountDetails) =>
-          a.username.toLowerCase() === cleanTarget.toLowerCase() ||
-          a.displayName.toLowerCase() === cleanTarget.toLowerCase() ||
-          a.uid.toLowerCase() === cleanTarget.toLowerCase()
-      );
-
-      if (targetUser) {
-        matchedAccounts.push(targetUser);
-        targetUser.ipAddresses.forEach((ip) => relatedIpsSet.add(ip.ip));
-
-        // Find other accounts sharing these IPs or similar subnets
-        const targetIps = targetUser.ipAddresses.map((i) => i.ip);
-        const targetSubnets = targetIps.map((ip) => ip.split('.').slice(0, 3).join('.'));
-        const targetUserAgents = targetUser.userAgents.map((ua) => ua.raw);
-
-        allAccountsList.forEach((acc: CheckUserAccountDetails) => {
-          if (acc.uid !== targetUser.uid) {
-            const hasDirectIp = acc.ipAddresses.some((ip) => targetIps.includes(ip.ip));
-            const hasSubnetMatch = acc.ipAddresses.some((ip) =>
-              targetSubnets.some((sub) => ip.ip.startsWith(sub))
-            );
-            const hasUaMatch = acc.userAgents.some((ua) => targetUserAgents.includes(ua.raw));
-            const hasFlaggedSockpuppet = acc.sockpuppetOf?.toLowerCase() === targetUser.username.toLowerCase();
-
-            if (hasDirectIp || hasSubnetMatch || hasFlaggedSockpuppet || (hasUaMatch && hasSubnetMatch)) {
-              matchedAccounts.push(acc);
-              acc.ipAddresses.forEach((ip) => relatedIpsSet.add(ip.ip));
-
-              if (hasDirectIp || hasFlaggedSockpuppet) {
-                detectedSockpuppetsSet.add(acc.username);
-              }
-            }
-          }
-        });
-
-        // Generate evidence notes
-        if (targetIps.length > 0) {
-          evidenceNotes.push(`Alvo verificado possui ${targetIps.length} endereço(s) IP registrado(s): ${targetIps.join(', ')}.`);
-        }
-        if (detectedSockpuppetsSet.size > 0) {
-          evidenceNotes.push(`Identificadas ${detectedSockpuppetsSet.size} conta(s) com correspondência direta de rede/IP ou confissão técnica: ${Array.from(detectedSockpuppetsSet).join(', ')}.`);
-        } else {
-          evidenceNotes.push('Nenhuma correlação crítica imediata de endereço IP exclusivo identificada nesta consulta.');
-        }
-      }
-    } else if (targetType === 'ip') {
-      allAccountsList.forEach((acc: CheckUserAccountDetails) => {
-        const matches = acc.ipAddresses.some((ip) => ip.ip === cleanTarget);
-        if (matches) {
-          matchedAccounts.push(acc);
-          relatedIpsSet.add(cleanTarget);
-          acc.ipAddresses.forEach((ip) => relatedIpsSet.add(ip.ip));
-        }
-      });
-      evidenceNotes.push(`Busca por endereço IP exato "${cleanTarget}" encontrou ${matchedAccounts.length} conta(s) associada(s).`);
-    } else if (targetType === 'cidr') {
-      const baseSubnet = cleanTarget.replace('/24', '').replace('/16', '').trim();
-      const subnetPrefix = baseSubnet.split('.').slice(0, 3).join('.');
-
-      allAccountsList.forEach((acc: CheckUserAccountDetails) => {
-        const matches = acc.ipAddresses.some((ip) => ip.ip.startsWith(subnetPrefix));
-        if (matches) {
-          matchedAccounts.push(acc);
-          acc.ipAddresses.forEach((ip) => relatedIpsSet.add(ip.ip));
-        }
-      });
-      evidenceNotes.push(`Busca por faixa CIDR "${cleanTarget}" (sub-rede ${subnetPrefix}.0/24) localizou ${matchedAccounts.length} conta(s).`);
-    }
-
-    // Correlation calculation
-    let correlationScore = 0;
-    if (matchedAccounts.length >= 2) {
-      correlationScore = 85;
-      if (detectedSockpuppetsSet.size > 0) correlationScore = 98;
-    } else if (matchedAccounts.length === 1) {
-      correlationScore = 15;
-    }
-
-    // Save query log
-    const queryLog = await this.logCheckUserQuery({
-      target: cleanTarget,
-      targetType,
-      reason,
-      performedBy: performedBy.displayName || performedBy.username || performedBy.email.split('@')[0],
-      performedByRole: performedBy.role,
-      resultsFound: matchedAccounts.length,
-    });
-
-    // Also log in UserAuditLog if username
-    this.logUserAuditAction(
-      cleanTarget,
-      cleanTarget,
-      'checkuser_query',
-      `Consulta CheckUser realizada (Tipo: ${targetType}). Motivo: "${reason}". Resultados: ${matchedAccounts.length} conta(s).`,
-      performedBy
-    );
-
-    return {
-      matchedAccounts,
-      relatedIps: Array.from(relatedIpsSet),
-      correlationScore,
-      detectedSockpuppets: Array.from(detectedSockpuppetsSet),
-      evidenceNotes,
-      queryLog,
-    };
-  },
-
-  async flagAccountAsSockpuppet(
-    targetUid: string,
-    masterUsername: string,
-    adminProfile: UserProfile
-  ): Promise<void> {
-    // Update community users list
-    const users = await this.getCommunityUsers();
-    const user = users.find((u) => u.uid === targetUid);
-    if (user) {
-      user.isBanned = true;
-      user.banType = 'permanente';
-      user.banReason = `Conta fantoche confirmada (Sockpuppet de ${masterUsername}).`;
-      
-      const badgeTemplate = `{{Fantoche|${masterUsername}}}\n`;
-      if (!user.bio?.includes('{{Fantoche')) {
-        user.bio = badgeTemplate + (user.bio || 'Conta bloqueada indefinidamente por uso ilícito de contas múltiplas.');
-      }
-      
-      await this.updateCommunityUser(user);
-    }
-
-    // Update CheckUser accounts cache
-    const accounts = await this.getAllCheckUserAccounts();
-    if (accounts[targetUid]) {
-      accounts[targetUid].isBanned = true;
-      accounts[targetUid].isSockpuppet = true;
-      accounts[targetUid].sockpuppetOf = masterUsername;
-      accounts[targetUid].banReason = `Fantoche (Sockpuppet) de ${masterUsername}.`;
-      localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify(accounts));
-    }
-
-    // Add user audit log
-    this.logUserAuditAction(
-      targetUid,
-      user ? user.username : targetUid,
-      'sockpuppet_flagged',
-      `Conta identificada e marcada formalmente como fantoche (Sockpuppet) de ${masterUsername}. Predefinição {{Fantoche}} aplicada.`,
-      adminProfile
-    );
-
-    // Send talk page message
-    if (user) {
-      this.addUserTalkMessage(
-        targetUid,
-        user.username,
-        {
-          titulo: `🛑 Notificação de Bloqueio por Fantochada (Sockpuppetry)`,
-          conteudo: `Sua conta foi identificada por verificação técnica CheckUser como um fantoche (sockpuppet) associado à conta principal [[User:${masterUsername}|${masterUsername}]], violando as políticas da WikiZero contra evasão de sanções e falsificação de consenso. Esta conta foi suspensa permanentemente.`,
-          tipo: 'aviso_admin',
-        },
-        adminProfile
-      );
-    }
-  },
-
-  async unflagAccountAsSockpuppet(targetUid: string, adminProfile: UserProfile): Promise<void> {
-    const users = await this.getCommunityUsers();
-    const user = users.find((u) => u.uid === targetUid);
-    if (user) {
-      user.isBanned = false;
-      user.banReason = undefined;
-      user.banType = undefined;
-      user.bio = (user.bio || '').replace(/\{\{Fantoche\|.*?\}\}\n?/g, '');
-      await this.updateCommunityUser(user);
-    }
-
-    const accounts = await this.getAllCheckUserAccounts();
-    if (accounts[targetUid]) {
-      accounts[targetUid].isBanned = false;
-      accounts[targetUid].isSockpuppet = false;
-      accounts[targetUid].sockpuppetOf = undefined;
-      accounts[targetUid].banReason = undefined;
-      localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify(accounts));
-    }
-
-    this.logUserAuditAction(
-      targetUid,
-      user ? user.username : targetUid,
-      'sockpuppet_unflagged',
-      'Remoção de marcação de fantoche e desbanimento da conta após apuração ou recurso aceito.',
-      adminProfile
-    );
-  },
-
-  async bulkBanSockpuppets(
-    targetUids: string[],
-    masterUsername: string,
-    reason: string,
-    adminProfile: UserProfile
-  ): Promise<number> {
-    let count = 0;
-    for (const uid of targetUids) {
-      await this.flagAccountAsSockpuppet(uid, masterUsername, adminProfile);
-      count++;
-    }
-    return count;
-  },
-
-  // === UNBLOCK REQUESTS (PEDIDOS DE DESBLOQUEIO DE CONTAS) ===
+  // === UNBLOCK REQUESTS ===
   async getUnblockRequests(): Promise<UnblockRequest[]> {
     initializeLocalStorage();
-    const raw = localStorage.getItem(STORAGE_KEYS.UNBLOCK_REQUESTS);
-    if (!raw) return INITIAL_UNBLOCK_REQUESTS;
-    try {
-      const parsed: UnblockRequest[] = JSON.parse(raw);
-      return parsed;
-    } catch {
-      return INITIAL_UNBLOCK_REQUESTS;
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'unblock_requests'));
+        const list: UnblockRequest[] = [];
+        snap.forEach((d) => list.push(d.data() as UnblockRequest));
+        localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify(list));
+        return list.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+      } catch (err) {
+        console.warn('Firestore getUnblockRequests error:', err);
+      }
     }
-  },
 
-  async getUnblockRequestById(id: string): Promise<UnblockRequest | null> {
-    const list = await this.getUnblockRequests();
-    return list.find((req) => req.id === id) || null;
-  },
-
-  async getUnblockRequestsForUser(userUidOrUsername: string): Promise<UnblockRequest[]> {
-    const list = await this.getUnblockRequests();
-    const clean = userUidOrUsername.toLowerCase().trim();
-    return list.filter(
-      (req) =>
-        req.userUid.toLowerCase() === clean ||
-        req.username.toLowerCase() === clean ||
-        (req.email && req.email.toLowerCase() === clean)
+    const local: UnblockRequest[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.UNBLOCK_REQUESTS) || '[]'
     );
+    return local.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
   },
 
   async createUnblockRequest(
-    requestData: Omit<UnblockRequest, 'id' | 'requestedAt' | 'status' | 'comments'> & {
-      id?: string;
-      requestedAt?: string;
+    data: Omit<UnblockRequest, 'id' | 'status' | 'requestedAt' | 'comments'> & {
+      urgency?: 'alta' | 'media' | 'baixa';
+      comments?: UnblockAppealComment[];
     }
   ): Promise<UnblockRequest> {
     const list = await this.getUnblockRequests();
+    const id = `unblock-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    const now = new Date().toISOString();
     const newRequest: UnblockRequest = {
-      id: requestData.id || `unb-${Date.now().toString().slice(-4)}`,
-      userUid: requestData.userUid,
-      username: requestData.username,
-      displayName: requestData.displayName || requestData.username,
-      email: requestData.email,
-      userRoleAtBan: requestData.userRoleAtBan || 'leitor',
-      blockReason: requestData.blockReason || 'Suspensão por violação de conduta.',
-      blockedBy: requestData.blockedBy || 'Administração',
-      blockedAt: requestData.blockedAt || new Date().toISOString(),
-      requestedAt: requestData.requestedAt || new Date().toISOString(),
-      category: requestData.category || 'outro',
-      appealJustification: requestData.appealJustification.trim(),
-      commitmentToGuidelines: requestData.commitmentToGuidelines.trim(),
-      ipAddress: requestData.ipAddress,
+      ...data,
+      id,
       status: 'pendente',
-      urgency: requestData.urgency || 'media',
-      comments: [],
-      linkedSockpuppetCaseId: requestData.linkedSockpuppetCaseId,
-      checkUserSummary: requestData.checkUserSummary,
+      urgency: data.urgency || 'media',
+      requestedAt: now,
+      comments: data.comments || [],
     };
 
     list.unshift(newRequest);
@@ -3196,619 +3072,325 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
-        await setDoc(doc(db, 'unblock_requests', newRequest.id), {
-          ...newRequest,
-          timestamp: serverTimestamp(),
-        });
+        await setDoc(doc(db, 'unblock_requests', id), newRequest);
       } catch (err) {
-        console.warn('Firestore createUnblockRequest background sync error:', err);
+        console.warn('Firestore createUnblockRequest error:', err);
       }
     }
-
-    this.logUserAuditAction(
-      newRequest.userUid,
-      newRequest.username,
-      'unblock_request_submitted',
-      `Solicitação de desbloqueio #${newRequest.id} submetida pelo usuário. Categoria: ${newRequest.category}.`,
-      null
-    );
 
     return newRequest;
   },
 
-  async updateUnblockRequest(
-    id: string,
-    updates: Partial<UnblockRequest>
-  ): Promise<UnblockRequest | null> {
+  async evaluateUnblockRequest(
+    requestId: string,
+    decision: 'aprovado' | 'recusado' | 'em_analise',
+    notes: string,
+    adminUser: UserProfile
+  ): Promise<{ success: boolean; message: string; updatedRequest?: UnblockRequest }> {
     const list = await this.getUnblockRequests();
-    const index = list.findIndex((req) => req.id === id);
-    if (index === -1) return null;
+    const idx = list.findIndex((r) => r.id === requestId);
+    if (idx === -1) {
+      return { success: false, message: 'Pedido de desbloqueio não encontrado.' };
+    }
 
-    const updated = {
-      ...list[index],
-      ...updates,
+    const req = list[idx];
+    const now = new Date().toISOString();
+    const updatedRequest: UnblockRequest = {
+      ...req,
+      status: decision === 'em_analise' ? 'em_analise' : decision,
+      reviewedBy: adminUser.displayName || adminUser.username,
+      reviewedByRole: adminUser.role,
+      reviewedAt: now,
+      resolutionNotes: notes,
+      resolutionDecision:
+        decision === 'aprovado'
+          ? 'unblock_full'
+          : decision === 'recusado'
+          ? 'rejected'
+          : 'requested_more_info',
     };
 
-    list[index] = updated;
+    list[idx] = updatedRequest;
     localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify(list));
 
     if (firebaseActive && db) {
       try {
-        await setDoc(doc(db, 'unblock_requests', id), {
-          ...updated,
-          updatedAt: serverTimestamp(),
-        });
+        await setDoc(doc(db, 'unblock_requests', requestId), updatedRequest);
       } catch (err) {
-        console.warn('Firestore updateUnblockRequest error:', err);
+        console.warn('Firestore evaluateUnblockRequest error:', err);
       }
     }
 
-    return updated;
-  },
-
-  async evaluateUnblockRequest(
-    id: string,
-    decision: 'unblock_full' | 'unblock_probationary' | 'rejected' | 'requested_more_info',
-    notes: string,
-    reviewer: UserProfile
-  ): Promise<{ success: boolean; message: string; updatedRequest?: UnblockRequest }> {
-    const req = await this.getUnblockRequestById(id);
-    if (!req) return { success: false, message: 'Solicitação não encontrada.' };
-
-    const reviewerName = reviewer.displayName || reviewer.username || reviewer.email.split('@')[0];
-    const reviewerRole = reviewer.role || 'moderador';
-    const nowIso = new Date().toISOString();
-
-    let newStatus: UnblockRequestStatus = 'em_analise';
-    let successMessage = '';
-
-    if (decision === 'unblock_full') {
-      newStatus = 'aprovado';
-      // 1. Unban user in profiles
-      await this.unbanUser(req.userUid, reviewer);
-      // 2. Unflag from CheckUser if exists
-      await this.unflagSockpuppet(req.userUid, reviewer);
-
-      // 3. Post notification to user's talk page
-      this.addUserTalkMessage(
-        req.userUid,
-        req.username,
-        {
-          titulo: `✅ Solicitação de Desbloqueio #${req.id} APROVADA`,
-          conteudo: `Sua solicitação de recurso foi avaliada e '''APROVADA''' pelo moderador '''${reviewerName}'''.\n\n'''Parecer da Moderação:'''\n${notes.trim()}\n\nSuas permissões editoriais foram integralmente restauradas. Seja bem-vindo de volta à WikiZero!`,
-          tipo: 'aviso_admin',
-        },
-        reviewer
-      );
-
-      this.logUserAuditAction(
-        req.userUid,
-        req.username,
-        'unblock_request_evaluated',
-        `Recurso #${req.id} APROVADO com desbloqueio total por ${reviewerName}. Parecer: ${notes}`,
-        reviewer
-      );
-
-      successMessage = `Conta de ${req.username} desbloqueada com sucesso! Permissões restabelecidas.`;
-    } else if (decision === 'unblock_probationary') {
-      newStatus = 'aprovado';
-      // Unban and apply probationary permissions
-      await this.unbanUser(req.userUid, reviewer);
-      await this.updateUserPermissions(
-        req.userUid,
-        {
-          canEdit: true,
-          canCreate: false,
-          canTalk: true,
-          canDelete: false,
-          canGrantBarnstars: false,
-        },
-        reviewer
-      );
-
-      this.addUserTalkMessage(
-        req.userUid,
-        req.username,
-        {
-          titulo: `🟡 Desbloqueio Condicional / Probatório #${req.id}`,
-          conteudo: `Seu pedido de desbloqueio foi aceito sob '''Regime Probatório supervisionado'''.\n\n'''Parecer e Condições:'''\n${notes.trim()}\n\nVocê poderá editar artigos existentes e participar de discussões, mas a criação de novas páginas permanece temporariamente restrita.`,
-          tipo: 'aviso_admin',
-        },
-        reviewer
-      );
-
-      this.logUserAuditAction(
-        req.userUid,
-        req.username,
-        'unblock_request_evaluated',
-        `Recurso #${req.id} APROVADO sob regime probatório por ${reviewerName}. Parecer: ${notes}`,
-        reviewer
-      );
-
-      successMessage = `Conta de ${req.username} desbloqueada sob período probatório supervisionado.`;
-    } else if (decision === 'rejected') {
-      newStatus = 'recusado';
-
-      this.addUserTalkMessage(
-        req.userUid,
-        req.username,
-        {
-          titulo: `❌ Solicitação de Desbloqueio #${req.id} INDEFERIDA`,
-          conteudo: `Sua solicitação de desbloqueio foi avaliada e '''INDEFERIDA''' pelo corpo de moderação (${reviewerName}).\n\n'''Fundamentação do Indeferimento:'''\n${notes.trim()}\n\nConforme as políticas da WikiZero, um novo recurso poderá ser protocolado após decorrido o prazo regulamentar.`,
-          tipo: 'aviso_admin',
-        },
-        reviewer
-      );
-
-      this.logUserAuditAction(
-        req.userUid,
-        req.username,
-        'unblock_request_evaluated',
-        `Recurso #${req.id} INDEFERIDO por ${reviewerName}. Motivo: ${notes}`,
-        reviewer
-      );
-
-      successMessage = `Solicitação de desbloqueio indeferida. Bloqueio mantido.`;
-    } else if (decision === 'requested_more_info') {
-      newStatus = 'em_analise';
-
-      this.addUserTalkMessage(
-        req.userUid,
-        req.username,
-        {
-          titulo: `🔍 Solicitação de Esclarecimentos - Recurso #${req.id}`,
-          conteudo: `O moderador '''${reviewerName}''' analisou sua solicitação e requisitou os seguintes esclarecimentos antes do veredito final:\n\n''"${notes.trim()}"''\n\nPor favor, responda a este tópico ou adicione sua tréplica no formulário de recurso.`,
-          tipo: 'aviso_admin',
-        },
-        reviewer
-      );
-
-      this.logUserAuditAction(
-        req.userUid,
-        req.username,
-        'unblock_request_evaluated',
-        `Solicitados esclarecimentos adicionais para o recurso #${req.id} por ${reviewerName}.`,
-        reviewer
-      );
-
-      successMessage = `Pedido marcado como "Em Análise" e solicitação de esclarecimentos enviada ao usuário.`;
+    // Se aprovado, desbloquear usuário correspondente se existir
+    if (decision === 'aprovado' && req.userUid) {
+      try {
+        const users = await this.getCommunityUsers();
+        const uIdx = users.findIndex((u) => u.uid === req.userUid);
+        if (uIdx >= 0) {
+          users[uIdx].isBanned = false;
+          users[uIdx].banReason = undefined;
+          localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(users));
+          if (firebaseActive && db) {
+            await setDoc(doc(db, 'users', req.userUid), { isBanned: false, banReason: '' }, { merge: true });
+          }
+        }
+      } catch (e) {
+        console.warn('Erro ao atualizar status de banimento:', e);
+      }
     }
-
-    const updated = await this.updateUnblockRequest(id, {
-      status: newStatus,
-      resolutionDecision: decision,
-      resolutionNotes: notes.trim(),
-      reviewedBy: reviewerName,
-      reviewedByRole: reviewerRole,
-      reviewedAt: nowIso,
-    });
 
     return {
       success: true,
-      message: successMessage,
-      updatedRequest: updated || undefined,
+      message: `Pedido ${decision === 'aprovado' ? 'aprovado e usuário desbloqueado' : decision === 'recusado' ? 'recusado' : 'colocado em análise'}.`,
+      updatedRequest,
     };
   },
 
   async addCommentToUnblockRequest(
     requestId: string,
     text: string,
-    author: UserProfile,
-    isInternalNote: boolean = true
-  ): Promise<UnblockAppealComment | null> {
-    const req = await this.getUnblockRequestById(requestId);
-    if (!req) return null;
+    user: UserProfile,
+    isInternal: boolean = false
+  ): Promise<UnblockRequest> {
+    const list = await this.getUnblockRequests();
+    const idx = list.findIndex((r) => r.id === requestId);
+    if (idx === -1) throw new Error('Pedido não encontrado');
 
-    const newComment: UnblockAppealComment = {
-      id: 'comm-' + Date.now(),
-      author: author.displayName || author.username || author.email.split('@')[0],
-      authorRole: author.role || 'moderador',
-      authorUid: author.uid,
-      text: text.trim(),
+    const comment: UnblockAppealComment = {
+      id: `comm-${Date.now()}`,
+      author: user.displayName || user.username,
+      authorRole: user.role,
+      authorUid: user.uid,
+      text,
       timestamp: new Date().toISOString(),
-      isInternalModeratorNote: isInternalNote,
+      isInternalModeratorNote: isInternal,
     };
 
-    const updatedComments = [...(req.comments || []), newComment];
-    await this.updateUnblockRequest(requestId, { comments: updatedComments });
-    return newComment;
-  },
-
-  // === PROMOTION REQUESTS (PEDIDOS DE PROMOÇÃO / RFA COM VOTAÇÃO DE ATÉ 10 VOTOS) ===
-  async getPromotionRequests(): Promise<PromotionRequest[]> {
-    initializeLocalStorage();
-    const raw = localStorage.getItem(STORAGE_KEYS.PROMOTION_REQUESTS);
-    if (!raw) return INITIAL_PROMOTION_REQUESTS;
-    try {
-      const parsed: PromotionRequest[] = JSON.parse(raw);
-      return parsed;
-    } catch {
-      return INITIAL_PROMOTION_REQUESTS;
-    }
-  },
-
-  async getPromotionRequestById(id: string): Promise<PromotionRequest | null> {
-    const list = await this.getPromotionRequests();
-    return list.find((req) => req.id === id) || null;
-  },
-
-  async savePromotionRequest(req: PromotionRequest): Promise<PromotionRequest> {
-    const list = await this.getPromotionRequests();
-    const index = list.findIndex((r) => r.id === req.id);
-    if (index >= 0) {
-      list[index] = req;
-    } else {
-      list.unshift(req);
-    }
-    localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(list));
+    list[idx].comments = [...(list[idx].comments || []), comment];
+    localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify(list));
 
     if (firebaseActive && db) {
       try {
-        await setDoc(doc(db, 'promotion_requests', req.id), {
-          ...req,
-          updatedAt: serverTimestamp(),
-        });
+        await setDoc(doc(db, 'unblock_requests', requestId), list[idx]);
       } catch (err) {
-        console.warn('Firestore savePromotionRequest background error:', err);
+        console.warn('Firestore addCommentToUnblockRequest error:', err);
       }
     }
-    return req;
+
+    return list[idx];
   },
 
-  async createPromotionRequest(data: {
-    candidateUid: string;
-    candidateUsername: string;
-    candidateDisplayName: string;
-    candidateEmail?: string;
-    currentRole: UserRole;
-    targetRole: PromotionTargetRole;
-    statement: string;
-    contributionsSummary: string;
-    isSelfNomination?: boolean;
-    nominatedBy?: string;
-    nominatedByUid?: string;
-    requiredApprovalRate?: number;
-  }, creator: UserProfile): Promise<{ success: boolean; message: string; request?: PromotionRequest }> {
-    if (creator.isBanned) {
-      return { success: false, message: 'Usuários bloqueados não podem criar pedidos de promoção.' };
-    }
-
-    const list = await this.getPromotionRequests();
-    
-    // Check if candidate already has an active voting
-    const activeExisting = list.find(
+  async getUnblockRequestsForUser(uidOrUsername: string): Promise<UnblockRequest[]> {
+    const all = await this.getUnblockRequests();
+    const clean = uidOrUsername.toLowerCase();
+    return all.filter(
       (r) =>
-        r.candidateUid === data.candidateUid &&
-        r.targetRole === data.targetRole &&
-        r.status === 'em_votacao'
+        (r.userUid && r.userUid.toLowerCase() === clean) ||
+        (r.username && r.username.toLowerCase() === clean)
     );
-    if (activeExisting) {
-      return {
-        success: false,
-        message: `Já existe uma candidatura em votação ativa para este usuário no cargo de ${data.targetRole}.`,
-      };
+  },
+
+  // === PROMOTION REQUESTS ===
+  async getPromotionRequests(): Promise<PromotionRequest[]> {
+    initializeLocalStorage();
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'promotion_requests'));
+        const list: PromotionRequest[] = [];
+        snap.forEach((d) => list.push(d.data() as PromotionRequest));
+        localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(list));
+        return list.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+      } catch (err) {
+        console.warn('Firestore getPromotionRequests error:', err);
+      }
     }
 
-    const newId = `rfa-${Date.now()}`;
-    const requiredRate = data.requiredApprovalRate || (data.targetRole === 'admin' ? 75 : 60);
+    const local: PromotionRequest[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.PROMOTION_REQUESTS) || '[]'
+    );
+    return local.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+  },
 
-    const newRequest: PromotionRequest = {
-      id: newId,
-      candidateUid: data.candidateUid,
-      candidateUsername: data.candidateUsername,
-      candidateDisplayName: data.candidateDisplayName,
-      candidateEmail: data.candidateEmail,
-      currentRole: data.currentRole,
-      targetRole: data.targetRole,
-      nominatedBy: data.nominatedBy || creator.displayName || creator.username,
-      nominatedByUid: data.nominatedByUid || creator.uid,
-      isSelfNomination: data.isSelfNomination ?? (data.candidateUid === creator.uid),
-      statement: data.statement.trim(),
-      contributionsSummary: data.contributionsSummary.trim(),
+  async createPromotionRequest(
+    data: {
+      candidateUid: string;
+      candidateUsername: string;
+      candidateDisplayName: string;
+      candidateEmail?: string;
+      currentRole: UserRole;
+      targetRole: PromotionTargetRole;
+      nominatedBy: string;
+      nominatedByUid?: string;
+      isSelfNomination: boolean;
+      statement: string;
+      contributionsSummary: string;
+      requiredApprovalRate?: number;
+    },
+    _creator?: UserProfile | null
+  ): Promise<{ success: boolean; message: string; request?: PromotionRequest }> {
+    const list = await this.getPromotionRequests();
+    const id = `promo-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    const newReq: PromotionRequest = {
+      ...data,
+      id,
       requestedAt: new Date().toISOString(),
       status: 'em_votacao',
       maxVotes: 10,
       votes: [],
-      requiredApprovalRate: requiredRate,
+      requiredApprovalRate: data.requiredApprovalRate || (data.targetRole === 'admin' ? 75 : 60),
     };
 
-    await this.savePromotionRequest(newRequest);
+    list.unshift(newReq);
+    localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(list));
 
-    // Audit log
-    this.logUserAuditAction(
-      data.candidateUid,
-      data.candidateDisplayName,
-      'promotion_created',
-      `Nova candidatura comunitária para promoção a ${data.targetRole.toUpperCase()} iniciada (Limite: 10 votos). Proponente: ${newRequest.nominatedBy}.`,
-      creator
-    );
-
-    // Notify candidate on Talk page if nominated by another user
-    if (!newRequest.isSelfNomination) {
-      this.addUserTalkMessage(
-        data.candidateUid,
-        data.candidateDisplayName,
-        {
-          titulo: `🏛️ Nomeação para ${data.targetRole === 'admin' ? 'Administrador' : 'Moderador'} da WikiZero`,
-          conteudo: `Você foi formalmente indicado por '''${newRequest.nominatedBy}''' para o cargo de '''${
-            data.targetRole === 'admin' ? 'Administrador (Sysop)' : 'Moderador'
-          }'''. A votação comunitária de até 10 votos já está aberta na página [[Special:PromotionRequests|Pedidos de Promoção]].`,
-          tipo: 'geral',
-        },
-        creator
-      );
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'promotion_requests', id), newReq);
+      } catch (err) {
+        console.warn('Firestore createPromotionRequest error:', err);
+      }
     }
 
     return {
       success: true,
-      message: 'Candidatura registrada com sucesso! A votação comunitária de até 10 votos está aberta.',
-      request: newRequest,
+      message: 'Candidatura registrada com sucesso! A votação comunitária foi aberta.',
+      request: newReq,
     };
   },
 
   async castPromotionVote(
     requestId: string,
-    vote: PromotionVoteType,
+    voteType: PromotionVoteType,
     reason: string,
     voter: UserProfile
   ): Promise<{ success: boolean; message: string; updatedRequest?: PromotionRequest }> {
-    if (!voter || voter.isGuest) {
-      return { success: false, message: 'É necessário estar autenticado com uma conta registrada para votar.' };
-    }
-    if (voter.isBanned) {
-      return { success: false, message: 'Usuários com sanções ativas ou bloqueados não possuem direito a voto.' };
-    }
+    const list = await this.getPromotionRequests();
+    const idx = list.findIndex((r) => r.id === requestId);
+    if (idx === -1) return { success: false, message: 'Pedido de promoção não encontrado.' };
 
-    const cleanReason = (reason || '').trim();
-    if (cleanReason.length < 8) {
-      return {
-        success: false,
-        message: 'O motivo do voto é obrigatório e deve conter ao menos 8 caracteres explicando sua justificativa.',
-      };
-    }
-
-    const req = await this.getPromotionRequestById(requestId);
-    if (!req) {
-      return { success: false, message: 'Pedido de promoção não encontrado.' };
-    }
-
+    const req = list[idx];
     if (req.status !== 'em_votacao') {
-      return { success: false, message: 'Esta votação já se encontra encerrada e não aceita novos votos.' };
+      return { success: false, message: 'Esta votação já se encontra encerrada.' };
     }
 
-    // Check if voter is the candidate themselves
-    if (voter.uid === req.candidateUid && vote !== 'neutro') {
-      return {
-        success: false,
-        message: 'O próprio candidato não pode votar a favor ou contra em sua própria eleição (apenas abstenção neutra é permitida).',
-      };
-    }
-
-    const existingVoteIndex = req.votes.findIndex(
-      (v) => v.voterUid === voter.uid || (v.voterUsername && v.voterUsername.toLowerCase() === voter.username.toLowerCase())
-    );
-
-    const isUpdating = existingVoteIndex >= 0;
-
-    // If new vote and already has 10 votes, reject
-    if (!isUpdating && req.votes.length >= req.maxVotes) {
-      return {
-        success: false,
-        message: `Esta votação já atingiu o quórum máximo estrito de ${req.maxVotes} votos comunitários.`,
-      };
-    }
-
-    const voterName = voter.displayName || voter.username || voter.email.split('@')[0];
-    const voteEntry: PromotionVote = {
-      id: isUpdating ? req.votes[existingVoteIndex].id : 'pvote-' + Date.now(),
+    // Verificar se usuário já votou
+    const existingVoteIndex = req.votes.findIndex((v) => v.voterUid === voter.uid);
+    const voteItem: PromotionVote = {
+      id: `vote-${Date.now()}`,
       voterUid: voter.uid,
       voterUsername: voter.username,
-      voterDisplayName: voterName,
+      voterDisplayName: voter.displayName || voter.username,
       voterRole: voter.role,
-      vote,
-      reason: cleanReason,
+      vote: voteType,
+      reason,
       timestamp: new Date().toISOString(),
     };
 
-    let updatedVotes = [...req.votes];
-    if (isUpdating) {
-      updatedVotes[existingVoteIndex] = voteEntry;
+    if (existingVoteIndex >= 0) {
+      req.votes[existingVoteIndex] = voteItem;
     } else {
-      updatedVotes.push(voteEntry);
+      if (req.votes.length >= req.maxVotes) {
+        return { success: false, message: 'Limite máximo de votos atingido para este pedido.' };
+      }
+      req.votes.push(voteItem);
     }
 
-    const updatedRequest: PromotionRequest = {
-      ...req,
-      votes: updatedVotes,
-    };
+    list[idx] = req;
+    localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(list));
 
-    await this.savePromotionRequest(updatedRequest);
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'promotion_requests', requestId), req);
+      } catch (err) {
+        console.warn('Firestore castPromotionVote error:', err);
+      }
+    }
 
-    // Audit log
-    this.logUserAuditAction(
-      req.candidateUid,
-      req.candidateDisplayName,
-      'promotion_voted',
-      `Voto computado em RFA (${updatedVotes.length}/${req.maxVotes}): ${voterName} votou ${
-        vote === 'a_favor' ? 'A FAVOR' : vote === 'contra' ? 'CONTRA' : 'NEUTRO'
-      }. Motivo: "${cleanReason.slice(0, 60)}${cleanReason.length > 60 ? '...' : ''}"`,
-      voter
-    );
-
-    const voteLabel = vote === 'a_favor' ? 'a favor' : vote === 'contra' ? 'contra' : 'neutro';
-    return {
-      success: true,
-      message: isUpdating
-        ? `Seu voto e justificativa foram atualizados com sucesso (${updatedVotes.length}/${req.maxVotes} votos).`
-        : `Seu voto ${voteLabel} foi registrado com sucesso (${updatedVotes.length}/${req.maxVotes} votos comunitários computados).`,
-      updatedRequest,
-    };
+    return { success: true, message: 'Seu voto e fundamentação foram registrados!', updatedRequest: req };
   },
 
   async concludePromotionRequest(
     requestId: string,
-    decision: 'aprovada' | 'rejeitada',
-    resolutionNotes: string,
-    executor: UserProfile
+    outcome: 'aprovada' | 'rejeitada',
+    conclusionNotes: string,
+    adminUser: UserProfile
   ): Promise<{ success: boolean; message: string; updatedRequest?: PromotionRequest }> {
-    const isBureaucrat =
-      executor.role === 'admin' || executor.email === 'pedrohenriquecardonaperes@gmail.com';
+    const list = await this.getPromotionRequests();
+    const idx = list.findIndex((r) => r.id === requestId);
+    if (idx === -1) return { success: false, message: 'Candidatura não encontrada.' };
 
-    if (!isBureaucrat) {
-      return {
-        success: false,
-        message: 'Apenas Administradores e Burocratas podem homologar ou indeferir pedidos de promoção.',
-      };
+    const req = list[idx];
+    req.status = outcome;
+    req.closedAt = new Date().toISOString();
+    req.closedBy = adminUser.displayName || adminUser.username;
+    req.closedByRole = adminUser.role;
+    req.resolutionNotes = conclusionNotes;
+
+    list[idx] = req;
+    localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'promotion_requests', requestId), req);
+      } catch (err) {
+        console.warn('Firestore concludePromotionRequest error:', err);
+      }
     }
 
-    const req = await this.getPromotionRequestById(requestId);
-    if (!req) {
-      return { success: false, message: 'Pedido de promoção não encontrado.' };
+    // Se aprovada, promover cargo do usuário
+    if (outcome === 'aprovada') {
+      try {
+        const users = await this.getCommunityUsers();
+        const uIdx = users.findIndex((u) => u.uid === req.candidateUid);
+        if (uIdx >= 0) {
+          users[uIdx].role = req.targetRole;
+          localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(users));
+          if (firebaseActive && db) {
+            await setDoc(doc(db, 'users', req.candidateUid), { role: req.targetRole }, { merge: true });
+          }
+        }
+      } catch (e) {
+        console.warn('Erro ao atualizar cargo de usuário:', e);
+      }
     }
-
-    const notes = (resolutionNotes || '').trim() || (decision === 'aprovada'
-      ? `Candidatura homologada após deliberação comunitária (${req.votes.filter(v => v.vote === 'a_favor').length} a favor de ${req.votes.length} votos).`
-      : 'Candidatura indeferida por não atingir quórum ou taxa de aprovação necessária.');
-
-    const updatedRequest: PromotionRequest = {
-      ...req,
-      status: decision,
-      closedAt: new Date().toISOString(),
-      closedBy: executor.displayName || executor.username,
-      closedByRole: executor.role,
-      resolutionNotes: notes,
-    };
-
-    // If approved, update candidate role!
-    if (decision === 'aprovada') {
-      await this.updateUserRole(req.candidateUid, req.targetRole, executor);
-
-      // Award official promotion barnstar
-      const barnstarTitle =
-        req.targetRole === 'admin'
-          ? 'Medalha do Estatuto de Administrador (Sysop)'
-          : 'Medalha do Estatuto de Moderador';
-      
-      const barnstarDesc =
-        req.targetRole === 'admin'
-          ? 'Concedida em reconhecimento à homologação pelo quórum comunitário como Administrador da WikiZero.'
-          : 'Concedida em reconhecimento à homologação pelo quórum comunitário como Moderador da WikiZero.';
-
-      await this.awardBarnstar(
-        req.candidateUid,
-        {
-          title: barnstarTitle,
-          description: barnstarDesc,
-          icon: req.targetRole === 'admin' ? '👑' : '🛡️',
-        },
-        executor
-      );
-
-      // Send congratulations message on user talk page
-      this.addUserTalkMessage(
-        req.candidateUid,
-        req.candidateDisplayName,
-        {
-          titulo: `🎉 Parabéns! Promoção a ${req.targetRole === 'admin' ? 'Administrador' : 'Moderador'} Homologada`,
-          conteudo: `Prezado(a) '''${req.candidateDisplayName}''',\n\nÉ com grande satisfação que informamos que sua candidatura ao estatuto de '''${
-            req.targetRole === 'admin' ? 'Administrador (Sysop)' : 'Moderador'
-          }''' foi formalmente '''APROVADA E HOMOLOGADA''' pelo corpo de burocratas da WikiZero após deliberação comunitária.\n\n'''Resultado da Votação:''' ${
-            req.votes.filter((v) => v.vote === 'a_favor').length
-          } votos a favor, ${req.votes.filter((v) => v.vote === 'contra').length} contra e ${
-            req.votes.filter((v) => v.vote === 'neutro').length
-          } neutros.\n\n'''Parecer da Homologação:''' ${notes}\n\nSuas novas ferramentas já foram habilitadas na plataforma. Faça bom uso dos novos poderes e continue zelando pela integridade do nosso conhecimento livre!`,
-          tipo: 'boas_vindas',
-        },
-        executor
-      );
-    } else {
-      // Send encouragement message on talk page
-      this.addUserTalkMessage(
-        req.candidateUid,
-        req.candidateDisplayName,
-        {
-          titulo: `📋 Notificação de Encerramento de Candidatura (${req.targetRole.toUpperCase()})`,
-          conteudo: `Prezado(a) '''${req.candidateDisplayName}''',\n\nSua recente candidatura ao estatuto de ${req.targetRole} foi encerrada sem homologação no momento.\n\n'''Parecer:''' ${notes}\n\nAgradecemos profundamente sua dedicação à WikiZero e encorajamos a continuidade de suas contribuições para submissão de nova candidatura no futuro.`,
-          tipo: 'aviso_admin',
-        },
-        executor
-      );
-    }
-
-    await this.savePromotionRequest(updatedRequest);
-
-    // Audit log
-    this.logUserAuditAction(
-      req.candidateUid,
-      req.candidateDisplayName,
-      'promotion_concluded',
-      `Candidatura a ${req.targetRole.toUpperCase()} finalizada com status [${decision.toUpperCase()}]. Homologador: ${executor.displayName || executor.username}. Parecer: ${notes}`,
-      executor
-    );
 
     return {
       success: true,
-      message: decision === 'aprovada'
-        ? `Promoção a ${req.targetRole.toUpperCase()} homologada com sucesso! O cargo do usuário foi atualizado.`
-        : 'Candidatura finalizada e indeferida.',
-      updatedRequest,
+      message: `Candidatura homologada como [${outcome.toUpperCase()}].`,
+      updatedRequest: req,
     };
   },
 
-  async deletePromotionRequest(requestId: string): Promise<boolean> {
-    const list = await this.getPromotionRequests();
-    const filtered = list.filter((r) => r.id !== requestId);
-    localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(filtered));
-
-    if (firebaseActive && db) {
-      try {
-        await deleteDoc(doc(db, 'promotion_requests', requestId));
-      } catch (err) {
-        console.warn('Firestore deletePromotionRequest error:', err);
-      }
-    }
-    return true;
-  },
-
-  // === ADMIN CONTACT TICKETS (FALE COM A ADMINISTRAÇÃO / CENTRAL DE AJUDA & DENÚNCIAS) ===
-  async getAdminTickets(): Promise<AdminContactTicket[]> {
+  // === ADMIN CONTACT TICKETS ===
+  async getAdminTickets(user?: UserProfile | null): Promise<AdminContactTicket[]> {
     initializeLocalStorage();
-    const raw = localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS);
-    if (!raw) return INITIAL_ADMIN_TICKETS;
-    try {
-      const parsed: AdminContactTicket[] = JSON.parse(raw);
-      return parsed;
-    } catch {
-      return INITIAL_ADMIN_TICKETS;
-    }
-  },
-
-  async getAdminTicketById(id: string): Promise<AdminContactTicket | null> {
-    const list = await this.getAdminTickets();
-    return list.find((t) => t.id === id) || null;
-  },
-
-  async saveAdminTicket(ticket: AdminContactTicket): Promise<AdminContactTicket> {
-    const list = await this.getAdminTickets();
-    const index = list.findIndex((t) => t.id === ticket.id);
-    if (index >= 0) {
-      list[index] = ticket;
-    } else {
-      list.unshift(ticket);
-    }
-    localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(list));
+    let tickets: AdminContactTicket[] = [];
 
     if (firebaseActive && db) {
       try {
-        await setDoc(doc(db, 'admin_tickets', ticket.id), {
-          ...ticket,
-          updatedAt: serverTimestamp(),
-        });
+        const snap = await getDocs(collection(db, 'admin_tickets'));
+        const list: AdminContactTicket[] = [];
+        snap.forEach((d) => list.push(d.data() as AdminContactTicket));
+        localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(list));
+        tickets = list;
       } catch (err) {
-        console.warn('Firestore saveAdminTicket background error:', err);
+        console.warn('Firestore getAdminTickets error:', err);
       }
     }
-    return ticket;
+
+    if (tickets.length === 0) {
+      tickets = JSON.parse(localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS) || '[]');
+    }
+
+    // Se não for staff (admin/moderador), filtrar apenas chamados criados pelo usuário
+    const isStaff = user?.role === 'admin' || user?.role === 'moderador';
+    if (!isStaff && user) {
+      return tickets
+        .filter((t) => t.userUid === user.uid || (user.email && t.userEmail === user.email))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    return tickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
   async createAdminTicket(
@@ -3823,234 +3405,181 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       guestName?: string;
       guestEmail?: string;
     },
-    creator?: UserProfile | null
+    user?: UserProfile | null
   ): Promise<{ success: boolean; message: string; ticket?: AdminContactTicket }> {
-    const isGuest = !creator || creator.isGuest;
-    const cleanSubject = data.subject.trim();
-    const cleanDesc = data.description.trim();
+    const id = `ticket-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    const now = new Date().toISOString();
 
-    if (cleanSubject.length < 5) {
-      return { success: false, message: 'O assunto do chamado deve conter ao menos 5 caracteres.' };
-    }
-    if (cleanDesc.length < 15) {
-      return { success: false, message: 'A descrição e detalhes do chamado devem conter ao menos 15 caracteres.' };
-    }
-
-    const ticketId = `ticket-${Date.now()}`;
-    const userUid = isGuest ? `guest-${Date.now().toString(36)}` : creator.uid;
-    const username = isGuest
-      ? (data.guestName ? data.guestName.trim().replace(/\s+/g, '_') : 'Anonimo_' + Math.floor(Math.random() * 9000 + 1000))
-      : creator.username;
-    const displayName = isGuest
-      ? (data.guestName?.trim() || 'Visitante Anônimo')
-      : (creator.displayName || creator.username);
-    const email = isGuest ? data.guestEmail?.trim() : creator.email;
-    const role: UserRole = isGuest ? 'convidado' : creator.role;
-
+    const isGuest = !user;
     const initialMessage: AdminTicketMessage = {
       id: `msg-${Date.now()}`,
-      senderUid: userUid,
-      senderName: displayName,
-      senderRole: role,
-      isStaff: role === 'admin' || role === 'moderador',
-      message: cleanDesc,
-      timestamp: new Date().toISOString(),
+      senderUid: user?.uid || `guest-${Date.now()}`,
+      senderName: user?.displayName || user?.username || data.guestName || 'Visitante',
+      senderRole: user?.role || 'leitor',
+      isStaff: user?.role === 'admin' || user?.role === 'moderador',
+      message: data.description,
+      timestamp: now,
     };
 
     const newTicket: AdminContactTicket = {
-      id: ticketId,
-      subject: cleanSubject,
+      id,
+      subject: data.subject,
       category: data.category,
       priority: data.priority,
       status: 'aberto',
-      userUid,
-      userUsername: username,
-      userDisplayName: displayName,
-      userEmail: email,
-      userRole: role,
+      userUid: user?.uid || `guest-${Date.now()}`,
+      userUsername: user?.username || data.guestName || 'Visitante',
+      userDisplayName: user?.displayName || data.guestName || 'Visitante',
+      userEmail: user?.email || data.guestEmail,
+      userRole: user?.role || 'leitor',
       isGuestSubmission: isGuest,
-      relatedArticleTitle: data.relatedArticleTitle?.trim() || undefined,
-      relatedArticleId: data.relatedArticleId?.trim() || undefined,
-      description: cleanDesc,
-      evidenceLinks: data.evidenceLinks?.filter((l) => l.trim().length > 0),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      assignedAdmin: 'WazzimaGiygg',
-      assignedAdminUid: 'user-wazzima',
+      relatedArticleTitle: data.relatedArticleTitle,
+      relatedArticleId: data.relatedArticleId,
+      description: data.description,
+      evidenceLinks: data.evidenceLinks || [],
+      createdAt: now,
+      updatedAt: now,
       messages: [initialMessage],
     };
 
-    await this.saveAdminTicket(newTicket);
+    const allTickets: AdminContactTicket[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS) || '[]'
+    );
+    allTickets.unshift(newTicket);
+    localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(allTickets));
 
-    // Audit log if creator is registered
-    if (creator && !creator.isGuest) {
-      this.logUserAuditAction(
-        creator.uid,
-        creator.displayName || creator.username,
-        'other',
-        `Abertura de chamado para a Administração [#${ticketId.slice(-6)}]: "${cleanSubject.slice(0, 50)}..." [Categoria: ${data.category.toUpperCase()}]`,
-        creator
-      );
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'admin_tickets', id), newTicket);
+      } catch (err) {
+        console.warn('Firestore createAdminTicket error:', err);
+      }
     }
 
     return {
       success: true,
-      message: 'Seu chamado foi enviado à equipe de administração da WikiZero com sucesso! Você receberá atualizações nesta central.',
+      message: 'Chamado aberto com sucesso! A equipe de moderação e administração foi notificada.',
       ticket: newTicket,
     };
   },
 
   async addAdminTicketMessage(
     ticketId: string,
-    messageText: string,
+    message: string,
     sender: UserProfile
   ): Promise<{ success: boolean; message: string; updatedTicket?: AdminContactTicket }> {
-    const cleanText = (messageText || '').trim();
-    if (cleanText.length < 3) {
-      return { success: false, message: 'A mensagem deve conter ao menos 3 caracteres.' };
-    }
+    const allTickets: AdminContactTicket[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS) || '[]'
+    );
+    const idx = allTickets.findIndex((t) => t.id === ticketId);
+    if (idx === -1) return { success: false, message: 'Chamado não encontrado.' };
 
-    const ticket = await this.getAdminTicketById(ticketId);
-    if (!ticket) {
-      return { success: false, message: 'Chamado não encontrado.' };
-    }
-
-    const isStaff =
-      sender.role === 'admin' ||
-      sender.role === 'moderador' ||
-      sender.email === 'pedrohenriquecardonaperes@gmail.com';
+    const ticket = allTickets[idx];
+    const isStaff = sender.role === 'admin' || sender.role === 'moderador';
+    const now = new Date().toISOString();
 
     const newMessage: AdminTicketMessage = {
       id: `msg-${Date.now()}`,
       senderUid: sender.uid,
-      senderName: sender.displayName || sender.username || sender.email.split('@')[0],
+      senderName: sender.displayName || sender.username,
       senderRole: sender.role,
       isStaff,
-      message: cleanText,
-      timestamp: new Date().toISOString(),
+      message,
+      timestamp: now,
     };
 
-    // If staff answers an open ticket, update status to 'respondido' or 'em_analise'
-    let newStatus = ticket.status;
+    ticket.messages.push(newMessage);
+    ticket.updatedAt = now;
     if (isStaff && ticket.status === 'aberto') {
-      newStatus = 'respondido';
-    } else if (!isStaff && ticket.status === 'respondido') {
-      newStatus = 'em_analise';
+      ticket.status = 'respondido';
     }
 
-    const updatedTicket: AdminContactTicket = {
-      ...ticket,
-      status: newStatus,
-      updatedAt: new Date().toISOString(),
-      messages: [...ticket.messages, newMessage],
-    };
+    allTickets[idx] = ticket;
+    localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(allTickets));
 
-    await this.saveAdminTicket(updatedTicket);
-
-    // If staff answered, notify the user talk page if registered
-    if (isStaff && ticket.userUid && !ticket.isGuestSubmission) {
-      this.addUserTalkMessage(
-        ticket.userUid,
-        ticket.userDisplayName,
-        {
-          titulo: `💬 Resposta da Administração no Chamado #${ticket.id.slice(-6)}`,
-          conteudo: `Olá '''${ticket.userDisplayName}''',\n\nA equipe de administração da WikiZero enviou uma nova resposta ao seu chamado '''"${ticket.subject}"''':\n\n> ''${cleanText}''\n\nVocê pode acompanhar ou dar continuidade à conversa na página [[Special:ContactAdmin|Falar com a Administração]].`,
-          tipo: 'aviso_admin',
-        },
-        sender
-      );
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'admin_tickets', ticketId), ticket);
+      } catch (err) {
+        console.warn('Firestore addAdminTicketMessage error:', err);
+      }
     }
 
-    return {
-      success: true,
-      message: 'Mensagem enviada com sucesso.',
-      updatedTicket,
-    };
+    return { success: true, message: 'Mensagem adicionada com sucesso.', updatedTicket: ticket };
   },
 
   async updateAdminTicketStatus(
     ticketId: string,
     status: AdminTicketStatus,
-    resolutionSummary: string | undefined,
-    admin: UserProfile
+    resolutionNotes: string,
+    resolver: UserProfile
   ): Promise<{ success: boolean; message: string; updatedTicket?: AdminContactTicket }> {
-    const isStaff =
-      admin.role === 'admin' ||
-      admin.role === 'moderador' ||
-      admin.email === 'pedrohenriquecardonaperes@gmail.com';
-
-    if (!isStaff) {
-      return { success: false, message: 'Apenas moderadores e administradores podem atualizar o status de chamados.' };
-    }
-
-    const ticket = await this.getAdminTicketById(ticketId);
-    if (!ticket) {
-      return { success: false, message: 'Chamado não encontrado.' };
-    }
-
-    const now = new Date().toISOString();
-    const isClosing = status === 'resolvido' || status === 'arquivado';
-
-    const updatedTicket: AdminContactTicket = {
-      ...ticket,
-      status,
-      updatedAt: now,
-      closedAt: isClosing ? now : undefined,
-      resolutionSummary: resolutionSummary?.trim() || ticket.resolutionSummary,
-    };
-
-    await this.saveAdminTicket(updatedTicket);
-
-    // System audit
-    this.logUserAuditAction(
-      ticket.userUid,
-      ticket.userDisplayName,
-      'other',
-      `Status do chamado #${ticket.id.slice(-6)} alterado para [${status.toUpperCase()}] por ${admin.displayName || admin.username}. ${resolutionSummary ? `Resolução: ${resolutionSummary}` : ''}`,
-      admin
+    const allTickets: AdminContactTicket[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS) || '[]'
     );
+    const idx = allTickets.findIndex((t) => t.id === ticketId);
+    if (idx === -1) return { success: false, message: 'Chamado não encontrado.' };
 
-    return {
-      success: true,
-      message: `Status do chamado alterado para "${status}" com sucesso.`,
-      updatedTicket,
-    };
+    const ticket = allTickets[idx];
+    const now = new Date().toISOString();
+    ticket.status = status;
+    ticket.updatedAt = now;
+    if (resolutionNotes) ticket.resolutionSummary = resolutionNotes;
+    if (status === 'resolvido' || status === 'arquivado') {
+      ticket.closedAt = now;
+    }
+
+    allTickets[idx] = ticket;
+    localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(allTickets));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'admin_tickets', ticketId), ticket);
+      } catch (err) {
+        console.warn('Firestore updateAdminTicketStatus error:', err);
+      }
+    }
+
+    return { success: true, message: `Status do chamado alterado para [${status.toUpperCase()}].`, updatedTicket: ticket };
   },
 
   async assignAdminTicket(
     ticketId: string,
-    adminUid: string,
-    adminName: string,
+    assigneeUid: string,
+    assigneeName: string,
     assigner: UserProfile
   ): Promise<{ success: boolean; message: string; updatedTicket?: AdminContactTicket }> {
-    const ticket = await this.getAdminTicketById(ticketId);
-    if (!ticket) return { success: false, message: 'Chamado não encontrado.' };
+    const allTickets: AdminContactTicket[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS) || '[]'
+    );
+    const idx = allTickets.findIndex((t) => t.id === ticketId);
+    if (idx === -1) return { success: false, message: 'Chamado não encontrado.' };
 
-    const updatedTicket: AdminContactTicket = {
-      ...ticket,
-      assignedAdmin: adminName,
-      assignedAdminUid: adminUid,
-      updatedAt: new Date().toISOString(),
-    };
+    const ticket = allTickets[idx];
+    ticket.assignedAdminUid = assigneeUid;
+    ticket.assignedAdmin = assigneeName;
+    ticket.status = 'em_analise';
+    ticket.updatedAt = new Date().toISOString();
 
-    await this.saveAdminTicket(updatedTicket);
-    return {
-      success: true,
-      message: `Chamado atribuído a ${adminName}.`,
-      updatedTicket,
-    };
+    allTickets[idx] = ticket;
+    localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(allTickets));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'admin_tickets', ticketId), ticket);
+      } catch (err) {
+        console.warn('Firestore assignAdminTicket error:', err);
+      }
+    }
+
+    return { success: true, message: `Chamado atribuído a ${assigneeName}.`, updatedTicket: ticket };
   },
 
-  async deleteAdminTicket(ticketId: string, admin: UserProfile): Promise<boolean> {
-    const isStaff =
-      admin.role === 'admin' ||
-      admin.role === 'moderador' ||
-      admin.email === 'pedrohenriquecardonaperes@gmail.com';
-
-    if (!isStaff) return false;
-
-    const list = await this.getAdminTickets();
-    const filtered = list.filter((t) => t.id !== ticketId);
+  async deleteAdminTicket(ticketId: string, deleter: UserProfile): Promise<boolean> {
+    const allTickets: AdminContactTicket[] = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS) || '[]'
+    );
+    const filtered = allTickets.filter((t) => t.id !== ticketId);
     localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(filtered));
 
     if (firebaseActive && db) {
@@ -4060,29 +3589,25 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         console.warn('Firestore deleteAdminTicket error:', err);
       }
     }
+
     return true;
   },
 
-  // ========================================================
-  // CONSELHO DE ARBITRAGEM (ARBCOM) - MÉTODOS DE ARMAZENAMENTO
-  // ========================================================
-
+  // === ARBITRATION CASES ===
   async getArbitrationCases(langCode?: string): Promise<ArbitrationCase[]> {
     initializeLocalStorage();
     if (firebaseActive && db) {
       try {
         const snap = await getDocs(collection(db, 'arbitration_cases'));
-        if (!snap.empty) {
-          const list: ArbitrationCase[] = [];
-          snap.forEach((d) => list.push(d.data() as ArbitrationCase));
-          localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(list));
-          if (langCode && langCode !== 'all') {
-            return list.filter((c) => c.langCode.toLowerCase() === langCode.toLowerCase());
-          }
-          return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const list: ArbitrationCase[] = [];
+        snap.forEach((d) => list.push(d.data() as ArbitrationCase));
+        localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(list));
+        if (langCode && langCode !== 'all') {
+          return list.filter((c) => c.langCode.toLowerCase() === langCode.toLowerCase());
         }
+        return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       } catch (err) {
-        console.warn('Firestore getArbitrationCases error, fallback to localStorage:', err);
+        console.warn('Firestore getArbitrationCases error:', err);
       }
     }
 
@@ -4323,15 +3848,13 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     if (firebaseActive && db) {
       try {
         const snap = await getDocs(collection(db, 'arbitration_members'));
-        if (!snap.empty) {
-          const list: ArbitrationCommitteeMember[] = [];
-          snap.forEach((d) => list.push(d.data() as ArbitrationCommitteeMember));
-          localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(list));
-          if (langCode && langCode !== 'all') {
-            return list.filter((m) => m.langCode.toLowerCase() === langCode.toLowerCase());
-          }
-          return list;
+        const list: ArbitrationCommitteeMember[] = [];
+        snap.forEach((d) => list.push(d.data() as ArbitrationCommitteeMember));
+        localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(list));
+        if (langCode && langCode !== 'all') {
+          return list.filter((m) => m.langCode.toLowerCase() === langCode.toLowerCase());
         }
+        return list;
       } catch (err) {
         console.warn('Firestore getArbitrationMembers error:', err);
       }
