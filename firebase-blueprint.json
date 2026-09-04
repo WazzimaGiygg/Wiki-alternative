@@ -102,6 +102,63 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["userId"]
+    },
+    "RecentChange": {
+      "title": "RecentChange",
+      "description": "Registros de alterações recentes em verbetes e coleções para auditoria e histórico em tempo real",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "articleTitle": { "type": "string" },
+        "autor": { "type": "string" },
+        "data": { "type": "string" },
+        "resumo": { "type": "string" }
+      },
+      "required": ["id", "type", "articleTitle", "autor", "data"]
+    },
+    "TalkThread": {
+      "title": "TalkThread",
+      "description": "Tópicos de discussão e debate editorial de artigos da enciclopédia",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "articleId": { "type": "string" },
+        "titulo": { "type": "string" },
+        "conteudo": { "type": "string" },
+        "autor": { "type": "string" },
+        "data": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "articleId", "titulo", "conteudo", "autor", "data"]
+    },
+    "UserTalkMessage": {
+      "title": "UserTalkMessage",
+      "description": "Mensagens públicas na página de discussão de um usuário",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "targetUserUid": { "type": "string" },
+        "titulo": { "type": "string" },
+        "conteudo": { "type": "string" },
+        "senderName": { "type": "string" },
+        "data": { "type": "string" }
+      },
+      "required": ["id", "targetUserUid", "titulo", "conteudo", "data"]
+    },
+    "UnblockRequest": {
+      "title": "UnblockRequest",
+      "description": "Pedidos de apelação e desbloqueio de contas suspensas",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userUid": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "justificativa": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userUid", "justificativa", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -144,6 +201,22 @@
     "/audit_logs/{logId}": {
       "schema": "object",
       "description": "Registros de auditoria administrativa"
+    },
+    "/recent_changes/{changeId}": {
+      "schema": "RecentChange",
+      "description": "Mudanças recentes gravadas em tempo real"
+    },
+    "/talk_threads/{threadId}": {
+      "schema": "TalkThread",
+      "description": "Páginas de discussão e tópicos de artigos"
+    },
+    "/user_talk_messages/{messageId}": {
+      "schema": "UserTalkMessage",
+      "description": "Mensagens nas páginas de discussão dos usuários"
+    },
+    "/unblock_requests/{requestId}": {
+      "schema": "UnblockRequest",
+      "description": "Pedidos de apelação de desbloqueio de usuários"
     }
   }
 }

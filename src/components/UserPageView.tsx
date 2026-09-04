@@ -192,7 +192,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
       }
 
       // Load Talk Messages
-      const msgs = StorageService.getUserTalkMessages(profile.uid);
+      const msgs = await StorageService.fetchUserTalkMessages(profile.uid);
       setTalkMessages(msgs);
 
       // Load Audit Logs
@@ -200,7 +200,10 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
       setAuditLogs(logs);
 
       // Load Contributions
-      const contribs = await StorageService.getUserContributions(profile.displayName || profile.username || profile.uid);
+      const contribs = await StorageService.getUserContributions(
+        profile.displayName || profile.username || profile.uid,
+        profile.uid
+      );
       setContributions(contribs);
     }
     setIsLoading(false);
@@ -209,6 +212,17 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   useEffect(() => {
     loadUserData();
   }, [targetUserIdentifier]);
+
+  // Real-time synchronization for user talk messages
+  useEffect(() => {
+    if (!userProfile?.uid) return;
+    const unsubscribe = StorageService.subscribeToUserTalkMessages(userProfile.uid, (remoteMsgs) => {
+      if (remoteMsgs && remoteMsgs.length > 0) {
+        setTalkMessages(remoteMsgs);
+      }
+    });
+    return () => unsubscribe();
+  }, [userProfile?.uid]);
 
   // Sync active tab whenever initialTab prop changes
   useEffect(() => {
@@ -238,52 +252,78 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   };
 
   // Handle Add Talk Topic
-  const handleAddTalkTopic = (e: React.FormEvent) => {
+  const handleAddTalkTopic = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTopicTitle.trim() || !newTopicContent.trim() || !userProfile) return;
 
-    const newMsg = StorageService.addUserTalkMessage(
-      userProfile.uid,
-      userProfile.displayName || userProfile.username || userProfile.uid,
-      {
-        titulo: newTopicTitle,
-        conteudo: newTopicContent,
-        tipo: newTopicType,
-      },
-      currentUser
-    );
+    if (!currentUser || currentUser.isGuest) {
+      alert('Somente usuários cadastrados e logados podem enviar mensagens de discussão.');
+      return;
+    }
+    if (currentUser.isBanned) {
+      alert('Sua conta está suspensa. Usuários bloqueados não podem enviar mensagens de discussão.');
+      return;
+    }
 
-    setTalkMessages([newMsg, ...talkMessages]);
-    setNewTopicTitle('');
-    setNewTopicContent('');
-    setShowNewTopicModal(false);
+    try {
+      const newMsg = await StorageService.addUserTalkMessage(
+        userProfile.uid,
+        userProfile.displayName || userProfile.username || userProfile.uid,
+        {
+          titulo: newTopicTitle,
+          conteudo: newTopicContent,
+          tipo: newTopicType,
+        },
+        currentUser
+      );
+
+      setTalkMessages((prev) => [newMsg, ...prev.filter((m) => m.id !== newMsg.id)]);
+      setNewTopicTitle('');
+      setNewTopicContent('');
+      setShowNewTopicModal(false);
+    } catch (err: any) {
+      alert(err.message || 'Erro ao enviar mensagem.');
+    }
   };
 
   // Handle Add Reply to Talk Thread
-  const handleAddReply = (messageId: string) => {
+  const handleAddReply = async (messageId: string) => {
     const text = replyTexts[messageId];
     if (!text || !text.trim()) return;
 
-    const reply = StorageService.addUserTalkReply(messageId, text, currentUser);
-    if (reply) {
-      setTalkMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId
-            ? {
-                ...msg,
-                status: 'em_discussao',
-                respostas: [...msg.respostas, reply],
-              }
-            : msg
-        )
-      );
-      setReplyTexts((prev) => ({ ...prev, [messageId]: '' }));
+    if (!currentUser || currentUser.isGuest) {
+      alert('Somente usuários cadastrados e logados podem responder em discussões.');
+      return;
+    }
+    if (currentUser.isBanned) {
+      alert('Sua conta está suspensa. Usuários bloqueados não podem responder mensagens.');
+      return;
+    }
+
+    try {
+      const reply = await StorageService.addUserTalkReply(messageId, text, currentUser);
+      if (reply) {
+        setTalkMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId
+              ? {
+                  ...msg,
+                  status: 'em_discussao',
+                  respostas: [...msg.respostas, reply],
+                }
+              : msg
+          )
+        );
+        setReplyTexts((prev) => ({ ...prev, [messageId]: '' }));
+      }
+    } catch (err: any) {
+      alert(err.message || 'Erro ao responder mensagem.');
     }
   };
 
   // Handle Talk Status Change
-  const handleUpdateTalkStatus = (messageId: string, status: UserTalkMessage['status']) => {
-    const success = StorageService.updateUserTalkStatus(messageId, status);
+  const handleUpdateTalkStatus = async (messageId: string, status: UserTalkMessage['status']) => {
+    const success = await StorageService.updateUserTalkStatus(messageId, status);
     if (success) {
       setTalkMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, status } : m))

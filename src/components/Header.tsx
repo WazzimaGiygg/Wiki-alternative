@@ -22,10 +22,12 @@ import {
   Menu,
   Smartphone,
   Monitor,
+  Users,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
+import { StorageService } from '../services/storageService';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -38,6 +40,7 @@ interface HeaderProps {
   onSearchSubmit: () => void;
   onRandomPage: () => void;
   onNavigate: (view: ViewMode) => void;
+  onNavigateToUser?: (identifier: string) => void;
   onLoginClick: () => void;
   onLogoutClick: () => void;
   onToggleTheme: () => void;
@@ -60,6 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSearchSubmit,
   onRandomPage,
   onNavigate,
+  onNavigateToUser,
   onLoginClick,
   onLogoutClick,
   onToggleTheme,
@@ -74,11 +78,23 @@ export const Header: React.FC<HeaderProps> = ({
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [showOnlineMenu, setShowOnlineMenu] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<UserProfile[]>([]);
+
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
+  const onlineMenuRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    StorageService.getOnlineUsers().then((users) => setOnlineUsers(users));
+    const unsub = StorageService.subscribeToOnlineUsers((users) => {
+      setOnlineUsers(users);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -90,6 +106,9 @@ export const Header: React.FC<HeaderProps> = ({
       }
       if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
         setShowLangMenu(false);
+      }
+      if (onlineMenuRef.current && !onlineMenuRef.current.contains(event.target as Node)) {
+        setShowOnlineMenu(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -320,6 +339,113 @@ export const Header: React.FC<HeaderProps> = ({
                     <Globe2 size={13} />
                     <span>{t('header.all_languages')}</span>
                   </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Online Users Trigger & Modal/Dropdown */}
+          <div className="relative" ref={onlineMenuRef}>
+            <button
+              id="btn-header-online-users"
+              onClick={() => setShowOnlineMenu(!showOnlineMenu)}
+              className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-200"
+              title="Ver quem está logado na WikiZero"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <Users size={13} className="text-slate-500 dark:text-slate-400" />
+              <span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {onlineUsers.length}
+              </span>
+              <span className="text-[11px] hidden md:inline font-normal text-slate-500 dark:text-slate-400">
+                online
+              </span>
+            </button>
+
+            {showOnlineMenu && (
+              <div className="absolute right-0 mt-1.5 w-72 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-700 shadow-xl py-2 z-50 animate-in fade-in text-xs">
+                <div className="px-3 pb-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="font-bold text-slate-900 dark:text-white">Usuários Conectados</span>
+                  </div>
+                  <span className="text-[10px] font-mono bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-bold">
+                    {onlineUsers.length} ativo{onlineUsers.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                <div className="max-h-64 overflow-y-auto py-1 divide-y divide-slate-100 dark:divide-slate-800/50">
+                  {onlineUsers.length === 0 ? (
+                    <div className="p-3 text-center text-slate-500 text-xs">
+                      Nenhum outro usuário registrado ativo no momento.
+                    </div>
+                  ) : (
+                    onlineUsers.map((u) => (
+                      <div
+                        key={u.uid}
+                        onClick={() => {
+                          setShowOnlineMenu(false);
+                          if (onNavigateToUser) {
+                            onNavigateToUser(u.uid);
+                          } else {
+                            onNavigate('user-page');
+                          }
+                        }}
+                        className="px-3 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {u.photoURL ? (
+                            <img src={u.photoURL} alt={u.displayName} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                              {u.displayName?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                              {u.displayName}
+                            </p>
+                            <p className="text-[10px] text-slate-400 font-mono truncate">
+                              @{u.username || u.displayName?.toLowerCase().replace(/\s+/g, '')}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                          u.role === 'admin'
+                            ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+                            : u.role === 'moderador'
+                            ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
+                            : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                        }`}>
+                          {u.role}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="p-2.5 mt-1 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-[11px] text-slate-500 dark:text-slate-400 space-y-1.5">
+                  <p className="leading-snug">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Regra de Contribuição:</span> Somente usuários cadastrados e logados podem editar verbetes ou abrir discussões.
+                  </p>
+                  {(!user || user.isGuest) && (
+                    <button
+                      onClick={() => {
+                        setShowOnlineMenu(false);
+                        onLoginClick();
+                      }}
+                      className="w-full py-1 px-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition text-center"
+                    >
+                      Fazer Login para Contribuir
+                    </button>
+                  )}
                 </div>
               </div>
             )}

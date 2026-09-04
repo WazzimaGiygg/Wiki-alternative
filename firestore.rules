@@ -19,27 +19,34 @@ service cloud.firestore {
     }
 
     function isOwner(userId) {
-      return isAuthenticated() && isNotBanned() && request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
     }
     
     function userDocExists() {
-      return isRegistered() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      return exists(/databases/$(database)/documents/userpage/$(request.auth.uid)) ||
+             exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
     
     function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return exists(/databases/$(database)/documents/userpage/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/userpage/$(request.auth.uid)).data
+        : get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
     
     function isSuperAdmin() {
-      return isAuthenticated() && request.auth.token.email == 'pedrohenriquecardonaperes@gmail.com';
+      return isAuthenticated() && (
+        request.auth.token.email == 'pedrohenriquecardonaperes@gmail.com' ||
+        (exists(/databases/$(database)/documents/userpage/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/userpage/$(request.auth.uid)).data.email == 'pedrohenriquecardonaperes@gmail.com')
+      );
     }
     
     function isAdmin() {
-      return isAuthenticated() && isNotBanned() && (
+      return isAuthenticated() && (
         isSuperAdmin() ||
         (userDocExists() && (
-          getUserData().group == 'admin' ||
-          getUserData().role == 'admin'
+          getUserData().group in ['admin', 'administrador', 'superadmin'] ||
+          getUserData().role in ['admin', 'administrador', 'superadmin']
         ))
       );
     }
@@ -48,8 +55,8 @@ service cloud.firestore {
       return isRegistered() && (
         isAdmin() ||
         (userDocExists() && (
-          getUserData().group in ['editor', 'admin'] ||
-          getUserData().role in ['editor', 'moderador', 'admin']
+          getUserData().group in ['editor', 'admin', 'moderador', 'administrador'] ||
+          getUserData().role in ['editor', 'moderador', 'admin', 'administrador']
         ))
       );
     }
@@ -72,13 +79,12 @@ service cloud.firestore {
     // ✅ Coleção principal de páginas - leitura pública
     match /pages/{pageId} {
       allow read: if true;  // ✅ Qualquer um pode ler
-      allow create, update: if (request.auth == null || isNotBanned());
+      allow create, update: if isAuthenticated() && isNotBanned();
       allow delete: if isAdmin();
 
       match /versions/{versionId} {
         allow read: if true;  // ✅ Qualquer um pode ler histórico
-        allow create: if (request.auth == null || isNotBanned());
-        allow update: if isEditor();
+        allow create, update: if isAuthenticated() && isNotBanned();
         allow delete: if isAdmin();
       }
     }
@@ -86,18 +92,18 @@ service cloud.firestore {
     // ✅ Coleção principal de artigos WikiZero - leitura pública, sincronização em tempo real
     match /articles/{articleId} {
       allow read: if true;  // ✅ Qualquer um pode ler
-      allow create, update: if (request.auth == null || isNotBanned());
+      allow create, update: if isAuthenticated() && isNotBanned();
       allow delete: if isAdmin();
     }
 
     // ✅ Coleção de documentos e artigos em tópicos - leitura pública
     match /documentos/{pageUid} {
       allow read: if true;
-      allow write: if (request.auth == null || isNotBanned());
+      allow write: if isAuthenticated() && isNotBanned();
       
       match /inevitavel/{articleId} {
         allow read: if true;
-        allow create, update: if (request.auth == null || isNotBanned());
+        allow create, update: if isAuthenticated() && isNotBanned();
         allow delete: if isAdmin();
       }
     }
@@ -113,16 +119,15 @@ service cloud.firestore {
     // ✅ Páginas de usuário - leitura pública
     match /userpage/{userId} {
       allow read: if true;  // ✅ Qualquer um pode ver perfis públicos
-      allow create, update: if isRegistered() && (isOwner(userId) || isAdmin());
-      allow delete: if isOwner(userId) || isAdmin();
+      allow create, update: if isAuthenticated() && isNotBanned();
+      allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // ⚠️ Perfis de usuários - leitura pública (apenas informações não sensíveis)
     match /users/{userId} {
       allow read: if true;  // ✅ Qualquer um pode ver dados básicos
-      allow create: if isRegistered() && request.auth.uid == userId;
-      allow update: if isRegistered() && (request.auth.uid == userId || isAdmin());
-      allow delete: if isAdmin();
+      allow create, update: if isAuthenticated() && isNotBanned();
+      allow delete: if isAdmin() || isSuperAdmin();
     }
 
     // ⚠️ Lista de banimentos - leitura pública para verificação de bloqueio
@@ -134,34 +139,34 @@ service cloud.firestore {
     // ⚠️ Logs de auditoria
     match /audit_logs/{logId} {
       allow read: if true;
-      allow create: if (request.auth == null || isNotBanned());
+      allow create: if isAuthenticated() && isNotBanned();
       allow update, delete: if isAdmin();
     }
 
     // ✅ Discussões de usuário
     match /user_talk_messages/{messageId} {
       allow read: if true;
-      allow create, update: if (request.auth == null || isNotBanned());
+      allow create, update: if isAuthenticated() && isNotBanned();
       allow delete: if isAdmin();
     }
 
     // ✅ Notificações do sistema e usuários
     match /notifications/{notificationId} {
       allow read: if true;
-      allow create, update: if (request.auth == null || isNotBanned());
+      allow create, update: if isAuthenticated() && isNotBanned();
       allow delete: if isAdmin();
     }
 
     // ✅ Notas de versão e atualizações do sistema
     match /system_updates/{updateId} {
       allow read: if true;
-      allow write: if (request.auth == null || isNotBanned());
+      allow write: if isAuthenticated() && isNotBanned();
     }
 
-    // ✅ Pedidos de desbloqueio de contas
+    // ✅ Pedidos de desbloqueio de contas (Usuários bloqueados PODEM criar pedidos de apelação)
     match /unblock_requests/{requestId} {
       allow read: if true;
-      allow create, update: if (request.auth == null || isNotBanned());
+      allow create, update: if isAuthenticated();
       allow delete: if isAdmin();
     }
 
@@ -219,20 +224,20 @@ service cloud.firestore {
     // ✅ Discussões e tópicos de discussão comunitária
     match /talk_threads/{threadId} {
       allow read: if true;
-      allow create, update: if (request.auth == null || isNotBanned());
+      allow create, update: if isAuthenticated() && isNotBanned();
       allow delete: if isAdmin();
     }
 
     // ✅ Avaliações comunitárias de artigos
     match /ratings/{articleId} {
       allow read: if true;
-      allow write: if (request.auth == null || isNotBanned());
+      allow write: if isAuthenticated() && isNotBanned();
     }
 
     // ✅ Mudanças e logs recentes
     match /recent_changes/{changeId} {
       allow read: if true;
-      allow create: if (request.auth == null || isNotBanned());
+      allow create, update: if isAuthenticated() && isNotBanned();
       allow delete: if isAdmin();
     }
 

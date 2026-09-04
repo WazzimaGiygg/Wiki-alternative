@@ -86,6 +86,21 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
 
   useEffect(() => {
     loadRecentChanges();
+    const unsub = StorageService.subscribeToRecentChanges((liveChanges) => {
+      if (liveChanges && liveChanges.length > 0) {
+        setChanges((prev) => {
+          const map = new Map<string, RecentChangeEntry>();
+          liveChanges.forEach((c) => map.set(c.id, c));
+          prev.forEach((c) => {
+            if (!map.has(c.id)) map.set(c.id, c);
+          });
+          return Array.from(map.values()).sort(
+            (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
+          );
+        });
+      }
+    });
+    return () => unsub();
   }, [articles, pages]);
 
   const handleRefresh = async () => {

@@ -98,6 +98,7 @@ export interface UserProfile {
   birthdate?: string;
   createdAt: string;
   lastActive?: string;
+  isOnline?: boolean;
   warningCount?: number;
   editsCount?: number;
   recentActivity?: UserActivityLogEntry[];
@@ -305,6 +306,7 @@ export interface RecentChangeEntry {
   pageTitle?: string;
   autor: string;
   autorEmail?: string;
+  autorUid?: string;
   autorRole?: string;
   data: string;
   resumo: string;

@@ -700,6 +700,7 @@ export default function App() {
         onSearchSubmit={handleSearchSubmit}
         onRandomPage={handleRandomPage}
         onNavigate={handleNavigate}
+        onNavigateToUser={handleNavigateToUser}
         onLoginClick={handleLoginClick}
         onLogoutClick={handleLogout}
         onToggleTheme={handleToggleTheme}

@@ -34,10 +34,19 @@ export const TalkPageView: React.FC<TalkPageViewProps> = ({ article, user }) => 
 
   useEffect(() => {
     loadThreads();
+    const unsub = StorageService.subscribeToTalkThreads(article.id, (threads) => {
+      if (threads && threads.length > 0) {
+        setThreads(threads);
+        const map: Record<string, boolean> = {};
+        threads.forEach((t) => (map[t.id] = true));
+        setExpandedThreads((prev) => ({ ...map, ...prev }));
+      }
+    });
+    return () => unsub();
   }, [article.id]);
 
-  const loadThreads = () => {
-    const list = StorageService.getTalkThreads(article.id);
+  const loadThreads = async () => {
+    const list = await StorageService.fetchTalkThreads(article.id);
     setThreads(list);
     // Expand all by default
     const map: Record<string, boolean> = {};
@@ -45,29 +54,55 @@ export const TalkPageView: React.FC<TalkPageViewProps> = ({ article, user }) => 
     setExpandedThreads(map);
   };
 
-  const handleCreateThread = (e: React.FormEvent) => {
+  const handleCreateThread = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim()) return;
 
-    StorageService.addTalkThread(article.id, newTitle.trim(), newContent.trim(), user);
-    setNewTitle('');
-    setNewContent('');
-    setShowNewThreadModal(false);
-    loadThreads();
+    if (!user || user.isGuest) {
+      alert('Somente usuários cadastrados e logados podem abrir tópicos de discussão na WikiZero.');
+      return;
+    }
+    if (user.isBanned) {
+      alert('Sua conta está suspensa. Usuários bloqueados não podem abrir tópicos de discussão.');
+      return;
+    }
+
+    try {
+      await StorageService.addTalkThread(article.id, newTitle.trim(), newContent.trim(), user);
+      setNewTitle('');
+      setNewContent('');
+      setShowNewThreadModal(false);
+      await loadThreads();
+    } catch (err: any) {
+      alert(err.message || 'Erro ao criar tópico de discussão.');
+    }
   };
 
-  const handleSendReply = (threadId: string) => {
+  const handleSendReply = async (threadId: string) => {
     if (!replyContent.trim()) return;
 
-    StorageService.addTalkReply(threadId, replyContent.trim(), user);
-    setReplyContent('');
-    setReplyingToThreadId(null);
-    loadThreads();
+    if (!user || user.isGuest) {
+      alert('Somente usuários cadastrados e logados podem responder em discussões.');
+      return;
+    }
+    if (user.isBanned) {
+      alert('Sua conta está suspensa. Usuários bloqueados não podem responder em discussões.');
+      return;
+    }
+
+    try {
+      await StorageService.addTalkReply(threadId, replyContent.trim(), user);
+      setReplyContent('');
+      setReplyingToThreadId(null);
+      await loadThreads();
+    } catch (err: any) {
+      alert(err.message || 'Erro ao enviar resposta.');
+    }
   };
 
-  const handleStatusChange = (threadId: string, status: TalkThread['status']) => {
-    StorageService.updateTalkThreadStatus(threadId, status);
-    loadThreads();
+  const handleStatusChange = async (threadId: string, status: TalkThread['status']) => {
+    await StorageService.updateTalkThreadStatus(threadId, status);
+    await loadThreads();
   };
 
   const toggleExpand = (threadId: string) => {

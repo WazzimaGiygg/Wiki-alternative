@@ -10,6 +10,7 @@ import {
   onSnapshot,
   query,
   where,
+  limit,
   serverTimestamp,
 } from 'firebase/firestore';
 import {
@@ -81,6 +82,22 @@ try {
   firebaseActive = true;
 } catch (e) {
   console.warn('Firebase initialized in offline/local storage fallback mode', e);
+}
+
+/**
+ * Garante que exista uma sessão de autenticação ativa no Firebase Auth para permitir
+ * operações de escrita no Firestore autorizadas pelas regras de segurança.
+ */
+export async function ensureFirebaseAuth(): Promise<string | null> {
+  if (!auth) return null;
+  if (auth.currentUser) return auth.currentUser.uid;
+  try {
+    const cred = await signInAnonymously(auth);
+    return cred.user.uid;
+  } catch (err) {
+    console.warn('[StorageService] Falha ao autenticar anonimamente no Firebase Auth:', err);
+    return null;
+  }
 }
 
 const STORAGE_KEYS = {
@@ -343,6 +360,38 @@ export const StorageService = {
           }
         }
 
+        // Se o Firestore estiver vazio mas o cache local tiver dados, inicializar no Firestore
+        if (remoteArticles.length === 0 && localArticles.length > 0) {
+          try {
+            await ensureFirebaseAuth();
+            for (const art of localArticles) {
+              await setDoc(doc(db, 'articles', art.id), {
+                ...art,
+                atualizadoEm: serverTimestamp(),
+              });
+              await setDoc(doc(db, 'documentos', art.pageUid || 'geral', 'inevitavel', art.id), art);
+              await setDoc(
+                doc(db, 'pages', `main:${art.id}`),
+                {
+                  id: `main:${art.id}`,
+                  namespace: 'main',
+                  title: art.titulo,
+                  content: art.descricao,
+                  categories: art.categoria ? [art.categoria] : ['Geral'],
+                  authorName: art.autor,
+                  version: art.versao || 1,
+                  updatedAt: art.dataEdicao,
+                  createdAt: art.dataCriacao,
+                },
+                { merge: true }
+              );
+            }
+          } catch (seedErr) {
+            console.warn('[StorageService] Erro ao sincronizar artigos iniciais no Firestore:', seedErr);
+          }
+          return localArticles;
+        }
+
         // Ordenar cronologicamente decrescente por edição/criação
         remoteArticles.sort((a, b) => {
           const timeA = new Date(a.dataEdicao || a.dataCriacao).getTime();
@@ -493,6 +542,17 @@ export const StorageService = {
     editSummary?: string,
     isMinor?: boolean
   ): Promise<WikiArticle> {
+    const effectiveUser = user || this.getCurrentUser();
+    if (!effectiveUser || effectiveUser.isGuest) {
+      throw new Error('Somente usuários logados podem contribuir com edições na WikiZero.');
+    }
+    if (effectiveUser.isBanned) {
+      throw new Error('Sua conta está suspensa. Usuários bloqueados não podem editar verbetes, apenas enviar pedidos de desbloqueio.');
+    }
+    if (effectiveUser.permissions && effectiveUser.permissions.canEdit === false) {
+      throw new Error('Você não possui autorização para editar artigos nesta wiki.');
+    }
+
     const articles = await this.getArticles();
     const now = new Date().toISOString();
 
@@ -510,8 +570,9 @@ export const StorageService = {
       const historyItem = {
         id: `h-${Date.now()}`,
         data: now,
-        autor: user?.displayName || user?.email || 'Anônimo',
-        autorEmail: user?.email,
+        autor: effectiveUser.displayName || effectiveUser.username || effectiveUser.email?.split('@')[0] || 'Colaborador',
+        autorEmail: effectiveUser.email,
+        autorUid: effectiveUser.uid,
         resumo: editSummary || 'Edição no artigo',
         tamanho: newLength,
         deltaBytes,
@@ -535,8 +596,9 @@ export const StorageService = {
       const historyItem = {
         id: `h-${Date.now()}`,
         data: now,
-        autor: user?.displayName || user?.email || 'Autor Original',
-        autorEmail: user?.email,
+        autor: effectiveUser.displayName || effectiveUser.username || effectiveUser.email?.split('@')[0] || 'Autor Original',
+        autorEmail: effectiveUser.email,
+        autorUid: effectiveUser.uid,
         resumo: editSummary || 'Criação do artigo',
         tamanho: newLength,
         deltaBytes: newLength,
@@ -553,9 +615,9 @@ export const StorageService = {
         resumo: articleData.resumo || articleData.descricao.slice(0, 140) + '...',
         categoria: articleData.categoria || 'Geral',
         idioma: articleData.idioma || 'Português',
-        autor: user?.displayName || 'Colaborador WikiZero',
-        autorEmail: user?.email,
-        autorUid: user?.uid,
+        autor: effectiveUser.displayName || effectiveUser.username || 'Colaborador WikiZero',
+        autorEmail: effectiveUser.email,
+        autorUid: effectiveUser.uid,
         dataCriacao: now,
         dataEdicao: now,
         visualizacoes: 1,
@@ -571,6 +633,8 @@ export const StorageService = {
     // Persistência e Sincronização em Tempo Real no Firestore
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
+
         const firestorePayload = {
           id: article.id,
           pageUid: article.pageUid,
@@ -581,7 +645,7 @@ export const StorageService = {
           idioma: article.idioma || 'Português',
           autor: article.autor || 'Colaborador WikiZero',
           autorEmail: article.autorEmail || null,
-          autorUid: article.autorUid || 'anon',
+          autorUid: article.autorUid || effectiveUser.uid || 'anon',
           dataCriacao: article.dataCriacao,
           dataEdicao: article.dataEdicao,
           visualizacoes: article.visualizacoes || 1,
@@ -610,12 +674,33 @@ export const StorageService = {
             content: article.descricao,
             categories: article.categoria ? [article.categoria] : ['Geral'],
             authorName: article.autor,
+            authorUid: article.autorUid || effectiveUser.uid,
             version: article.versao || 1,
             updatedAt: article.dataEdicao,
             createdAt: article.dataCriacao,
           },
           { merge: true }
         );
+
+        // 4. Salvar na coleção /recent_changes do Firestore
+        const rcEntry: RecentChangeEntry = {
+          id: `rc-${article.id}-${Date.now()}`,
+          type: existingIndex >= 0 ? (isMinor ? 'minor_edit' : 'edit_article') : 'new_article',
+          articleId: article.id,
+          articleTitle: article.titulo,
+          pageUid: article.pageUid,
+          autor: article.autor || 'Colaborador WikiZero',
+          autorEmail: article.autorEmail,
+          autorUid: article.autorUid || effectiveUser.uid,
+          data: now,
+          resumo: editSummary || (existingIndex >= 0 ? 'Edição no artigo' : 'Criação do artigo'),
+          tamanho: article.descricao.length,
+          deltaBytes: existingIndex >= 0 ? (articleData.descricao.length - (articles[existingIndex]?.descricao?.length || 0)) : articleData.descricao.length,
+          versao: article.versao || 1,
+          idioma: article.idioma || 'pt',
+          isMinor: !!isMinor,
+        };
+        await setDoc(doc(db, 'recent_changes', rcEntry.id), rcEntry);
 
         console.info(`[StorageService] Artigo "${article.titulo}" sincronizado com sucesso no Firebase Firestore.`);
       } catch (err) {
@@ -749,19 +834,9 @@ export const StorageService = {
     const result = await signInWithPopup(auth, provider);
     const u = result.user;
 
-    // Verificar banimento ANTES de autorizar a sessão
+    // Verificar status de bloqueio
     const banStatus = await this.getUserBanStatus(u.uid, u.email || undefined, u.displayName || undefined);
-    if (banStatus.isBanned) {
-      try {
-        await signOut(auth);
-      } catch {
-        // Ignora
-      }
-      this.clearUser();
-      throw new Error(
-        `Acesso Bloqueado: Esta conta está bloqueada na WikiZero. Motivo: ${banStatus.reason || 'Violação das políticas comunitárias.'}. O login foi recusado.`
-      );
-    }
+    const isBanned = !!banStatus.isBanned;
 
     const userProfile: UserProfile = {
       uid: u.uid,
@@ -769,8 +844,18 @@ export const StorageService = {
       displayName: u.displayName || u.email?.split('@')[0] || 'Usuário WikiZero',
       photoURL: u.photoURL || undefined,
       isGuest: false,
-      isBanned: false,
-      role: 'editor',
+      isBanned,
+      banReason: isBanned ? (banStatus.reason || 'Violação das políticas comunitárias.') : undefined,
+      role: isBanned ? 'leitor' : 'editor',
+      permissions: {
+        canEdit: !isBanned,
+        canCreate: !isBanned,
+        canTalk: !isBanned,
+        canDelete: false,
+        canGrantBarnstars: !isBanned,
+      },
+      lastActive: new Date().toISOString(),
+      isOnline: true,
       createdAt: new Date().toISOString(),
     };
 
@@ -781,45 +866,46 @@ export const StorageService = {
   },
 
   async loginAsCommunityUser(uid: string): Promise<UserProfile> {
+    await ensureFirebaseAuth();
     const existing = await this.getUserProfile(uid);
     if (!existing) {
       throw new Error('Usuário comunitário não encontrado');
     }
 
-    // Checar banimento
+    // Checar bloqueio
     const banStatus = await this.getUserBanStatus(uid, existing.email, existing.username || existing.displayName);
-    if (banStatus.isBanned || existing.isBanned) {
-      this.clearUser();
-      throw new Error(
-        `Acesso Bloqueado: A conta "${existing.displayName || existing.username}" está bloqueada na WikiZero. Motivo: ${banStatus.reason || existing.banReason || 'Violação das políticas comunitárias.'}. O login foi recusado.`
-      );
-    }
+    const isBanned = banStatus.isBanned || !!existing.isBanned;
 
-    const publicProfile = await this.ensureUserPage(existing);
+    const updatedProfile: UserProfile = {
+      ...existing,
+      isBanned,
+      banReason: isBanned ? (banStatus.reason || existing.banReason || 'Violação das diretrizes comunitárias.') : undefined,
+      role: isBanned ? 'leitor' : existing.role,
+      permissions: {
+        canEdit: !isBanned,
+        canCreate: !isBanned && existing.role !== 'leitor',
+        canTalk: !isBanned,
+        canDelete: !isBanned && (existing.role === 'admin' || existing.role === 'moderador'),
+        canGrantBarnstars: !isBanned && existing.role !== 'convidado',
+      },
+      lastActive: new Date().toISOString(),
+      isOnline: true,
+    };
+
+    const publicProfile = await this.ensureUserPage(updatedProfile);
     this.saveUser(publicProfile);
     return publicProfile;
   },
 
   async loginCustom(username: string, displayName?: string, role: UserRole = 'editor'): Promise<UserProfile> {
+    await ensureFirebaseAuth();
     const cleanUsername = username.trim();
     const uid = 'user-' + cleanUsername.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
 
-    // Checar banimento
+    // Checar bloqueio
     const banStatus = await this.getUserBanStatus(uid, `${cleanUsername.toLowerCase()}@wikizero.org`, cleanUsername);
-    if (banStatus.isBanned) {
-      this.clearUser();
-      throw new Error(
-        `Acesso Bloqueado: A conta "${cleanUsername}" está bloqueada na WikiZero. Motivo: ${banStatus.reason || 'Violação das políticas comunitárias.'}. O login foi recusado.`
-      );
-    }
-
     let existing = await this.getUserProfile(uid);
-    if (existing && existing.isBanned) {
-      this.clearUser();
-      throw new Error(
-        `Acesso Bloqueado: A conta "${cleanUsername}" está bloqueada na WikiZero. Motivo: ${existing.banReason || 'Violação das políticas comunitárias.'}. O login foi recusado.`
-      );
-    }
+    const isBanned = banStatus.isBanned || !!existing?.isBanned;
 
     if (!existing) {
       existing = {
@@ -827,10 +913,35 @@ export const StorageService = {
         username: cleanUsername,
         displayName: displayName || cleanUsername,
         email: `${cleanUsername.toLowerCase()}@wikizero.org`,
-        role,
+        role: isBanned ? 'leitor' : role,
         isGuest: false,
-        isBanned: false,
+        isBanned,
+        banReason: isBanned ? (banStatus.reason || 'Violação das políticas comunitárias.') : undefined,
+        permissions: {
+          canEdit: !isBanned,
+          canCreate: !isBanned && role !== 'leitor',
+          canTalk: !isBanned,
+          canDelete: !isBanned && (role === 'admin' || role === 'moderador'),
+          canGrantBarnstars: !isBanned,
+        },
+        lastActive: new Date().toISOString(),
+        isOnline: true,
         createdAt: new Date().toISOString(),
+      };
+    } else {
+      existing = {
+        ...existing,
+        isBanned,
+        banReason: isBanned ? (banStatus.reason || existing.banReason || 'Violação das políticas comunitárias.') : undefined,
+        permissions: {
+          canEdit: !isBanned,
+          canCreate: !isBanned && existing.role !== 'leitor',
+          canTalk: !isBanned,
+          canDelete: !isBanned && (existing.role === 'admin' || existing.role === 'moderador'),
+          canGrantBarnstars: !isBanned,
+        },
+        lastActive: new Date().toISOString(),
+        isOnline: true,
       };
     }
     const publicProfile = await this.ensureUserPage(existing);
@@ -1220,6 +1331,21 @@ export const StorageService = {
       });
     });
 
+    // 3. Consultar a coleção real 'recent_changes' no Firestore
+    if (firebaseActive && db) {
+      try {
+        const rcSnap = await getDocs(query(collection(db, 'recent_changes'), limit(100)));
+        rcSnap.forEach((d) => {
+          const rcData = d.data() as RecentChangeEntry;
+          if (rcData && rcData.id) {
+            entries.push(rcData);
+          }
+        });
+      } catch (err) {
+        console.warn('[StorageService] Erro ao carregar coleção recent_changes do Firestore:', err);
+      }
+    }
+
     // Deduplicate by ID
     const uniqueMap = new Map<string, RecentChangeEntry>();
     entries.forEach((e) => {
@@ -1234,7 +1360,32 @@ export const StorageService = {
     );
   },
 
-  recordRecentChange(entry: Omit<RecentChangeEntry, 'id' | 'data'>): RecentChangeEntry {
+  subscribeToRecentChanges(callback: (changes: RecentChangeEntry[]) => void): () => void {
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+    try {
+      const q = query(collection(db, 'recent_changes'), limit(80));
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const list: RecentChangeEntry[] = [];
+          snapshot.forEach((d) => list.push(d.data() as RecentChangeEntry));
+          if (list.length > 0) {
+            list.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+            callback(list);
+          }
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição de recent_changes:', err);
+        }
+      );
+    } catch {
+      return () => {};
+    }
+  },
+
+  async recordRecentChange(entry: Omit<RecentChangeEntry, 'id' | 'data'>): Promise<RecentChangeEntry> {
     const fullEntry: RecentChangeEntry = {
       ...entry,
       id: `rc-live-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -1249,6 +1400,15 @@ export const StorageService = {
       localStorage.setItem(STORAGE_KEYS.RECENT_CHANGES, JSON.stringify(list.slice(0, 200)));
     } catch (e) {
       console.warn('Error recording recent change:', e);
+    }
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'recent_changes', fullEntry.id), fullEntry);
+      } catch (err) {
+        console.warn('[StorageService] Erro ao gravar recent_change no Firestore:', err);
+      }
     }
 
     return fullEntry;
@@ -1267,12 +1427,72 @@ export const StorageService = {
     }
   },
 
+  async fetchTalkThreads(articleId: string): Promise<TalkThread[]> {
+    initializeLocalStorage();
+    let localList: TalkThread[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
+      const list: TalkThread[] = raw ? JSON.parse(raw) : [];
+      localList = list.filter((t) => t.articleId === articleId);
+    } catch (e) {
+      console.warn('Error loading talk threads:', e);
+    }
+
+    if (firebaseActive && db) {
+      try {
+        const q = query(collection(db, 'talk_threads'), where('articleId', '==', articleId));
+        const snap = await getDocs(q);
+        const remoteList: TalkThread[] = [];
+        snap.forEach((d) => remoteList.push(d.data() as TalkThread));
+        if (remoteList.length > 0) {
+          remoteList.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+          return remoteList;
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao carregar talk_threads do Firestore:', err);
+      }
+    }
+
+    return localList;
+  },
+
+  subscribeToTalkThreads(articleId: string, callback: (threads: TalkThread[]) => void): () => void {
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+    try {
+      const q = query(collection(db, 'talk_threads'), where('articleId', '==', articleId));
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const list: TalkThread[] = [];
+          snapshot.forEach((d) => list.push(d.data() as TalkThread));
+          list.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+          callback(list);
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição de talk_threads:', err);
+        }
+      );
+    } catch {
+      return () => {};
+    }
+  },
+
   async addTalkThread(
     articleId: string,
     titulo: string,
     conteudo: string,
     user: UserProfile | null
   ): Promise<TalkThread> {
+    const effectiveUser = user || this.getCurrentUser();
+    if (!effectiveUser || effectiveUser.isGuest) {
+      throw new Error('Somente usuários cadastrados e logados podem abrir tópicos de discussão na WikiZero.');
+    }
+    if (effectiveUser.isBanned) {
+      throw new Error('Sua conta está suspensa. Usuários bloqueados não podem criar tópicos de discussão.');
+    }
+
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
     const list: TalkThread[] = raw ? JSON.parse(raw) : [];
@@ -1282,9 +1502,9 @@ export const StorageService = {
       articleId,
       titulo,
       conteudo,
-      autor: user ? user.displayName || user.email.split('@')[0] : 'Colaborador Anônimo',
-      autorEmail: user?.email,
-      autorRole: user?.role || 'leitor',
+      autor: effectiveUser.displayName || effectiveUser.username || effectiveUser.email.split('@')[0],
+      autorEmail: effectiveUser.email,
+      autorRole: effectiveUser.role || 'editor',
       data: new Date().toISOString(),
       status: 'aberto',
       respostas: [],
@@ -1295,7 +1515,9 @@ export const StorageService = {
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'talk_threads', newThread.id), newThread);
+        console.info(`[StorageService] Tópico de discussão "${titulo}" gravado no Firebase.`);
       } catch (err) {
         console.warn('[StorageService] Erro ao sincronizar talk_thread no Firestore:', err);
       }
@@ -1309,6 +1531,14 @@ export const StorageService = {
     conteudo: string,
     user: UserProfile | null
   ): Promise<TalkReply | null> {
+    const effectiveUser = user || this.getCurrentUser();
+    if (!effectiveUser || effectiveUser.isGuest) {
+      throw new Error('Somente usuários cadastrados e logados podem responder em discussões.');
+    }
+    if (effectiveUser.isBanned) {
+      throw new Error('Sua conta está suspensa. Usuários bloqueados não podem responder em discussões.');
+    }
+
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
     const list: TalkThread[] = raw ? JSON.parse(raw) : [];
@@ -1318,9 +1548,9 @@ export const StorageService = {
 
     const newReply: TalkReply = {
       id: `reply-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      autor: user ? user.displayName || user.email.split('@')[0] : 'Colaborador Anônimo',
-      autorEmail: user?.email,
-      autorRole: user?.role || 'leitor',
+      autor: effectiveUser.displayName || effectiveUser.username || effectiveUser.email.split('@')[0],
+      autorEmail: effectiveUser.email,
+      autorRole: effectiveUser.role || 'editor',
       conteudo,
       data: new Date().toISOString(),
       upvotes: 0,
@@ -1335,6 +1565,7 @@ export const StorageService = {
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         const threadDocRef = doc(db, 'talk_threads', threadId);
         const threadSnap = await getDoc(threadDocRef);
         if (threadSnap.exists()) {
@@ -1348,6 +1579,7 @@ export const StorageService = {
         } else {
           await setDoc(threadDocRef, thread);
         }
+        console.info(`[StorageService] Resposta de discussão salva no Firebase.`);
       } catch (err) {
         console.warn('[StorageService] Erro ao sincronizar resposta no Firestore:', err);
       }
@@ -1356,7 +1588,7 @@ export const StorageService = {
     return newReply;
   },
 
-  updateTalkThreadStatus(threadId: string, status: TalkThread['status']): boolean {
+  async updateTalkThreadStatus(threadId: string, status: TalkThread['status']): Promise<boolean> {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
     const list: TalkThread[] = raw ? JSON.parse(raw) : [];
@@ -1576,6 +1808,55 @@ export const StorageService = {
     }
 
     return localUsers;
+  },
+
+  subscribeToCommunityUsers(callback: (users: UserProfile[]) => void): () => void {
+    if (!firebaseActive || !db) {
+      initializeLocalStorage();
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.COMMUNITY_USERS);
+        callback(raw ? JSON.parse(raw) : []);
+      } catch {
+        callback([]);
+      }
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'userpage'));
+      const unsubscribe = onSnapshot(
+        q,
+        (snap) => {
+          const remoteUsers: UserProfile[] = [];
+          snap.forEach((d) => {
+            remoteUsers.push(d.data() as UserProfile);
+          });
+
+          initializeLocalStorage();
+          let localUsers: UserProfile[] = [];
+          try {
+            const raw = localStorage.getItem(STORAGE_KEYS.COMMUNITY_USERS);
+            localUsers = raw ? JSON.parse(raw) : [];
+          } catch {
+            localUsers = [];
+          }
+
+          const mergedMap = new Map<string, UserProfile>();
+          localUsers.forEach((u) => mergedMap.set(u.uid, u));
+          remoteUsers.forEach((u) => mergedMap.set(u.uid, { ...(mergedMap.get(u.uid) || {}), ...u }));
+          const merged = Array.from(mergedMap.values());
+          localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(merged));
+          callback(merged);
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição de userpage:', err);
+        }
+      );
+      return unsubscribe;
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener de userpage:', err);
+      return () => {};
+    }
   },
 
   /**
@@ -2400,17 +2681,77 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   getUserTalkMessages(targetUidOrUsername: string): UserTalkMessage[] {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
-    const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : [];
+    const localMessages: UserTalkMessage[] = raw ? JSON.parse(raw) : [];
 
     const clean = targetUidOrUsername.toLowerCase().trim();
-    return messages.filter(
+    return localMessages.filter(
       (m) =>
         m.targetUserUid.toLowerCase() === clean ||
         m.targetUsername.toLowerCase() === clean
     );
   },
 
-  addUserTalkMessage(
+  async fetchUserTalkMessages(targetUidOrUsername: string): Promise<UserTalkMessage[]> {
+    initializeLocalStorage();
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
+    const localMessages: UserTalkMessage[] = raw ? JSON.parse(raw) : [];
+
+    const clean = targetUidOrUsername.toLowerCase().trim();
+    let filtered = localMessages.filter(
+      (m) =>
+        m.targetUserUid.toLowerCase() === clean ||
+        m.targetUsername.toLowerCase() === clean
+    );
+
+    if (firebaseActive && db) {
+      try {
+        const q = query(
+          collection(db, 'user_talk_messages'),
+          where('targetUserUid', '==', targetUidOrUsername)
+        );
+        const snap = await getDocs(q);
+        const remote: UserTalkMessage[] = [];
+        snap.forEach((d) => remote.push(d.data() as UserTalkMessage));
+        if (remote.length > 0) {
+          remote.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+          return remote;
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao carregar user_talk_messages do Firestore:', err);
+      }
+    }
+
+    return filtered;
+  },
+
+  subscribeToUserTalkMessages(
+    targetUidOrUsername: string,
+    callback: (messages: UserTalkMessage[]) => void
+  ): () => void {
+    if (!firebaseActive || !db) return () => {};
+    try {
+      const q = query(
+        collection(db, 'user_talk_messages'),
+        where('targetUserUid', '==', targetUidOrUsername)
+      );
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          const list: UserTalkMessage[] = [];
+          snapshot.forEach((d) => list.push(d.data() as UserTalkMessage));
+          list.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+          callback(list);
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição de user_talk_messages:', err);
+        }
+      );
+    } catch {
+      return () => {};
+    }
+  },
+
+  async addUserTalkMessage(
     targetUid: string,
     targetUsername: string,
     msg: {
@@ -2419,7 +2760,15 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       tipo: 'geral' | 'aviso_admin' | 'barnstar' | 'duvida' | 'boas_vindas';
     },
     sender: UserProfile | null
-  ): UserTalkMessage {
+  ): Promise<UserTalkMessage> {
+    const effectiveSender = sender || this.getCurrentUser();
+    if (!effectiveSender || effectiveSender.isGuest) {
+      throw new Error('Somente usuários cadastrados e logados podem enviar mensagens na página de discussão.');
+    }
+    if (effectiveSender.isBanned) {
+      throw new Error('Sua conta está suspensa. Usuários bloqueados não podem enviar mensagens para outros usuários.');
+    }
+
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
     const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : [];
@@ -2428,10 +2777,10 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       id: 'utalk-' + Date.now(),
       targetUserUid: targetUid,
       targetUsername: targetUsername,
-      senderUid: sender?.uid,
-      senderName: sender ? sender.displayName || sender.email.split('@')[0] : 'Colaborador Anônimo',
-      senderEmail: sender?.email,
-      senderRole: sender?.role || 'convidado',
+      senderUid: effectiveSender.uid,
+      senderName: effectiveSender.displayName || effectiveSender.username || effectiveSender.email.split('@')[0],
+      senderEmail: effectiveSender.email,
+      senderRole: effectiveSender.role || 'editor',
       titulo: msg.titulo.trim(),
       conteudo: msg.conteudo.trim(),
       tipo: msg.tipo || 'geral',
@@ -2443,14 +2792,32 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     messages.unshift(newMessage);
     localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify(messages));
 
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'user_talk_messages', newMessage.id), newMessage);
+        console.info(`[StorageService] Mensagem de discussão para "${targetUsername}" sincronizada no Firebase.`);
+      } catch (err) {
+        console.warn('[StorageService] Erro ao sincronizar user_talk_message no Firestore:', err);
+      }
+    }
+
     return newMessage;
   },
 
-  addUserTalkReply(
+  async addUserTalkReply(
     messageId: string,
     conteudo: string,
     sender: UserProfile | null
-  ): TalkReply | null {
+  ): Promise<TalkReply | null> {
+    const effectiveSender = sender || this.getCurrentUser();
+    if (!effectiveSender || effectiveSender.isGuest) {
+      throw new Error('Somente usuários cadastrados e logados podem responder mensagens de discussão.');
+    }
+    if (effectiveSender.isBanned) {
+      throw new Error('Sua conta está suspensa. Usuários bloqueados não podem responder mensagens.');
+    }
+
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
     const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : [];
@@ -2460,9 +2827,9 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     const reply: TalkReply = {
       id: 'reply-' + Date.now(),
-      autor: sender ? sender.displayName || sender.email.split('@')[0] : 'Colaborador Anônimo',
-      autorEmail: sender?.email,
-      autorRole: sender?.role || 'convidado',
+      autor: effectiveSender.displayName || effectiveSender.username || effectiveSender.email.split('@')[0],
+      autorEmail: effectiveSender.email,
+      autorRole: effectiveSender.role || 'editor',
       conteudo: conteudo.trim(),
       data: new Date().toISOString(),
       upvotes: 0,
@@ -2472,10 +2839,21 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     target.status = 'em_discussao';
 
     localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify(messages));
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'user_talk_messages', messageId), target, { merge: true });
+        console.info(`[StorageService] Resposta na página de usuário salva no Firebase.`);
+      } catch (err) {
+        console.warn('[StorageService] Erro ao salvar resposta de user_talk no Firestore:', err);
+      }
+    }
+
     return reply;
   },
 
-  updateUserTalkStatus(messageId: string, status: UserTalkMessage['status']): boolean {
+  async updateUserTalkStatus(messageId: string, status: UserTalkMessage['status']): Promise<boolean> {
     initializeLocalStorage();
     const raw = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
     const messages: UserTalkMessage[] = raw ? JSON.parse(raw) : [];
@@ -2485,6 +2863,16 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     target.status = status;
     localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify(messages));
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'user_talk_messages', messageId), { status }, { merge: true });
+      } catch (err) {
+        console.warn('[StorageService] Erro ao atualizar status de user_talk no Firestore:', err);
+      }
+    }
+
     return true;
   },
 
@@ -2531,7 +2919,8 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
   // === USER CONTRIBUTIONS ===
   async getUserContributions(
-    username: string
+    username: string,
+    secondaryUid?: string
   ): Promise<{
     type: 'create' | 'edit';
     articleId: string;
@@ -2545,6 +2934,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     const articles = await this.getArticles();
     const cleanName = username.toLowerCase().trim();
     const cleanNorm = cleanName.replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const cleanUid = (secondaryUid || '').toLowerCase().trim();
 
     const contributions: {
       type: 'create' | 'edit';
@@ -2561,7 +2951,10 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     articles.forEach((art) => {
       const artAutor = (art.autor || '').toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (artAutor && (artAutor.includes(cleanNorm) || cleanNorm.includes(artAutor))) {
+      const artUid = (art.autorUid || '').toLowerCase().trim();
+      const matchArt = (cleanUid && artUid === cleanUid) || (artAutor && (artAutor.includes(cleanNorm) || cleanNorm.includes(artAutor)));
+
+      if (matchArt) {
         const key = `create-${art.id}-${art.dataCriacao}`;
         if (!seenKeys.has(key)) {
           seenKeys.add(key);
@@ -2580,7 +2973,10 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       if (art.historico && art.historico.length > 0) {
         art.historico.forEach((h) => {
           const hAutor = (h.autor || '').toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          if (hAutor && (hAutor.includes(cleanNorm) || cleanNorm.includes(hAutor))) {
+          const hUid = (h.autorUid || '').toLowerCase().trim();
+          const matchH = (cleanUid && hUid === cleanUid) || (hAutor && (hAutor.includes(cleanNorm) || cleanNorm.includes(hAutor)));
+
+          if (matchH) {
             const key = `edit-${art.id}-${h.data}`;
             if (!seenKeys.has(key)) {
               seenKeys.add(key);
@@ -2600,8 +2996,33 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       }
     });
 
-    // Mesclar também com recentActivity salvo diretamente no perfil do usuário
-    const userProfile = await this.getUserProfile(username);
+    // Mesclar também com recent_changes gravados no Firestore
+    const recentChanges = await this.getRecentChanges();
+    recentChanges.forEach((rc) => {
+      const rcUid = (rc.autorUid || '').toLowerCase().trim();
+      const rcAutor = (rc.autor || '').toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const matchRc = (cleanUid && rcUid === cleanUid) || (rcAutor && (rcAutor.includes(cleanNorm) || cleanNorm.includes(rcAutor)));
+
+      if (matchRc) {
+        const key = `${rc.type}-${rc.articleId}-${rc.data}`;
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          contributions.push({
+            type: rc.type === 'new_article' || rc.type === 'new_collection' ? 'create' : 'edit',
+            articleId: rc.articleId || '',
+            articleTitle: rc.articleTitle,
+            pageUid: rc.pageUid || '',
+            date: rc.data,
+            summary: rc.resumo,
+            deltaBytes: rc.deltaBytes,
+            isMinor: rc.isMinor,
+          });
+        }
+      }
+    });
+
+    // Mesclar com recentActivity do perfil do usuário
+    const userProfile = await this.getUserProfile(secondaryUid || username);
     if (userProfile?.recentActivity && userProfile.recentActivity.length > 0) {
       userProfile.recentActivity.forEach((act) => {
         const key = `${act.type}-${act.articleId || act.articleTitle}-${act.date}`;
@@ -2625,6 +3046,38 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     return contributions.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
+  },
+
+  // === USUÁRIOS ONLINE / CONECTADOS ===
+  async getOnlineUsers(): Promise<UserProfile[]> {
+    const users = await this.getCommunityUsers();
+    const now = Date.now();
+    // Consider online if marked as online or active in the last 45 minutes
+    return users.filter((u) => {
+      if (u.isGuest) return false;
+      if (u.isOnline) return true;
+      if (u.lastActive) {
+        const diff = now - new Date(u.lastActive).getTime();
+        return diff < 45 * 60 * 1000;
+      }
+      return false;
+    });
+  },
+
+  subscribeToOnlineUsers(callback: (onlineUsers: UserProfile[]) => void): () => void {
+    return StorageService.subscribeToCommunityUsers((allUsers) => {
+      const now = Date.now();
+      const online = (allUsers || []).filter((u) => {
+        if (!u || u.isGuest) return false;
+        if (u.isOnline) return true;
+        if (u.lastActive) {
+          const diff = now - new Date(u.lastActive).getTime();
+          return diff < 45 * 60 * 1000;
+        }
+        return false;
+      });
+      callback(online);
+    });
   },
 
   // === FIREBASE DATABASE ADMINISTRATION (PARA ADMINISTRADORES) ===
