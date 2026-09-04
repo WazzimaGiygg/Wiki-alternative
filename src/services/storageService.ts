@@ -1563,8 +1563,12 @@ export const StorageService = {
         });
 
         if (remoteUsers.length > 0) {
-          localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(remoteUsers));
-          return remoteUsers;
+          const mergedMap = new Map<string, UserProfile>();
+          localUsers.forEach((u) => mergedMap.set(u.uid, u));
+          remoteUsers.forEach((u) => mergedMap.set(u.uid, { ...(mergedMap.get(u.uid) || {}), ...u }));
+          const merged = Array.from(mergedMap.values());
+          localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(merged));
+          return merged;
         }
       } catch (err) {
         console.warn('[StorageService] Erro ao sincronizar community users do Firestore:', err);
@@ -1576,63 +1580,87 @@ export const StorageService = {
 
   /**
    * Garante que uma página de usuário exista no sistema e esteja disponível publicamente.
-   * Se não existir no localStorage nem no Firestore, o próprio sistema a cria imediatamente.
+   * Se for um novo usuário cujo nome pretendido colida com outro usuário existente,
+   * ele receberá automaticamente um sufixo numérico (ex: WazzimaGiygg2).
+   * Jamais sobrescreve perfis ou usuários distintos.
    */
   async ensureUserPage(user: Partial<UserProfile> & { uid: string }): Promise<UserProfile> {
     const users = await this.getCommunityUsers();
-    const cleanId = (user.displayName || user.username || user.uid).toLowerCase().trim();
-    const cleanNormalized = cleanId.replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    // 1. Verificar se já existe nos usuários locais
-    let existing = users.find((u) => {
-      const uName = (u.displayName || u.username || '').toLowerCase().trim();
-      const uNorm = uName.replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return (
-        u.uid.toLowerCase() === user.uid.toLowerCase() ||
-        uName === cleanId ||
-        uNorm === cleanNormalized ||
-        (u.username && u.username.toLowerCase() === cleanId) ||
-        (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase())
-      );
-    });
+    // 1. Procurar por este usuário ESPECÍFICO pelo seu UID único (Google UID ou UID interno)
+    let existing = users.find((u) => u.uid === user.uid || u.uid.toLowerCase() === user.uid.toLowerCase());
 
-    // 2. Verificar se já existe no Firestore na coleção 'userpage'
-    if (!existing && firebaseActive && db) {
+    // 2. Verificar se o currentUser local é o mesmo usuário (mesmo UID)
+    if (!existing) {
+      const current = this.getCurrentUser();
+      if (current && (current.uid === user.uid || current.uid.toLowerCase() === user.uid.toLowerCase())) {
+        existing = current;
+      }
+    }
+
+    // 3. Consultar no Firestore na coleção 'userpage' pelo ID de documento (user.uid)
+    if (!existing && firebaseActive && db && user.uid) {
       try {
         const docSnap = await getDoc(doc(db, 'userpage', user.uid));
         if (docSnap.exists()) {
           existing = docSnap.data() as UserProfile;
-        } else if (user.displayName || user.username) {
-          const q = query(
-            collection(db, 'userpage'),
-            where('displayName', '==', user.displayName || user.username)
-          );
-          const querySnap = await getDocs(q);
-          if (!querySnap.empty) {
-            existing = querySnap.docs[0].data() as UserProfile;
-          }
         }
       } catch (err) {
-        console.warn('[StorageService] Erro ao consultar Firestore userpage:', err);
+        console.warn('[StorageService] Erro ao consultar Firestore userpage por UID:', err);
       }
     }
 
     const now = new Date().toISOString();
     const createdDateFormatted = new Date().toLocaleDateString('pt-BR');
-    const authorName = user.displayName || user.username || 'Editor WikiZero';
 
     if (!existing) {
-      const defaultBio = `= ${authorName} =
+      // É UM USUÁRIO NOVO:
+      // Resolver conflito de nome caso já exista outro usuário cadastrado com o mesmo displayName ou username.
+      const rawAuthorName = (user.displayName || user.username || 'Editor WikiZero').trim();
+
+      const isNameConflict = (candidate: string): boolean => {
+        const candNorm = candidate.toLowerCase().trim().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return users.some((u) => {
+          if (u.uid === user.uid) return false;
+          const uName = (u.displayName || '').toLowerCase().trim().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const uUser = (u.username || '').toLowerCase().trim().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return uName === candNorm || uUser === candNorm;
+        });
+      };
+
+      let resolvedDisplayName = rawAuthorName;
+      if (isNameConflict(resolvedDisplayName)) {
+        // Encontrar próximo número disponível (ex: WazzimaGiygg2, WazzimaGiygg3...)
+        const match = resolvedDisplayName.match(/^(.*?)(\d+)$/);
+        let baseRoot = resolvedDisplayName;
+        let counter = 2;
+        if (match && match[1] && match[2]) {
+          baseRoot = match[1];
+          counter = Math.max(2, parseInt(match[2], 10) + 1);
+        }
+        while (isNameConflict(`${baseRoot}${counter}`)) {
+          counter++;
+        }
+        resolvedDisplayName = `${baseRoot}${counter}`;
+      }
+
+      const resolvedUsername = user.username && !isNameConflict(user.username)
+        ? user.username
+        : resolvedDisplayName.replace(/\s+/g, '_');
+
+      const defaultBio = `= ${resolvedDisplayName} =
 Editor(a) e colaborador(a) da enciclopédia livre '''WikiZero'''.
 
 == Apresentação ==
-Esta é a página oficial do(a) usuário(a) '''${authorName}'''.
+Esta é a página oficial do(a) usuário(a) '''${resolvedDisplayName}'''.
 Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
 == Rastreio & Atividades Comunitárias ==
 * '''Status do Usuário:''' Ativo(a)
+* '''Identificador Único Google/Sistema (UID):''' \`\`${user.uid}\`\`
 * '''Rastreabilidade:''' Todas as alterações de rastreio, edições e verbetes criados são automaticamente inseridos nesta página de usuário pública.
-* '''Link Permanente Público:''' Disponível para consulta por qualquer usuário através do link [[User:${authorName}]].
+* '''Link Permanente Público (UID):''' Disponível para consulta por qualquer usuário através do link permanente [[User:${user.uid}]].
+* '''Link Alternativo por Nome:''' [[User:${resolvedDisplayName}]].
 
 == Caixas de Usuário ==
 {{Userbox|🌐|Colaborador(a) da WikiZero Enciclopédia Aberta}}
@@ -1641,8 +1669,8 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
       const newUserPage: UserProfile = {
         uid: user.uid,
-        username: user.username || authorName.replace(/\s+/g, '_'),
-        displayName: authorName,
+        username: resolvedUsername,
+        displayName: resolvedDisplayName,
         email: user.email || '',
         photoURL: user.photoURL,
         role: user.role || 'editor',
@@ -1686,7 +1714,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
       await this.saveCommunityUser(newUserPage);
 
-      // Persistir no Firestore na coleção 'userpage'
+      // Persistir no Firestore na coleção 'userpage' com chave newUserPage.uid
       if (firebaseActive && db) {
         try {
           await setDoc(doc(db, 'userpage', newUserPage.uid), newUserPage, { merge: true });
@@ -1697,10 +1725,13 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
       return newUserPage;
     } else {
+      // Usuário já existente: manter integridade do UID e nome pré-existente
       const updated: UserProfile = {
         ...existing,
         ...user,
-        displayName: existing.displayName || user.displayName || authorName,
+        uid: existing.uid,
+        displayName: existing.displayName || user.displayName || 'Editor WikiZero',
+        username: existing.username || user.username || existing.displayName || 'Editor',
         bio: existing.bio || user.bio,
         lastActive: now,
         recentActivity: existing.recentActivity || [],
@@ -1740,7 +1771,14 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         ? userOrAuthor
         : userOrAuthor.displayName || userOrAuthor.username || userOrAuthor.email || 'Colaborador WikiZero';
 
-    let profile = await this.getUserProfile(authorName);
+    let profile =
+      typeof userOrAuthor === 'object' && userOrAuthor.uid
+        ? await this.getUserProfile(userOrAuthor.uid)
+        : null;
+
+    if (!profile) {
+      profile = await this.getUserProfile(authorName);
+    }
 
     if (!profile) {
       const cleanNorm = authorName.toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -1798,63 +1836,88 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
   async getUserProfile(uidOrUsername: string): Promise<UserProfile | null> {
     if (!uidOrUsername) return null;
-    const cleanId = uidOrUsername.toLowerCase().trim();
+    const stripped = uidOrUsername.replace(/^(?:User|Usuario|Usuário|user|usuario|@):?/i, '').trim();
+    const cleanId = (stripped || uidOrUsername).toLowerCase().trim();
     const cleanNormalized = cleanId.replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    // 1. Procurar nos usuários comunitários locais
     const users = await this.getCommunityUsers();
-    const found = users.find((u) => {
-      const uName = (u.displayName || u.username || '').toLowerCase().trim();
+
+    // 1. Procurar por UID exato primeiro (UID Google ou UID do sistema)
+    let found = users.find(
+      (u) => u.uid === stripped || u.uid.toLowerCase() === cleanId
+    );
+    if (found) return found;
+
+    // 2. Verificar se o usuário atualmente logado tem esse UID
+    const currentUser = this.getCurrentUser();
+    if (currentUser && (currentUser.uid === stripped || currentUser.uid.toLowerCase() === cleanId)) {
+      return currentUser;
+    }
+
+    // 3. Consultar Firestore pelo ID do documento (que é o UID)
+    if (firebaseActive && db) {
+      try {
+        const docSnap = await getDoc(doc(db, 'userpage', stripped));
+        if (docSnap.exists()) {
+          const profile = docSnap.data() as UserProfile;
+          await this.saveCommunityUser(profile);
+          return profile;
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao buscar userpage por UID no Firestore:', err);
+      }
+    }
+
+    // 4. Se não encontrou por UID, procurar por username ou displayName nos usuários comunitários
+    found = users.find((u) => {
+      const uName = (u.displayName || '').toLowerCase().trim();
       const uNorm = uName.replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const uUser = (u.username || '').toLowerCase().trim();
       return (
-        u.uid.toLowerCase() === cleanId ||
+        uUser === cleanId ||
         uName === cleanId ||
         uNorm === cleanNormalized ||
-        (u.username && u.username.toLowerCase() === cleanId) ||
         (u.email && u.email.toLowerCase() === cleanId)
       );
     });
-
     if (found) return found;
 
-    // 2. Verificar se é o usuário atualmente logado
-    const currentUser = this.getCurrentUser();
+    // 5. Verificar se o usuário logado bate por nome/username
     if (
       currentUser &&
-      (currentUser.uid.toLowerCase() === cleanId ||
-        currentUser.displayName?.toLowerCase().trim() === cleanId ||
+      (currentUser.displayName?.toLowerCase().trim() === cleanId ||
+        currentUser.username?.toLowerCase().trim() === cleanId ||
         currentUser.displayName?.toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '') === cleanNormalized ||
         currentUser.email?.toLowerCase() === cleanId)
     ) {
       return currentUser;
     }
 
-    // 3. Consultar no Firestore na coleção 'userpage'
+    // 6. Consultar no Firestore por username ou displayName
     if (firebaseActive && db) {
       try {
-        const docSnap = await getDoc(doc(db, 'userpage', uidOrUsername));
-        if (docSnap.exists()) {
-          const profile = docSnap.data() as UserProfile;
+        const properName = stripped.replace(/[+_]/g, ' ').trim();
+        const q1 = query(collection(db, 'userpage'), where('displayName', '==', properName));
+        const querySnap1 = await getDocs(q1);
+        if (!querySnap1.empty) {
+          const profile = querySnap1.docs[0].data() as UserProfile;
           await this.saveCommunityUser(profile);
           return profile;
         }
 
-        const q = query(
-          collection(db, 'userpage'),
-          where('displayName', '==', uidOrUsername.replace(/[+_]/g, ' ').trim())
-        );
-        const querySnap = await getDocs(q);
-        if (!querySnap.empty) {
-          const profile = querySnap.docs[0].data() as UserProfile;
+        const q2 = query(collection(db, 'userpage'), where('username', '==', stripped));
+        const querySnap2 = await getDocs(q2);
+        if (!querySnap2.empty) {
+          const profile = querySnap2.docs[0].data() as UserProfile;
           await this.saveCommunityUser(profile);
           return profile;
         }
       } catch (err) {
-        console.warn('[StorageService] Erro ao buscar userpage no Firestore:', err);
+        console.warn('[StorageService] Erro ao buscar userpage no Firestore por nome:', err);
       }
     }
 
-    // 4. Criação automática da página de usuário se acessada via link público ou se for autor de edições
+    // 7. Criação automática da página de usuário apenas se for autor de edições reais
     const articles = await this.getArticles();
     const hasEditsOrArticles = articles.some((a) => {
       const aAuthor = (a.autor || '').toLowerCase().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -1862,8 +1925,8 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       return aAuthor === cleanNormalized || hAuthor;
     });
 
-    if (hasEditsOrArticles || (cleanId.length > 1 && !cleanId.includes(':'))) {
-      const properName = uidOrUsername.replace(/[+_]/g, ' ').trim();
+    if (hasEditsOrArticles) {
+      const properName = stripped.replace(/[+_]/g, ' ').trim();
       const generatedUid = `user-${cleanNormalized.replace(/[^a-z0-9]/g, '-') || 'editor'}`;
       const autoCreated = await this.ensureUserPage({
         uid: generatedUid,
@@ -1883,11 +1946,8 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
   async saveCommunityUser(user: UserProfile): Promise<UserProfile> {
     const users = await this.getCommunityUsers();
-    const index = users.findIndex(
-      (u) =>
-        u.uid === user.uid ||
-        (u.displayName && user.displayName && u.displayName.toLowerCase() === user.displayName.toLowerCase())
-    );
+    // Identificar estritamente pelo UID único para jamais sobrescrever outro usuário
+    const index = users.findIndex((u) => u.uid === user.uid);
 
     let updatedUsers: UserProfile[];
     if (index >= 0) {
@@ -1899,17 +1959,13 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(updatedUsers));
 
-    // Atualizar usuário local se for o próprio
+    // Atualizar usuário local se for o próprio (pelo UID)
     const currentUser = this.getCurrentUser();
-    if (
-      currentUser &&
-      (currentUser.uid === user.uid ||
-        (currentUser.displayName && user.displayName && currentUser.displayName.toLowerCase() === user.displayName.toLowerCase()))
-    ) {
+    if (currentUser && currentUser.uid === user.uid) {
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify({ ...currentUser, ...user }));
     }
 
-    // Sincronizar na coleção 'userpage' do Firestore
+    // Sincronizar na coleção 'userpage' do Firestore indexado por UID
     if (firebaseActive && db && user.uid) {
       try {
         await setDoc(doc(db, 'userpage', user.uid), user, { merge: true });

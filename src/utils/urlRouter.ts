@@ -378,7 +378,7 @@ export function resolveNavigationUid(
     return { type: 'view', view: item.view, initialTab: item.initialTab };
   }
 
-  // 3. User namespace prefix: User:name, @name, Usuario:name, user:name
+  // 3. User namespace prefix: User:name, @name, Usuario:name, user:name, user-uid
   const userMatch = uid.match(/^(?:User|Usuario|Usuário|user|usuario|@):?(.*)$/i);
   if (userMatch && userMatch[1]) {
     const rawTarget = userMatch[1].trim();
@@ -389,6 +389,10 @@ export function resolveNavigationUid(
       : 'profile';
     const cleanUsername = targetUser.replace(/[+_]/g, ' ').trim();
     return { type: 'user', username: cleanUsername, initialTab: tab };
+  }
+
+  if (/^user-[a-z0-9_-]+$/i.test(uid)) {
+    return { type: 'user', username: uid.trim(), initialTab: 'profile' };
   }
 
   // 4. File namespace prefix or file extensions: File:..., Arquivo:..., Ficheiro:...

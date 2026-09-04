@@ -599,6 +599,11 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                   User:{userProfile.displayName || userProfile.username}
                 </span>
                 <span>•</span>
+                <span className="inline-flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700" title={`Identificador Único Google/Sistema: ${userProfile.uid}`}>
+                  <span className="font-semibold text-slate-400">UID:</span>
+                  <span className="font-mono max-w-[170px] truncate">{userProfile.uid}</span>
+                </span>
+                <span>•</span>
                 <span className="flex items-center gap-1">
                   <Calendar size={12} /> Desde {new Date(userProfile.createdAt || '2026-01-15').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
                 </span>
@@ -650,20 +655,20 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
 
             {/* Ações de Interação Rápida */}
             <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto justify-end">
-              {/* UID Permalink Button */}
+              {/* UID Google/Sistema Permalink Button */}
               <button
                 onClick={() => {
-                  const permalink = buildUidPermalink(`User:${userProfile.displayName || userProfile.username || userProfile.uid}`);
+                  const permalink = buildUidPermalink(`User:${userProfile.uid}`);
                   navigator.clipboard.writeText(permalink);
                   setCopiedUid(true);
                   setTimeout(() => setCopiedUid(false), 2000);
                 }}
-                title={`Copiar Link Permanente UID (?uid=User:${userProfile.displayName || userProfile.username || userProfile.uid})`}
+                title={`Copiar Link Permanente Seguro UID (?uid=User:${userProfile.uid})`}
                 className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded text-xs font-semibold flex items-center gap-1.5 transition font-mono"
               >
                 <Link2 size={13} className="text-blue-500" />
                 <span className="hidden sm:inline">UID:</span>
-                <span>User:{userProfile.displayName || userProfile.username}</span>
+                <span className="max-w-[130px] truncate" title={userProfile.uid}>User:{userProfile.uid}</span>
                 {copiedUid ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} className="text-slate-400" />}
               </button>
 
@@ -932,16 +937,16 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      const permalink = buildUidPermalink(`User:${userProfile.displayName || userProfile.username || userProfile.uid}`);
+                      const permalink = buildUidPermalink(`User:${userProfile.uid}`);
                       navigator.clipboard.writeText(permalink);
                       setCopiedUid(true);
                       setTimeout(() => setCopiedUid(false), 2000);
                     }}
                     className="text-[11px] font-mono text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
-                    title="Copiar link público permanente desta página de usuário"
+                    title={`Copiar link permanente UID Google/Sistema (?uid=User:${userProfile.uid})`}
                   >
                     <Link2 size={12} />
-                    <span>{copiedUid ? 'Copiado!' : 'Link Público'}</span>
+                    <span>{copiedUid ? 'Copiado!' : 'Link Público UID'}</span>
                   </button>
                 </div>
               </div>

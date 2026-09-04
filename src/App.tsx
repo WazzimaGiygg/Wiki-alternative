@@ -366,7 +366,7 @@ export default function App() {
 
   const handleNavigate = (view: ViewMode) => {
     if (view === 'user-page' && user) {
-      setTargetUserIdentifier(user.displayName || user.username || user.uid);
+      setTargetUserIdentifier(user.uid || user.displayName || user.username);
       setUserPageInitialTab('profile');
     }
     setCurrentView(view);
@@ -532,9 +532,12 @@ export default function App() {
       );
       return;
     }
-    setUser(loggedUser);
     if (!loggedUser.isGuest) {
-      await StorageService.ensureUserPage(loggedUser);
+      const verified = await StorageService.ensureUserPage(loggedUser);
+      setUser(verified);
+      setTargetUserIdentifier(verified.uid);
+    } else {
+      setUser(loggedUser);
     }
   };
 
@@ -871,7 +874,7 @@ export default function App() {
 
           {currentView === 'user-page' && (
             <UserPageView
-              targetUserIdentifier={targetUserIdentifier || user?.displayName || user?.username || 'WazzimaGiygg'}
+              targetUserIdentifier={targetUserIdentifier || user?.uid || user?.displayName || user?.username || 'WazzimaGiygg'}
               currentUser={user}
               allArticles={articles}
               allPages={pages}
