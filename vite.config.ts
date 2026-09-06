@@ -16,14 +16,14 @@ export default defineConfig(() => {
           id: '/',
           name: 'WikiZero - Enciclopédia Livre',
           short_name: 'WikiZero',
-          description: 'WikiZero - Enciclopédia colaborativa e livre com leitura e edição para Android e Web.',
+          description: 'WikiZero - Enciclopédia colaborativa e livre com leitura e edição para Smart TV, Android e Web.',
           theme_color: '#2563eb',
           background_color: '#ffffff',
           display: 'standalone',
-          orientation: 'portrait-primary',
+          orientation: 'any',
           start_url: '/',
           scope: '/',
-          categories: ['education', 'books', 'reference'],
+          categories: ['education', 'books', 'reference', 'entertainment', 'lifestyle'],
           icons: [
             {
               src: '/pwa-192x192.png',

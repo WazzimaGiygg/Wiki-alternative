@@ -344,7 +344,7 @@ export interface SystemUpdateEntry {
   isLatest?: boolean;
 }
 
-export type DeviceMode = 'auto' | 'mobile' | 'desktop';
+export type DeviceMode = 'auto' | 'mobile' | 'desktop' | 'tv';
 
 export type UnblockRequestStatus = 'pendente' | 'em_analise' | 'aprovado' | 'recusado' | 'arquivado';
 
@@ -516,7 +516,8 @@ export type ViewMode =
   | 'offline'
   | 'upload'
   | 'file-page'
-  | 'files-list';
+  | 'files-list'
+  | 'smart-tv';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)
