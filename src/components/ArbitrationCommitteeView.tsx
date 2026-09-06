@@ -147,7 +147,28 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
   };
 
   useEffect(() => {
-    loadData();
+    setIsLoading(true);
+    const lang = selectedLangCode === 'all' ? undefined : selectedLangCode;
+
+    const unsubMembers = StorageService.subscribeToArbitrationMembers((fetchedMembers) => {
+      setMembers(fetchedMembers);
+    }, lang);
+
+    const unsubCases = StorageService.subscribeToArbitrationCases((fetchedCases) => {
+      setCases(fetchedCases);
+      // Se tiver caso selecionado aberto, atualiza seus dados em tempo real
+      setSelectedCase((prev) => {
+        if (!prev) return null;
+        const refreshed = fetchedCases.find((c) => c.id === prev.id);
+        return refreshed || null;
+      });
+      setIsLoading(false);
+    }, lang);
+
+    return () => {
+      unsubMembers();
+      unsubCases();
+    };
   }, [selectedLangCode]);
 
   // Is user a recognized arbitrator / admin

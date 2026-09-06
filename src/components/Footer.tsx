@@ -13,6 +13,7 @@ import {
   Smartphone,
   Monitor,
   Gavel,
+  AlertOctagon,
 } from 'lucide-react';
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -131,6 +132,14 @@ export const Footer: React.FC<FooterProps> = ({
             >
               <Gavel size={11} className="text-purple-600 dark:text-purple-400" />
               <span>Conselho de Arbitragem (ArbCom)</span>
+            </button>
+            <button
+              onClick={() => onNavigate('emergency-contact')}
+              title="Contato de Emergência em Casos Extremos (Risco à Vida, Doxxing e Segurança de Menores)"
+              className="hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1 font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded border border-red-200 dark:border-red-800/60 transition animate-pulse"
+            >
+              <AlertOctagon size={11} className="text-red-600 dark:text-red-400" />
+              <span>Contato de Emergência</span>
             </button>
             <button
               onClick={() => onNavigate('privacy')}

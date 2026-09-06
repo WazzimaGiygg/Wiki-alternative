@@ -106,7 +106,30 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
   };
 
   useEffect(() => {
-    loadData();
+    setIsLoading(true);
+    // Carregar usuários da comunidade para dropdown de nomeação
+    StorageService.getCommunityUsers()
+      .then((users) => setCommunityUsers(users))
+      .catch((err) => console.warn('Erro ao carregar usuários:', err));
+
+    const unsubscribe = StorageService.subscribeToPromotionRequests((reqs) => {
+      setRequests(reqs);
+      setSelectedId((prev) => {
+        if (!prev && reqs.length > 0) {
+          const firstActive = reqs.find((r) => r.status === 'em_votacao');
+          return firstActive ? firstActive.id : reqs[0].id;
+        }
+        if (prev && !reqs.some((r) => r.id === prev) && reqs.length > 0) {
+          return reqs[0].id;
+        }
+        return prev;
+      });
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const selectedRequest = useMemo(() => {

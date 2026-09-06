@@ -28,6 +28,7 @@ import {
   Upload,
   Image as ImageIcon,
   Gavel,
+  AlertOctagon,
 } from 'lucide-react';
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -367,6 +368,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="truncate">Falar com Administração</span>
                   <span className="text-[8px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono font-bold px-1 rounded-xs">
                     OFICIAL
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
+              onClick={() => onNavigate('emergency-contact')}
+              title="Contato de Emergência em Casos Extremos (Special:EmergencyContact - Plantão e Risco Crítico)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'emergency-contact'
+                  ? 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 font-bold border border-red-200 dark:border-red-800 shadow-xs'
+                  : 'text-rose-700 dark:text-rose-400 hover:bg-rose-50/70 dark:hover:bg-rose-950/40'
+              }`}
+            >
+              <AlertOctagon size={15} className="text-red-600 dark:text-red-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate font-semibold text-rose-700 dark:text-rose-300">Contato de Emergência</span>
+                  <span className="text-[8px] bg-red-600 text-white font-mono font-bold px-1 rounded-xs">
+                    URGENTE
                   </span>
                 </div>
               )}

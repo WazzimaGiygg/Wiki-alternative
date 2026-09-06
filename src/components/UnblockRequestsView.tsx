@@ -183,7 +183,20 @@ export const UnblockRequestsView: React.FC<UnblockRequestsViewProps> = ({
   };
 
   useEffect(() => {
-    loadRequests();
+    setIsLoading(true);
+    const unsubscribe = StorageService.subscribeToUnblockRequests((data) => {
+      setRequests(data);
+      setSelectedId((prev) => {
+        if (!prev && data.length > 0) return data[0].id;
+        if (prev && !data.some((r) => r.id === prev) && data.length > 0) return data[0].id;
+        return prev;
+      });
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const selectedRequest = requests.find((r) => r.id === selectedId) || requests[0] || null;

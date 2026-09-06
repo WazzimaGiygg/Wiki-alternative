@@ -30,6 +30,7 @@ import {
   Copy,
   Check,
   FileDown,
+  AlertOctagon,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -44,6 +45,7 @@ interface SpecialPagesViewProps {
   onNavigateToPage: (pageUid: string) => void;
   onNavigateToUser?: (username: string) => void;
   onNavigateToContactAdmin?: () => void;
+  onNavigateToEmergencyContact?: () => void;
   onNavigateToPromotionRequests?: () => void;
   onNavigateToUnblockRequests?: () => void;
   onNavigateToCheckUser?: (username?: string) => void;
@@ -62,6 +64,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToPage,
   onNavigateToUser,
   onNavigateToContactAdmin,
+  onNavigateToEmergencyContact,
   onNavigateToPromotionRequests,
   onNavigateToUnblockRequests,
   onNavigateToCheckUser,
@@ -273,6 +276,30 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Fale com a Administração
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToEmergencyContact && (
+          <button
+            onClick={onNavigateToEmergencyContact}
+            className="p-3 rounded-lg border border-red-300 dark:border-red-800/80 bg-red-50/70 dark:bg-red-950/40 hover:bg-red-100/80 dark:hover:bg-red-900/50 text-left transition flex items-center gap-2.5 group ring-1 ring-red-400/30"
+          >
+            <div className="p-2 rounded-md bg-red-600 text-white shrink-0 animate-pulse">
+              <AlertOctagon size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-red-900 dark:text-red-200 truncate group-hover:underline">
+                  Special:EmergencyContact
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-red-600 text-white">
+                  URGENTE
+                </span>
+              </div>
+              <div className="text-[10px] text-red-700 dark:text-red-300 truncate">
+                Contato de Emergência (Casos Extremos)
               </div>
             </div>
           </button>

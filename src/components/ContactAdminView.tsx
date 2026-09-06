@@ -28,6 +28,7 @@ import {
   AlertCircle,
   Archive,
   BookOpen,
+  AlertOctagon,
 } from 'lucide-react';
 import {
   AdminContactTicket,
@@ -43,6 +44,7 @@ interface ContactAdminViewProps {
   currentUser?: UserProfile | null;
   onNavigateToArticle?: (articleId: string) => void;
   onNavigateToUser?: (username: string) => void;
+  onNavigateToEmergencyContact?: () => void;
   onBack?: () => void;
 }
 
@@ -155,6 +157,7 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
   currentUser,
   onNavigateToArticle,
   onNavigateToUser,
+  onNavigateToEmergencyContact,
   onBack,
 }) => {
   const [tickets, setTickets] = useState<AdminContactTicket[]>([]);
@@ -216,8 +219,26 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    setIsLoading(true);
+    // Carregar artigos para vínculo nos chamados
+    StorageService.getArticles()
+      .then((articleList) => setArticles(articleList))
+      .catch((err) => console.warn('Erro ao carregar artigos:', err));
+
+    const unsubscribe = StorageService.subscribeToAdminTickets((ticketList) => {
+      setTickets(ticketList);
+      setSelectedTicketId((prev) => {
+        if (!prev && ticketList.length > 0) return ticketList[0].id;
+        if (prev && !ticketList.some((t) => t.id === prev) && ticketList.length > 0) return ticketList[0].id;
+        return prev;
+      });
+      setIsLoading(false);
+    }, currentUser);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser]);
 
   const selectedTicket = useMemo(() => {
     return tickets.find((t) => t.id === selectedTicketId) || null;
@@ -440,6 +461,46 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
             <span>{isCreatingTicket ? 'Cancelar' : 'Abrir Novo Chamado'}</span>
           </button>
         </div>
+      </div>
+
+      {/* Alerta Prioritário: Contato de Emergência em Casos Extremos */}
+      <div className="mb-6 p-4 rounded-xl border border-rose-300 dark:border-rose-900/80 bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-950/40 dark:to-red-950/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-red-600 text-white flex-shrink-0 mt-0.5">
+            <AlertOctagon size={20} className="animate-pulse" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold font-mono uppercase px-1.5 py-0.5 rounded bg-red-600 text-white">
+                Caso Extremo?
+              </span>
+              <h3 className="text-xs font-bold text-red-900 dark:text-red-200">
+                Risco à vida, vazamento criminoso de dados (Doxxing), menores ou ordem judicial
+              </h3>
+            </div>
+            <p className="text-[11px] text-slate-700 dark:text-slate-300 mt-0.5 leading-snug">
+              Este formulário regular é triado em até 24h. Em casos de risco iminente, utilize o <strong>Canal de Emergência de Plantão</strong> para atendimento prioritário imediato.
+            </p>
+          </div>
+        </div>
+
+        {onNavigateToEmergencyContact ? (
+          <button
+            onClick={onNavigateToEmergencyContact}
+            className="flex-shrink-0 px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition"
+          >
+            <AlertOctagon size={13} />
+            <span>Acessar Linha de Emergência</span>
+          </button>
+        ) : (
+          <a
+            href="mailto:pedrohenriquecardonaperes@gmail.com?subject=%5BEMERG%C3%8ANCIA%20EXTREMA%20WIKIZERO%5D"
+            className="flex-shrink-0 px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition"
+          >
+            <AlertOctagon size={13} />
+            <span>Plantão de Emergência</span>
+          </a>
+        )}
       </div>
 
       {/* Header Banner */}

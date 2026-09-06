@@ -60,11 +60,17 @@ import {
   ArbitrationComment,
   ArbitrationRuling,
   ArbitrationCommitteeMember,
+  EmergencyReport,
+  EmergencyCategory,
+  EmergencyUrgencyLevel,
+  EmergencyReportStatus,
+  EmergencyReportActionLog,
   CookieConsent,
   WatchlistItem,
   ArticleRatingData,
   DailyEditLimitStatus,
 } from '../types';
+import { sanitizeIpForDocId, hashIpAddress } from '../utils/ipUtils';
 import { ACTIVE_FIREBASE_CONFIG } from '../config/firebaseCustomConfig';
 
 // Configuração ativa do Firebase derivada do arquivo de configuração do desenvolvedor (src/config/firebaseCustomConfig.ts)
@@ -128,6 +134,8 @@ const STORAGE_KEYS = {
   ADMIN_TICKETS: 'wikizero_admin_tickets_v3',
   ARBITRATION_CASES: 'wikizero_arbitration_cases_v3',
   ARBITRATION_MEMBERS: 'wikizero_arbitration_members_v3',
+  EMERGENCY_REPORTS: 'wikizero_emergency_reports_v1',
+  EMERGENCY_IP_REPORTS: 'wikizero_emergency_ip_reports_v1',
   DAILY_EDITS_PREFIX: 'wikizero_daily_edits_',
 };
 
@@ -159,6 +167,7 @@ function purgePredefinedNonDatabaseData() {
   localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify([]));
   localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify([]));
   localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify([]));
   localStorage.setItem(STORAGE_KEYS.RATINGS, JSON.stringify({}));
 
   localStorage.setItem(PURGE_PREDEFINED_FLAG, 'true');
@@ -185,6 +194,7 @@ function initializeLocalStorage() {
   if (!localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS)) localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify([]));
   if (!localStorage.getItem(STORAGE_KEYS.ARBITRATION_CASES)) localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify([]));
   if (!localStorage.getItem(STORAGE_KEYS.ARBITRATION_MEMBERS)) localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify([]));
+  if (!localStorage.getItem(STORAGE_KEYS.EMERGENCY_REPORTS)) localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify([]));
 }
 
 initializeLocalStorage();
@@ -3406,10 +3416,44 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'sockpuppet_cases', caseItem.id), caseItem);
       } catch (err) {
         console.warn('Firestore saveSockpuppetCase error:', err);
       }
+    }
+  },
+
+  /**
+   * Subscrição em tempo real aos casos de investigação de fantoches (Sockpuppet Cases).
+   */
+  subscribeToSockpuppetCases(callback: (cases: SockpuppetCase[]) => void): () => void {
+    initializeLocalStorage();
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEYS.SOCKPUPPET_CASES) || '[]') as SockpuppetCase[];
+    callback(local.sort((a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime()));
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'sockpuppet_cases'));
+      return onSnapshot(
+        q,
+        (snap) => {
+          const list: SockpuppetCase[] = [];
+          snap.forEach((d) => list.push(d.data() as SockpuppetCase));
+          const sorted = list.sort((a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime());
+          localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify(sorted));
+          callback(sorted);
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição em tempo real de sockpuppet_cases:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener para sockpuppet_cases:', err);
+      return () => {};
     }
   },
 
@@ -3430,6 +3474,39 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS) || '[]'
     );
     return local.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  },
+
+  /**
+   * Subscrição em tempo real aos logs de auditoria do CheckUser.
+   */
+  subscribeToCheckUserLogs(callback: (logs: CheckUserLogEntry[]) => void): () => void {
+    initializeLocalStorage();
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS) || '[]') as CheckUserLogEntry[];
+    callback(local.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'checkuser_logs'));
+      return onSnapshot(
+        q,
+        (snap) => {
+          const list: CheckUserLogEntry[] = [];
+          snap.forEach((d) => list.push(d.data() as CheckUserLogEntry));
+          const sorted = list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          localStorage.setItem(STORAGE_KEYS.CHECKUSER_LOGS, JSON.stringify(sorted));
+          callback(sorted);
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição em tempo real de checkuser_logs:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener para checkuser_logs:', err);
+      return () => {};
+    }
   },
 
   async performCheckUserInvestigation(
@@ -3568,6 +3645,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'checkuser_logs', logEntry.id), logEntry);
       } catch (err) {
         console.warn('Firestore performCheckUserInvestigation log sync error:', err);
@@ -3595,6 +3673,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'users', uid), { isBanned: true, banReason: reason }, { merge: true });
       } catch (err) {
         console.warn('Firestore flagAccountAsSockpuppet error:', err);
@@ -3621,6 +3700,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'users', uid), { isBanned: false, banReason: '' }, { merge: true });
       } catch (err) {
         console.warn('Firestore unflagAccountAsSockpuppet error:', err);
@@ -4201,6 +4281,39 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     return local.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
   },
 
+  /**
+   * Subscrição em tempo real aos pedidos de apelação e recursos de desbloqueio.
+   */
+  subscribeToUnblockRequests(callback: (requests: UnblockRequest[]) => void): () => void {
+    initializeLocalStorage();
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEYS.UNBLOCK_REQUESTS) || '[]') as UnblockRequest[];
+    callback(local.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime()));
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'unblock_requests'));
+      return onSnapshot(
+        q,
+        (snap) => {
+          const list: UnblockRequest[] = [];
+          snap.forEach((d) => list.push(d.data() as UnblockRequest));
+          const sorted = list.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+          localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify(sorted));
+          callback(sorted);
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição em tempo real de unblock_requests:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener para unblock_requests:', err);
+      return () => {};
+    }
+  },
+
   async createUnblockRequest(
     data: Omit<UnblockRequest, 'id' | 'status' | 'requestedAt' | 'comments'> & {
       urgency?: 'alta' | 'media' | 'baixa';
@@ -4224,6 +4337,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'unblock_requests', id), newRequest);
       } catch (err) {
         console.warn('Firestore createUnblockRequest error:', err);
@@ -4267,6 +4381,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'unblock_requests', requestId), updatedRequest);
       } catch (err) {
         console.warn('Firestore evaluateUnblockRequest error:', err);
@@ -4283,6 +4398,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
           users[uIdx].banReason = undefined;
           localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(users));
           if (firebaseActive && db) {
+            await ensureFirebaseAuth();
             await setDoc(doc(db, 'users', req.userUid), { isBanned: false, banReason: '' }, { merge: true });
           }
         }
@@ -4323,6 +4439,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'unblock_requests', requestId), list[idx]);
       } catch (err) {
         console.warn('Firestore addCommentToUnblockRequest error:', err);
@@ -4363,6 +4480,39 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     return local.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
   },
 
+  /**
+   * Subscrição em tempo real aos pedidos de promoção / candidaturas a cargos.
+   */
+  subscribeToPromotionRequests(callback: (requests: PromotionRequest[]) => void): () => void {
+    initializeLocalStorage();
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROMOTION_REQUESTS) || '[]') as PromotionRequest[];
+    callback(local.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime()));
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'promotion_requests'));
+      return onSnapshot(
+        q,
+        (snap) => {
+          const list: PromotionRequest[] = [];
+          snap.forEach((d) => list.push(d.data() as PromotionRequest));
+          const sorted = list.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+          localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify(sorted));
+          callback(sorted);
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição em tempo real de promotion_requests:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener para promotion_requests:', err);
+      return () => {};
+    }
+  },
+
   async createPromotionRequest(
     data: {
       candidateUid: string;
@@ -4397,6 +4547,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'promotion_requests', id), newReq);
       } catch (err) {
         console.warn('Firestore createPromotionRequest error:', err);
@@ -4452,6 +4603,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'promotion_requests', requestId), req);
       } catch (err) {
         console.warn('Firestore castPromotionVote error:', err);
@@ -4483,6 +4635,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'promotion_requests', requestId), req);
       } catch (err) {
         console.warn('Firestore concludePromotionRequest error:', err);
@@ -4498,6 +4651,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
           users[uIdx].role = req.targetRole;
           localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(users));
           if (firebaseActive && db) {
+            await ensureFirebaseAuth();
             await setDoc(doc(db, 'users', req.candidateUid), { role: req.targetRole }, { merge: true });
           }
         }
@@ -4543,6 +4697,50 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     }
 
     return tickets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  /**
+   * Subscrição em tempo real aos chamados/tickets de suporte e contato com a administração.
+   */
+  subscribeToAdminTickets(
+    callback: (tickets: AdminContactTicket[]) => void,
+    user?: UserProfile | null
+  ): () => void {
+    initializeLocalStorage();
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS) || '[]') as AdminContactTicket[];
+    const isStaff = user?.role === 'admin' || user?.role === 'moderador';
+    const filterAndSort = (raw: AdminContactTicket[]) => {
+      let filtered = raw;
+      if (!isStaff && user) {
+        filtered = raw.filter((t) => t.userUid === user.uid || (user.email && t.userEmail === user.email));
+      }
+      return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    };
+
+    callback(filterAndSort(local));
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'admin_tickets'));
+      return onSnapshot(
+        q,
+        (snap) => {
+          const list: AdminContactTicket[] = [];
+          snap.forEach((d) => list.push(d.data() as AdminContactTicket));
+          localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify(list));
+          callback(filterAndSort(list));
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição em tempo real de admin_tickets:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener para admin_tickets:', err);
+      return () => {};
+    }
   },
 
   async createAdminTicket(
@@ -4602,6 +4800,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'admin_tickets', id), newTicket);
       } catch (err) {
         console.warn('Firestore createAdminTicket error:', err);
@@ -4651,6 +4850,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'admin_tickets', ticketId), ticket);
       } catch (err) {
         console.warn('Firestore addAdminTicketMessage error:', err);
@@ -4686,6 +4886,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'admin_tickets', ticketId), ticket);
       } catch (err) {
         console.warn('Firestore updateAdminTicketStatus error:', err);
@@ -4718,6 +4919,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'admin_tickets', ticketId), ticket);
       } catch (err) {
         console.warn('Firestore assignAdminTicket error:', err);
@@ -4736,6 +4938,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await deleteDoc(doc(db, 'admin_tickets', ticketId));
       } catch (err) {
         console.warn('Firestore deleteAdminTicket error:', err);
@@ -4774,6 +4977,49 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     return local.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
+  /**
+   * Subscrição em tempo real aos processos do Conselho de Arbitragem (ArbCom).
+   */
+  subscribeToArbitrationCases(
+    callback: (cases: ArbitrationCase[]) => void,
+    langCode?: string
+  ): () => void {
+    initializeLocalStorage();
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARBITRATION_CASES) || '[]') as ArbitrationCase[];
+    const filterAndSort = (raw: ArbitrationCase[]) => {
+      let filtered = raw;
+      if (langCode && langCode !== 'all') {
+        filtered = raw.filter((c) => c.langCode.toLowerCase() === langCode.toLowerCase());
+      }
+      return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    };
+
+    callback(filterAndSort(local));
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'arbitration_cases'));
+      return onSnapshot(
+        q,
+        (snap) => {
+          const list: ArbitrationCase[] = [];
+          snap.forEach((d) => list.push(d.data() as ArbitrationCase));
+          localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify(list));
+          callback(filterAndSort(list));
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição em tempo real de arbitration_cases:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener para arbitration_cases:', err);
+      return () => {};
+    }
+  },
+
   async getArbitrationCaseById(caseId: string): Promise<ArbitrationCase | null> {
     const list = await this.getArbitrationCases();
     return list.find((c) => c.id === caseId) || null;
@@ -4791,6 +5037,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'arbitration_cases', arbCase.id), arbCase);
       } catch (err) {
         console.warn('Firestore saveArbitrationCase error:', err);
@@ -5021,6 +5268,48 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     return local;
   },
 
+  /**
+   * Subscrição em tempo real aos membros do Conselho de Arbitragem.
+   */
+  subscribeToArbitrationMembers(
+    callback: (members: ArbitrationCommitteeMember[]) => void,
+    langCode?: string
+  ): () => void {
+    initializeLocalStorage();
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARBITRATION_MEMBERS) || '[]') as ArbitrationCommitteeMember[];
+    const filter = (raw: ArbitrationCommitteeMember[]) => {
+      if (langCode && langCode !== 'all') {
+        return raw.filter((m) => m.langCode.toLowerCase() === langCode.toLowerCase());
+      }
+      return raw;
+    };
+
+    callback(filter(local));
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'arbitration_members'));
+      return onSnapshot(
+        q,
+        (snap) => {
+          const list: ArbitrationCommitteeMember[] = [];
+          snap.forEach((d) => list.push(d.data() as ArbitrationCommitteeMember));
+          localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify(list));
+          callback(filter(list));
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição em tempo real de arbitration_members:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener para arbitration_members:', err);
+      return () => {};
+    }
+  },
+
   async addArbitrationMember(
     member: Omit<ArbitrationCommitteeMember, 'id'>
   ): Promise<{ success: boolean; message: string; createdMember?: ArbitrationCommitteeMember }> {
@@ -5035,6 +5324,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'arbitration_members', id), newMember);
       } catch (err) {
         console.warn('Firestore addArbitrationMember error:', err);
@@ -5046,6 +5336,577 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       message: `Árbitro ${member.displayName} adicionado ao Conselho do idioma ${member.langCode.toUpperCase()}.`,
       createdMember: newMember,
     };
+  },
+
+  // ==========================================
+  // CONTATO DE EMERGÊNCIA (CASOS EXTREMOS)
+  // ==========================================
+
+  /**
+   * Obtém os chamados de emergência armazenados (Área Restrita da Administração).
+   * Apenas administradores podem visualizar a totalidade das denúncias.
+   */
+  async getEmergencyReports(user?: UserProfile | null): Promise<EmergencyReport[]> {
+    initializeLocalStorage();
+    const isAdminUser = user?.role === 'admin' || user?.email === 'pedrohenriquecardonaperes@gmail.com';
+    let allReports: EmergencyReport[] = [];
+
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'emergency_reports'));
+        const reports: EmergencyReport[] = [];
+        snap.forEach((d) => reports.push(d.data() as EmergencyReport));
+        if (reports.length > 0) {
+          localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify(reports));
+          allReports = reports;
+        }
+      } catch (err) {
+        console.warn('Firestore getEmergencyReports error:', err);
+      }
+    }
+
+    if (allReports.length === 0) {
+      allReports = JSON.parse(localStorage.getItem(STORAGE_KEYS.EMERGENCY_REPORTS) || '[]') as EmergencyReport[];
+    }
+
+    // Se for administrador, tem acesso irrestrito a todas as denúncias
+    if (isAdminUser) {
+      return allReports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    // Se não for administrador, filtra estritamente apenas para chamados abertos pelo próprio usuário
+    if (user) {
+      return allReports
+        .filter((r) => r.reporterUid === user.uid || (user.email && r.reporterEmail === user.email))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    // Visitantes não autenticados não recebem nenhuma denúncia
+    return [];
+  },
+
+  /**
+   * Subscrição em tempo real aos chamados de emergência (ÁREA RESTRITA: APENAS ADMINISTRADORES).
+   */
+  subscribeToEmergencyReports(
+    callback: (reports: EmergencyReport[]) => void,
+    user?: UserProfile | null
+  ): () => void {
+    initializeLocalStorage();
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEYS.EMERGENCY_REPORTS) || '[]') as EmergencyReport[];
+    const isAdminUser = user?.role === 'admin' || user?.email === 'pedrohenriquecardonaperes@gmail.com';
+    
+    const filterAndSort = (raw: EmergencyReport[]) => {
+      if (isAdminUser) {
+        // Administrador tem visão total
+        return raw.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
+      if (user) {
+        // Usuário regular autenticado só vê chamados que ele próprio abriu
+        return raw
+          .filter((r) => r.reporterUid === user.uid || (user.email && r.reporterEmail === user.email))
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
+      // Visitante anônimo não tem acesso a nenhuma denúncia
+      return [];
+    };
+
+    callback(filterAndSort(local));
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'emergency_reports'));
+      return onSnapshot(
+        q,
+        (snap) => {
+          const list: EmergencyReport[] = [];
+          snap.forEach((d) => list.push(d.data() as EmergencyReport));
+          localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify(list));
+          callback(filterAndSort(list));
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição em tempo real de emergency_reports:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener para emergency_reports:', err);
+      return () => {};
+    }
+  },
+
+  /**
+   * Busca um relatório de emergência pelo número de protocolo (ex: EMERG-2026-XXXX).
+   */
+  async getEmergencyReportByProtocol(protocolNumber: string): Promise<EmergencyReport | null> {
+    const clean = protocolNumber.trim().toUpperCase();
+    const all = await this.getEmergencyReports();
+    const foundLocal = all.find((r) => r.protocolNumber.toUpperCase() === clean || r.id === clean);
+    if (foundLocal) return foundLocal;
+
+    // Tenta buscar no Firebase Firestore pelo protocolo ou id
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        const q = query(collection(db, 'emergency_reports'), where('protocolNumber', '==', clean), limit(1));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          return snap.docs[0].data() as EmergencyReport;
+        }
+        // Tenta também por ID do documento
+        const docSnap = await getDoc(doc(db, 'emergency_reports', clean.toLowerCase()));
+        if (docSnap.exists()) {
+          return docSnap.data() as EmergencyReport;
+        }
+      } catch (err) {
+        console.warn('Firestore getEmergencyReportByProtocol error:', err);
+      }
+    }
+
+    return null;
+  },
+
+  /**
+   * Verifica se um endereço IP já possui um chamado de emergência registrado.
+   * Regra de negócio: Usuários não autenticados estão estritamente limitados a 1 envio por IP.
+   */
+  async checkEmergencyReportByIp(ip: string): Promise<EmergencyReport | null> {
+    if (!ip) return null;
+    initializeLocalStorage();
+
+    // 1. Checa cache local por IP
+    try {
+      const ipMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.EMERGENCY_IP_REPORTS) || '{}') as Record<string, EmergencyReport>;
+      if (ipMap[ip]) {
+        return ipMap[ip];
+      }
+    } catch {
+      // Ignora erro de parse
+    }
+
+    // 2. Checa se algum chamado em EMERGENCY_REPORTS bate com o IP
+    try {
+      const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.EMERGENCY_REPORTS) || '[]') as EmergencyReport[];
+      const match = all.find((r) => r.reporterIp === ip);
+      if (match) {
+        return match;
+      }
+    } catch {
+      // Ignora erro
+    }
+
+    // 3. Consulta Firestore em tempo real se ativo
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        const docRef = doc(db, 'emergency_ip_records', sanitizeIpForDocId(ip));
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const report = snap.data() as EmergencyReport;
+          // Atualiza cache local
+          this._saveEmergencyReportToIpCache(ip, report);
+          return report;
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao checar emergency_ip_records no Firestore:', err);
+      }
+    }
+
+    return null;
+  },
+
+  /**
+   * Subscrição em tempo real ao chamado de emergência associado a um determinado endereço IP.
+   * Usado para sincronizar em tempo real a página de criação/visualização de usuários não logados.
+   */
+  subscribeToEmergencyReportByIp(
+    ip: string,
+    callback: (report: EmergencyReport | null) => void
+  ): () => void {
+    if (!ip) {
+      callback(null);
+      return () => {};
+    }
+
+    initializeLocalStorage();
+
+    // Emite valor local imediatamente se existente
+    let initialFound: EmergencyReport | null = null;
+    try {
+      const ipMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.EMERGENCY_IP_REPORTS) || '{}') as Record<string, EmergencyReport>;
+      if (ipMap[ip]) initialFound = ipMap[ip];
+      if (!initialFound) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.EMERGENCY_REPORTS) || '[]') as EmergencyReport[];
+        initialFound = all.find((r) => r.reporterIp === ip) || null;
+      }
+    } catch {
+      // Ignora
+    }
+
+    callback(initialFound);
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      const sanitized = sanitizeIpForDocId(ip);
+      const docRef = doc(db, 'emergency_ip_records', sanitized);
+      return onSnapshot(
+        docRef,
+        (snap) => {
+          if (snap.exists()) {
+            const rep = snap.data() as EmergencyReport;
+            this._saveEmergencyReportToIpCache(ip, rep);
+            callback(rep);
+          } else {
+            callback(null);
+          }
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição em tempo real por IP:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener para IP:', err);
+      return () => {};
+    }
+  },
+
+  /**
+   * Subscrição em tempo real à visualização de um chamado específico pelo número de protocolo.
+   * Permite que o usuário consulte e veja respostas dos administradores em tempo real.
+   */
+  subscribeToEmergencyReportByProtocol(
+    protocolNumber: string,
+    callback: (report: EmergencyReport | null) => void
+  ): () => void {
+    const clean = protocolNumber.trim().toUpperCase();
+    if (!clean) {
+      callback(null);
+      return () => {};
+    }
+
+    initializeLocalStorage();
+
+    // 1. Emite valor local prévio
+    const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.EMERGENCY_REPORTS) || '[]') as EmergencyReport[];
+    const local = all.find((r) => r.protocolNumber.toUpperCase() === clean || r.id === clean) || null;
+    callback(local);
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      // Cria query para escutar alterações em tempo real do protocolo
+      const q = query(collection(db, 'emergency_reports'), where('protocolNumber', '==', clean), limit(1));
+      return onSnapshot(
+        q,
+        (snap) => {
+          if (!snap.empty) {
+            const rep = snap.docs[0].data() as EmergencyReport;
+            // Atualiza cache local
+            const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.EMERGENCY_REPORTS) || '[]') as EmergencyReport[];
+            const idx = list.findIndex((r) => r.id === rep.id);
+            if (idx >= 0) list[idx] = rep;
+            else list.unshift(rep);
+            localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify(list));
+            callback(rep);
+          } else if (local) {
+            callback(local);
+          } else {
+            callback(null);
+          }
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição do protocolo:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener de protocolo:', err);
+      return () => {};
+    }
+  },
+
+  _saveEmergencyReportToIpCache(ip: string, report: EmergencyReport | null) {
+    if (typeof window === 'undefined' || !ip) return;
+    try {
+      const ipMap = JSON.parse(localStorage.getItem(STORAGE_KEYS.EMERGENCY_IP_REPORTS) || '{}') as Record<string, EmergencyReport>;
+      if (report) {
+        ipMap[ip] = report;
+      } else {
+        delete ipMap[ip];
+      }
+      localStorage.setItem(STORAGE_KEYS.EMERGENCY_IP_REPORTS, JSON.stringify(ipMap));
+    } catch {
+      // Ignora erro
+    }
+  },
+
+  /**
+   * Cria e despacha um chamado de emergência imediato para a administração.
+   * Aplica a limitação de 1 chamado por IP para usuários não logados.
+   */
+  async createEmergencyReport(data: {
+    category: EmergencyCategory;
+    urgencyLevel: EmergencyUrgencyLevel;
+    title: string;
+    description: string;
+    involvedUrlsOrPages?: string[];
+    involvedUsers?: string[];
+    evidenceText?: string;
+    reporterName?: string;
+    reporterEmail?: string;
+    reporterUid?: string;
+    reporterIp?: string;
+    isAnonymous?: boolean;
+    requiresConfidentiality?: boolean;
+  }): Promise<EmergencyReport> {
+    const ip = data.reporterIp?.trim() || '127.0.0.1';
+
+    // REGRA DE SEGURANÇA: Se não estiver logado, não pode emitir mais de 1 chamado por IP
+    if (!data.reporterUid) {
+      const existing = await this.checkEmergencyReportByIp(ip);
+      if (existing) {
+        throw new Error(
+          `O endereço IP ${ip} já possui um chamado de emergência registrado (Protocolo: ${existing.protocolNumber}). Usuários não autenticados estão limitados a 1 relato por IP.`
+        );
+      }
+    }
+
+    const list = await this.getEmergencyReports();
+    const id = `emerg-${Date.now()}`;
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    const protocolNumber = `EMERG-2026-${randSuffix}`;
+    const now = new Date().toISOString();
+
+    const newReport: EmergencyReport = {
+      id,
+      protocolNumber,
+      category: data.category,
+      urgencyLevel: data.urgencyLevel,
+      title: data.title.trim(),
+      description: data.description.trim(),
+      involvedUrlsOrPages: data.involvedUrlsOrPages?.filter(Boolean) || [],
+      involvedUsers: data.involvedUsers?.filter(Boolean) || [],
+      evidenceText: data.evidenceText?.trim(),
+      reporterName: data.isAnonymous ? 'Notificante Anônimo' : data.reporterName?.trim(),
+      reporterEmail: data.reporterEmail?.trim(),
+      reporterUid: data.reporterUid,
+      reporterIp: ip,
+      reporterIpHash: hashIpAddress(ip),
+      isAnonymous: !!data.isAnonymous,
+      requiresConfidentiality: data.requiresConfidentiality !== false,
+      status: 'urgente_recebido',
+      createdAt: now,
+      updatedAt: now,
+      actionLogs: [
+        {
+          id: `log-${Date.now()}`,
+          adminUid: 'system',
+          adminName: 'Sistema de Alerta WikiZero',
+          timestamp: now,
+          action: 'Chamado de Emergência Registrado',
+          note: `Protocolo ${protocolNumber} gerado e emitido para o plantão da administração via IP ${ip}.`,
+        },
+      ],
+    };
+
+    list.unshift(newReport);
+    localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify(list));
+    this._saveEmergencyReportToIpCache(ip, newReport);
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        // Grava no acervo geral de emergências
+        await setDoc(doc(db, 'emergency_reports', id), newReport);
+        // Grava no índice direto de IP para consultas e limitação em tempo real de 1 por IP
+        if (ip) {
+          const sanitizedIp = sanitizeIpForDocId(ip);
+          await setDoc(doc(db, 'emergency_ip_records', sanitizedIp), newReport);
+        }
+      } catch (err) {
+        console.warn('Firestore createEmergencyReport error:', err);
+      }
+    }
+
+    return newReport;
+  },
+
+  /**
+   * Atualiza o status e parecer administrativo de um chamado de emergência.
+   */
+  async updateEmergencyReportStatus(
+    reportId: string,
+    status: EmergencyReportStatus,
+    adminUser: UserProfile,
+    resolutionNote?: string
+  ): Promise<void> {
+    const list = await this.getEmergencyReports();
+    const idx = list.findIndex((r) => r.id === reportId);
+    if (idx === -1) return;
+
+    const now = new Date().toISOString();
+    const report = list[idx];
+    report.status = status;
+    report.updatedAt = now;
+    if (resolutionNote) {
+      report.resolutionSummary = resolutionNote;
+    }
+
+    report.actionLogs.push({
+      id: `log-${Date.now()}`,
+      adminUid: adminUser.uid,
+      adminName: adminUser.displayName || adminUser.username || 'Administrador',
+      timestamp: now,
+      action: `Status alterado para [${status}]`,
+      note: resolutionNote || 'Atualização de status do atendimento de emergência.',
+    });
+
+    list[idx] = report;
+    localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify(list));
+    if (report.reporterIp) {
+      this._saveEmergencyReportToIpCache(report.reporterIp, report);
+    }
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'emergency_reports', reportId), report);
+        if (report.reporterIp) {
+          const sanitizedIp = sanitizeIpForDocId(report.reporterIp);
+          await setDoc(doc(db, 'emergency_ip_records', sanitizedIp), report);
+        }
+      } catch (err) {
+        console.warn('Firestore updateEmergencyReportStatus error:', err);
+      }
+    }
+  },
+
+  /**
+   * Atribui um chamado de emergência a um administrador específico.
+   */
+  async assignEmergencyReport(
+    reportId: string,
+    adminUid: string,
+    adminName: string,
+    adminUser: UserProfile
+  ): Promise<void> {
+    const list = await this.getEmergencyReports();
+    const idx = list.findIndex((r) => r.id === reportId);
+    if (idx === -1) return;
+
+    const now = new Date().toISOString();
+    const report = list[idx];
+    report.assignedAdminUid = adminUid;
+    report.assignedAdminName = adminName;
+    if (report.status === 'urgente_recebido') {
+      report.status = 'em_atendimento_imediato';
+    }
+    report.updatedAt = now;
+
+    report.actionLogs.push({
+      id: `log-${Date.now()}`,
+      adminUid: adminUser.uid,
+      adminName: adminUser.displayName || adminUser.username || 'Administrador',
+      timestamp: now,
+      action: 'Responsabilidade Assumida',
+      note: `O caso de emergência foi assumido pelo administrador ${adminName}.`,
+    });
+
+    list[idx] = report;
+    localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify(list));
+    if (report.reporterIp) {
+      this._saveEmergencyReportToIpCache(report.reporterIp, report);
+    }
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'emergency_reports', reportId), report);
+        if (report.reporterIp) {
+          const sanitizedIp = sanitizeIpForDocId(report.reporterIp);
+          await setDoc(doc(db, 'emergency_ip_records', sanitizedIp), report);
+        }
+      } catch (err) {
+        console.warn('Firestore assignEmergencyReport error:', err);
+      }
+    }
+  },
+
+  /**
+   * Adiciona uma nota ou log de ação técnica/jurídica ao chamado de emergência.
+   */
+  async addEmergencyActionLog(
+    reportId: string,
+    action: string,
+    note: string,
+    adminUser: UserProfile
+  ): Promise<void> {
+    const list = await this.getEmergencyReports();
+    const idx = list.findIndex((r) => r.id === reportId);
+    if (idx === -1) return;
+
+    const now = new Date().toISOString();
+    const report = list[idx];
+    report.updatedAt = now;
+    report.actionLogs.push({
+      id: `log-${Date.now()}`,
+      adminUid: adminUser.uid,
+      adminName: adminUser.displayName || adminUser.username || 'Administrador',
+      timestamp: now,
+      action,
+      note,
+    });
+
+    list[idx] = report;
+    localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify(list));
+    if (report.reporterIp) {
+      this._saveEmergencyReportToIpCache(report.reporterIp, report);
+    }
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'emergency_reports', reportId), report);
+        if (report.reporterIp) {
+          const sanitizedIp = sanitizeIpForDocId(report.reporterIp);
+          await setDoc(doc(db, 'emergency_ip_records', sanitizedIp), report);
+        }
+      } catch (err) {
+        console.warn('Firestore addEmergencyActionLog error:', err);
+      }
+    }
+  },
+
+  /**
+   * Exclui um registro de emergência (apenas super-administrador).
+   */
+  async deleteEmergencyReport(reportId: string): Promise<void> {
+    let list = await this.getEmergencyReports();
+    const target = list.find((r) => r.id === reportId);
+    list = list.filter((r) => r.id !== reportId);
+    localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify(list));
+    if (target?.reporterIp) {
+      this._saveEmergencyReportToIpCache(target.reporterIp, null);
+    }
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await deleteDoc(doc(db, 'emergency_reports', reportId));
+        if (target?.reporterIp) {
+          const sanitizedIp = sanitizeIpForDocId(target.reporterIp);
+          await deleteDoc(doc(db, 'emergency_ip_records', sanitizedIp));
+        }
+      } catch (err) {
+        console.warn('Firestore deleteEmergencyReport error:', err);
+      }
+    }
   },
 
   async clearLocalCache(): Promise<void> {

@@ -166,7 +166,7 @@ service cloud.firestore {
     // ✅ Pedidos de desbloqueio de contas (Usuários bloqueados PODEM criar pedidos de apelação)
     match /unblock_requests/{requestId} {
       allow read: if true;
-      allow create, update: if isAuthenticated();
+      allow create, update: if true;
       allow delete: if isAdmin();
     }
 
@@ -179,6 +179,21 @@ service cloud.firestore {
 
     // ✅ Central de ajuda e tickets da administração
     match /admin_tickets/{ticketId} {
+      allow read: if true;
+      allow create, update: if (request.auth == null || isNotBanned());
+      allow delete: if isAdmin();
+    }
+
+    // ✅ Chamados e notificações de contato de emergência em casos extremos (ÁREA RESTRITA DA ADMINISTRAÇÃO)
+    match /emergency_reports/{reportId} {
+      allow get: if true;
+      allow list: if isAdmin() || (isAuthenticated() && resource.data.reporterUid == request.auth.uid);
+      allow create: if (request.auth == null || isNotBanned());
+      allow update, delete: if isAdmin();
+    }
+
+    // ✅ Registros de limitação e consulta de chamados por IP (1 chamado por usuário não logado)
+    match /emergency_ip_records/{ipRecordId} {
       allow read: if true;
       allow create, update: if (request.auth == null || isNotBanned());
       allow delete: if isAdmin();

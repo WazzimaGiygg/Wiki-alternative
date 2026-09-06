@@ -188,6 +188,9 @@ export function getCanonicalUid(
     case 'contact-admin':
       return 'Special:ContactAdmin';
 
+    case 'emergency-contact':
+      return 'Special:EmergencyContact';
+
     case 'admin-firebase':
       return 'Special:AdminFirebase';
 
@@ -332,6 +335,15 @@ export function resolveNavigationUid(
     'contact-admin': { view: 'contact-admin' },
     'contato-admin': { view: 'contact-admin' },
     'suporte': { view: 'contact-admin' },
+
+    'special:emergencycontact': { view: 'emergency-contact' },
+    'special:emergency': { view: 'emergency-contact' },
+    'special:contatoemergencia': { view: 'emergency-contact' },
+    'special:emergencia': { view: 'emergency-contact' },
+    'emergency-contact': { view: 'emergency-contact' },
+    'emergency': { view: 'emergency-contact' },
+    'emergencia': { view: 'emergency-contact' },
+    'contato-emergencia': { view: 'emergency-contact' },
 
     'special:adminfirebase': { view: 'admin-firebase' },
     'admin-firebase': { view: 'admin-firebase' },

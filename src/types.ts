@@ -504,6 +504,7 @@ export type ViewMode =
   | 'unblock-requests'
   | 'promotion-requests'
   | 'contact-admin'
+  | 'emergency-contact'
   | 'arbitration'
   | 'security'
   | 'donation'
@@ -822,4 +823,62 @@ export interface SaveVersionInput {
   comment: string;
   previousVersion?: number | null;
 }
+
+// ==========================================
+// CONTATO DE EMERGÊNCIA (CASOS EXTREMOS)
+// ==========================================
+
+export type EmergencyCategory =
+  | 'ameaca_vida_violencia'     // Ameaça crível de dano físico iminente, atentado ou autoextermínio
+  | 'doxxing_dados_sensiveis'   // Vazamento criminoso de dados de alto risco (LGPD severa, endereço, CPF, fotos íntimas)
+  | 'seguranca_menores_csam'    // Exploração ou assédio/ameaça grave a crianças/adolescentes (Zero Tolerância)
+  | 'ataque_infraestrutura'     // Comprometimento crítico do sistema, invasão de conta root/admin, injeção de malware
+  | 'ordem_judicial_urgente'    // Intimação de autoridade judicial/policial com prazo de plantão
+  | 'outro_extremo';            // Outro perigo imediato extremo
+
+export type EmergencyUrgencyLevel = 'critica_imediata' | 'alta_gravidade';
+
+export type EmergencyReportStatus =
+  | 'urgente_recebido'
+  | 'em_atendimento_imediato'
+  | 'resolvido_mitigado'
+  | 'encaminhado_autoridades'
+  | 'encerrado_invalido';
+
+export interface EmergencyReportActionLog {
+  id: string;
+  adminUid: string;
+  adminName: string;
+  timestamp: string;
+  action: string;
+  note: string;
+}
+
+export interface EmergencyReport {
+  id: string;
+  protocolNumber: string; // Ex: EMERG-2026-XXXX
+  category: EmergencyCategory;
+  urgencyLevel: EmergencyUrgencyLevel;
+  title: string;
+  description: string;
+  involvedUrlsOrPages?: string[];
+  involvedUsers?: string[];
+  evidenceText?: string;
+  reporterName?: string;
+  reporterEmail?: string;
+  reporterUid?: string;
+  reporterIp?: string;
+  reporterIpHash?: string;
+  isAnonymous: boolean;
+  requiresConfidentiality: boolean;
+  status: EmergencyReportStatus;
+  createdAt: string;
+  updatedAt: string;
+  assignedAdminUid?: string;
+  assignedAdminName?: string;
+  adminNotes?: string;
+  resolutionSummary?: string;
+  actionLogs: EmergencyReportActionLog[];
+}
+
 

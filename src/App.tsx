@@ -12,6 +12,7 @@ import { CheckUserView } from './components/CheckUserView';
 import { UnblockRequestsView } from './components/UnblockRequestsView';
 import { PromotionRequestsView } from './components/PromotionRequestsView';
 import { ContactAdminView } from './components/ContactAdminView';
+import { EmergencyContactView } from './components/EmergencyContactView';
 import { FirebaseAdminDashboard } from './components/FirebaseAdminDashboard';
 import { CreatePageModal } from './components/CreatePageModal';
 import { CookieBanner } from './components/CookieBanner';
@@ -812,6 +813,7 @@ export default function App() {
               onNavigateToPage={handleSelectPage}
               onNavigateToUser={handleNavigateToUser}
               onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
+              onNavigateToEmergencyContact={() => handleNavigate('emergency-contact')}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
@@ -832,6 +834,7 @@ export default function App() {
               onNavigateToPage={handleSelectPage}
               onNavigateToUser={handleNavigateToUser}
               onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
+              onNavigateToEmergencyContact={() => handleNavigate('emergency-contact')}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
@@ -934,6 +937,20 @@ export default function App() {
             <ContactAdminView
               currentUser={user}
               onNavigateToUser={handleNavigateToUser}
+              onNavigateToEmergencyContact={() => handleNavigate('emergency-contact')}
+              onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'emergency-contact' && (
+            <EmergencyContactView
+              currentUser={user}
+              onNavigateToArticle={handleSelectArticle}
+              onNavigateToUser={handleNavigateToUser}
+              onNavigateToCheckUser={handleNavigateToCheckUser}
+              onLoginClick={handleLoginClick}
+              onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
+              onNavigateToArbCom={() => handleNavigate('arbitration')}
               onBack={() => handleNavigate('hub')}
             />
           )}
