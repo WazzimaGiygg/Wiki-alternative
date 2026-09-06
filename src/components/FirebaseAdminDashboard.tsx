@@ -20,6 +20,7 @@ import {
   Trash2,
   UploadCloud,
   Lock,
+  FileCode,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle } from '../types';
 import { StorageService } from '../services/storageService';
@@ -30,6 +31,7 @@ interface FirebaseAdminDashboardProps {
   articles: WikiArticle[];
   onNavigateToPage?: (pageUid: string) => void;
   onNavigateToArticle?: (articleId: string) => void;
+  onNavigateToUpdates?: () => void;
   onBack?: () => void;
 }
 
@@ -39,6 +41,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
   articles,
   onNavigateToPage,
   onNavigateToArticle,
+  onNavigateToUpdates,
   onBack,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'devconfig' | 'collections' | 'sync' | 'security' | 'raw'>('overview');
@@ -138,6 +141,16 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {onNavigateToUpdates && (
+              <button
+                onClick={onNavigateToUpdates}
+                className="px-3.5 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs"
+                title="Abrir painel de Notas de Atualização com importador JSON"
+              >
+                <FileCode size={14} />
+                <span>Notas de Atualização (JSON)</span>
+              </button>
+            )}
             <button
               onClick={handleTestConnection}
               disabled={isTesting}

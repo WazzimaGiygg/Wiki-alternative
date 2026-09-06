@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { ACTIVE_FIREBASE_CONFIG } from '../config/firebaseCustomConfig';
 
@@ -55,7 +55,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 }
 
 let appInstance: ReturnType<typeof initializeApp> | null = null;
-let dbInstance: ReturnType<typeof getFirestore> | null = null;
+let dbInstance: Firestore | null = null;
 let authInstance: ReturnType<typeof getAuth> | null = null;
 
 export function getFirebaseApp() {
@@ -65,11 +65,23 @@ export function getFirebaseApp() {
   return appInstance;
 }
 
-export function getDb() {
+export function getDb(): Firestore {
   if (!dbInstance) {
     const app = getFirebaseApp();
     const dbId = ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId;
-    dbInstance = dbId && dbId !== '(default)' ? getFirestore(app, dbId) : getFirestore(app);
+    const settings = {
+      experimentalForceLongPolling: true,
+    };
+    try {
+      dbInstance = dbId && dbId !== '(default)'
+        ? initializeFirestore(app, settings, dbId)
+        : initializeFirestore(app, settings);
+    } catch {
+      // Caso já tenha sido inicializado anteriormente, utiliza a instância existente
+      dbInstance = dbId && dbId !== '(default)'
+        ? getFirestore(app, dbId)
+        : getFirestore(app);
+    }
   }
   return dbInstance;
 }

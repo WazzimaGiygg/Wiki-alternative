@@ -954,6 +954,7 @@ export default function App() {
               articles={articles}
               onNavigateToPage={handleSelectPage}
               onNavigateToArticle={handleSelectArticle}
+              onNavigateToUpdates={() => handleNavigate('site-updates')}
               onBack={() => handleNavigate('hub')}
             />
           )}

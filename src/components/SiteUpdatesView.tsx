@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Sparkles,
   Search,
@@ -27,6 +27,13 @@ import {
   Terminal,
   Share2,
   FileText,
+  UploadCloud,
+  FileCode,
+  Download,
+  AlertCircle,
+  Eye,
+  Sliders,
+  X,
 } from 'lucide-react';
 import { SystemUpdateEntry, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -52,6 +59,9 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
 
   // New Update Modal State
   const [showAddModal, setShowAddModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'json' | 'manual'>('json');
+
+  // Manual Form State
   const [newVersion, setNewVersion] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState<SystemUpdateEntry['category']>('improvement');
@@ -62,7 +72,28 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'editor';
+  // JSON File & Text Import States
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [jsonInputText, setJsonInputText] = useState('');
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [uploadedFileSize, setUploadedFileSize] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [notifyUsersOnImport, setNotifyUsersOnImport] = useState(true);
+  const [replaceAllExisting, setReplaceAllExisting] = useState(false);
+  const [isImportingJson, setIsImportingJson] = useState(false);
+  const [jsonActiveSubTab, setJsonActiveSubTab] = useState<'upload' | 'raw'>('upload');
+
+  const isAdmin =
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'moderador' ||
+    currentUser?.role === 'editor' ||
+    currentUser?.email === 'pedrohenriquecardonaperes@gmail.com';
+
+  // Interpretação e validação do JSON em tempo real
+  const parsedJsonResult = useMemo(() => {
+    if (!jsonInputText.trim()) return null;
+    return StorageService.parseSystemUpdatesJson(jsonInputText);
+  }, [jsonInputText]);
 
   const loadUpdates = async () => {
     setLoading(true);
@@ -78,6 +109,12 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
 
   useEffect(() => {
     loadUpdates();
+    const unsub = StorageService.subscribeToSystemUpdates((liveUpdates) => {
+      if (liveUpdates && liveUpdates.length > 0) {
+        setUpdates(liveUpdates);
+      }
+    });
+    return () => unsub();
   }, []);
 
   const handleRefresh = async () => {
@@ -179,6 +216,110 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
     downloadAnchor.click();
     downloadAnchor.remove();
     showToast('Histórico de atualizações exportado em JSON.');
+  };
+
+  const handleFileSelected = (file: File) => {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.json') && file.type && !file.type.includes('json')) {
+      alert('Por favor, selecione um arquivo válido no formato JSON (.json).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = (e.target?.result as string) || '';
+      setJsonInputText(content);
+      setUploadedFileName(file.name);
+      const sizeStr = file.size > 1024 ? `${(file.size / 1024).toFixed(1)} KB` : `${file.size} B`;
+      setUploadedFileSize(sizeStr);
+      showToast(`Arquivo "${file.name}" carregado e interpretado.`);
+    };
+    reader.onerror = () => {
+      alert('Erro ao ler o arquivo JSON selecionado.');
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileSelected(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateStr = StorageService.getSystemUpdateJsonTemplate();
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(templateStr);
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', 'template_notas_atualizacao_wikizero.json');
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showToast('Modelo de arquivo JSON baixado com sucesso.');
+  };
+
+  const handleLoadSampleJson = () => {
+    const templateStr = StorageService.getSystemUpdateJsonTemplate();
+    setJsonInputText(templateStr);
+    setUploadedFileName('modelo_oficial_exemplo.json');
+    setUploadedFileSize('1.9 KB');
+    showToast('Exemplo oficial carregado no interpretador.');
+  };
+
+  const handleClearJson = () => {
+    setJsonInputText('');
+    setUploadedFileName(null);
+    setUploadedFileSize(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    showToast('Editor de JSON limpo.');
+  };
+
+  const handleConfirmJsonImport = async () => {
+    if (!parsedJsonResult || !parsedJsonResult.valid || parsedJsonResult.entries.length === 0) {
+      alert('Nenhuma nota válida encontrada para publicação. Verifique as mensagens de erro abaixo.');
+      return;
+    }
+
+    if (
+      replaceAllExisting &&
+      !window.confirm(
+        '⚠️ ATENÇÃO: Você selecionou "Substituir histórico existente". Todas as notas anteriores serão substituídas por este arquivo JSON. Deseja continuar?'
+      )
+    ) {
+      return;
+    }
+
+    setIsImportingJson(true);
+    try {
+      const res = await StorageService.addSystemUpdatesBatch(parsedJsonResult.entries, {
+        replaceAll: replaceAllExisting,
+        notifyUsers: notifyUsersOnImport,
+        authorFallback: currentUser?.displayName || currentUser?.username || 'Administração da WikiZero',
+      });
+
+      const updatedList = await StorageService.getSystemUpdates();
+      setUpdates(updatedList);
+      setShowAddModal(false);
+      handleClearJson();
+      showToast(`Sucesso! ${res.count} nota(s) de atualização salva(s) e publicadas no sistema.`);
+    } catch (err: any) {
+      console.error('Erro ao importar JSON de atualizações:', err);
+      alert(`Falha ao persistir notas de atualização: ${err?.message || 'Erro desconhecido'}`);
+    } finally {
+      setIsImportingJson(false);
+    }
   };
 
   // Filter updates
@@ -419,14 +560,34 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
             </button>
 
             {isAdmin && (
-              <button
-                id="btn-open-add-update"
-                onClick={() => setShowAddModal(true)}
-                className="px-3 py-2 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 shadow-xs transition active:scale-95"
-              >
-                <Plus size={15} />
-                <span>Registrar Melhoria</span>
-              </button>
+              <>
+                <button
+                  id="btn-open-json-import"
+                  onClick={() => {
+                    setModalMode('json');
+                    setShowAddModal(true);
+                  }}
+                  className="px-3 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-xs transition active:scale-95"
+                  title="Importar e interpretar notas de atualização a partir de um arquivo JSON"
+                >
+                  <FileCode size={15} />
+                  <span>Importar JSON (Admin)</span>
+                </button>
+
+                <button
+                  id="btn-open-add-update"
+                  onClick={() => {
+                    setModalMode('manual');
+                    setShowAddModal(true);
+                  }}
+                  className="px-3 py-2 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 shadow-xs transition active:scale-95"
+                  title="Registrar manualmente uma melhoria no sistema"
+                >
+                  <Plus size={15} />
+                  <span className="hidden sm:inline">Registrar Manual</span>
+                  <span className="sm:hidden">Manual</span>
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -658,21 +819,31 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
         </p>
       </div>
 
-      {/* Modal: Registrar Nova Melhoria no Sistema */}
+      {/* Modal: Adicionar Notas de Atualização (Administração) */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5 animate-in zoom-in-95 duration-150 my-8">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5 animate-in zoom-in-95 duration-150 my-8">
+            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-                  <Plus size={18} />
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`p-2 rounded-lg ${
+                    modalMode === 'json'
+                      ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400'
+                  }`}
+                >
+                  {modalMode === 'json' ? <FileCode size={20} /> : <Plus size={20} />}
                 </div>
                 <div>
-                  <h3 className="font-serif-heading font-bold text-base text-slate-900 dark:text-white">
-                    Registrar Nova Melhoria do Sistema
+                  <h3 className="font-serif-heading font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    Gestão de Notas de Atualização
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+                      Administração
+                    </span>
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Insira uma nova nota de versão no changelog público da WikiZero
+                    Publique melhorias no changelog público da WikiZero interpretando arquivos JSON ou preenchendo manualmente
                   </p>
                 </div>
               </div>
@@ -684,136 +855,427 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleAddUpdateSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Versão */}
+            {/* Mode Switcher Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+              <button
+                type="button"
+                onClick={() => setModalMode('json')}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition ${
+                  modalMode === 'json'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <FileCode size={14} />
+                <span>Arquivo JSON (Interpretação Inteligente)</span>
+                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-mono">Recomendado</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setModalMode('manual')}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition ${
+                  modalMode === 'manual'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Plus size={14} />
+                <span>Formulário Manual</span>
+              </button>
+            </div>
+
+            {/* TAB 1: JSON IMPORT & INTERPRETATION */}
+            {modalMode === 'json' && (
+              <div className="space-y-4 text-xs">
+                {/* Drag and Drop Upload Area */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2 ${
+                    isDragging
+                      ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 scale-[1.01]'
+                      : uploadedFileName
+                      ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/20 dark:bg-emerald-950/10 hover:border-emerald-400'
+                      : 'border-slate-300 dark:border-slate-700 hover:border-emerald-400 bg-slate-50/50 dark:bg-slate-800/50'
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleFileSelected(e.target.files[0])}
+                  />
+                  <div className="p-2.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+                    <UploadCloud size={24} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                      {uploadedFileName
+                        ? `Arquivo selecionado: ${uploadedFileName}`
+                        : 'Arraste e solte o arquivo .json de atualização aqui ou clique para selecionar'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      {uploadedFileSize
+                        ? `Tamanho: ${uploadedFileSize} • Dados prontos para interpretação`
+                        : 'Suporta objetos únicos de atualização ou arrays completos com múltiplas versões'}
+                    </p>
+                  </div>
+                  {uploadedFileName && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold underline mt-1">
+                      Clique para trocar de arquivo
+                    </span>
+                  )}
+                </div>
+
+                {/* Editor / Visualizador do Código JSON com Ações */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                      <Code2 size={13} />
+                      <span>Conteúdo JSON Interpretado:</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleLoadSampleJson}
+                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                      >
+                        Carregar Exemplo Modelo
+                      </button>
+                      <span className="text-slate-300 dark:text-slate-700">|</span>
+                      <button
+                        type="button"
+                        onClick={handleDownloadTemplate}
+                        className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-semibold flex items-center gap-1"
+                        title="Baixar arquivo JSON modelo para preenchimento"
+                      >
+                        <Download size={12} />
+                        <span>Baixar Modelo (.json)</span>
+                      </button>
+                      {jsonInputText && (
+                        <>
+                          <span className="text-slate-300 dark:text-slate-700">|</span>
+                          <button
+                            type="button"
+                            onClick={handleClearJson}
+                            className="text-[11px] text-rose-500 hover:underline font-semibold"
+                          >
+                            Limpar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <textarea
+                    rows={5}
+                    value={jsonInputText}
+                    onChange={(e) => setJsonInputText(e.target.value)}
+                    placeholder='Cole aqui seu JSON de notas de atualização ou carregue um arquivo .json acima...'
+                    className="w-full p-2.5 bg-slate-950 text-slate-100 font-mono text-[11px] leading-relaxed border border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                </div>
+
+                {/* Feedback de Interpretação e Validação */}
+                {!jsonInputText.trim() && (
+                  <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg text-xs text-blue-800 dark:text-blue-300 flex items-start gap-2.5">
+                    <Info size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Interpretação automática de esquemas:</span>
+                      <p className="text-[11px] text-blue-700 dark:text-blue-300 mt-0.5 leading-relaxed">
+                        O site interpreta chaves tanto em inglês (<code>version</code>, <code>title</code>, <code>summary</code>, <code>highlights</code>) quanto em português (<code>versao</code>, <code>titulo</code>, <code>resumo</code>, <code>destaques</code>). Você pode fazer upload de um arquivo ou clicar em <strong>"Carregar Exemplo Modelo"</strong>.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {parsedJsonResult && !parsedJsonResult.valid && (
+                  <div className="p-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-lg text-xs text-rose-800 dark:text-rose-300 space-y-1.5 animate-in fade-in duration-150">
+                    <div className="flex items-center gap-1.5 font-bold text-rose-700 dark:text-rose-200">
+                      <AlertCircle size={15} />
+                      <span>Erros encontrados na interpretação do JSON:</span>
+                    </div>
+                    <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
+                      {parsedJsonResult.errors.map((err, idx) => (
+                        <li key={idx}>{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {parsedJsonResult && parsedJsonResult.valid && (
+                  <div className="space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between text-xs p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-lg text-emerald-800 dark:text-emerald-300">
+                      <div className="flex items-center gap-2 font-bold">
+                        <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" />
+                        <span>
+                          {parsedJsonResult.entries.length} nota(s) de atualização interpretada(s) com sucesso!
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-mono bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded text-emerald-800 dark:text-emerald-200 font-bold">
+                        Schema Válido
+                      </span>
+                    </div>
+
+                    {/* Preview Cards das Notas Interpretadas */}
+                    <div className="max-h-56 overflow-y-auto space-y-2 pr-1 border border-slate-200 dark:border-slate-800 rounded-lg p-2 bg-slate-50/50 dark:bg-slate-900/50">
+                      <div className="text-[10px] uppercase font-bold text-slate-400 px-1">
+                        Pré-visualização das Notas que serão publicadas:
+                      </div>
+                      {parsedJsonResult.entries.map((entry, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg space-y-1.5 shadow-2xs"
+                        >
+                          <div className="flex items-center justify-between flex-wrap gap-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                {entry.version}
+                              </span>
+                              <span className="font-bold text-slate-900 dark:text-white">
+                                {entry.title}
+                              </span>
+                              {entry.badge && (
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                  {entry.badge}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-slate-500 font-mono">
+                              {entry.date} • Categoria: {entry.category}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                            {entry.summary}
+                          </p>
+
+                          {entry.highlights && entry.highlights.length > 0 && (
+                            <div className="pt-1 border-t border-slate-100 dark:border-slate-700 space-y-0.5">
+                              <span className="text-[10px] font-bold text-slate-400">
+                                Destaques ({entry.highlights.length}):
+                              </span>
+                              <ul className="text-[11px] text-slate-700 dark:text-slate-300 space-y-0.5 list-disc pl-4">
+                                {entry.highlights.slice(0, 3).map((hl, hidx) => (
+                                  <li key={hidx} className="line-clamp-1">{hl}</li>
+                                ))}
+                                {entry.highlights.length > 3 && (
+                                  <li className="text-[10px] text-slate-400 list-none italic font-semibold">
+                                    + mais {entry.highlights.length - 3} item(ns)...
+                                  </li>
+                                )}
+                              </ul>
+                            </div>
+                          )}
+
+                          {entry.affectedComponents && entry.affectedComponents.length > 0 && (
+                            <div className="flex items-center gap-1 flex-wrap pt-0.5">
+                              <span className="text-[10px] text-slate-400 font-bold">Módulos:</span>
+                              {entry.affectedComponents.map((comp, cidx) => (
+                                <span
+                                  key={cidx}
+                                  className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-mono"
+                                >
+                                  {comp}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Opções de Publicação */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={notifyUsersOnImport}
+                      onChange={(e) => setNotifyUsersOnImport(e.target.checked)}
+                      className="rounded text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="font-medium">
+                      🔔 Disparar notificação comunitária para todos os usuários da WikiZero
+                    </span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={replaceAllExisting}
+                      onChange={(e) => setReplaceAllExisting(e.target.checked)}
+                      className="rounded text-amber-600 focus:ring-amber-500"
+                    />
+                    <span className="font-medium text-amber-700 dark:text-amber-400">
+                      ⚠️ Substituir todo o histórico existente por este arquivo JSON (caso desmarcado, adiciona/mescla)
+                    </span>
+                  </label>
+                </div>
+
+                {/* Botões de Ação */}
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmJsonImport}
+                    disabled={!parsedJsonResult?.valid || isImportingJson}
+                    className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
+                  >
+                    <CheckCircle2 size={15} />
+                    <span>
+                      {isImportingJson
+                        ? 'Persistindo e Sincronizando...'
+                        : `Publicar ${parsedJsonResult?.valid ? parsedJsonResult.entries.length : ''} Nota(s) no Sistema`}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: MANUAL FORM */}
+            {modalMode === 'manual' && (
+              <form onSubmit={handleAddUpdateSubmit} className="space-y-4 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Versão */}
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">
+                      Versão <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: v3.3.1 ou v3.4.0"
+                      value={newVersion}
+                      onChange={(e) => setNewVersion(e.target.value)}
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  {/* Categoria */}
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">
+                      Categoria <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value as any)}
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    >
+                      <option value="feature">✨ Novidade (Feature)</option>
+                      <option value="mobile">📱 Mobile & Touch</option>
+                      <option value="improvement">⚡ Melhoria Geral</option>
+                      <option value="compliance">🔒 Segurança & LGPD</option>
+                      <option value="backend">☁️ Backend & Firestore</option>
+                      <option value="design">🎨 Design & i18n</option>
+                      <option value="fix">🛠️ Correção de Erro (Fix)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Título */}
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 dark:text-slate-300">
-                    Versão <span className="text-rose-500">*</span>
+                    Título da Atualização <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Ex: v3.3.1 ou v3.4.0"
-                    value={newVersion}
-                    onChange={(e) => setNewVersion(e.target.value)}
+                    placeholder="Ex: Otimização de Performance e Cache Offline no PWA"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
                     className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                   />
                 </div>
 
-                {/* Categoria */}
+                {/* Resumo */}
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 dark:text-slate-300">
-                    Categoria <span className="text-rose-500">*</span>
+                    Resumo Explicativo <span className="text-rose-500">*</span>
                   </label>
-                  <select
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value as any)}
+                  <textarea
+                    required
+                    rows={2}
+                    placeholder="Breve descrição do que foi modificado e benefícios para o usuário..."
+                    value={newSummary}
+                    onChange={(e) => setNewSummary(e.target.value)}
                     className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                  >
-                    <option value="feature">✨ Novidade (Feature)</option>
-                    <option value="mobile">📱 Mobile & Touch</option>
-                    <option value="improvement">⚡ Melhoria Geral</option>
-                    <option value="compliance">🔒 Segurança & LGPD</option>
-                    <option value="backend">☁️ Backend & Firestore</option>
-                    <option value="design">🎨 Design & i18n</option>
-                    <option value="fix">🛠️ Correção de Erro (Fix)</option>
-                  </select>
+                  />
                 </div>
-              </div>
 
-              {/* Título */}
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 dark:text-slate-300">
-                  Título da Atualização <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Otimização de Performance e Cache Offline no PWA"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                />
-              </div>
-
-              {/* Resumo */}
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 dark:text-slate-300">
-                  Resumo Explicativo <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  required
-                  rows={2}
-                  placeholder="Breve descrição do que foi modificado e benefícios para o usuário..."
-                  value={newSummary}
-                  onChange={(e) => setNewSummary(e.target.value)}
-                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                />
-              </div>
-
-              {/* Destaques (um por linha) */}
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 dark:text-slate-300">
-                  Itens Implementados (um por linha)
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Ex:&#10;Implementação do cache local IndexedDB&#10;Novo botão de sincronização manual&#10;Correção de bug de rolagem no Safari"
-                  value={newHighlightsText}
-                  onChange={(e) => setNewHighlightsText(e.target.value)}
-                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden font-mono"
-                />
-              </div>
-
-              {/* Componentes Afetados & Badge */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Destaques (um por linha) */}
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 dark:text-slate-300">
-                    Componentes Afetados (separados por vírgula)
+                    Itens Implementados (um por linha)
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Header.tsx, storageService.ts"
-                    value={newComponentsText}
-                    onChange={(e) => setNewComponentsText(e.target.value)}
+                  <textarea
+                    rows={4}
+                    placeholder="Ex:&#10;Implementação do cache local IndexedDB&#10;Novo botão de sincronização manual&#10;Correção de bug de rolagem no Safari"
+                    value={newHighlightsText}
+                    onChange={(e) => setNewHighlightsText(e.target.value)}
                     className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden font-mono"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">
-                    Tag / Selo Opcional
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Destaque, Performance, Hotfix"
-                    value={newBadge}
-                    onChange={(e) => setNewBadge(e.target.value)}
-                    className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
-                  />
-                </div>
-              </div>
+                {/* Componentes Afetados & Badge */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">
+                      Componentes Afetados (separados por vírgula)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Header.tsx, storageService.ts"
+                      value={newComponentsText}
+                      onChange={(e) => setNewComponentsText(e.target.value)}
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden font-mono"
+                    />
+                  </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
-                >
-                  <CheckCircle2 size={15} />
-                  <span>{isSubmitting ? 'Salvando...' : 'Salvar e Publicar'}</span>
-                </button>
-              </div>
-            </form>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">
+                      Tag / Selo Opcional
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Destaque, Performance, Hotfix"
+                      value={newBadge}
+                      onChange={(e) => setNewBadge(e.target.value)}
+                      className="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
+                  >
+                    <CheckCircle2 size={15} />
+                    <span>{isSubmitting ? 'Salvando...' : 'Salvar e Publicar'}</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

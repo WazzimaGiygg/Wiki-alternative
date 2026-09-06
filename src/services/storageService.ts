@@ -1,4 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
+import { getDb, getAuthSafe } from './firebase';
 import {
   getFirestore,
   collection,
@@ -75,11 +76,9 @@ let auth: ReturnType<typeof getAuth> | null = null;
 let firebaseActive = false;
 
 try {
-  const app = getApps().length ? getApps()[0] : initializeApp(ACTIVE_FIREBASE_CONFIG.firebaseConfig);
-  const dbId = ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId;
-  db = dbId && dbId !== '(default)' ? getFirestore(app, dbId) : getFirestore(app);
-  auth = getAuth(app);
-  firebaseActive = true;
+  db = getDb();
+  auth = getAuthSafe();
+  firebaseActive = !!db;
 } catch (e) {
   console.warn('Firebase initialized in offline/local storage fallback mode', e);
 }
@@ -3103,12 +3102,12 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       return { success: false, message: 'Firebase não está ativo ou instância de Firestore não inicializada.' };
     }
     try {
-      const pingDoc = doc(db, '_health_check', 'ping');
-      await setDoc(pingDoc, { ping: true, timestamp: serverTimestamp() });
-      const snap = await getDoc(pingDoc);
+      await ensureFirebaseAuth();
+      // Testa consulta de leitura não-destrutiva em coleção pública com limite 1
+      await getDocs(query(collection(db, 'system_updates'), limit(1)));
       const latencyMs = Date.now() - start;
       return {
-        success: snap.exists(),
+        success: true,
         message: `Conexão com Firestore autenticada e operacional (${latencyMs}ms).`,
         latencyMs,
       };
@@ -3495,6 +3494,375 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     }
 
     return updates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  },
+
+  subscribeToSystemUpdates(callback: (updates: SystemUpdateEntry[]) => void): () => void {
+    if (!firebaseActive || !db) {
+      initializeLocalStorage();
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES);
+        callback(raw ? JSON.parse(raw) : []);
+      } catch {
+        callback([]);
+      }
+      return () => {};
+    }
+
+    try {
+      const q = query(collection(db, 'system_updates'));
+      const unsubscribe = onSnapshot(
+        q,
+        (snap) => {
+          const list: SystemUpdateEntry[] = [];
+          snap.forEach((d) => {
+            list.push(d.data() as SystemUpdateEntry);
+          });
+          const sorted = list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(sorted));
+          callback(sorted);
+        },
+        (err) => {
+          console.warn('[StorageService] Erro na subscrição de system_updates:', err);
+        }
+      );
+      return unsubscribe;
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener de system_updates:', err);
+      return () => {};
+    }
+  },
+
+  /**
+   * Interpreta e valida dados JSON brutos ou objetos contendo notas de atualização.
+   * Suporta objeto único, array de atualizações ou payloads envelopados.
+   */
+  parseSystemUpdatesJson(jsonInput: string | any): {
+    valid: boolean;
+    entries: Array<Omit<SystemUpdateEntry, 'id'> & { id?: string }>;
+    errors: string[];
+    rawCount: number;
+  } {
+    const errors: string[] = [];
+    let parsed: any;
+
+    if (typeof jsonInput === 'string') {
+      try {
+        parsed = JSON.parse(jsonInput);
+      } catch (e: any) {
+        return {
+          valid: false,
+          entries: [],
+          errors: [`Erro de sintaxe JSON: ${e.message || 'JSON inválido'}`],
+          rawCount: 0,
+        };
+      }
+    } else {
+      parsed = jsonInput;
+    }
+
+    if (!parsed || typeof parsed !== 'object') {
+      return {
+        valid: false,
+        entries: [],
+        errors: ['O arquivo ou conteúdo JSON deve conter um objeto ou array de atualizações.'],
+        rawCount: 0,
+      };
+    }
+
+    // Extrair lista bruta de itens (suporta root array ou envelopamento)
+    let rawItems: any[] = [];
+    if (Array.isArray(parsed)) {
+      rawItems = parsed;
+    } else if (Array.isArray(parsed.updates)) {
+      rawItems = parsed.updates;
+    } else if (Array.isArray(parsed.releaseNotes)) {
+      rawItems = parsed.releaseNotes;
+    } else if (Array.isArray(parsed.changelog)) {
+      rawItems = parsed.changelog;
+    } else if (Array.isArray(parsed.notas)) {
+      rawItems = parsed.notas;
+    } else if (Array.isArray(parsed.atualizacoes)) {
+      rawItems = parsed.atualizacoes;
+    } else if (Array.isArray(parsed.itens)) {
+      rawItems = parsed.itens;
+    } else if (parsed.version || parsed.versao || parsed.title || parsed.titulo) {
+      // Objeto único de atualização
+      rawItems = [parsed];
+    } else {
+      return {
+        valid: false,
+        entries: [],
+        errors: ['Nenhuma nota de atualização encontrada no JSON. O objeto deve conter uma nota ou lista de notas.'],
+        rawCount: 0,
+      };
+    }
+
+    const interpretedEntries: Array<Omit<SystemUpdateEntry, 'id'> & { id?: string }> = [];
+
+    rawItems.forEach((item, index) => {
+      if (!item || typeof item !== 'object') {
+        errors.push(`Item #${index + 1}: formato inválido (não é um objeto).`);
+        return;
+      }
+
+      // Normalizar versão
+      let version = String(item.version || item.versao || item.versão || item.tag_name || item.tag || item.v || '').trim();
+      if (!version) {
+        errors.push(`Item #${index + 1}: campo 'version' (versão) é obrigatório.`);
+        return;
+      }
+      if (!version.startsWith('v') && !version.startsWith('V')) {
+        version = `v${version}`;
+      }
+
+      // Normalizar título
+      const title = String(item.title || item.titulo || item.título || item.name || item.nome || '').trim();
+      if (!title) {
+        errors.push(`Item #${index + 1} (${version}): campo 'title' (título da atualização) é obrigatório.`);
+        return;
+      }
+
+      // Normalizar categoria
+      const catRaw = String(item.category || item.categoria || item.type || item.tipo || '').toLowerCase();
+      let category: SystemUpdateEntry['category'] = 'improvement';
+      if (catRaw.includes('feat') || catRaw.includes('nov') || catRaw.includes('recurs')) {
+        category = 'feature';
+      } else if (catRaw.includes('mob') || catRaw.includes('touch') || catRaw.includes('cel') || catRaw.includes('app')) {
+        category = 'mobile';
+      } else if (catRaw.includes('sec') || catRaw.includes('seg') || catRaw.includes('lgpd') || catRaw.includes('priv') || catRaw.includes('comp')) {
+        category = 'compliance';
+      } else if (catRaw.includes('back') || catRaw.includes('nuvem') || catRaw.includes('cloud') || catRaw.includes('serv') || catRaw.includes('banco') || catRaw.includes('firestore')) {
+        category = 'backend';
+      } else if (catRaw.includes('des') || catRaw.includes('ui') || catRaw.includes('ux') || catRaw.includes('vis') || catRaw.includes('i18n') || catRaw.includes('tema')) {
+        category = 'design';
+      } else if (catRaw.includes('fix') || catRaw.includes('corr') || catRaw.includes('bug') || catRaw.includes('erro') || catRaw.includes('ajust')) {
+        category = 'fix';
+      }
+
+      // Normalizar resumo
+      const summary = String(
+        item.summary || item.resumo || item.descricao || item.descrição || item.description || item.details || item.detalhes || title
+      ).trim();
+
+      // Normalizar destaques (highlights)
+      let highlights: string[] = [];
+      const hlRaw = item.highlights || item.destaques || item.changes || item.itens || item.mudancas || item.mudanças || item.features;
+      if (Array.isArray(hlRaw)) {
+        highlights = hlRaw
+          .map((h) => {
+            if (typeof h === 'string') return h.replace(/^[-*•]\s*/, '').trim();
+            if (h && typeof h === 'object') return (h.description || h.text || h.titulo || h.title || JSON.stringify(h)).trim();
+            return String(h).trim();
+          })
+          .filter((h) => h.length > 0);
+      } else if (typeof hlRaw === 'string') {
+        highlights = hlRaw
+          .split('\n')
+          .map((line) => line.replace(/^[-*•]\s*/, '').trim())
+          .filter((line) => line.length > 0);
+      }
+
+      if (highlights.length === 0) {
+        highlights = [summary];
+      }
+
+      // Normalizar componentes / módulos afetados
+      let affectedComponents: string[] | undefined = undefined;
+      const compRaw = item.affectedComponents || item.components || item.modulos || item.módulos || item.componentes || item.arquivos;
+      if (Array.isArray(compRaw)) {
+        affectedComponents = compRaw.map((c) => String(c).trim()).filter((c) => c.length > 0);
+      } else if (typeof compRaw === 'string') {
+        affectedComponents = compRaw
+          .split(/[,;\n]/)
+          .map((c) => c.trim())
+          .filter((c) => c.length > 0);
+      }
+
+      // Normalizar data
+      let date = String(item.date || item.data || item.releaseDate || item.dataLancamento || item.created_at || '').trim();
+      if (!date || isNaN(new Date(date).getTime())) {
+        date = new Date().toISOString().split('T')[0];
+      } else {
+        try {
+          date = new Date(date).toISOString().split('T')[0];
+        } catch {
+          date = new Date().toISOString().split('T')[0];
+        }
+      }
+
+      const badge = item.badge || item.selo || item.tag || item.label || undefined;
+      const author = String(item.author || item.autor || item.responsavel || 'Administração da WikiZero').trim();
+      const authorRole = String(item.authorRole || item.cargo || item.papel || 'Administrador do Sistema').trim();
+      const commitHash = item.commitHash || item.commit || item.hash || undefined;
+
+      interpretedEntries.push({
+        id: item.id ? String(item.id) : undefined,
+        version,
+        title,
+        category,
+        author,
+        authorRole,
+        summary,
+        highlights,
+        badge: badge ? String(badge).trim() : undefined,
+        affectedComponents: affectedComponents && affectedComponents.length > 0 ? affectedComponents : undefined,
+        date,
+        commitHash: commitHash ? String(commitHash).trim() : undefined,
+        isLatest: false,
+      });
+    });
+
+    return {
+      valid: errors.length === 0 && interpretedEntries.length > 0,
+      entries: interpretedEntries,
+      errors,
+      rawCount: rawItems.length,
+    };
+  },
+
+  /**
+   * Importa e persiste um lote de notas de atualização no Firestore e LocalStorage.
+   */
+  async addSystemUpdatesBatch(
+    entries: Array<Omit<SystemUpdateEntry, 'id'> & { id?: string }>,
+    options: {
+      replaceAll?: boolean;
+      notifyUsers?: boolean;
+      authorFallback?: string;
+    } = {}
+  ): Promise<{ success: boolean; count: number; saved: SystemUpdateEntry[] }> {
+    const existingList = options.replaceAll ? [] : await this.getSystemUpdates();
+    const existingMap = new Map<string, SystemUpdateEntry>();
+    existingList.forEach((item) => existingMap.set(item.version.toLowerCase(), item));
+
+    const timestamp = Date.now();
+    const savedEntries: SystemUpdateEntry[] = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      const versionKey = entry.version.toLowerCase();
+      const existing = existingMap.get(versionKey);
+
+      const id = entry.id || existing?.id || `upd-${timestamp}-${i}-${Math.random().toString(36).substring(2, 6)}`;
+      const fullEntry: SystemUpdateEntry = {
+        id,
+        version: entry.version,
+        title: entry.title,
+        date: entry.date || new Date().toISOString().split('T')[0],
+        category: entry.category,
+        author: entry.author || options.authorFallback || 'Administração da WikiZero',
+        authorRole: entry.authorRole || 'Administrador do Sistema',
+        summary: entry.summary,
+        highlights: entry.highlights && entry.highlights.length > 0 ? entry.highlights : [entry.summary],
+        badge: entry.badge,
+        affectedComponents: entry.affectedComponents,
+        commitHash: entry.commitHash,
+        isLatest: false,
+      };
+
+      existingMap.set(versionKey, fullEntry);
+      savedEntries.push(fullEntry);
+
+      // Persistir individualmente no Firestore para garantir integridade
+      if (firebaseActive && db) {
+        try {
+          await setDoc(doc(db, 'system_updates', id), fullEntry);
+        } catch (err) {
+          console.warn(`[StorageService] Erro ao salvar nota ${fullEntry.version} no Firestore:`, err);
+        }
+      }
+    }
+
+    // Ordenar por data decrescente e marcar a mais recente como isLatest
+    const combined = Array.from(existingMap.values()).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    if (combined.length > 0) {
+      combined[0].isLatest = true;
+      for (let j = 1; j < combined.length; j++) {
+        combined[j].isLatest = false;
+      }
+    }
+
+    localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(combined));
+
+    // Notificar usuários se solicitado
+    if (options.notifyUsers && savedEntries.length > 0) {
+      try {
+        const topRelease = savedEntries[0];
+        this.addNotification({
+          title: `Nova Versão: ${topRelease.version} lançada!`,
+          message: `${topRelease.title} - Veja os destaques e notas da versão completa.`,
+          type: 'info',
+          link: 'site-updates',
+        });
+      } catch (err) {
+        console.warn('[StorageService] Erro ao disparar notificação de atualização:', err);
+      }
+    }
+
+    return {
+      success: true,
+      count: savedEntries.length,
+      saved: savedEntries,
+    };
+  },
+
+  /**
+   * Fornece um modelo JSON padronizado com documentação para preenchimento pelos administradores.
+   */
+  getSystemUpdateJsonTemplate(): string {
+    const template = {
+      $schema: "https://wikizero.org/schemas/release-notes-v1.json",
+      _comment: "Modelo oficial de notas de atualização da WikiZero / WazzimaGiygg. Este arquivo pode conter uma única nota ou um array sob 'updates'.",
+      updates: [
+        {
+          version: "v3.4.0",
+          title: "Novo Módulo de Gestão de Notas de Atualização via JSON",
+          category: "feature",
+          date: new Date().toISOString().split('T')[0],
+          badge: "Novo",
+          author: "Administração da WikiZero",
+          authorRole: "Administrador do Sistema",
+          summary: "Permite que administradores importem e gerenciem notas de versão estruturadas diretamente a partir de arquivos JSON padronizados.",
+          highlights: [
+            "Importação via arrastar e soltar de arquivos .json com validação de schema em tempo real",
+            "Suporte a múltiplos itens em lote (batch import) ou notas individuais",
+            "Mapeamento inteligente com tolerância para chaves em português e inglês",
+            "Sincronização imediata no Cloud Firestore com subscrição reativa para todos os usuários",
+            "Disparo automático de notificações comunitárias sobre a nova versão"
+          ],
+          affectedComponents: [
+            "SiteUpdatesView.tsx",
+            "storageService.ts",
+            "Header.tsx",
+            "FirebaseAdminDashboard.tsx"
+          ],
+          commitHash: "a7c8f92b4e1d3c5e"
+        },
+        {
+          version: "v3.3.9",
+          title: "Ajustes de Segurança e Otimização de Performance",
+          category: "compliance",
+          date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0],
+          badge: "Segurança",
+          author: "Equipe de Engenharia",
+          authorRole: "Desenvolvedor Backend",
+          summary: "Reforço nas regras de leitura pública e validações de integridade no Firebase Firestore.",
+          highlights: [
+            "Auditoria de regras de segurança no Firestore para conformidade com LGPD",
+            "Redução de latência de leitura com caching local transparente",
+            "Melhorias no tratamento defensivo de sessões de convidados"
+          ],
+          affectedComponents: [
+            "firestore.rules",
+            "storageService.ts"
+          ]
+        }
+      ]
+    };
+    return JSON.stringify(template, null, 2);
   },
 
   async addSystemUpdate(updateData: Omit<SystemUpdateEntry, 'id' | 'date'>): Promise<SystemUpdateEntry> {
