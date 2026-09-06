@@ -35,10 +35,25 @@ import {
   Sliders,
   X,
   Database,
+  GitCommit,
+  GitPullRequest,
+  GitBranch,
+  GitCompare,
+  ChevronDown,
+  ChevronUp,
+  ArrowUpRight,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { SystemUpdateEntry, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
 import { useLanguage } from '../context/LanguageContext';
+import {
+  GitHubDiffService,
+  GitHubCommitSummary,
+  GitHubCompareResult,
+  GITHUB_REPO_CONFIG,
+} from '../services/githubDiffService';
+import { GitHubDiffViewer } from './GitHubDiffViewer';
 
 interface SiteUpdatesViewProps {
   currentUser: UserProfile | null;
@@ -57,6 +72,31 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Aba principal ativa: 'github-diffs' (Padrão para inspeção direta de diffs no GitHub) | 'compare-diffs' | 'release-notes'
+  const [activeMainTab, setActiveMainTab] = useState<'github-diffs' | 'compare-diffs' | 'release-notes'>('github-diffs');
+
+  // Estados de Commits e Diffs do GitHub (WazzimaGiygg/Wiki-alternative)
+  const [gitCommits, setGitCommits] = useState<GitHubCommitSummary[]>([]);
+  const [loadingGitCommits, setLoadingGitCommits] = useState(true);
+  const [gitSource, setGitSource] = useState<'github_api' | 'local_cache' | 'seed'>('seed');
+  const [rateLimitRemaining, setRateLimitRemaining] = useState<number | undefined>();
+  const [isRefreshingGitHub, setIsRefreshingGitHub] = useState(false);
+  const [gitSearchQuery, setGitSearchQuery] = useState('');
+
+  // Estados de Diffs expandidos por SHA
+  const [expandedCommitShas, setExpandedCommitShas] = useState<Record<string, boolean>>({
+    'e3e28bc5bc20086a4ff66db25eed67035ab16532': true, // Abre o commit mais recente por padrão
+  });
+  const [detailedCommitData, setDetailedCommitData] = useState<Record<string, GitHubCommitSummary>>({});
+  const [loadingShaDiff, setLoadingShaDiff] = useState<string | null>(null);
+
+  // Estados do Comparador de Diffs
+  const [compareBaseSha, setCompareBaseSha] = useState<string>('');
+  const [compareHeadSha, setCompareHeadSha] = useState<string>('');
+  const [compareResult, setCompareResult] = useState<GitHubCompareResult | null>(null);
+  const [isComparing, setIsComparing] = useState(false);
+  const [compareError, setCompareError] = useState<string | null>(null);
 
   // New Update Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -107,8 +147,45 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
     }
   };
 
+  // Carrega commits da API do GitHub
+  const loadGitHubCommits = async (forceRefresh = false) => {
+    if (forceRefresh) setIsRefreshingGitHub(true);
+    try {
+      const res = await GitHubDiffService.getRecentCommits(30, forceRefresh);
+      setGitCommits(res.commits);
+      setGitSource(res.source);
+      if (res.rateLimitRemaining !== undefined) {
+        setRateLimitRemaining(res.rateLimitRemaining);
+      }
+      if (res.commits.length >= 2) {
+        if (!compareHeadSha) setCompareHeadSha(res.commits[0].sha);
+        if (!compareBaseSha) setCompareBaseSha(res.commits[1].sha);
+      }
+      if (forceRefresh) {
+        showToast('Commits e diffs do GitHub sincronizados.');
+      }
+    } catch (err: any) {
+      console.warn('Erro ao buscar commits do GitHub:', err);
+    } finally {
+      setLoadingGitCommits(false);
+      setIsRefreshingGitHub(false);
+    }
+  };
+
   useEffect(() => {
     loadUpdates();
+    loadGitHubCommits();
+
+    // Carrega antecipadamente os detalhes do commit principal para renderização imediata do diff
+    GitHubDiffService.getCommitDetails('e3e28bc5bc20086a4ff66db25eed67035ab16532')
+      .then((det) => {
+        setDetailedCommitData((prev) => ({
+          ...prev,
+          ['e3e28bc5bc20086a4ff66db25eed67035ab16532']: det,
+        }));
+      })
+      .catch(() => {});
+
     const unsub = StorageService.subscribeToSystemUpdates((liveUpdates) => {
       if (liveUpdates && liveUpdates.length > 0) {
         setUpdates(liveUpdates);
@@ -116,6 +193,64 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
     });
     return () => unsub();
   }, []);
+
+  const toggleCommitDiff = async (sha: string) => {
+    const willOpen = !expandedCommitShas[sha];
+    setExpandedCommitShas((prev) => ({ ...prev, [sha]: willOpen }));
+
+    if (willOpen && !detailedCommitData[sha]?.loadedDetailedDiff) {
+      setLoadingShaDiff(sha);
+      try {
+        const fullDetails = await GitHubDiffService.getCommitDetails(sha);
+        setDetailedCommitData((prev) => ({ ...prev, [sha]: fullDetails }));
+        setGitCommits((prev) =>
+          prev.map((c) => (c.sha === sha ? { ...c, ...fullDetails } : c))
+        );
+      } catch (err) {
+        console.error('Erro ao obter diffs do commit:', err);
+        showToast('Não foi possível carregar os patches deste commit.');
+      } finally {
+        setLoadingShaDiff(null);
+      }
+    }
+  };
+
+  const handleRunCompare = async () => {
+    if (!compareBaseSha || !compareHeadSha) return;
+    setIsComparing(true);
+    setCompareError(null);
+    try {
+      const res = await GitHubDiffService.compareCommits(compareBaseSha, compareHeadSha);
+      setCompareResult(res);
+    } catch (err: any) {
+      setCompareError(err?.message || 'Erro ao comparar diffs no GitHub.');
+    } finally {
+      setIsComparing(false);
+    }
+  };
+
+  const handleViewCommitDiffInGitHubTab = async (commitHash: string) => {
+    setActiveMainTab('github-diffs');
+    setExpandedCommitShas((prev) => ({ ...prev, [commitHash]: true }));
+    if (!detailedCommitData[commitHash]?.loadedDetailedDiff) {
+      setLoadingShaDiff(commitHash);
+      try {
+        const fullDetails = await GitHubDiffService.getCommitDetails(commitHash);
+        setDetailedCommitData((prev) => ({ ...prev, [commitHash]: fullDetails }));
+      } catch {
+        // Fallback silencioso
+      } finally {
+        setLoadingShaDiff(null);
+      }
+    }
+    // Rola a tela até o commit caso esteja visível
+    setTimeout(() => {
+      const el = document.getElementById(`git-commit-${commitHash}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -368,6 +503,23 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
     });
   }, [updates, selectedCategory, searchQuery]);
 
+  // Commits filtrados para a aba de Diffs do GitHub
+  const filteredGitCommits = useMemo(() => {
+    return gitCommits.filter((c) => {
+      const q = gitSearchQuery.toLowerCase().trim();
+      if (!q) return true;
+      const matchMessage = c.message.toLowerCase().includes(q);
+      const matchAuthor =
+        c.authorName.toLowerCase().includes(q) ||
+        (c.authorLogin && c.authorLogin.toLowerCase().includes(q));
+      const matchSha =
+        c.sha.toLowerCase().includes(q) || c.shortSha.toLowerCase().includes(q);
+      const matchFiles =
+        c.files && c.files.some((f) => f.filename.toLowerCase().includes(q));
+      return matchMessage || matchAuthor || matchSha || matchFiles;
+    });
+  }, [gitCommits, gitSearchQuery]);
+
   const latestVersion = updates.length > 0 ? updates[0].version : 'v3.3.0';
 
   const getCategoryConfig = (category: SystemUpdateEntry['category']) => {
@@ -466,382 +618,860 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
       </div>
 
       {/* Hero Header Card */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-xl p-6 sm:p-8 shadow-md relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 text-white rounded-2xl p-6 sm:p-8 shadow-lg relative overflow-hidden border border-slate-800">
         {/* Background Subtle Accent */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-blue-500/10 pointer-events-none blur-3xl" />
+        <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-blue-500/10 pointer-events-none blur-3xl" />
         <div className="absolute -right-8 -bottom-8 opacity-10 text-white pointer-events-none">
           <Layers size={220} />
         </div>
 
-        <div className="relative z-10 max-w-3xl space-y-3">
+        <div className="relative z-10 max-w-4xl space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/30 text-blue-200 border border-blue-400/30 backdrop-blur-xs">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30 backdrop-blur-xs">
               <Sparkles size={13} className="text-amber-300 animate-pulse" />
-              Changelog Contínuo
+              Changelog & Diffs Contínuos
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/30 text-emerald-200 border border-emerald-400/30">
-              Versão Atual: {latestVersion}
+            <a
+              href={GITHUB_REPO_CONFIG.repoUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition"
+              title="Abrir repositório oficial no GitHub"
+            >
+              <Terminal size={12} className="text-blue-400" />
+              <span>{GITHUB_REPO_CONFIG.owner}/{GITHUB_REPO_CONFIG.repo}</span>
+              <ArrowUpRight size={12} className="text-slate-300" />
+            </a>
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+              <GitBranch size={12} />
+              {GITHUB_REPO_CONFIG.branch}
             </span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-serif-heading font-bold text-white tracking-tight">
-            Atualizações do Site & Registro de Melhorias
+            Histórico de Atualizações & Mudanças no GitHub
           </h1>
 
-          <p className="text-sm text-slate-200 leading-relaxed font-sans">
-            Acompanhe em tempo real cada melhoria, novidade, aprimoramento na interface móvel,
-            reforço de segurança e atualização arquitetural implementada neste sistema enciclopédico.
-            Transparência total em conformidade com o ecossistema de conhecimento livre.
+          <p className="text-sm text-slate-300 leading-relaxed font-sans max-w-3xl">
+            Visualize diretamente as mudanças nos <strong>DIFFS</strong> de código presentes no repositório oficial{' '}
+            <a
+              href={GITHUB_REPO_CONFIG.repoUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-blue-400 hover:underline font-mono inline-flex items-center gap-0.5"
+            >
+              {GITHUB_REPO_CONFIG.owner}/{GITHUB_REPO_CONFIG.repo}
+            </a>
+            . Monitore adições (+), deleções (-) e patches unificados com total transparência em tempo real.
           </p>
 
           {/* Quick Metrics Bar */}
-          <div className="pt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white/10 backdrop-blur-xs rounded-lg p-2.5 border border-white/10">
-              <div className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">
-                Total de Atualizações
+          <div className="pt-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10">
+              <div className="text-[10px] uppercase font-bold text-blue-300 tracking-wider flex items-center gap-1">
+                <GitCommit size={12} />
+                Commits no GitHub
               </div>
               <div className="text-lg font-bold font-mono text-white mt-0.5">
-                {updates.length} releases
+                {gitCommits.length} commits
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-xs rounded-lg p-2.5 border border-white/10">
-              <div className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">
-                Última Melhoria
+            <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10">
+              <div className="text-[10px] uppercase font-bold text-blue-300 tracking-wider flex items-center gap-1">
+                <Clock size={12} />
+                Última Mudança
               </div>
               <div className="text-xs font-semibold text-white mt-1 truncate">
-                {updates.length > 0 ? formatDate(updates[0].date) : 'Recente'}
+                {gitCommits.length > 0 ? formatDate(gitCommits[0].date) : 'Recente'}
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-xs rounded-lg p-2.5 border border-white/10">
-              <div className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">
-                Disponibilidade
+            <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10">
+              <div className="text-[10px] uppercase font-bold text-blue-300 tracking-wider flex items-center gap-1">
+                <ShieldCheck size={12} />
+                Status da Conexão
               </div>
-              <div className="text-xs font-semibold text-emerald-300 mt-1 flex items-center gap-1">
+              <div className="text-xs font-semibold text-emerald-300 mt-1 flex items-center gap-1.5 truncate">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-                100% Online
+                {gitSource === 'github_api' ? 'GitHub API Online' : 'Cache / Espelho'}
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-xs rounded-lg p-2.5 border border-white/10">
-              <div className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">
-                Sincronização
+            <div className="bg-white/5 backdrop-blur-xs rounded-xl p-3 border border-white/10">
+              <div className="text-[10px] uppercase font-bold text-blue-300 tracking-wider flex items-center gap-1">
+                <Database size={12} />
+                Releases Estruturadas
               </div>
               <div className="text-xs font-semibold text-white mt-1 truncate">
-                Cloud Firestore & Local
+                {updates.length} notas no Firestore
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Control Bar: Search, Category Filters & Actions */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {/* Search Input */}
-          <div className="relative flex-1">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              id="input-search-updates"
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por versão, título, componente (ex: Mobile, LGPD, v3.2.0)..."
-              className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                Limpar
-              </button>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              id="btn-refresh-updates"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 transition disabled:opacity-50"
-              title="Atualizar lista"
-            >
-              <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-              <span>Sincronizar</span>
-            </button>
-
-            <button
-              id="btn-export-updates"
-              onClick={handleExportJSON}
-              className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 transition"
-              title="Exportar dados estruturados"
-            >
-              <FileText size={14} />
-              <span className="hidden xs:inline">Exportar</span> JSON
-            </button>
-
-            {isAdmin && (
-              <>
-                <button
-                  id="btn-sync-firebase-updates"
-                  onClick={handleSyncFirebase}
-                  disabled={isSyncingFirebase}
-                  className="px-3 py-2 text-xs font-bold rounded-lg border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
-                  title="Sincronizar todos os registros de atualização com o Firebase Firestore"
-                >
-                  <RefreshCw size={14} className={isSyncingFirebase ? 'animate-spin' : ''} />
-                  <span>{isSyncingFirebase ? 'Sincronizando...' : 'Sincronizar no Firebase'}</span>
-                </button>
-
-                <button
-                  id="btn-open-json-import"
-                  onClick={() => {
-                    setModalMode('json');
-                    setShowAddModal(true);
-                  }}
-                  className="px-3 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-xs transition active:scale-95"
-                  title="Importar e registrar notas de atualização em JSON sincronizadas no Firebase Firestore"
-                >
-                  <FileCode size={15} />
-                  <span>Registrar JSON (Admin)</span>
-                </button>
-
-                <button
-                  id="btn-open-add-update"
-                  onClick={() => {
-                    setModalMode('manual');
-                    setShowAddModal(true);
-                  }}
-                  className="px-3 py-2 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 shadow-xs transition active:scale-95"
-                  title="Registrar manualmente uma melhoria no sistema"
-                >
-                  <Plus size={15} />
-                  <span className="hidden sm:inline">Registrar Manual</span>
-                  <span className="sm:hidden">Manual</span>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Category Pills Filter */}
-        <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-          <span className="text-[11px] font-bold text-slate-400 mr-1 flex items-center gap-1">
-            <Filter size={12} /> Categoria:
+      {/* Main Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto text-sm font-semibold">
+        <button
+          onClick={() => setActiveMainTab('github-diffs')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition whitespace-nowrap ${
+            activeMainTab === 'github-diffs'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+          }`}
+        >
+          <GitCommit size={16} />
+          <span>Diffs de Código no GitHub</span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+              activeMainTab === 'github-diffs'
+                ? 'bg-white/20 text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            {gitCommits.length}
           </span>
-          {[
-            { id: 'all', label: 'Todas as Atualizações' },
-            { id: 'feature', label: '✨ Novidades' },
-            { id: 'mobile', label: '📱 Mobile & Touch' },
-            { id: 'improvement', label: '⚡ Melhorias' },
-            { id: 'compliance', label: '🔒 Segurança & LGPD' },
-            { id: 'backend', label: '☁️ Backend & Firestore' },
-            { id: 'design', label: '🎨 Design & i18n' },
-            { id: 'fix', label: '🛠️ Correções' },
-          ].map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
-                selectedCategory === cat.id
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
+        </button>
+
+        <button
+          onClick={() => setActiveMainTab('compare-diffs')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition whitespace-nowrap ${
+            activeMainTab === 'compare-diffs'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+          }`}
+        >
+          <GitCompare size={16} />
+          <span>Comparador de Diffs (Compare)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMainTab('release-notes')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition whitespace-nowrap ${
+            activeMainTab === 'release-notes'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+          }`}
+        >
+          <Sparkles size={16} />
+          <span>Notas de Release & Changelog</span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+              activeMainTab === 'release-notes'
+                ? 'bg-white/20 text-white'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            {updates.length}
+          </span>
+        </button>
       </div>
 
-      {/* Timeline List of System Updates */}
-      <div className="space-y-4">
-        {loading ? (
-          <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
-            <RefreshCw size={24} className="animate-spin text-blue-600 mx-auto" />
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Carregando notas de versão e melhorias do sistema...
-            </p>
-          </div>
-        ) : filteredUpdates.length === 0 ? (
-          <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
-            <Info size={32} className="text-slate-400 mx-auto" />
-            <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-              Nenhuma atualização encontrada para este filtro
-            </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Tente redefinir o termo de pesquisa ou selecionar outra categoria acima.
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedCategory('all');
-              }}
-              className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-100 transition"
-            >
-              Ver todas as atualizações
-            </button>
-          </div>
-        ) : (
-          <div className="relative pl-4 sm:pl-6 border-l-2 border-slate-200 dark:border-slate-800 space-y-6 ml-2 sm:ml-4">
-            {filteredUpdates.map((item, index) => {
-              const catConfig = getCategoryConfig(item.category);
-              const CatIcon = catConfig.icon;
-
-              return (
-                <div key={item.id} className="relative group">
-                  {/* Timeline Dot */}
-                  <div
-                    className={`absolute -left-[23px] sm:-left-[31px] top-4 w-4 h-4 rounded-full border-2 border-white dark:border-slate-950 ${catConfig.dotBg} shadow-xs flex items-center justify-center`}
-                  >
-                    {item.isLatest && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    )}
-                  </div>
-
-                  {/* Main Card */}
-                  <article
-                    id={`update-card-${item.id}`}
-                    className={`bg-white dark:bg-slate-900 rounded-xl border ${
-                      item.isLatest
-                        ? 'border-blue-300 dark:border-blue-700/80 shadow-md ring-1 ring-blue-500/20'
-                        : 'border-slate-200 dark:border-slate-800 shadow-xs'
-                    } p-5 sm:p-6 transition hover:border-slate-300 dark:hover:border-slate-700 space-y-4`}
-                  >
-                    {/* Card Header */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* Version Badge */}
-                        <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900">
-                          {item.version}
-                        </span>
-
-                        {/* Category Badge */}
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${catConfig.badgeBg}`}
-                        >
-                          <CatIcon size={12} />
-                          <span>{catConfig.label}</span>
-                        </span>
-
-                        {/* Special Badges */}
-                        {item.badge && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 border border-blue-200 dark:border-blue-700">
-                            {item.badge}
-                          </span>
-                        )}
-
-                        {item.isLatest && (
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500 text-white shadow-xs">
-                            Recente
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Date & Meta Info */}
-                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-                        <span className="flex items-center gap-1" title={item.date}>
-                          <Calendar size={13} />
-                          {formatDate(item.date)}
-                        </span>
-                        {item.author && (
-                          <span className="hidden sm:flex items-center gap-1">
-                            <User size={13} />
-                            {item.author}
-                          </span>
-                        )}
-
-                        {isAdmin && (
-                          <button
-                            onClick={() => handleDeleteUpdate(item.id, item.version)}
-                            className="p-1 text-slate-400 hover:text-rose-600 rounded transition opacity-0 group-hover:opacity-100"
-                            title="Excluir este registro"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Title & Summary */}
-                    <div className="space-y-2">
-                      <h2 className="text-base sm:text-lg font-serif-heading font-bold text-slate-900 dark:text-white">
-                        {item.title}
-                      </h2>
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                        {item.summary}
-                      </p>
-                    </div>
-
-                    {/* Highlights List */}
-                    {item.highlights && item.highlights.length > 0 && (
-                      <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-3.5 border border-slate-100 dark:border-slate-800 space-y-2">
-                        <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                          <CheckCircle2 size={13} className="text-blue-500" />
-                          Principais Recursos e Melhorias Implementadas:
-                        </div>
-                        <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-200">
-                          {item.highlights.map((h, i) => (
-                            <li key={i} className="flex items-start gap-2">
-                              <span className="text-blue-500 font-bold mt-0.5">•</span>
-                              <span className="leading-snug">{h}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Footer Row: Affected Components & Commit ID */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px]">
-                      {/* Affected Components */}
-                      {item.affectedComponents && item.affectedComponents.length > 0 ? (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-slate-400 font-medium flex items-center gap-1">
-                            <Code2 size={12} /> Módulos:
-                          </span>
-                          {item.affectedComponents.map((comp, ci) => (
-                            <span
-                              key={ci}
-                              className="font-mono text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded border border-slate-200 dark:border-slate-700"
-                            >
-                              {comp}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <div />
-                      )}
-
-                      {/* Commit Reference & Copy */}
-                      {item.commitHash && (
-                        <button
-                          onClick={() => handleCopyHash(item.commitHash, item.id)}
-                          className="flex items-center gap-1 font-mono text-[10px] text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded transition"
-                          title="Copiar referência do commit"
-                        >
-                          <Terminal size={11} />
-                          <span>{item.commitHash.substring(0, 12)}...</span>
-                          {copiedId === item.id ? (
-                            <Check size={11} className="text-emerald-500" />
-                          ) : (
-                            <Copy size={11} />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </article>
+      {/* ========================================================================= */}
+      {/* ABA 1: DIFFS DE CÓDIGO NO GITHUB (WazzimaGiygg/Wiki-alternative)         */}
+      {/* ========================================================================= */}
+      {activeMainTab === 'github-diffs' && (
+        <div className="space-y-4">
+          {/* GitHub Repository Banner & Control Bar */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
+                    <Terminal size={17} className="text-blue-600 dark:text-blue-400" />
+                    Repositório Oficial: WazzimaGiygg / Wiki-alternative
+                  </span>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    branch: {GITHUB_REPO_CONFIG.branch}
+                  </span>
                 </div>
-              );
-            })}
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Visualização direta e unificada dos patches e commits do Git. Clique em qualquer atualização para inspecionar os arquivos e diffs.
+                </p>
+              </div>
+
+              {/* Ações Rápidas do GitHub */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => loadGitHubCommits(true)}
+                  disabled={isRefreshingGitHub}
+                  className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 transition disabled:opacity-50"
+                  title="Consultar API pública do GitHub para buscar novos commits"
+                >
+                  <RefreshCw size={14} className={isRefreshingGitHub ? 'animate-spin text-blue-600' : ''} />
+                  <span>{isRefreshingGitHub ? 'Sincronizando...' : 'Atualizar do GitHub'}</span>
+                </button>
+
+                <a
+                  href={GITHUB_REPO_CONFIG.repoUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="px-3 py-2 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white flex items-center gap-1.5 shadow-xs transition"
+                  title="Abrir repositório completo diretamente no GitHub"
+                >
+                  <span>Abrir no GitHub</span>
+                  <ExternalLink size={13} />
+                </a>
+              </div>
+            </div>
+
+            {/* Barra de Busca de Commits */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="relative flex-1">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={gitSearchQuery}
+                  onChange={(e) => setGitSearchQuery(e.target.value)}
+                  placeholder="Pesquisar por mensagem de commit, autor, SHA (ex: e3e28bc, emergency, firestore)..."
+                  className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-mono"
+                />
+                {gitSearchQuery && (
+                  <button
+                    onClick={() => setGitSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+
+              <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                <span>
+                  Exibindo <strong>{filteredGitCommits.length}</strong> de <strong>{gitCommits.length}</strong> commits
+                </span>
+                {rateLimitRemaining !== undefined && (
+                  <span className="hidden sm:inline text-[11px] text-slate-400 font-mono">
+                    (Quota API: {rateLimitRemaining}/60 req)
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Timeline de Commits e Visualizador Direto de DIFFS */}
+          <div className="space-y-4">
+            {loadingGitCommits ? (
+              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                <RefreshCw size={26} className="animate-spin text-blue-600 mx-auto" />
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  Carregando commits e árvore de mudanças diretamente do GitHub...
+                </p>
+              </div>
+            ) : filteredGitCommits.length === 0 ? (
+              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                <Info size={32} className="text-slate-400 mx-auto" />
+                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                  Nenhum commit encontrado para este filtro
+                </h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Tente buscar por outro termo, autor ou limpe a pesquisa.
+                </p>
+                <button
+                  onClick={() => setGitSearchQuery('')}
+                  className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-100 transition"
+                >
+                  Ver todos os commits
+                </button>
+              </div>
+            ) : (
+              <div className="relative pl-4 sm:pl-6 border-l-2 border-blue-500/30 dark:border-blue-500/20 space-y-6 ml-2 sm:ml-4">
+                {filteredGitCommits.map((commit, index) => {
+                  const isExpanded = !!expandedCommitShas[commit.sha];
+                  const hasLoadedDetails = !!detailedCommitData[commit.sha]?.loadedDetailedDiff;
+                  const currentFiles = detailedCommitData[commit.sha]?.files || commit.files || [];
+                  const isLatest = index === 0;
+
+                  return (
+                    <div
+                      key={commit.sha}
+                      id={`git-commit-${commit.sha}`}
+                      className="relative group"
+                    >
+                      {/* Ponto da Linha do Tempo */}
+                      <div
+                        className={`absolute -left-[23px] sm:-left-[31px] top-4 w-4 h-4 rounded-full border-2 border-white dark:border-slate-950 ${
+                          isLatest ? 'bg-emerald-500 ring-4 ring-emerald-500/20' : 'bg-blue-600'
+                        } shadow-xs flex items-center justify-center`}
+                      >
+                        <GitCommit size={10} className="text-white" />
+                      </div>
+
+                      {/* Card Principal do Commit */}
+                      <article
+                        className={`bg-white dark:bg-slate-900 rounded-2xl border ${
+                          isLatest
+                            ? 'border-blue-400/80 dark:border-blue-600/80 shadow-md ring-1 ring-blue-500/20'
+                            : 'border-slate-200 dark:border-slate-800 shadow-2xs'
+                        } p-5 sm:p-6 transition hover:border-slate-300 dark:hover:border-slate-700 space-y-4`}
+                      >
+                        {/* Header do Commit */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {/* SHA Badge Clicável */}
+                            <button
+                              type="button"
+                              onClick={() => handleCopyHash(commit.sha, commit.sha)}
+                              className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-slate-900 dark:bg-slate-800 text-white hover:bg-blue-700 transition flex items-center gap-1 shadow-2xs"
+                              title="Copiar SHA completo do commit"
+                            >
+                              <Terminal size={11} className="text-blue-400" />
+                              <span>{commit.shortSha}</span>
+                              {copiedId === commit.sha ? (
+                                <Check size={11} className="text-emerald-400 ml-1" />
+                              ) : (
+                                <Copy size={11} className="text-slate-400 ml-1" />
+                              )}
+                            </button>
+
+                            <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold flex items-center gap-1">
+                              <GitBranch size={10} />
+                              main
+                            </span>
+
+                            {isLatest && (
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500 text-white shadow-xs">
+                                Mais Recente
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Autor, Data e Link Externo */}
+                          <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                            <span className="flex items-center gap-1.5 font-medium">
+                              {commit.authorAvatar ? (
+                                <img
+                                  src={commit.authorAvatar}
+                                  alt={commit.authorName}
+                                  className="w-4 h-4 rounded-full border border-slate-200 dark:border-slate-700"
+                                />
+                              ) : (
+                                <User size={13} />
+                              )}
+                              <span>{commit.authorName}</span>
+                            </span>
+
+                            <span className="flex items-center gap-1" title={commit.date}>
+                              <Calendar size={13} />
+                              {formatDate(commit.date)}
+                            </span>
+
+                            <a
+                              href={commit.htmlUrl}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="p-1 rounded text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                              title="Ver este commit no GitHub"
+                            >
+                              <ExternalLink size={14} />
+                            </a>
+                          </div>
+                        </div>
+
+                        {/* Mensagem do Commit */}
+                        <div className="space-y-1.5">
+                          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-mono leading-snug">
+                            {commit.headline}
+                          </h2>
+                          {commit.body && (
+                            <div className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-line bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800 font-sans leading-relaxed">
+                              {commit.body}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Barra de Ação & Visualização do DIFF */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          {/* Resumo de Arquivos e Linhas Alteradas */}
+                          <div className="flex items-center gap-2 flex-wrap text-xs">
+                            <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                              <Code2 size={13} />
+                              <strong>{commit.filesCount || currentFiles.length || 'Arquivos'}</strong> alterados
+                            </span>
+                            {commit.stats && (
+                              <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold">
+                                <span className="text-emerald-600 dark:text-emerald-400">
+                                  +{commit.stats.additions}
+                                </span>
+                                <span className="text-slate-400">/</span>
+                                <span className="text-rose-600 dark:text-rose-400">
+                                  -{commit.stats.deletions}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Botão de Expansão do DIFF */}
+                          <button
+                            type="button"
+                            onClick={() => toggleCommitDiff(commit.sha)}
+                            className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-xs ${
+                              isExpanded
+                                ? 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-700'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            }`}
+                          >
+                            <Code2 size={14} />
+                            <span>{isExpanded ? 'Recolher Diffs' : 'Visualizar Diffs de Código (DIFF)'}</span>
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+                        </div>
+
+                        {/* Área Expandida com os DIFFS e Patches Unificados */}
+                        {isExpanded && (
+                          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                            <GitHubDiffViewer
+                              files={currentFiles}
+                              commitSha={commit.sha}
+                              isDetailedLoading={loadingShaDiff === commit.sha}
+                            />
+                          </div>
+                        )}
+                      </article>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ABA 2: COMPARADOR DE DIFFS (COMPARE DE COMMITS)                           */}
+      {/* ========================================================================= */}
+      {activeMainTab === 'compare-diffs' && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <GitCompare size={18} className="text-blue-600" />
+                Comparar Mudanças Entre Dois Commits (Diff Comparison)
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Selecione o commit base (ponto de partida) e o commit de destino (head) para inspecionar todas as alterações agregadas.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Commit Base (Anterior / Referência):
+                </label>
+                <select
+                  value={compareBaseSha}
+                  onChange={(e) => setCompareBaseSha(e.target.value)}
+                  className="w-full p-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
+                >
+                  {gitCommits.map((c) => (
+                    <option key={c.sha} value={c.sha}>
+                      {c.shortSha} - {c.headline.slice(0, 50)} ({formatDate(c.date)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Commit Head (Destino / Mais Recente):
+                </label>
+                <select
+                  value={compareHeadSha}
+                  onChange={(e) => setCompareHeadSha(e.target.value)}
+                  className="w-full p-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono"
+                >
+                  {gitCommits.map((c) => (
+                    <option key={c.sha} value={c.sha}>
+                      {c.shortSha} - {c.headline.slice(0, 50)} ({formatDate(c.date)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex-wrap">
+              <div className="text-xs text-slate-500">
+                Comparação: <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{compareBaseSha.slice(0, 7)}</span>...<span className="font-mono font-bold text-slate-700 dark:text-slate-300">{compareHeadSha.slice(0, 7)}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={`${GITHUB_REPO_CONFIG.repoUrl}/compare/${compareBaseSha}...${compareHeadSha}`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition flex items-center gap-1"
+                >
+                  <span>Ver Compare no GitHub</span>
+                  <ExternalLink size={12} />
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleRunCompare}
+                  disabled={isComparing || !compareBaseSha || !compareHeadSha}
+                  className="px-4 py-2 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <GitCompare size={14} />
+                  <span>{isComparing ? 'Comparando...' : 'Executar Comparação de Diffs'}</span>
+                </button>
+              </div>
+            </div>
+
+            {compareError && (
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-700 dark:text-rose-300">
+                {compareError}
+              </div>
+            )}
+          </div>
+
+          {/* Resultado da Comparação */}
+          {compareResult && (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Resultado da Comparação: {compareResult.files.length} arquivos alterados
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    O commit de destino está à frente por {compareResult.ahead_by} commit(s).
+                  </p>
+                </div>
+              </div>
+
+              <GitHubDiffViewer files={compareResult.files} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ABA 3: NOTAS DE RELEASE E CHANGELOG ESTRUTURADO                          */}
+      {/* ========================================================================= */}
+      {activeMainTab === 'release-notes' && (
+        <div className="space-y-4">
+          {/* Control Bar: Search, Category Filters & Actions */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  id="input-search-updates"
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar por versão, título, componente (ex: Mobile, LGPD, v3.2.0)..."
+                  className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  id="btn-refresh-updates"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 transition disabled:opacity-50"
+                  title="Atualizar lista"
+                >
+                  <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                  <span>Sincronizar</span>
+                </button>
+
+                <button
+                  id="btn-export-updates"
+                  onClick={handleExportJSON}
+                  className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 transition"
+                  title="Exportar dados estruturados"
+                >
+                  <FileText size={14} />
+                  <span className="hidden xs:inline">Exportar</span> JSON
+                </button>
+
+                {isAdmin && (
+                  <>
+                    <button
+                      id="btn-sync-firebase-updates"
+                      onClick={handleSyncFirebase}
+                      disabled={isSyncingFirebase}
+                      className="px-3 py-2 text-xs font-bold rounded-lg border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
+                      title="Sincronizar todos os registros de atualização com o Firebase Firestore"
+                    >
+                      <RefreshCw size={14} className={isSyncingFirebase ? 'animate-spin' : ''} />
+                      <span>{isSyncingFirebase ? 'Sincronizando...' : 'Sincronizar no Firebase'}</span>
+                    </button>
+
+                    <button
+                      id="btn-open-json-import"
+                      onClick={() => {
+                        setModalMode('json');
+                        setShowAddModal(true);
+                      }}
+                      className="px-3 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-xs transition active:scale-95"
+                      title="Importar e registrar notas de atualização em JSON sincronizadas no Firebase Firestore"
+                    >
+                      <FileCode size={15} />
+                      <span>Registrar JSON (Admin)</span>
+                    </button>
+
+                    <button
+                      id="btn-open-add-update"
+                      onClick={() => {
+                        setModalMode('manual');
+                        setShowAddModal(true);
+                      }}
+                      className="px-3 py-2 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 shadow-xs transition active:scale-95"
+                      title="Registrar manualmente uma melhoria no sistema"
+                    >
+                      <Plus size={15} />
+                      <span className="hidden sm:inline">Registrar Manual</span>
+                      <span className="sm:hidden">Manual</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Category Pills Filter */}
+            <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+              <span className="text-[11px] font-bold text-slate-400 mr-1 flex items-center gap-1">
+                <Filter size={12} /> Categoria:
+              </span>
+              {[
+                { id: 'all', label: 'Todas as Atualizações' },
+                { id: 'feature', label: '✨ Novidades' },
+                { id: 'mobile', label: '📱 Mobile & Touch' },
+                { id: 'improvement', label: '⚡ Melhorias' },
+                { id: 'compliance', label: '🔒 Segurança & LGPD' },
+                { id: 'backend', label: '☁️ Backend & Firestore' },
+                { id: 'design', label: '🎨 Design & i18n' },
+                { id: 'fix', label: '🛠️ Correções' },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
+                    selectedCategory === cat.id
+                      ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Timeline List of System Updates */}
+          <div className="space-y-4">
+            {loading ? (
+              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+                <RefreshCw size={24} className="animate-spin text-blue-600 mx-auto" />
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Carregando notas de versão e melhorias do sistema...
+                </p>
+              </div>
+            ) : filteredUpdates.length === 0 ? (
+              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+                <Info size={32} className="text-slate-400 mx-auto" />
+                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                  Nenhuma atualização encontrada para este filtro
+                </h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Tente redefinir o termo de pesquisa ou selecionar outra categoria acima.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('all');
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-100 transition"
+                >
+                  Ver todas as atualizações
+                </button>
+              </div>
+            ) : (
+              <div className="relative pl-4 sm:pl-6 border-l-2 border-slate-200 dark:border-slate-800 space-y-6 ml-2 sm:ml-4">
+                {filteredUpdates.map((item, index) => {
+                  const catConfig = getCategoryConfig(item.category);
+                  const CatIcon = catConfig.icon;
+
+                  return (
+                    <div key={item.id} className="relative group">
+                      {/* Timeline Dot */}
+                      <div
+                        className={`absolute -left-[23px] sm:-left-[31px] top-4 w-4 h-4 rounded-full border-2 border-white dark:border-slate-950 ${catConfig.dotBg} shadow-xs flex items-center justify-center`}
+                      >
+                        {item.isLatest && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        )}
+                      </div>
+
+                      {/* Main Card */}
+                      <article
+                        id={`update-card-${item.id}`}
+                        className={`bg-white dark:bg-slate-900 rounded-xl border ${
+                          item.isLatest
+                            ? 'border-blue-300 dark:border-blue-700/80 shadow-md ring-1 ring-blue-500/20'
+                            : 'border-slate-200 dark:border-slate-800 shadow-xs'
+                        } p-5 sm:p-6 transition hover:border-slate-300 dark:hover:border-slate-700 space-y-4`}
+                      >
+                        {/* Card Header */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {/* Version Badge */}
+                            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900">
+                              {item.version}
+                            </span>
+
+                            {/* Category Badge */}
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${catConfig.badgeBg}`}
+                            >
+                              <CatIcon size={12} />
+                              <span>{catConfig.label}</span>
+                            </span>
+
+                            {/* Special Badges */}
+                            {item.badge && (
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 border border-blue-200 dark:border-blue-700">
+                                {item.badge}
+                              </span>
+                            )}
+
+                            {item.isLatest && (
+                              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500 text-white shadow-xs">
+                                Recente
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Date & Meta Info */}
+                          <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                            <span className="flex items-center gap-1" title={item.date}>
+                              <Calendar size={13} />
+                              {formatDate(item.date)}
+                            </span>
+                            {item.author && (
+                              <span className="hidden sm:flex items-center gap-1">
+                                <User size={13} />
+                                {item.author}
+                              </span>
+                            )}
+
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleDeleteUpdate(item.id, item.version)}
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded transition opacity-0 group-hover:opacity-100"
+                                title="Excluir este registro"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Title & Summary */}
+                        <div className="space-y-2">
+                          <h2 className="text-base sm:text-lg font-serif-heading font-bold text-slate-900 dark:text-white">
+                            {item.title}
+                          </h2>
+                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                            {item.summary}
+                          </p>
+                        </div>
+
+                        {/* Highlights List */}
+                        {item.highlights && item.highlights.length > 0 && (
+                          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-3.5 border border-slate-100 dark:border-slate-800 space-y-2">
+                            <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <CheckCircle2 size={13} className="text-blue-500" />
+                              Principais Recursos e Melhorias Implementadas:
+                            </div>
+                            <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-200">
+                              {item.highlights.map((h, i) => (
+                                <li key={i} className="flex items-start gap-2">
+                                  <span className="text-blue-500 font-bold mt-0.5">•</span>
+                                  <span className="leading-snug">{h}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Footer Row: Affected Components & Commit ID with Direct GitHub DIFF Link */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px]">
+                          {/* Affected Components */}
+                          {item.affectedComponents && item.affectedComponents.length > 0 ? (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-slate-400 font-medium flex items-center gap-1">
+                                <Code2 size={12} /> Módulos:
+                              </span>
+                              {item.affectedComponents.map((comp, ci) => (
+                                <span
+                                  key={ci}
+                                  className="font-mono text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded border border-slate-200 dark:border-slate-700"
+                                >
+                                  {comp}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <div />
+                          )}
+
+                          {/* Commit Reference, Direct DIFF & Copy */}
+                          {item.commitHash && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => handleViewCommitDiffInGitHubTab(item.commitHash!)}
+                                className="flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 px-2.5 py-1 rounded-md border border-blue-200 dark:border-blue-800 transition shadow-2xs"
+                                title="Visualizar diretamente o DIFF deste commit na aba do GitHub"
+                              >
+                                <Code2 size={12} />
+                                <span>Ver DIFF no GitHub</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleCopyHash(item.commitHash, item.id)}
+                                className="flex items-center gap-1 font-mono text-[10px] text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded transition"
+                                title="Copiar referência do commit"
+                              >
+                                <Terminal size={11} />
+                                <span>{item.commitHash.substring(0, 12)}...</span>
+                                {copiedId === item.id ? (
+                                  <Check size={11} className="text-emerald-500" />
+                                ) : (
+                                  <Copy size={11} />
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </article>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Footer Transparency & Open Source Notice */}
       <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 text-xs text-slate-600 dark:text-slate-400 space-y-2">
