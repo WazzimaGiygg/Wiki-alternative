@@ -34,6 +34,7 @@ import {
   Eye,
   Sliders,
   X,
+  Database,
 } from 'lucide-react';
 import { SystemUpdateEntry, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -83,11 +84,10 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
   const [isImportingJson, setIsImportingJson] = useState(false);
   const [jsonActiveSubTab, setJsonActiveSubTab] = useState<'upload' | 'raw'>('upload');
 
-  const isAdmin =
-    currentUser?.role === 'admin' ||
-    currentUser?.role === 'moderador' ||
-    currentUser?.role === 'editor' ||
-    currentUser?.email === 'pedrohenriquecardonaperes@gmail.com';
+  const [isSyncingFirebase, setIsSyncingFirebase] = useState(false);
+
+  // Apenas administradores e o superadmin do sistema podem gerenciar e registrar atualizações
+  const isAdmin = StorageService.canManageSystemUpdates(currentUser);
 
   // Interpretação e validação do JSON em tempo real
   const parsedJsonResult = useMemo(() => {
@@ -127,6 +127,23 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
       console.warn('Erro na atualização:', err);
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const handleSyncFirebase = async () => {
+    if (!isAdmin) return;
+    setIsSyncingFirebase(true);
+    try {
+      const res = await StorageService.syncAllSystemUpdatesToFirebase();
+      if (res.success) {
+        showToast(`✅ Firebase sincronizado: ${res.count} nota(s) confirmadas no Cloud Firestore.`);
+      } else {
+        showToast(`⚠️ Sincronização parcial com Firebase: ${res.error || 'Verifique a conexão'}`);
+      }
+    } catch (err: any) {
+      showToast(`Erro ao sincronizar com Firebase: ${err?.message || 'Erro de rede'}`);
+    } finally {
+      setIsSyncingFirebase(false);
     }
   };
 
@@ -287,6 +304,11 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
   };
 
   const handleConfirmJsonImport = async () => {
+    if (!isAdmin) {
+      alert('Acesso restrito: Apenas administradores do sistema podem registrar e sincronizar notas de atualização no Firebase.');
+      return;
+    }
+
     if (!parsedJsonResult || !parsedJsonResult.valid || parsedJsonResult.entries.length === 0) {
       alert('Nenhuma nota válida encontrada para publicação. Verifique as mensagens de erro abaixo.');
       return;
@@ -295,7 +317,7 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
     if (
       replaceAllExisting &&
       !window.confirm(
-        '⚠️ ATENÇÃO: Você selecionou "Substituir histórico existente". Todas as notas anteriores serão substituídas por este arquivo JSON. Deseja continuar?'
+        '⚠️ ATENÇÃO: Você selecionou "Substituir histórico existente". Todas as notas anteriores no Firebase Firestore serão substituídas por este arquivo JSON. Deseja continuar?'
       )
     ) {
       return;
@@ -313,7 +335,12 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
       setUpdates(updatedList);
       setShowAddModal(false);
       handleClearJson();
-      showToast(`Sucesso! ${res.count} nota(s) de atualização salva(s) e publicadas no sistema.`);
+
+      if (res.firebaseSynced) {
+        showToast(`🎉 Sucesso! ${res.count} nota(s) registradas e sincronizadas no Firebase Firestore (${res.firebaseSyncedCount} docs).`);
+      } else {
+        showToast(`⚠️ ${res.count} nota(s) salvas no cache local. Alerta Firebase: ${res.firebaseError || 'Aguardando rede'}`);
+      }
     } catch (err: any) {
       console.error('Erro ao importar JSON de atualizações:', err);
       alert(`Falha ao persistir notas de atualização: ${err?.message || 'Erro desconhecido'}`);
@@ -562,16 +589,27 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
             {isAdmin && (
               <>
                 <button
+                  id="btn-sync-firebase-updates"
+                  onClick={handleSyncFirebase}
+                  disabled={isSyncingFirebase}
+                  className="px-3 py-2 text-xs font-bold rounded-lg border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
+                  title="Sincronizar todos os registros de atualização com o Firebase Firestore"
+                >
+                  <RefreshCw size={14} className={isSyncingFirebase ? 'animate-spin' : ''} />
+                  <span>{isSyncingFirebase ? 'Sincronizando...' : 'Sincronizar no Firebase'}</span>
+                </button>
+
+                <button
                   id="btn-open-json-import"
                   onClick={() => {
                     setModalMode('json');
                     setShowAddModal(true);
                   }}
                   className="px-3 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-xs transition active:scale-95"
-                  title="Importar e interpretar notas de atualização a partir de um arquivo JSON"
+                  title="Importar e registrar notas de atualização em JSON sincronizadas no Firebase Firestore"
                 >
                   <FileCode size={15} />
-                  <span>Importar JSON (Admin)</span>
+                  <span>Registrar JSON (Admin)</span>
                 </button>
 
                 <button
@@ -1092,6 +1130,14 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
 
                 {/* Opções de Publicação */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                  {/* Banner de Sincronização Firebase */}
+                  <div className="p-2.5 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                    <Database size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span>
+                      <strong>Sincronização Firebase Firestore:</strong> As notas deste arquivo JSON serão gravadas diretamente na coleção <code>system_updates</code> pelo Administrador, com replicação e subscrição reativa para todos os usuários.
+                    </span>
+                  </div>
+
                   <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300">
                     <input
                       type="checkbox"
@@ -1135,8 +1181,8 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
                     <CheckCircle2 size={15} />
                     <span>
                       {isImportingJson
-                        ? 'Persistindo e Sincronizando...'
-                        : `Publicar ${parsedJsonResult?.valid ? parsedJsonResult.entries.length : ''} Nota(s) no Sistema`}
+                        ? 'Registrando no Firebase...'
+                        : `Registrar ${parsedJsonResult?.valid ? parsedJsonResult.entries.length : ''} Nota(s) no Firebase`}
                     </span>
                   </button>
                 </div>

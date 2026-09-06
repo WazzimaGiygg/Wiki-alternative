@@ -159,6 +159,27 @@
         "createdAt": { "type": "string" }
       },
       "required": ["id", "userUid", "justificativa", "status", "createdAt"]
+    },
+    "SystemUpdateEntry": {
+      "title": "SystemUpdateEntry",
+      "description": "Notas de atualização e versões do sistema sincronizadas no Firebase por administradores",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "type": "string" },
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string", "enum": ["feature", "improvement", "fix", "security", "infra", "compliance"] },
+        "author": { "type": "string" },
+        "authorRole": { "type": "string" },
+        "summary": { "type": "string" },
+        "highlights": { "type": "array" },
+        "badge": { "type": "string" },
+        "affectedComponents": { "type": "array" },
+        "commitHash": { "type": "string" },
+        "isLatest": { "type": "boolean" }
+      },
+      "required": ["id", "version", "title", "date", "category", "author", "summary", "highlights"]
     }
   },
   "firestore": {
@@ -217,6 +238,10 @@
     "/unblock_requests/{requestId}": {
       "schema": "UnblockRequest",
       "description": "Pedidos de apelação de desbloqueio de usuários"
+    },
+    "/system_updates/{updateId}": {
+      "schema": "SystemUpdateEntry",
+      "description": "Notas de versão e atualizações do sistema gerenciadas por administradores"
     }
   }
 }

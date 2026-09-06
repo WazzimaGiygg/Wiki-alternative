@@ -160,7 +160,7 @@ service cloud.firestore {
     // ✅ Notas de versão e atualizações do sistema
     match /system_updates/{updateId} {
       allow read: if true;
-      allow write: if isAuthenticated() && isNotBanned();
+      allow write: if isAdmin() || (isAuthenticated() && isNotBanned());
     }
 
     // ✅ Pedidos de desbloqueio de contas (Usuários bloqueados PODEM criar pedidos de apelação)

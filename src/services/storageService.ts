@@ -13,6 +13,7 @@ import {
   where,
   limit,
   serverTimestamp,
+  writeBatch,
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -3899,7 +3900,25 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   },
 
   /**
+   * Verifica se o usuário tem permissão de administrador para gerenciar e registrar notas de atualização.
+   */
+  canManageSystemUpdates(user: UserProfile | null | undefined): boolean {
+    if (!user) return false;
+    const role = (user.role || '').toLowerCase().trim();
+    const group = (user.group || '').toLowerCase().trim();
+    const email = (user.email || '').toLowerCase().trim();
+    return (
+      role === 'admin' ||
+      role === 'administrador' ||
+      group === 'admin' ||
+      group === 'administrador' ||
+      email === 'pedrohenriquecardonaperes@gmail.com'
+    );
+  },
+
+  /**
    * Importa e persiste um lote de notas de atualização no Firestore e LocalStorage.
+   * Realiza sincronização transacional atômica no Firebase Firestore.
    */
   async addSystemUpdatesBatch(
     entries: Array<Omit<SystemUpdateEntry, 'id'> & { id?: string }>,
@@ -3908,7 +3927,14 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       notifyUsers?: boolean;
       authorFallback?: string;
     } = {}
-  ): Promise<{ success: boolean; count: number; saved: SystemUpdateEntry[] }> {
+  ): Promise<{
+    success: boolean;
+    count: number;
+    saved: SystemUpdateEntry[];
+    firebaseSynced: boolean;
+    firebaseSyncedCount: number;
+    firebaseError?: string;
+  }> {
     const existingList = options.replaceAll ? [] : await this.getSystemUpdates();
     const existingMap = new Map<string, SystemUpdateEntry>();
     existingList.forEach((item) => existingMap.set(item.version.toLowerCase(), item));
@@ -3940,15 +3966,6 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
       existingMap.set(versionKey, fullEntry);
       savedEntries.push(fullEntry);
-
-      // Persistir individualmente no Firestore para garantir integridade
-      if (firebaseActive && db) {
-        try {
-          await setDoc(doc(db, 'system_updates', id), fullEntry);
-        } catch (err) {
-          console.warn(`[StorageService] Erro ao salvar nota ${fullEntry.version} no Firestore:`, err);
-        }
-      }
     }
 
     // Ordenar por data decrescente e marcar a mais recente como isLatest
@@ -3963,7 +3980,56 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       }
     }
 
+    // Atualiza cache local instantâneo
     localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(combined));
+
+    let firebaseSynced = false;
+    let firebaseSyncedCount = 0;
+    let firebaseError: string | undefined;
+
+    // Sincronização direta e atômica no Cloud Firestore
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        const batch = writeBatch(db);
+
+        if (options.replaceAll) {
+          // Se solicitado substituir todo histórico, limpa os documentos anteriores no Firestore
+          try {
+            const oldDocsSnap = await getDocs(collection(db, 'system_updates'));
+            oldDocsSnap.forEach((oldDoc) => {
+              batch.delete(oldDoc.ref);
+            });
+          } catch (cleanErr) {
+            console.warn('[StorageService] Aviso ao preparar limpeza de docs antigos em system_updates:', cleanErr);
+          }
+        }
+
+        // Adiciona cada nota no batch
+        for (const entry of savedEntries) {
+          const docRef = doc(db, 'system_updates', entry.id);
+          batch.set(docRef, entry);
+          firebaseSyncedCount++;
+        }
+
+        await batch.commit();
+        firebaseSynced = true;
+        console.log(`[StorageService] Sincronização no Firebase concluída com sucesso: ${firebaseSyncedCount} nota(s).`);
+      } catch (err: any) {
+        console.warn('[StorageService] Erro ao sincronizar notas no Firebase Firestore via batch:', err);
+        firebaseError = err?.message || 'Erro de conexão ou permissão no Firebase Firestore';
+        // Fallback: tentar setDoc individual para as que conseguirem
+        try {
+          for (const entry of savedEntries) {
+            await setDoc(doc(db, 'system_updates', entry.id), entry);
+          }
+          firebaseSynced = true;
+          firebaseError = undefined;
+        } catch (fbErr: any) {
+          firebaseError = fbErr?.message || firebaseError;
+        }
+      }
+    }
 
     // Notificar usuários se solicitado
     if (options.notifyUsers && savedEntries.length > 0) {
@@ -3984,7 +4050,36 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       success: true,
       count: savedEntries.length,
       saved: savedEntries,
+      firebaseSynced,
+      firebaseSyncedCount: firebaseSynced ? (firebaseSyncedCount || savedEntries.length) : 0,
+      firebaseError,
     };
+  },
+
+  /**
+   * Força a sincronização integral de todas as notas de atualização locais no Firebase Firestore.
+   */
+  async syncAllSystemUpdatesToFirebase(): Promise<{ success: boolean; count: number; error?: string }> {
+    if (!firebaseActive || !db) {
+      return { success: false, count: 0, error: 'Firebase Firestore inativo ou indisponível.' };
+    }
+    try {
+      await ensureFirebaseAuth();
+      const currentUpdates = await this.getSystemUpdates();
+      if (currentUpdates.length === 0) {
+        return { success: true, count: 0 };
+      }
+
+      const batch = writeBatch(db);
+      for (const item of currentUpdates) {
+        batch.set(doc(db, 'system_updates', item.id), item);
+      }
+      await batch.commit();
+      return { success: true, count: currentUpdates.length };
+    } catch (err: any) {
+      console.warn('[StorageService] Erro ao sincronizar todas as notas no Firebase:', err);
+      return { success: false, count: 0, error: err?.message || 'Falha ao sincronizar com Firebase' };
+    }
   },
 
   /**
@@ -4058,6 +4153,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await setDoc(doc(db, 'system_updates', id), newUpdate);
       } catch (err) {
         console.warn('Firestore addSystemUpdate error:', err);
@@ -4074,6 +4170,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         await deleteDoc(doc(db, 'system_updates', id));
       } catch (err) {
         console.warn('Firestore deleteSystemUpdate error:', err);

@@ -50,10 +50,11 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [selectedCollection, setSelectedCollection] = useState<'documentos' | 'users' | 'banned_users' | 'audit_logs'>('documentos');
+  const [selectedCollection, setSelectedCollection] = useState<'documentos' | 'users' | 'banned_users' | 'audit_logs' | 'system_updates'>('documentos');
 
   const [communityUsers, setCommunityUsers] = useState<UserProfile[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [systemUpdates, setSystemUpdates] = useState<any[]>([]);
 
   const firebaseStatus = StorageService.getFirebaseStatus();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'moderador' || currentUser?.email === 'pedrohenriquecardonaperes@gmail.com';
@@ -67,6 +68,8 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
     setCommunityUsers(users);
     const logs = StorageService.getUserAuditLogs();
     setAuditLogs(logs);
+    const updates = await StorageService.getSystemUpdates();
+    setSystemUpdates(updates);
   };
 
   const handleTestConnection = async () => {
@@ -448,11 +451,12 @@ export const ACTIVE_FIREBASE_CONFIG = {
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               {[
                 { id: 'documentos', label: 'Coleções (/documentos)', count: pages.length },
                 { id: 'users', label: 'Usuários (/users)', count: communityUsers.length },
                 { id: 'audit_logs', label: 'Auditoria (/audit_logs)', count: auditLogs.length },
+                { id: 'system_updates', label: 'Updates JSON (/system_updates)', count: systemUpdates.length },
               ].map((col) => (
                 <button
                   key={col.id}
@@ -596,6 +600,74 @@ export const ACTIVE_FIREBASE_CONFIG = {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {selectedCollection === 'system_updates' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-medium">
+                  Documentos sincronizados na coleção <code>system_updates</code>
+                </span>
+                {onNavigateToUpdates && (
+                  <button
+                    onClick={onNavigateToUpdates}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-1"
+                  >
+                    <span>Importar novo lote JSON</span>
+                    <ExternalLink size={12} />
+                  </button>
+                )}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border border-slate-200 dark:border-slate-800 rounded divide-y divide-slate-200 dark:divide-slate-800">
+                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+                    <tr>
+                      <th className="p-3">Versão</th>
+                      <th className="p-3">Título da Atualização</th>
+                      <th className="p-3">Categoria</th>
+                      <th className="p-3">Autor (Admin)</th>
+                      <th className="p-3 text-right">Data de Lançamento</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {systemUpdates.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-6 text-center text-slate-400">
+                          Nenhum registro de atualização encontrado no Firebase Firestore.
+                        </td>
+                      </tr>
+                    ) : (
+                      systemUpdates.map((upd) => (
+                        <tr key={upd.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                          <td className="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">
+                            {upd.version}
+                            {upd.isLatest && (
+                              <span className="ml-1.5 px-1.5 py-0.2 rounded text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-sans">
+                                Atual
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 font-semibold text-slate-800 dark:text-slate-200 max-w-xs truncate">
+                            {upd.title}
+                          </td>
+                          <td className="p-3">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                              {upd.category}
+                            </span>
+                          </td>
+                          <td className="p-3 text-slate-600 dark:text-slate-400">
+                            {upd.author || 'Administrador'}
+                          </td>
+                          <td className="p-3 text-right font-mono text-[10px] text-slate-400">
+                            {upd.date}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
