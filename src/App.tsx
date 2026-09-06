@@ -38,6 +38,7 @@ import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileSearchModal } from './components/MobileSearchModal';
 import { MobileDrawerMenu } from './components/MobileDrawerMenu';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { StorageService } from './services/storageService';
 import {
   WikiPage,
@@ -1186,6 +1187,9 @@ export default function App() {
           onSaveCustom={handleSaveCustomCookies}
         />
       )}
+
+      {/* Network & PWA Offline Indicator */}
+      <OfflineIndicator />
     </div>
   );
 }

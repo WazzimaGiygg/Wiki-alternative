@@ -33,6 +33,7 @@ import {
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
+import { PWAInstallPrompt } from './PWAInstallPrompt';
 
 interface SidebarProps {
   currentView: ViewMode;
@@ -545,6 +546,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </span>
                 )}
               </button>
+            )}
+
+            {!isCollapsed && (
+              <div className="pt-2">
+                <PWAInstallPrompt buttonStyle="full" />
+              </div>
             )}
           </nav>
         </div>

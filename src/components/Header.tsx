@@ -28,6 +28,7 @@ import { UserProfile, NotificationItem, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { StorageService } from '../services/storageService';
+import { PWAInstallPrompt } from './PWAInstallPrompt';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -566,6 +567,9 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             )}
           </div>
+
+          {/* Android App PWA Install Button */}
+          <PWAInstallPrompt buttonStyle="header" />
 
           {/* User Profile / Auth Area */}
           {user ? (

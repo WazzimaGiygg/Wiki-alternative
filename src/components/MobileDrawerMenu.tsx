@@ -36,6 +36,7 @@ import {
 import { UserProfile, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
+import { PWAInstallPrompt } from './PWAInstallPrompt';
 
 interface MobileDrawerMenuProps {
   isOpen: boolean;
@@ -212,6 +213,11 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
 
         {/* Scrollable Navigation Sections */}
         <div className="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
+          {/* Android PWA App Quick Action */}
+          <div className="pb-1">
+            <PWAInstallPrompt buttonStyle="full" />
+          </div>
+
           {/* Main Wiki Navigation */}
           <div>
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-1.5 px-2">

@@ -16,9 +16,11 @@ import {
   Database,
   ArrowRight,
   LifeBuoy,
+  Smartphone,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle } from '../types';
 import { formatExternalUrl } from '../utils/linkUtils';
+import { PWAInstallPrompt } from './PWAInstallPrompt';
 
 interface InformativeViewsProps {
   user: UserProfile | null;
@@ -432,6 +434,24 @@ export const OfflineModeView: React.FC<InformativeViewsProps> = ({ articles, pag
             <div className="p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 col-span-2 sm:col-span-1">
               <span className="text-slate-400 text-[10px] uppercase font-mono block">Sincronização:</span>
               <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 font-mono">Ativo & Reativo</span>
+            </div>
+          </div>
+
+          {/* Android App & PWA Installation Card */}
+          <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200 dark:border-blue-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                  Aplicativo WikiZero para Celular Android
+                </h4>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Instale o WikiZero como aplicativo no seu smartphone Android. Ele funciona como um app nativo, ocupando menos de 3MB e oferecendo acesso total offline.
+              </p>
+            </div>
+            <div className="shrink-0 w-full sm:w-auto">
+              <PWAInstallPrompt buttonStyle="header" />
             </div>
           </div>
         </div>
