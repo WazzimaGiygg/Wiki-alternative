@@ -137,6 +137,25 @@ export class PermissionService {
   }
 
   /**
+   * Verifica se o usuário é isento da cota diária de 5 edições.
+   * Moderadores e Administradores possuem isenção e podem editar sem restrição diária.
+   */
+  public static isExemptFromDailyLimit(user: (UserProfile | BaseUserObject | null | undefined)): boolean {
+    if (!user) return false;
+    const roleVal = (user.role || '').toString().toLowerCase().trim();
+    const groupVal = (user.group || '').toString().toLowerCase().trim();
+    const emailVal = (user.email || '').toString().toLowerCase().trim();
+
+    if (roleVal === 'admin' || roleVal === 'administrador') return true;
+    if (roleVal === 'moderador' || roleVal === 'moderator') return true;
+    if (groupVal === 'admin' || groupVal === 'administrador') return true;
+    if (groupVal === 'moderador' || groupVal === 'moderator') return true;
+    if (emailVal === 'pedrohenriquecardonaperes@gmail.com') return true;
+
+    return false;
+  }
+
+  /**
    * Permite customizar ou estender o mapa de permissões em tempo de execução.
    */
   public static setPermission(action: string, groupsOrBool: boolean | UserGroup[]): void {

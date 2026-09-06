@@ -62,6 +62,7 @@ import {
   CookieConsent,
   WatchlistItem,
   ArticleRatingData,
+  DailyEditLimitStatus,
 } from '../types';
 import { ACTIVE_FIREBASE_CONFIG } from '../config/firebaseCustomConfig';
 
@@ -126,7 +127,10 @@ const STORAGE_KEYS = {
   ADMIN_TICKETS: 'wikizero_admin_tickets_v3',
   ARBITRATION_CASES: 'wikizero_arbitration_cases_v3',
   ARBITRATION_MEMBERS: 'wikizero_arbitration_members_v3',
+  DAILY_EDITS_PREFIX: 'wikizero_daily_edits_',
 };
+
+export const DAILY_EDITOR_EDIT_LIMIT = 5;
 
 
 // Flag para expurgar dados estáticos e pré-definidos que não existem no banco de dados real
@@ -535,6 +539,161 @@ export const StorageService = {
     return articles.find((a) => a.titulo.toLowerCase() === title.toLowerCase()) || null;
   },
 
+  getTodayDateKey(): string {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  },
+
+  /**
+   * Verifica se o usuário é isento do limite de 5 edições diárias.
+   * Moderadores e Administradores possuem isenção e podem editar sem limites.
+   */
+  isExemptFromDailyEditLimit(user: UserProfile | null | undefined): boolean {
+    if (!user) return false;
+    const role = (user.role || '').toLowerCase().trim();
+    const group = (user.group || '').toLowerCase().trim();
+    const email = (user.email || '').toLowerCase().trim();
+
+    // Isenção para Administradores e Moderadores
+    if (role === 'admin' || role === 'administrador') return true;
+    if (role === 'moderador' || role === 'moderator') return true;
+    if (group === 'admin' || group === 'administrador') return true;
+    if (group === 'moderador' || group === 'moderator') return true;
+    if (email === 'pedrohenriquecardonaperes@gmail.com') return true;
+
+    return false;
+  },
+
+  /**
+   * Retorna o status atual de edições diárias do usuário, incluindo contagem,
+   * limite restante e se a edição é permitida.
+   */
+  async getDailyEditLimitStatus(user: UserProfile | null | undefined): Promise<DailyEditLimitStatus> {
+    const dateKey = this.getTodayDateKey();
+    const isExempt = this.isExemptFromDailyEditLimit(user);
+
+    if (isExempt) {
+      return {
+        isExempt: true,
+        limit: Infinity,
+        count: 0,
+        remaining: Infinity,
+        allowed: true,
+        dateKey,
+        resetTimeMessage: 'Edições ilimitadas (Moderadores e Administradores possuem isenção de cota diária).',
+      };
+    }
+
+    if (!user || !user.uid) {
+      return {
+        isExempt: false,
+        limit: DAILY_EDITOR_EDIT_LIMIT,
+        count: 0,
+        remaining: DAILY_EDITOR_EDIT_LIMIT,
+        allowed: true,
+        dateKey,
+        resetTimeMessage: `Limite de ${DAILY_EDITOR_EDIT_LIMIT} edições por dia para editores. O limite é renovado à meia-noite.`,
+      };
+    }
+
+    const storageKey = `${STORAGE_KEYS.DAILY_EDITS_PREFIX}${user.uid}_${dateKey}`;
+    let count = parseInt(localStorage.getItem(storageKey) || '0', 10);
+    if (isNaN(count)) count = 0;
+
+    // Conferir atividades do dia no perfil local para consistência
+    try {
+      const profile = await this.getUserProfile(user.uid);
+      if (profile && Array.isArray(profile.recentActivity)) {
+        const todayStr = new Date().toDateString();
+        const activityCount = profile.recentActivity.filter((act) => {
+          if (act.type !== 'create' && act.type !== 'edit' && act.type !== 'revert') return false;
+          try {
+            return new Date(act.date).toDateString() === todayStr;
+          } catch {
+            return false;
+          }
+        }).length;
+
+        if (activityCount > count) {
+          count = activityCount;
+          localStorage.setItem(storageKey, count.toString());
+        }
+      }
+    } catch {
+      // safe fallback
+    }
+
+    // Consulta de integridade no Firestore se ativo
+    if (firebaseActive && db) {
+      try {
+        const ref = doc(db, 'user_daily_edits', `${user.uid}_${dateKey}`);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (typeof data?.count === 'number' && data.count > count) {
+            count = data.count;
+            localStorage.setItem(storageKey, count.toString());
+          }
+        }
+      } catch (err) {
+        console.warn('[StorageService] Consulta remota de limite diário ignorada (usando cache local):', err);
+      }
+    }
+
+    const remaining = Math.max(0, DAILY_EDITOR_EDIT_LIMIT - count);
+    const allowed = count < DAILY_EDITOR_EDIT_LIMIT;
+
+    return {
+      isExempt: false,
+      limit: DAILY_EDITOR_EDIT_LIMIT,
+      count,
+      remaining,
+      allowed,
+      dateKey,
+      resetTimeMessage: allowed
+        ? `Você realizou ${count} de ${DAILY_EDITOR_EDIT_LIMIT} edições hoje. Restam ${remaining}. O limite é renovado à meia-noite.`
+        : `Você atingiu o limite de ${DAILY_EDITOR_EDIT_LIMIT} edições diárias para o papel de Editor. Moderadores e administradores têm edições ilimitadas. O limite será renovado à meia-noite.`,
+    };
+  },
+
+  /**
+   * Incrementa o contador de edições do dia para o usuário editor.
+   */
+  async incrementDailyEditsCount(user: UserProfile | null | undefined): Promise<number> {
+    if (!user || !user.uid || this.isExemptFromDailyEditLimit(user)) {
+      return 0;
+    }
+    const dateKey = this.getTodayDateKey();
+    const storageKey = `${STORAGE_KEYS.DAILY_EDITS_PREFIX}${user.uid}_${dateKey}`;
+    const current = parseInt(localStorage.getItem(storageKey) || '0', 10);
+    const newCount = (isNaN(current) ? 0 : current) + 1;
+    localStorage.setItem(storageKey, newCount.toString());
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        const ref = doc(db, 'user_daily_edits', `${user.uid}_${dateKey}`);
+        await setDoc(
+          ref,
+          {
+            uid: user.uid,
+            date: dateKey,
+            count: newCount,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      } catch (err) {
+        console.warn('[StorageService] Erro ao sincronizar contagem diária no Firestore:', err);
+      }
+    }
+
+    return newCount;
+  },
+
   async saveArticle(
     articleData: Partial<WikiArticle> & { titulo: string; pageUid: string; descricao: string },
     user?: UserProfile | null,
@@ -550,6 +709,16 @@ export const StorageService = {
     }
     if (effectiveUser.permissions && effectiveUser.permissions.canEdit === false) {
       throw new Error('Você não possui autorização para editar artigos nesta wiki.');
+    }
+
+    // Validação de limite de 5 edições diárias para editores (com exceção de moderadores e administradores)
+    if (!this.isExemptFromDailyEditLimit(effectiveUser)) {
+      const dailyStatus = await this.getDailyEditLimitStatus(effectiveUser);
+      if (!dailyStatus.allowed) {
+        throw new Error(
+          `Limite diário de edições atingido: Usuários com papel de editor possuem um limite máximo de ${DAILY_EDITOR_EDIT_LIMIT} edições por dia (moderadores e administradores possuem edições ilimitadas). Você já atingiu 5 edições hoje. Seu limite será liberado à meia-noite.`
+        );
+      }
     }
 
     const articles = await this.getArticles();
@@ -722,6 +891,15 @@ export const StorageService = {
       });
     } catch (trackErr) {
       console.warn('[StorageService] Error recording user tracking activity on saveArticle:', trackErr);
+    }
+
+    // Incrementar a cota de edições diárias para usuários que não possuem isenção (editores)
+    try {
+      if (!this.isExemptFromDailyEditLimit(effectiveUser)) {
+        await this.incrementDailyEditsCount(effectiveUser);
+      }
+    } catch (limitErr) {
+      console.warn('[StorageService] Error updating daily edits counter on saveArticle:', limitErr);
     }
 
     return article;

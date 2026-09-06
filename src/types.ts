@@ -116,6 +116,16 @@ export interface UserActivityLogEntry {
   isMinor?: boolean;
 }
 
+export interface DailyEditLimitStatus {
+  isExempt: boolean; // Moderadores e Administradores têm edições ilimitadas
+  limit: number; // 5 para editores normais, Infinity para isentos
+  count: number; // Edições realizadas no dia atual
+  remaining: number; // Edições restantes no dia
+  allowed: boolean; // Se o usuário pode realizar nova edição agora
+  dateKey: string; // Formato YYYY-MM-DD da data corrente
+  resetTimeMessage: string; // Mensagem informativa sobre a renovação à meia-noite
+}
+
 export interface UserTalkMessage {
   id: string;
   targetUserUid: string;

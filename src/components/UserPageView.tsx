@@ -50,6 +50,7 @@ import {
   WikiArticle,
   WikiPage,
   TalkReply,
+  DailyEditLimitStatus,
 } from '../types';
 import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
@@ -154,6 +155,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   const [renameJustification, setRenameJustification] = useState('Solicitação do Titular de Dados (Art. 18, III LGPD)');
   const [customJustification, setCustomJustification] = useState('');
   const [isRenaming, setIsRenaming] = useState(false);
+  const [dailyLimitStatus, setDailyLimitStatus] = useState<DailyEditLimitStatus | null>(null);
 
   const isAdminOrMod =
     currentUser?.role === 'admin' ||
@@ -205,6 +207,14 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
         profile.uid
       );
       setContributions(contribs);
+
+      // Load Daily Edit Limit Status
+      try {
+        const limitStatus = await StorageService.getDailyEditLimitStatus(profile);
+        setDailyLimitStatus(limitStatus);
+      } catch (err) {
+        console.warn('Erro ao verificar status de edições diárias:', err);
+      }
     }
     setIsLoading(false);
   };
@@ -684,6 +694,27 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                   {contributions.length}
                 </div>
                 <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Edições</div>
+              </div>
+              <div
+                className="bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-700 min-w-[70px]"
+                title={
+                  dailyLimitStatus?.isExempt
+                    ? 'Moderadores e Administradores possuem permissão para edições ilimitadas.'
+                    : `Cota diária de 5 edições para o papel de editor. ${dailyLimitStatus ? dailyLimitStatus.count : 0}/5 edições realizadas hoje. Renovado à meia-noite.`
+                }
+              >
+                <div className={`text-sm sm:text-base font-bold font-mono ${
+                  dailyLimitStatus?.isExempt
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : (dailyLimitStatus && !dailyLimitStatus.allowed)
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-blue-600 dark:text-blue-400'
+                }`}>
+                  {dailyLimitStatus?.isExempt ? '∞' : `${dailyLimitStatus ? dailyLimitStatus.count : 0}/5`}
+                </div>
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                  {dailyLimitStatus?.isExempt ? 'Cota Mod/Adm' : 'Cota Diária'}
+                </div>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-700 min-w-[70px]">
                 <div className="text-sm sm:text-base font-bold font-mono text-amber-500">

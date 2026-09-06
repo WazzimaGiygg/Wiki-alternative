@@ -25,9 +25,12 @@ import {
   AlertCircle,
   FileText,
   FileDown,
+  ShieldCheck,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { WikiArticle, WikiPage, UserProfile } from '../types';
+import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus } from '../types';
 import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
 import { SaveReasonModal } from './SaveReasonModal';
@@ -84,9 +87,27 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [draftSaved, setDraftSaved] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [dailyLimitStatus, setDailyLimitStatus] = useState<DailyEditLimitStatus | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
+
+  const refreshDailyLimit = async () => {
+    if (user) {
+      try {
+        const status = await StorageService.getDailyEditLimitStatus(user);
+        setDailyLimitStatus(status);
+      } catch (err) {
+        console.warn('Erro ao verificar limite diário de edições:', err);
+      }
+    } else {
+      setDailyLimitStatus(null);
+    }
+  };
+
+  useEffect(() => {
+    refreshDailyLimit();
+  }, [user]);
 
   // Auto-save draft in localStorage
   useEffect(() => {
@@ -187,7 +208,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     }
   };
 
-  const handleOpenSaveModal = () => {
+  const handleOpenSaveModal = async () => {
     if (!titulo.trim()) {
       alert('Por favor, informe o título do artigo antes de salvar.');
       return;
@@ -195,6 +216,22 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     if (!descricao.trim()) {
       alert('O conteúdo do artigo não pode ficar vazio.');
       return;
+    }
+
+    // Validação do limite diário de 5 edições para editores (exceção para moderadores e administradores)
+    if (user) {
+      try {
+        const status = await StorageService.getDailyEditLimitStatus(user);
+        setDailyLimitStatus(status);
+        if (!status.allowed && !status.isExempt) {
+          alert(
+            'Limite diário atingido: Usuários com papel de editor podem realizar até 5 edições por dia (com exceção de moderadores e administradores). Seu limite será renovado à meia-noite.'
+          );
+          return;
+        }
+      } catch (e) {
+        console.warn('Erro ao consultar status de limite:', e);
+      }
     }
 
     // Sync any pending changes from visual editor
@@ -234,11 +271,12 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       }
 
       StorageService.clearDraft();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao salvar artigo:', err);
-      alert('Ocorreu um erro ao salvar o artigo.');
+      alert(err?.message || 'Ocorreu um erro ao salvar o artigo.');
     } finally {
       setIsSaving(false);
+      refreshDailyLimit();
     }
   };
 
@@ -264,9 +302,37 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
               <Sparkles size={16} className="text-amber-500" />
               {initialArticle ? `Editando: ${initialArticle.titulo}` : 'Criar Novo Artigo'}
             </h2>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Alterne livremente entre o <strong>Editor de Código Wikitexto</strong> e a <strong>Página Formatada (Visual)</strong>.
-            </p>
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Alterne livremente entre o <strong>Editor de Código Wikitexto</strong> e a <strong>Página Formatada (Visual)</strong>.
+              </p>
+
+              {dailyLimitStatus && (
+                dailyLimitStatus.isExempt ? (
+                  <span
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/80"
+                    title="Moderadores e Administradores não possuem restrição de cota diária de edições."
+                  >
+                    <ShieldCheck size={12} className="text-emerald-600 dark:text-emerald-400" />
+                    Edições ilimitadas (Moderador/Admin)
+                  </span>
+                ) : (
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded border ${
+                      !dailyLimitStatus.allowed
+                        ? 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800'
+                        : dailyLimitStatus.remaining <= 1
+                        ? 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800'
+                        : 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800'
+                    }`}
+                    title={dailyLimitStatus.resetTimeMessage}
+                  >
+                    <Clock size={12} />
+                    Cota diária de editor: {dailyLimitStatus.count}/5 usadas ({dailyLimitStatus.remaining} restantes hoje)
+                  </span>
+                )
+              )}
+            </div>
           </div>
 
           {/* View mode toggle & Action Buttons */}
@@ -358,6 +424,29 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             </button>
           </div>
         </div>
+
+        {/* Banner de Aviso de Limite Diário de 5 Edições Atingido */}
+        {dailyLimitStatus && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed && (
+          <div className="mt-3 p-3 rounded border border-red-200 dark:border-red-900/80 bg-red-50/90 dark:bg-red-950/40 text-red-900 dark:text-red-200 flex items-start gap-2.5">
+            <AlertTriangle size={18} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <strong className="text-xs font-bold uppercase tracking-wider font-mono text-red-800 dark:text-red-300">
+                  Limite Diário de Edições Atingido (5/5)
+                </strong>
+                <span className="text-[10px] bg-red-200 dark:bg-red-900/80 text-red-800 dark:text-red-200 px-1.5 py-0.2 rounded font-mono font-semibold">
+                  Bloqueio Temporário de Edição
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-red-700 dark:text-red-300">
+                Usuários com cargo de <strong>Editor</strong> possuem um limite diário de até <strong>5 edições por dia</strong> para manutenção da integridade da enciclopédia (com exceção de <strong>moderadores</strong> e <strong>administradores</strong>, que são isentos).
+              </p>
+              <p className="text-[10px] font-mono text-red-600 dark:text-red-400">
+                Suas edições serão renovadas automaticamente à meia-noite (00:00).
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* High Density Form Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -695,6 +784,15 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
           {/* Save Button with Mandatory Reason Trigger */}
           <div className="flex items-center gap-2">
+            {dailyLimitStatus && !dailyLimitStatus.isExempt && (
+              <span className={`text-[11px] font-mono hidden md:inline-flex items-center gap-1 ${
+                !dailyLimitStatus.allowed ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-500 dark:text-slate-400'
+              }`}>
+                <Clock size={11} />
+                {dailyLimitStatus.count}/5 edições hoje
+              </span>
+            )}
+
             <button
               type="button"
               onClick={() => setShowPdfModal(true)}
@@ -707,8 +805,13 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             <button
               type="button"
               onClick={handleOpenSaveModal}
-              disabled={isSaving}
-              className="px-4 py-1.5 text-xs font-semibold rounded bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1.5 flex-shrink-0 disabled:opacity-50 shadow-xs"
+              disabled={isSaving || (dailyLimitStatus !== null && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed)}
+              title={
+                dailyLimitStatus && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed
+                  ? 'Você atingiu o limite de 5 edições diárias para o perfil de editor. Moderadores e administradores têm edições ilimitadas.'
+                  : 'Salvar e Publicar Alterações'
+              }
+              className="px-4 py-1.5 text-xs font-semibold rounded bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1.5 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
             >
               <Save size={13} />
               {isSaving ? 'Salvando...' : 'Salvar e Publicar Alterações'}
