@@ -51,6 +51,7 @@ import {
   ViewMode,
   ArticleHistoryItem,
   DeviceMode,
+  AppTheme,
 } from './types';
 import {
   getUidFromUrl,
@@ -101,23 +102,36 @@ export default function App() {
       setCurrentView('smart-tv');
     }
   };
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    return (
-      localStorage.getItem('wikizero_theme_v3') === 'dark' ||
-      (!localStorage.getItem('wikizero_theme_v3') && window.matchMedia('(prefers-color-scheme: dark)').matches)
-    );
+  // Multi-theme state supporting light, dark, google, google-dark, win95, genshin
+  const [theme, setTheme] = useState<AppTheme>(() => {
+    const saved = localStorage.getItem('wikizero_theme_v3') as AppTheme | null;
+    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'genshin')) {
+      return saved;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
-  // Apply dark mode class to document
+  const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'genshin';
+
+  // Apply appropriate theme classes to document root
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('wikizero_theme_v3', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('wikizero_theme_v3', 'light');
+    const root = document.documentElement;
+    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-genshin');
+
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else if (theme === 'google') {
+      root.classList.add('theme-google');
+    } else if (theme === 'google-dark') {
+      root.classList.add('dark', 'theme-google', 'theme-google-dark');
+    } else if (theme === 'win95') {
+      root.classList.add('theme-win95');
+    } else if (theme === 'genshin') {
+      root.classList.add('dark', 'theme-genshin');
     }
-  }, [isDark]);
+
+    localStorage.setItem('wikizero_theme_v3', theme);
+  }, [theme]);
 
   // Navigate to any page/article/view/user/file by UID
   const handleNavigateByUid = (rawUid: string, mode: 'push' | 'replace' = 'push') => {
@@ -368,8 +382,20 @@ export default function App() {
   ]);
 
   // === HANDLERS ===
+  const handleSetTheme = (newTheme: AppTheme) => {
+    setTheme(newTheme);
+  };
+
   const handleToggleTheme = () => {
-    setIsDark(!isDark);
+    if (theme === 'google') {
+      setTheme('google-dark');
+    } else if (theme === 'google-dark') {
+      setTheme('google');
+    } else if (theme === 'dark') {
+      setTheme('light');
+    } else {
+      setTheme('dark');
+    }
   };
 
   const handleNavigate = (view: ViewMode) => {
@@ -703,6 +729,7 @@ export default function App() {
         currentView={currentView}
         searchQuery={searchQuery}
         isDark={isDark}
+        theme={theme}
         deviceMode={deviceMode}
         onSearchChange={setSearchQuery}
         onSearchSubmit={handleSearchSubmit}
@@ -712,6 +739,7 @@ export default function App() {
         onLoginClick={handleLoginClick}
         onLogoutClick={handleLogout}
         onToggleTheme={handleToggleTheme}
+        onSetTheme={handleSetTheme}
         onToggleDeviceMode={handleToggleDeviceMode}
         onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)}
         onOpenMobileSearch={() => setIsMobileSearchOpen(true)}
@@ -727,6 +755,8 @@ export default function App() {
         <Sidebar
           currentView={currentView}
           isCollapsed={isSidebarCollapsed}
+          theme={theme}
+          isDark={isDark}
           deviceMode={deviceMode}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           onNavigate={handleNavigate}
@@ -734,6 +764,7 @@ export default function App() {
           onCreatePageClick={() => setShowCreatePageModal(true)}
           totalPages={pages.length}
           totalArticles={articles.length}
+          onSetTheme={handleSetTheme}
           onOpenLanguagesModal={() => setShowLanguageModal(true)}
           onOpenSmartTVModal={() => setShowSmartTVModal(true)}
         />
@@ -1081,8 +1112,10 @@ export default function App() {
       {/* 3. Global Footer */}
       <Footer
         onNavigate={handleNavigate}
+        theme={theme}
         deviceMode={deviceMode}
         onToggleDeviceMode={handleToggleDeviceMode}
+        onSetTheme={handleSetTheme}
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
       />
 
@@ -1113,11 +1146,13 @@ export default function App() {
         currentView={currentView}
         user={user}
         isDark={isDark}
+        theme={theme}
         deviceMode={deviceMode}
         totalPages={pages.length}
         totalArticles={articles.length}
         onNavigate={handleNavigate}
         onToggleTheme={handleToggleTheme}
+        onSetTheme={handleSetTheme}
         onToggleDeviceMode={handleToggleDeviceMode}
         onLoginClick={handleLoginClick}
         onLogoutClick={handleLogout}

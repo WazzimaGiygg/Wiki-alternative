@@ -24,8 +24,10 @@ import {
   Monitor,
   Users,
   Tv,
+  Palette,
+  Check,
 } from 'lucide-react';
-import { UserProfile, NotificationItem, ViewMode, DeviceMode } from '../types';
+import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { StorageService } from '../services/storageService';
@@ -37,6 +39,7 @@ interface HeaderProps {
   currentView: ViewMode;
   searchQuery: string;
   isDark: boolean;
+  theme?: AppTheme;
   deviceMode?: DeviceMode;
   onSearchChange: (q: string) => void;
   onSearchSubmit: () => void;
@@ -46,6 +49,7 @@ interface HeaderProps {
   onLoginClick: () => void;
   onLogoutClick: () => void;
   onToggleTheme: () => void;
+  onSetTheme?: (theme: AppTheme) => void;
   onToggleDeviceMode?: (mode: DeviceMode) => void;
   onOpenMobileDrawer?: () => void;
   onOpenMobileSearch?: () => void;
@@ -61,6 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentView,
   searchQuery,
   isDark,
+  theme = 'light',
   deviceMode = 'auto',
   onSearchChange,
   onSearchSubmit,
@@ -70,6 +75,7 @@ export const Header: React.FC<HeaderProps> = ({
   onLoginClick,
   onLogoutClick,
   onToggleTheme,
+  onSetTheme,
   onToggleDeviceMode,
   onOpenMobileDrawer,
   onOpenMobileSearch,
@@ -83,13 +89,18 @@ export const Header: React.FC<HeaderProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showOnlineMenu, setShowOnlineMenu] = useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<UserProfile[]>([]);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const onlineMenuRef = useRef<HTMLDivElement>(null);
+  const themeMenuRef = useRef<HTMLDivElement>(null);
 
+  const isGoogleTheme = theme === 'google' || theme === 'google-dark';
+  const isWin95 = theme === 'win95';
+  const isGenshin = theme === 'genshin';
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
@@ -114,6 +125,9 @@ export const Header: React.FC<HeaderProps> = ({
       if (onlineMenuRef.current && !onlineMenuRef.current.contains(event.target as Node)) {
         setShowOnlineMenu(false);
       }
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
+        setShowThemeMenu(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -130,28 +144,84 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-[#ffffff] dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 transition-colors select-none">
-      {/* High Density Top Micro Notice Bar */}
-      <div className="bg-[#1e293b] dark:bg-[#090d16] text-slate-300 text-[11px] py-1 px-4 flex justify-between items-center border-b border-slate-800 font-mono">
-        <div className="flex items-center gap-2">
-          <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold">WIKIZERO v3.0</span>
-          <span className="text-slate-400">{t('header.open_encyclopedia')}</span>
+      {/* Windows 95 Top Window Title Bar */}
+      {isWin95 && (
+        <div className="win95-titlebar font-mono text-xs flex items-center justify-between px-2 py-0.5 select-none">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className="w-3.5 h-3.5 bg-[#c0c0c0] border border-black flex items-center justify-center text-[9px] font-black text-[#000080]">
+              W
+            </div>
+            <span className="font-bold text-white text-[11px] truncate tracking-wide">
+              WikiZero 95 - Enciclopédia Multimídia de 32 bits [v3.0.1995]
+            </span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            <button className="w-4 h-3.5 bg-[#c0c0c0] text-black font-black text-[9px] flex items-center justify-center border-t border-l border-white border-r border-b border-black active:border-black leading-none" title="Minimizar">_</button>
+            <button className="w-4 h-3.5 bg-[#c0c0c0] text-black font-black text-[9px] flex items-center justify-center border-t border-l border-white border-r border-b border-black active:border-black leading-none" title="Maximizar">□</button>
+            <button
+              onClick={() => onSetTheme?.('light')}
+              className="w-4 h-3.5 bg-[#c0c0c0] text-black font-black text-[9px] flex items-center justify-center border-t border-l border-white border-r border-b border-black active:border-black leading-none hover:bg-red-600 hover:text-white"
+              title="Fechar / Sair do Modo Windows 95"
+            >
+              ✕
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-4 text-slate-400 text-[11px]">
+      )}
+
+      {/* Google 4-Color Accent Line when Google Theme is active */}
+      {isGoogleTheme && <div className="google-gradient-bar w-full" />}
+
+      {/* Genshin Impact Celestial & 7-Elements Accent Line */}
+      {isGenshin && <div className="genshin-accent-bar w-full" />}
+
+      {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 flex justify-between items-center font-mono`}>
+        <div className="flex items-center gap-2">
+          {isWin95 ? (
+            <div className="flex items-center gap-2">
+              <span className="bg-[#000080] text-white px-1.5 py-0.2 text-[10px] font-bold border-t border-l border-white border-r border-b border-black">
+                START 95
+              </span>
+              <div className="hidden sm:flex items-center gap-3 text-black text-xs font-sans">
+                <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline"><u>A</u>rquivo</span>
+                <span onClick={() => onNavigate('editor')} className="cursor-pointer hover:underline"><u>E</u>ditar</span>
+                <span onClick={onOpenLanguagesModal} className="cursor-pointer hover:underline"><u>E</u>xibir</span>
+                <span onClick={() => onNavigate('history')} className="cursor-pointer hover:underline"><u>F</u>avoritos</span>
+                <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline">A<u>j</u>uda</span>
+              </div>
+            </div>
+          ) : isGenshin ? (
+            <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold genshin-primogem-badge">
+              <Sparkles size={10} className="text-amber-300 animate-pulse" />
+              GENSHIN IMPACT ✦ TEYVAT ARCHIVES
+            </span>
+          ) : isGoogleTheme ? (
+            <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#4285F4] text-white">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
+              GOOGLE THEME v3.0
+            </span>
+          ) : (
+            <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold">WIKIZERO v3.0</span>
+          )}
+          {!isWin95 && <span className={isGenshin ? "text-[#a0947d]" : "text-slate-400"}>{t('header.open_encyclopedia')}</span>}
+        </div>
+        <div className={`flex items-center gap-4 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : 'text-slate-400'} text-[11px]`}>
           <button
             onClick={onOpenLanguagesModal}
-            className="hover:text-blue-300 flex items-center gap-1 text-slate-300 transition"
+            className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-300 text-slate-300'} flex items-center gap-1 transition`}
           >
-            <Globe2 size={11} className="text-blue-400" />
+            <Globe2 size={11} className={isWin95 ? 'text-[#000080]' : isGenshin ? 'text-[#72e2db]' : 'text-blue-400'} />
             <span>{currentLanguage.flag} {currentLanguage.nativeName} ({currentLanguage.code})</span>
           </button>
-          <span className="hidden sm:inline text-slate-600">|</span>
+          <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
           <span className="hidden sm:inline">GNU GPL v3.0</span>
-          <span className="hidden md:inline text-slate-600">|</span>
+          <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden md:inline text-slate-600'}>|</span>
           <a
             href={formatExternalUrl("https://github.com/WazzimaGiygg/Wiki-alternative")}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-blue-400 flex items-center gap-1 text-slate-300"
+            className={`${isWin95 ? 'hover:underline text-[#000080]' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-400 text-slate-300'} flex items-center gap-1`}
           >
             GitHub <ExternalLink size={10} />
           </a>
@@ -172,58 +242,248 @@ export const Header: React.FC<HeaderProps> = ({
             <Menu size={20} />
           </button>
 
-          <div
-            onClick={() => onNavigate('hub')}
-            className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
-          >
-            <div className="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center font-serif-heading font-bold text-lg shadow-xs group-hover:bg-blue-700 transition">
-              W
+          {isWin95 ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              title="WikiZero - Tema Windows 95"
+            >
+              <div className="w-8 h-8 bg-[#c0c0c0] border-t-2 border-l-2 border-white border-r-2 border-b-2 border-black flex items-center justify-center shadow-xs">
+                <Monitor size={18} className="text-[#000080]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-bold text-base sm:text-lg text-black tracking-tight font-sans">
+                    WikiZero <span className="text-[#000080] font-black">95</span>
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-[#000080] text-white px-1.5 py-0.2 border border-white">
+                    WIN95
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-600 font-sans leading-none mt-0.5 hidden xs:block">
+                  Microsoft Windows 95 Style
+                </p>
+              </div>
             </div>
-            <div>
-              <div className="flex items-center gap-1.5 leading-none">
-                <h1 className="font-serif-heading font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
-                  WazzimaGiygg
-                </h1>
-                <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-1 py-0.2 rounded-xs">
-                  Wiki
+          ) : isGenshin ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              title="WikiZero - Tema Genshin Impact (Teyvat)"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#2a3454] to-[#121524] border border-[#d3bc8e] flex items-center justify-center shadow-sm shadow-amber-500/20 group-hover:border-amber-300 transition">
+                <Sparkles size={17} className="text-[#d3bc8e] drop-shadow-[0_0_6px_rgba(211,188,142,0.8)] animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-serif font-bold text-base sm:text-lg text-[#f2dfb7] tracking-wider">
+                    WikiZero <span className="text-[#72e2db] font-normal text-xs">✦ Teyvat</span>
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500/20 to-teal-500/20 text-[#e4ca95] border border-[#d3bc8e]/50 px-1.5 py-0.2 rounded-xs">
+                    GENSHIN
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#cca567] font-sans leading-none mt-0.5 hidden xs:block">
+                  Adventurer's Handbook & Lore
+                </p>
+              </div>
+            </div>
+          ) : isGoogleTheme ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              title="WikiZero - Tema Google Material"
+            >
+              <div className="w-8 h-8 rounded-full bg-white dark:bg-[#303134] border border-slate-200 dark:border-[#5f6368] flex items-center justify-center shadow-xs">
+                <span className="font-bold text-base font-sans tracking-tight">
+                  <span className="text-[#4285F4]">G</span>
+                  <span className="text-[#EA4335] text-xs font-black">W</span>
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans leading-none mt-0.5 hidden xs:block">
-                {t('header.tagline')}
-              </p>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-bold text-base sm:text-lg tracking-tight font-sans">
+                    <span className="text-[#4285F4]">W</span>
+                    <span className="text-[#EA4335]">a</span>
+                    <span className="text-[#FBBC05]">z</span>
+                    <span className="text-[#4285F4]">z</span>
+                    <span className="text-[#34A853]">i</span>
+                    <span className="text-[#EA4335]">m</span>
+                    <span className="text-[#4285F4]">a</span>
+                    <span className="text-slate-700 dark:text-slate-200"> </span>
+                    <span className="text-[#4285F4]">W</span>
+                    <span className="text-[#EA4335]">i</span>
+                    <span className="text-[#FBBC05]">k</span>
+                    <span className="text-[#34A853]">i</span>
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-300 border border-red-200 dark:border-red-800 px-1.5 py-0.2 rounded-full">
+                    Google
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans leading-none mt-0.5 hidden xs:block">
+                  Material Design 3 & Pesquisa Google
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+            >
+              <div className="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center font-serif-heading font-bold text-lg shadow-xs group-hover:bg-blue-700 transition">
+                W
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-serif-heading font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
+                    WazzimaGiygg
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-1 py-0.2 rounded-xs">
+                    Wiki
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans leading-none mt-0.5 hidden xs:block">
+                  {t('header.tagline')}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Dense Global Search Bar (Desktop) */}
-        <div className="flex-1 max-w-lg mx-2 hidden md:block">
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              placeholder={t('header.search_placeholder')}
-              className="w-full pl-8 pr-20 py-1 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
-            />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+        {isWin95 ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div className="flex items-center gap-1.5">
+              <div className="flex-1 win95-sunken flex items-center px-2 py-1 bg-white">
+                <Search className="w-3.5 h-3.5 text-[#000080] mr-1.5 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="C:\WIKIZERO\BUSCAR.EXE..."
+                  className="w-full text-xs bg-transparent border-none outline-none text-black font-mono placeholder:text-slate-500"
+                />
+              </div>
               <button
                 onClick={onSearchSubmit}
-                className="px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition"
+                className="win95-button font-bold flex items-center gap-1"
               >
+                <Search size={11} />
                 {t('header.search_btn')}
               </button>
               <button
                 onClick={onRandomPage}
-                title={t('header.random_page')}
-                className="p-1 text-slate-500 dark:text-slate-400 hover:text-blue-600 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                title="Artigo Aleatório"
+                className="win95-button"
               >
-                <Shuffle size={12} />
+                {t('header.random_page')}
               </button>
             </div>
           </div>
-        </div>
+        ) : isGenshin ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div className="relative genshin-search-box flex items-center px-3.5 py-1.5 transition-all">
+              <Sparkles className="w-4 h-4 text-[#d3bc8e] mr-2 shrink-0 animate-pulse" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Consultar o Guia de Teyvat (artigos, personagens, lore)..."
+                className="w-full text-xs bg-transparent border-none outline-none text-[#f2dfb7] placeholder:text-[#a0947d] font-sans"
+              />
+              <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#161a2c] border border-[#d3bc8e]/30" title="Sete Elementos de Teyvat">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#74c2a8]" title="Anemo" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#fab632]" title="Geo" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#af8ec9]" title="Electro" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#a5c83b]" title="Dendro" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#4cc2f1]" title="Hydro" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ef7938]" title="Pyro" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#9fd6e3]" title="Cryo" />
+                </div>
+                <button
+                  onClick={onSearchSubmit}
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-full genshin-gold-btn cursor-pointer"
+                >
+                  {t('header.search_btn')}
+                </button>
+                <button
+                  onClick={onRandomPage}
+                  title="Artigo Aleatório / Oração Astral"
+                  className="px-2 py-1 text-[11px] font-medium rounded-full bg-[#242c47] hover:bg-[#2f395d] text-[#e4ca95] border border-[#d3bc8e]/40 transition flex items-center gap-1 cursor-pointer"
+                >
+                  <span>✦ Desejo</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : isGoogleTheme ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div className="relative google-search-container flex items-center px-3.5 py-1.5 transition-all">
+              <Search className="w-4 h-4 text-[#4285F4] mr-2 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Pesquisar na Enciclopédia Google ou digitar artigo..."
+                className="w-full text-xs bg-transparent border-none outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+              />
+              <div className="flex items-center gap-1 ml-2 shrink-0">
+                <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/50" title="Cores do Google">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
+                </div>
+                <button
+                  onClick={onSearchSubmit}
+                  className="px-2.5 py-1 text-[11px] font-semibold rounded-full bg-[#f8f9fa] dark:bg-[#303134] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-slate-700 dark:text-slate-200 border border-[#dadce0] dark:border-[#5f6368] transition shadow-2xs"
+                >
+                  {t('header.search_btn')}
+                </button>
+                <button
+                  onClick={onRandomPage}
+                  title="Estou com sorte (Artigo Aleatório)"
+                  className="px-2 py-1 text-[11px] font-semibold rounded-full bg-[#f8f9fa] dark:bg-[#303134] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#1a73e8] dark:text-[#8ab4f8] border border-[#dadce0] dark:border-[#5f6368] transition shadow-2xs"
+                >
+                  Sorte
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 max-w-lg mx-2 hidden md:block">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder={t('header.search_placeholder')}
+                className="w-full pl-8 pr-20 py-1 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+              />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                <button
+                  onClick={onSearchSubmit}
+                  className="px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition"
+                >
+                  {t('header.search_btn')}
+                </button>
+                <button
+                  onClick={onRandomPage}
+                  title={t('header.random_page')}
+                  className="p-1 text-slate-500 dark:text-slate-400 hover:text-blue-600 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                >
+                  <Shuffle size={12} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* High Density Navigation Links & Controls */}
         <div className="flex items-center gap-1 sm:gap-2">
@@ -455,14 +715,279 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Theme Switcher */}
-          <button
-            onClick={onToggleTheme}
-            title={isDark ? t('header.theme_light') : t('header.theme_dark')}
-            className="p-1.5 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-          >
-            {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} />}
-          </button>
+          {/* Theme Switcher and Theme Selector Menu */}
+          <div className="relative" ref={themeMenuRef}>
+            <div className="flex items-center gap-1">
+              {/* Quick Google Theme Toggle Button */}
+              <button
+                id="btn-header-quick-google-theme"
+                onClick={() => {
+                  if (isGoogleTheme) {
+                    onSetTheme?.(isDark ? 'dark' : 'light');
+                  } else {
+                    onSetTheme?.(isDark ? 'google-dark' : 'google');
+                  }
+                }}
+                title={isGoogleTheme ? "Desativar Tema Google (Voltar ao Clássico)" : "Ativar Tema Google (Material Design 3)"}
+                className={`px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition ${
+                  isGoogleTheme
+                    ? 'bg-blue-50 dark:bg-blue-950/70 border-[#4285F4] text-blue-700 dark:text-blue-300 shadow-xs ring-1 ring-[#4285F4]/30'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-0.5" title="Google Colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
+                </div>
+                <span className="hidden xl:inline text-[11px] font-sans">
+                  {isGoogleTheme ? 'Google Ativo' : 'Google'}
+                </span>
+              </button>
+
+              {/* Quick Windows 95 Toggle Button */}
+              <button
+                id="btn-header-quick-win95-theme"
+                onClick={() => {
+                  if (isWin95) {
+                    onSetTheme?.('light');
+                  } else {
+                    onSetTheme?.('win95');
+                  }
+                }}
+                title={isWin95 ? "Desativar Windows 95 (Voltar ao Padrão)" : "Ativar Tema Windows 95 (Retrô 90s)"}
+                className={`px-2 py-1 text-xs font-semibold flex items-center gap-1.5 transition ${
+                  isWin95
+                    ? 'win95-button !bg-[#000080] !text-white font-bold border-t border-l border-white border-r border-b border-black'
+                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md'
+                }`}
+              >
+                <Monitor size={12} className={isWin95 ? 'text-amber-300' : 'text-slate-500'} />
+                <span className="hidden xl:inline text-[11px] font-mono">
+                  {isWin95 ? 'Win95 Ativo' : 'Win95'}
+                </span>
+              </button>
+
+              {/* Quick Genshin Impact Toggle Button */}
+              <button
+                id="btn-header-quick-genshin-theme"
+                onClick={() => {
+                  if (isGenshin) {
+                    onSetTheme?.('light');
+                  } else {
+                    onSetTheme?.('genshin');
+                  }
+                }}
+                title={isGenshin ? "Desativar Tema Genshin (Voltar ao Padrão)" : "Ativar Tema Genshin Impact (Teyvat & Primogem)"}
+                className={`px-2 py-1 text-xs font-semibold flex items-center gap-1.5 transition rounded-md ${
+                  isGenshin
+                    ? 'bg-gradient-to-r from-[#715ae0] to-[#35a5ea] text-white shadow-xs font-bold border border-amber-300/50'
+                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                <Sparkles size={12} className={isGenshin ? 'text-amber-300 animate-pulse' : 'text-amber-500'} />
+                <span className="hidden xl:inline text-[11px]">
+                  {isGenshin ? 'Genshin ✦' : 'Genshin'}
+                </span>
+              </button>
+
+              {/* Theme Menu Dropdown Trigger */}
+              <button
+                onClick={() => setShowThemeMenu(!showThemeMenu)}
+                title="Personalizar Tema Visual do Wiki"
+                className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-0.5"
+              >
+                {isDark ? (
+                  <Moon size={14} className="text-blue-400" />
+                ) : (
+                  <Sun size={14} className="text-amber-400" />
+                )}
+                <ChevronDown size={10} className="text-slate-400" />
+              </button>
+            </div>
+
+            {/* Theme Selector Popover */}
+            {showThemeMenu && (
+              <div className="absolute right-0 mt-1.5 w-68 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl py-2 z-50 animate-in fade-in text-xs font-sans">
+                <div className="px-3 pb-2 mb-1.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Palette size={13} className="text-blue-600 dark:text-blue-400" />
+                    <span className="font-bold text-slate-900 dark:text-white">Temas Visuais</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">WikiZero UI</span>
+                </div>
+
+                <div className="space-y-0.5 px-1.5">
+                  {/* Option 1: Light */}
+                  <button
+                    onClick={() => {
+                      onSetTheme?.('light');
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
+                      theme === 'light'
+                        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sun size={14} className="text-amber-500" />
+                      <div>
+                        <p className="font-medium text-xs">Claro Padrão</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Design clássico de enciclopédia</p>
+                      </div>
+                    </div>
+                    {theme === 'light' && <Check size={13} className="text-blue-600" />}
+                  </button>
+
+                  {/* Option 2: Dark */}
+                  <button
+                    onClick={() => {
+                      onSetTheme?.('dark');
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
+                      theme === 'dark'
+                        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Moon size={14} className="text-indigo-400" />
+                      <div>
+                        <p className="font-medium text-xs">Modo Escuro</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Contraste confortável para leitura noturna</p>
+                      </div>
+                    </div>
+                    {theme === 'dark' && <Check size={13} className="text-blue-600" />}
+                  </button>
+
+                  {/* Option 3: Google Theme */}
+                  <button
+                    onClick={() => {
+                      onSetTheme?.('google');
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
+                      theme === 'google'
+                        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold ring-1 ring-[#4285F4]/40'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1">
+                          <p className="font-medium text-xs">Tema Google</p>
+                          <span className="text-[8px] bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-300 font-bold px-1 rounded-xs uppercase">
+                            Material 3
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Estética Google Workspace & Search</p>
+                      </div>
+                    </div>
+                    {theme === 'google' && <Check size={13} className="text-[#4285F4]" />}
+                  </button>
+
+                  {/* Option 4: Google Dark */}
+                  <button
+                    onClick={() => {
+                      onSetTheme?.('google-dark');
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
+                      theme === 'google-dark'
+                        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold ring-1 ring-[#8ab4f8]/40'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#8ab4f8]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#f28b82]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#fdd663]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#81c995]" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1">
+                          <p className="font-medium text-xs">Tema Google Dark</p>
+                          <span className="text-[8px] bg-slate-800 text-slate-200 font-bold px-1 rounded-xs uppercase">
+                            Material You
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Fundo Google Dark (#202124)</p>
+                      </div>
+                    </div>
+                    {theme === 'google-dark' && <Check size={13} className="text-[#8ab4f8]" />}
+                  </button>
+
+                  {/* Option 5: Windows 95 */}
+                  <button
+                    onClick={() => {
+                      onSetTheme?.('win95');
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
+                      theme === 'win95'
+                        ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-300 font-semibold ring-1 ring-[#008080]/50'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 bg-[#c0c0c0] border-t border-l border-white border-r border-b border-black flex items-center justify-center text-[9px] font-bold text-[#000080]">
+                        95
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1">
+                          <p className="font-medium text-xs">Windows 95</p>
+                          <span className="text-[8px] bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-bold px-1 rounded-xs uppercase">
+                            Retrô 90s
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Desktop teal (#008080) & janelas chanfradas 3D</p>
+                      </div>
+                    </div>
+                    {theme === 'win95' && <Check size={13} className="text-teal-600" />}
+                  </button>
+
+                  {/* Option 6: Genshin Impact */}
+                  <button
+                    onClick={() => {
+                      onSetTheme?.('genshin');
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
+                      theme === 'genshin'
+                        ? 'bg-amber-500/10 text-amber-200 font-semibold ring-1 ring-[#d3bc8e]'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded bg-gradient-to-br from-[#715ae0] to-[#35a5ea] border border-amber-300/50 flex items-center justify-center text-[10px] text-amber-300 shadow-xs">
+                        ✦
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1">
+                          <p className="font-medium text-xs">Genshin Impact</p>
+                          <span className="text-[8px] bg-amber-500/20 text-amber-300 font-bold px-1 rounded-xs uppercase border border-amber-500/30">
+                            Teyvat & Primogem
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Noite astral, bordas douradas e 7 elementos</p>
+                      </div>
+                    </div>
+                    {theme === 'genshin' && <Check size={13} className="text-amber-400" />}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Notification Bell */}
           <div className="relative" ref={notifRef}>

@@ -15,26 +15,35 @@ import {
   Gavel,
   AlertOctagon,
   Tv,
+  Palette,
+  Sparkles,
 } from 'lucide-react';
-import { ViewMode, DeviceMode } from '../types';
+import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { FooterBadges } from './FooterBadges';
 import { formatExternalUrl } from '../utils/linkUtils';
 
 interface FooterProps {
   onNavigate: (view: ViewMode) => void;
+  theme?: AppTheme;
   deviceMode?: DeviceMode;
   onToggleDeviceMode?: (mode: DeviceMode) => void;
   onOpenLanguagesModal?: () => void;
+  onSetTheme?: (theme: AppTheme) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
   onNavigate,
+  theme = 'light',
   deviceMode = 'auto',
   onToggleDeviceMode,
   onOpenLanguagesModal,
+  onSetTheme,
 }) => {
   const { currentLanguage, t } = useLanguage();
+  const isGoogleTheme = theme === 'google' || theme === 'google-dark';
+  const isWin95 = theme === 'win95';
+  const isGenshin = theme === 'genshin';
 
   return (
     <footer className="mt-12 bg-[#f8f9fa] dark:bg-[#0b0f17] border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 py-6 pb-24 md:pb-6 transition-colors select-none font-sans">
@@ -97,6 +106,77 @@ export const Footer: React.FC<FooterProps> = ({
               <Tv size={13} />
               <span>Modo Smart TV</span>
               {deviceMode === 'tv' && <span className="text-[9px] bg-indigo-500 text-white px-1 rounded-xs uppercase">Ativo</span>}
+            </button>
+
+            {/* Google Theme Button */}
+            <button
+              id="btn-footer-google-theme"
+              onClick={() => {
+                if (isGoogleTheme) {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('google');
+                }
+              }}
+              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
+                isGoogleTheme
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700'
+              }`}
+              title="Ativar/Desativar Tema Google Material 3"
+            >
+              <div className="flex items-center gap-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
+              </div>
+              <span>Tema Google</span>
+              {isGoogleTheme && <span className="text-[9px] bg-amber-400 text-slate-900 px-1 rounded-xs uppercase font-bold">Ativo</span>}
+            </button>
+
+            {/* Windows 95 Theme Button */}
+            <button
+              id="btn-footer-win95-theme"
+              onClick={() => {
+                if (isWin95) {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('win95');
+                }
+              }}
+              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
+                isWin95
+                  ? 'bg-[#000080] text-white shadow-xs font-bold'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700'
+              }`}
+              title="Ativar/Desativar Tema Windows 95 Retrô"
+            >
+              <Monitor size={13} className={isWin95 ? 'text-amber-300' : 'text-slate-500'} />
+              <span>Windows 95</span>
+              {isWin95 && <span className="text-[9px] bg-teal-400 text-black px-1 rounded-xs uppercase font-bold">Ativo</span>}
+            </button>
+
+            {/* Genshin Impact Theme Button */}
+            <button
+              id="btn-footer-genshin-theme"
+              onClick={() => {
+                if (isGenshin) {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('genshin');
+                }
+              }}
+              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
+                isGenshin
+                  ? 'bg-gradient-to-r from-[#715ae0] to-[#35a5ea] text-white shadow-xs font-bold border border-amber-300/60'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700'
+              }`}
+              title="Ativar/Desativar Tema Genshin Impact (Teyvat & Primogem)"
+            >
+              <Sparkles size={13} className={isGenshin ? 'text-amber-300 animate-pulse' : 'text-amber-500'} />
+              <span>Genshin Impact</span>
+              {isGenshin && <span className="text-[9px] bg-amber-400 text-slate-900 px-1 rounded-xs uppercase font-bold">✦ Ativo</span>}
             </button>
           </div>
         </div>

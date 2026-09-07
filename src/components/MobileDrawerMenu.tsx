@@ -33,8 +33,10 @@ import {
   Image as ImageIcon,
   Gavel,
   Tv,
+  Palette,
+  Check,
 } from 'lucide-react';
-import { UserProfile, ViewMode, DeviceMode } from '../types';
+import { UserProfile, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
@@ -45,11 +47,13 @@ interface MobileDrawerMenuProps {
   currentView: ViewMode;
   deviceMode: DeviceMode;
   isDark: boolean;
+  theme?: AppTheme;
   totalPages: number;
   totalArticles: number;
   onClose: () => void;
   onNavigate: (view: ViewMode) => void;
   onToggleTheme: () => void;
+  onSetTheme?: (theme: AppTheme) => void;
   onToggleDeviceMode: (mode: DeviceMode) => void;
   onOpenLanguagesModal: () => void;
   onOpenSmartTVModal?: () => void;
@@ -64,11 +68,13 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
   currentView,
   deviceMode,
   isDark,
+  theme = 'light',
   totalPages,
   totalArticles,
   onClose,
   onNavigate,
   onToggleTheme,
+  onSetTheme,
   onToggleDeviceMode,
   onOpenLanguagesModal,
   onOpenSmartTVModal,
@@ -77,6 +83,7 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
   onLogoutClick,
 }) => {
   const { currentLanguage, t } = useLanguage();
+  const isGoogleTheme = theme === 'google' || theme === 'google-dark';
 
   if (!isOpen) return null;
 
@@ -203,6 +210,51 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <span className="text-[10px] font-mono uppercase font-bold">{currentLanguage.code}</span>
             </button>
 
+            {/* Quick Google Theme Toggle */}
+            <button
+              id="btn-drawer-quick-google-theme"
+              onClick={() => {
+                if (isGoogleTheme) {
+                  onSetTheme?.(isDark ? 'dark' : 'light');
+                } else {
+                  onSetTheme?.(isDark ? 'google-dark' : 'google');
+                }
+              }}
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 ${
+                isGoogleTheme
+                  ? 'bg-blue-50 dark:bg-blue-950/70 border-[#4285F4] text-blue-700 dark:text-blue-300 ring-1 ring-[#4285F4]/30'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={isGoogleTheme ? 'Desativar Tema Google' : 'Ativar Tema Google Material'}
+            >
+              <div className="flex items-center gap-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
+              </div>
+            </button>
+
+            {/* Quick Genshin Toggle */}
+            <button
+              id="btn-drawer-quick-genshin-theme"
+              onClick={() => {
+                if (theme === 'genshin') {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('genshin');
+                }
+              }}
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 ${
+                theme === 'genshin'
+                  ? 'bg-gradient-to-r from-[#715ae0] to-[#35a5ea] text-white border-amber-300/60 ring-1 ring-amber-300/40'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={theme === 'genshin' ? 'Desativar Tema Genshin' : 'Ativar Tema Genshin Impact'}
+            >
+              <Sparkles size={14} className={theme === 'genshin' ? 'text-amber-300 animate-pulse' : 'text-amber-500'} />
+            </button>
+
             {/* Dark Mode Toggle */}
             <button
               onClick={onToggleTheme}
@@ -216,6 +268,126 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
 
         {/* Scrollable Navigation Sections */}
         <div className="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
+          {/* Theme Selector Section */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 border border-slate-200 dark:border-slate-700/60">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Palette size={12} className="text-blue-600 dark:text-blue-400" />
+                Tema Visual
+              </span>
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold uppercase">
+                {theme}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                onClick={() => onSetTheme?.('light')}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] ${
+                  theme === 'light'
+                    ? 'bg-blue-600 text-white font-bold shadow-xs'
+                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <Sun size={12} className={theme === 'light' ? 'text-white' : 'text-amber-500'} />
+                  Claro
+                </span>
+                {theme === 'light' && <Check size={11} />}
+              </button>
+
+              <button
+                onClick={() => onSetTheme?.('dark')}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] ${
+                  theme === 'dark'
+                    ? 'bg-blue-600 text-white font-bold shadow-xs'
+                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <Moon size={12} className={theme === 'dark' ? 'text-white' : 'text-indigo-400'} />
+                  Escuro
+                </span>
+                {theme === 'dark' && <Check size={11} />}
+              </button>
+
+              <button
+                onClick={() => onSetTheme?.('google')}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] col-span-1 ${
+                  theme === 'google'
+                    ? 'bg-[#4285F4] text-white font-bold shadow-xs ring-1 ring-blue-300'
+                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
+                  </div>
+                  <span className="truncate">Google</span>
+                </div>
+                {theme === 'google' && <Check size={11} />}
+              </button>
+
+              <button
+                onClick={() => onSetTheme?.('google-dark')}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] col-span-1 ${
+                  theme === 'google-dark'
+                    ? 'bg-[#8ab4f8] text-slate-900 font-bold shadow-xs ring-1 ring-blue-300'
+                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#8ab4f8]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#f28b82]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#fdd663]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#81c995]" />
+                  </div>
+                  <span className="truncate">G. Dark</span>
+                </div>
+                {theme === 'google-dark' && <Check size={11} />}
+              </button>
+
+              {/* Windows 95 Theme in Drawer */}
+              <button
+                onClick={() => onSetTheme?.('win95')}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] col-span-2 ${
+                  theme === 'win95'
+                    ? 'bg-[#000080] text-white font-bold shadow-xs'
+                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-[#c0c0c0] border border-black flex items-center justify-center text-[8px] font-bold text-[#000080]">
+                    95
+                  </div>
+                  <span>Tema Windows 95 (Retrô 90s)</span>
+                </div>
+                {theme === 'win95' && <Check size={11} />}
+              </button>
+
+              {/* Genshin Impact Theme in Drawer */}
+              <button
+                onClick={() => onSetTheme?.('genshin')}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] col-span-2 ${
+                  theme === 'genshin'
+                    ? 'bg-amber-500/15 text-amber-200 font-bold shadow-xs ring-1 ring-[#d3bc8e]'
+                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded bg-gradient-to-br from-[#715ae0] to-[#35a5ea] border border-amber-300/60 flex items-center justify-center text-[9px] text-amber-300 font-bold">
+                    ✦
+                  </div>
+                  <span>Tema Genshin Impact (Teyvat & Primogem)</span>
+                </div>
+                {theme === 'genshin' && <Check size={11} className="text-amber-400" />}
+              </button>
+            </div>
+          </div>
+
           {/* Android PWA App Quick Action */}
           <div className="pb-1 space-y-1.5">
             <PWAInstallPrompt buttonStyle="full" />

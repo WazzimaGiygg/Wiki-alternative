@@ -246,3 +246,398 @@
 .dark ::-webkit-scrollbar-thumb {
   background: #475569;
 }
+
+/* ========================================================================== */
+/* TEMA GOOGLE (Material Design 3 / Google Workspace & Search Aesthetic)      */
+/* ========================================================================== */
+html.theme-google body {
+  font-family: 'Outfit', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #f8fafd;
+  color: #1f1f1f;
+}
+
+html.theme-google.dark body,
+html.theme-google-dark body {
+  font-family: 'Outfit', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #202124;
+  color: #e8eaed;
+}
+
+/* Google Theme Heading Typographies */
+html.theme-google h1,
+html.theme-google h2,
+html.theme-google h3,
+html.theme-google .font-serif-heading,
+html.theme-google-dark h1,
+html.theme-google-dark h2,
+html.theme-google-dark h3,
+html.theme-google-dark .font-serif-heading {
+  font-family: 'Outfit', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.015em;
+}
+
+/* Google 4-Color Signature Gradient Bar */
+.google-gradient-bar {
+  height: 3.5px;
+  background: linear-gradient(
+    to right,
+    #4285F4 0%,
+    #4285F4 25%,
+    #EA4335 25%,
+    #EA4335 50%,
+    #FBBC05 50%,
+    #FBBC05 75%,
+    #34A853 75%,
+    #34A853 100%
+  );
+}
+
+/* Google Search Pill Bar */
+html.theme-google .google-search-container {
+  border-radius: 9999px !important;
+  border-color: #dfe1e5 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(60, 64, 67, 0.15) !important;
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.theme-google .google-search-container:focus-within {
+  box-shadow: 0 2px 8px 1px rgba(60, 64, 67, 0.24) !important;
+  border-color: transparent !important;
+}
+
+html.theme-google.dark .google-search-container,
+html.theme-google-dark .google-search-container {
+  background-color: #303134 !important;
+  border-color: #5f6368 !important;
+  box-shadow: none !important;
+}
+
+html.theme-google.dark .google-search-container:focus-within,
+html.theme-google-dark .google-search-container:focus-within {
+  background-color: #303134 !important;
+  border-color: #8ab4f8 !important;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Google Wikitext Rendered Links */
+html.theme-google .wiki-rendered-content .wiki-link {
+  color: #1a0dab;
+  text-decoration: none;
+}
+
+html.theme-google .wiki-rendered-content .wiki-link:hover {
+  text-decoration: underline;
+}
+
+html.theme-google.dark .wiki-rendered-content .wiki-link,
+html.theme-google-dark .wiki-rendered-content .wiki-link {
+  color: #8ab4f8;
+  text-decoration: none;
+}
+
+html.theme-google.dark .wiki-rendered-content .wiki-link:hover,
+html.theme-google-dark .wiki-rendered-content .wiki-link:hover {
+  text-decoration: underline;
+}
+
+/* Google Cards & Containers */
+html.theme-google .bg-white {
+  border-radius: 1rem;
+}
+
+html.theme-google.dark .bg-slate-900,
+html.theme-google.dark .dark\:bg-\[\#0f172a\],
+html.theme-google-dark .bg-slate-900 {
+  background-color: #303134 !important;
+  border-color: #3c4043 !important;
+  border-radius: 1rem;
+}
+
+/* ========================================================================== */
+/* TEMA WINDOWS 95 (Retro 90s OS Aesthetic, Beveled 3D Borders & Teal Desktop)*/
+/* ========================================================================== */
+html.theme-win95 body {
+  font-family: 'MS Sans Serif', 'Tahoma', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #008080;
+  color: #000000;
+  image-rendering: pixelated;
+}
+
+html.theme-win95 * {
+  border-radius: 0 !important;
+}
+
+/* Classic Win95 Bevel Utilities */
+.win95-window {
+  background-color: #c0c0c0 !important;
+  border-top: 2px solid #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  box-shadow: 1px 1px 0px 1px #808080 inset !important;
+}
+
+.win95-titlebar {
+  background: linear-gradient(90deg, #000080, #1084d0) !important;
+  color: #ffffff !important;
+  font-weight: bold;
+  padding: 3px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  letter-spacing: 0.5px;
+  font-size: 12px;
+  user-select: none;
+}
+
+.win95-button {
+  background-color: #c0c0c0 !important;
+  border-top: 2px solid #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  box-shadow: 1px 1px 0px 0px #dfdfdf inset, -1px -1px 0px 0px #808080 inset !important;
+  color: #000000 !important;
+  font-family: 'MS Sans Serif', 'Tahoma', sans-serif !important;
+  font-size: 11px;
+  font-weight: normal;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.win95-button:active {
+  border-top: 2px solid #000000 !important;
+  border-left: 2px solid #000000 !important;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  box-shadow: 1px 1px 0px 0px #808080 inset !important;
+  padding: 4px 7px 2px 9px !important;
+}
+
+.win95-sunken,
+.win95-input {
+  background-color: #ffffff !important;
+  border-top: 2px solid #808080 !important;
+  border-left: 2px solid #808080 !important;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  box-shadow: 1px 1px 0px 0px #000000 inset, -1px -1px 0px 0px #dfdfdf inset !important;
+  color: #000000 !important;
+}
+
+/* Win95 Header & Content Adaptation */
+html.theme-win95 header {
+  background-color: #c0c0c0 !important;
+  border-bottom: 2px solid #000000 !important;
+  box-shadow: 0 1px 0 #ffffff !important;
+}
+
+html.theme-win95 main,
+html.theme-win95 .bg-white {
+  background-color: #c0c0c0;
+}
+
+html.theme-win95 article,
+html.theme-win95 .wiki-rendered-content {
+  background-color: #ffffff;
+  color: #000000;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  box-shadow: 1px 1px 0px 0px #000000 inset;
+  padding: 16px;
+}
+
+html.theme-win95 .wiki-rendered-content .wiki-link {
+  color: #000080;
+  text-decoration: underline;
+}
+
+html.theme-win95 .wiki-rendered-content .wiki-link:hover {
+  color: #ff0000;
+}
+
+html.theme-win95 .wiki-rendered-content .wikitable {
+  border: 2px solid #808080;
+  background-color: #ffffff;
+}
+
+html.theme-win95 .wiki-rendered-content .wikitable th {
+  background-color: #c0c0c0;
+  color: #000000;
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+}
+
+html.theme-win95 .wiki-rendered-content .wikitable td {
+  border: 1px solid #808080;
+  background-color: #ffffff;
+}
+
+/* Win95 Status Bar */
+.win95-statusbar {
+  background-color: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  padding: 2px 4px;
+  font-size: 11px;
+  display: flex;
+  gap: 4px;
+}
+
+.win95-statuspanel {
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+  padding: 2px 6px;
+}
+
+/* ========================================================================== */
+/* TEMA GENSHIN IMPACT (Teyvat Astral Night, Primogem & Celestial Gold)       */
+/* ========================================================================== */
+html.theme-genshin {
+  color-scheme: dark;
+}
+
+html.theme-genshin body {
+  background-color: #121524;
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, rgba(56, 75, 133, 0.25) 0%, transparent 70%),
+    radial-gradient(circle at 10% 20%, rgba(211, 188, 142, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(113, 90, 224, 0.05) 0%, transparent 40%);
+  color: #e6e9f2;
+}
+
+/* Genshin Header */
+html.theme-genshin header {
+  background-color: rgba(18, 22, 38, 0.95) !important;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(211, 188, 142, 0.35) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Genshin Golden Accent Line */
+.genshin-accent-bar {
+  height: 3px;
+  background: linear-gradient(90deg, 
+    #74c2a8 0%, 
+    #ef7938 16.6%, 
+    #4cc2f1 33.3%, 
+    #fab632 50%, 
+    #af8ec9 66.6%, 
+    #9fd6e3 83.3%, 
+    #a5c83b 100%
+  );
+  box-shadow: 0 0 10px rgba(211, 188, 142, 0.5);
+}
+
+/* Genshin Golden Card and Container Trims */
+html.theme-genshin .bg-white,
+html.theme-genshin .dark\:bg-slate-900,
+html.theme-genshin .dark\:bg-\[\#0f172a\] {
+  background-color: #181d30 !important;
+  border-color: rgba(211, 188, 142, 0.25) !important;
+}
+
+html.theme-genshin .bg-slate-50,
+html.theme-genshin .dark\:bg-slate-800,
+html.theme-genshin .dark\:bg-\[\#1e293b\] {
+  background-color: #1f253d !important;
+  border-color: rgba(211, 188, 142, 0.2) !important;
+}
+
+/* Genshin Primogem Button & Gold Accents */
+.genshin-gold-btn {
+  background: linear-gradient(135deg, #d3bc8e 0%, #b89862 100%);
+  color: #1a1e30;
+  font-weight: 700;
+  border: 1px solid #f2dfb7;
+  box-shadow: 0 2px 8px rgba(184, 152, 98, 0.3);
+  transition: all 0.2s ease;
+}
+
+.genshin-gold-btn:hover {
+  background: linear-gradient(135deg, #e4ca95 0%, #c4a169 100%);
+  box-shadow: 0 0 12px rgba(228, 202, 149, 0.5);
+  transform: translateY(-1px);
+}
+
+.genshin-primogem-badge {
+  background: linear-gradient(135deg, #715ae0 0%, #35a5ea 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 8px rgba(53, 165, 234, 0.4);
+}
+
+/* Genshin Search Input */
+html.theme-genshin .genshin-search-box {
+  background: rgba(27, 33, 56, 0.9);
+  border: 1px solid rgba(211, 188, 142, 0.4);
+  box-shadow: 0 0 10px rgba(211, 188, 142, 0.15) inset;
+  border-radius: 9999px;
+}
+
+html.theme-genshin .genshin-search-box:focus-within {
+  border-color: #d3bc8e;
+  box-shadow: 0 0 14px rgba(211, 188, 142, 0.35);
+}
+
+/* Genshin Article and Typography Enhancements */
+html.theme-genshin .wiki-rendered-content {
+  background-color: #171c2e;
+  border: 1px solid rgba(211, 188, 142, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border-radius: 0.75rem;
+  color: #e2e6f3;
+}
+
+html.theme-genshin .wiki-rendered-content h1,
+html.theme-genshin .wiki-rendered-content h2,
+html.theme-genshin .wiki-rendered-content h3 {
+  color: #f2dfb7;
+  border-bottom-color: rgba(211, 188, 142, 0.25);
+  text-shadow: 0 0 8px rgba(211, 188, 142, 0.2);
+}
+
+html.theme-genshin .wiki-rendered-content .wiki-link {
+  color: #e4ca95;
+  text-decoration: underline;
+  text-decoration-color: rgba(228, 202, 149, 0.4);
+}
+
+html.theme-genshin .wiki-rendered-content .wiki-link:hover {
+  color: #72e2db;
+  text-decoration-color: #72e2db;
+}
+
+html.theme-genshin .wiki-rendered-content .wikitable {
+  border: 1px solid rgba(211, 188, 142, 0.3);
+  background-color: #1a2035;
+}
+
+html.theme-genshin .wiki-rendered-content .wikitable th {
+  background: linear-gradient(180deg, #242c47 0%, #1c2238 100%);
+  color: #f2dfb7;
+  border-color: rgba(211, 188, 142, 0.25);
+}
+
+html.theme-genshin .wiki-rendered-content .wikitable td {
+  border-color: rgba(211, 188, 142, 0.15);
+}
+
+/* Genshin Sidebar and Navigation Trims */
+html.theme-genshin aside {
+  background-color: #14192b !important;
+  border-color: rgba(211, 188, 142, 0.25) !important;
+}
+
+html.theme-genshin footer {
+  background-color: #0f1322 !important;
+  border-top: 1px solid rgba(211, 188, 142, 0.25) !important;
+}
+
+

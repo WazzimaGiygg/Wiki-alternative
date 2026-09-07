@@ -882,4 +882,6 @@ export interface EmergencyReport {
   actionLogs: EmergencyReportActionLog[];
 }
 
+export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'genshin';
+
 
