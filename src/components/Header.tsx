@@ -6,8 +6,6 @@ import {
   CheckCheck,
   User as UserIcon,
   LogOut,
-  Moon,
-  Sun,
   Shield,
   Layers,
   Edit3,
@@ -24,8 +22,6 @@ import {
   Monitor,
   Users,
   Tv,
-  Palette,
-  Check,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -89,14 +85,12 @@ export const Header: React.FC<HeaderProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showOnlineMenu, setShowOnlineMenu] = useState(false);
-  const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<UserProfile[]>([]);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const onlineMenuRef = useRef<HTMLDivElement>(null);
-  const themeMenuRef = useRef<HTMLDivElement>(null);
 
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
   const isWin95 = theme === 'win95';
@@ -124,9 +118,6 @@ export const Header: React.FC<HeaderProps> = ({
       }
       if (onlineMenuRef.current && !onlineMenuRef.current.contains(event.target as Node)) {
         setShowOnlineMenu(false);
-      }
-      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
-        setShowThemeMenu(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -710,280 +701,6 @@ export const Header: React.FC<HeaderProps> = ({
                       Fazer Login para Contribuir
                     </button>
                   )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Theme Switcher and Theme Selector Menu */}
-          <div className="relative" ref={themeMenuRef}>
-            <div className="flex items-center gap-1">
-              {/* Quick Google Theme Toggle Button */}
-              <button
-                id="btn-header-quick-google-theme"
-                onClick={() => {
-                  if (isGoogleTheme) {
-                    onSetTheme?.(isDark ? 'dark' : 'light');
-                  } else {
-                    onSetTheme?.(isDark ? 'google-dark' : 'google');
-                  }
-                }}
-                title={isGoogleTheme ? "Desativar Tema Google (Voltar ao Clássico)" : "Ativar Tema Google (Material Design 3)"}
-                className={`px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 border transition ${
-                  isGoogleTheme
-                    ? 'bg-blue-50 dark:bg-blue-950/70 border-[#4285F4] text-blue-700 dark:text-blue-300 shadow-xs ring-1 ring-[#4285F4]/30'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-0.5" title="Google Colors">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
-                </div>
-                <span className="hidden xl:inline text-[11px] font-sans">
-                  {isGoogleTheme ? 'Google Ativo' : 'Google'}
-                </span>
-              </button>
-
-              {/* Quick Windows 95 Toggle Button */}
-              <button
-                id="btn-header-quick-win95-theme"
-                onClick={() => {
-                  if (isWin95) {
-                    onSetTheme?.('light');
-                  } else {
-                    onSetTheme?.('win95');
-                  }
-                }}
-                title={isWin95 ? "Desativar Windows 95 (Voltar ao Padrão)" : "Ativar Tema Windows 95 (Retrô 90s)"}
-                className={`px-2 py-1 text-xs font-semibold flex items-center gap-1.5 transition ${
-                  isWin95
-                    ? 'win95-button !bg-[#000080] !text-white font-bold border-t border-l border-white border-r border-b border-black'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md'
-                }`}
-              >
-                <Monitor size={12} className={isWin95 ? 'text-amber-300' : 'text-slate-500'} />
-                <span className="hidden xl:inline text-[11px] font-mono">
-                  {isWin95 ? 'Win95 Ativo' : 'Win95'}
-                </span>
-              </button>
-
-              {/* Quick Genshin Impact Toggle Button */}
-              <button
-                id="btn-header-quick-genshin-theme"
-                onClick={() => {
-                  if (isGenshin) {
-                    onSetTheme?.('light');
-                  } else {
-                    onSetTheme?.('genshin');
-                  }
-                }}
-                title={isGenshin ? "Desativar Tema Genshin (Voltar ao Padrão)" : "Ativar Tema Genshin Impact (Teyvat & Primogem)"}
-                className={`px-2 py-1 text-xs font-semibold flex items-center gap-1.5 transition rounded-md ${
-                  isGenshin
-                    ? 'bg-gradient-to-r from-[#715ae0] to-[#35a5ea] text-white shadow-xs font-bold border border-amber-300/50'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                <Sparkles size={12} className={isGenshin ? 'text-amber-300 animate-pulse' : 'text-amber-500'} />
-                <span className="hidden xl:inline text-[11px]">
-                  {isGenshin ? 'Genshin ✦' : 'Genshin'}
-                </span>
-              </button>
-
-              {/* Theme Menu Dropdown Trigger */}
-              <button
-                onClick={() => setShowThemeMenu(!showThemeMenu)}
-                title="Personalizar Tema Visual do Wiki"
-                className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-0.5"
-              >
-                {isDark ? (
-                  <Moon size={14} className="text-blue-400" />
-                ) : (
-                  <Sun size={14} className="text-amber-400" />
-                )}
-                <ChevronDown size={10} className="text-slate-400" />
-              </button>
-            </div>
-
-            {/* Theme Selector Popover */}
-            {showThemeMenu && (
-              <div className="absolute right-0 mt-1.5 w-68 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl py-2 z-50 animate-in fade-in text-xs font-sans">
-                <div className="px-3 pb-2 mb-1.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Palette size={13} className="text-blue-600 dark:text-blue-400" />
-                    <span className="font-bold text-slate-900 dark:text-white">Temas Visuais</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400">WikiZero UI</span>
-                </div>
-
-                <div className="space-y-0.5 px-1.5">
-                  {/* Option 1: Light */}
-                  <button
-                    onClick={() => {
-                      onSetTheme?.('light');
-                      setShowThemeMenu(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
-                      theme === 'light'
-                        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Sun size={14} className="text-amber-500" />
-                      <div>
-                        <p className="font-medium text-xs">Claro Padrão</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Design clássico de enciclopédia</p>
-                      </div>
-                    </div>
-                    {theme === 'light' && <Check size={13} className="text-blue-600" />}
-                  </button>
-
-                  {/* Option 2: Dark */}
-                  <button
-                    onClick={() => {
-                      onSetTheme?.('dark');
-                      setShowThemeMenu(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
-                      theme === 'dark'
-                        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Moon size={14} className="text-indigo-400" />
-                      <div>
-                        <p className="font-medium text-xs">Modo Escuro</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Contraste confortável para leitura noturna</p>
-                      </div>
-                    </div>
-                    {theme === 'dark' && <Check size={13} className="text-blue-600" />}
-                  </button>
-
-                  {/* Option 3: Google Theme */}
-                  <button
-                    onClick={() => {
-                      onSetTheme?.('google');
-                      setShowThemeMenu(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
-                      theme === 'google'
-                        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold ring-1 ring-[#4285F4]/40'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1">
-                          <p className="font-medium text-xs">Tema Google</p>
-                          <span className="text-[8px] bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-300 font-bold px-1 rounded-xs uppercase">
-                            Material 3
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Estética Google Workspace & Search</p>
-                      </div>
-                    </div>
-                    {theme === 'google' && <Check size={13} className="text-[#4285F4]" />}
-                  </button>
-
-                  {/* Option 4: Google Dark */}
-                  <button
-                    onClick={() => {
-                      onSetTheme?.('google-dark');
-                      setShowThemeMenu(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
-                      theme === 'google-dark'
-                        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-semibold ring-1 ring-[#8ab4f8]/40'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#8ab4f8]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#f28b82]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#fdd663]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#81c995]" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1">
-                          <p className="font-medium text-xs">Tema Google Dark</p>
-                          <span className="text-[8px] bg-slate-800 text-slate-200 font-bold px-1 rounded-xs uppercase">
-                            Material You
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Fundo Google Dark (#202124)</p>
-                      </div>
-                    </div>
-                    {theme === 'google-dark' && <Check size={13} className="text-[#8ab4f8]" />}
-                  </button>
-
-                  {/* Option 5: Windows 95 */}
-                  <button
-                    onClick={() => {
-                      onSetTheme?.('win95');
-                      setShowThemeMenu(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
-                      theme === 'win95'
-                        ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-300 font-semibold ring-1 ring-[#008080]/50'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 bg-[#c0c0c0] border-t border-l border-white border-r border-b border-black flex items-center justify-center text-[9px] font-bold text-[#000080]">
-                        95
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1">
-                          <p className="font-medium text-xs">Windows 95</p>
-                          <span className="text-[8px] bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-bold px-1 rounded-xs uppercase">
-                            Retrô 90s
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Desktop teal (#008080) & janelas chanfradas 3D</p>
-                      </div>
-                    </div>
-                    {theme === 'win95' && <Check size={13} className="text-teal-600" />}
-                  </button>
-
-                  {/* Option 6: Genshin Impact */}
-                  <button
-                    onClick={() => {
-                      onSetTheme?.('genshin');
-                      setShowThemeMenu(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition ${
-                      theme === 'genshin'
-                        ? 'bg-amber-500/10 text-amber-200 font-semibold ring-1 ring-[#d3bc8e]'
-                        : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded bg-gradient-to-br from-[#715ae0] to-[#35a5ea] border border-amber-300/50 flex items-center justify-center text-[10px] text-amber-300 shadow-xs">
-                        ✦
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1">
-                          <p className="font-medium text-xs">Genshin Impact</p>
-                          <span className="text-[8px] bg-amber-500/20 text-amber-300 font-bold px-1 rounded-xs uppercase border border-amber-500/30">
-                            Teyvat & Primogem
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Noite astral, bordas douradas e 7 elementos</p>
-                      </div>
-                    </div>
-                    {theme === 'genshin' && <Check size={13} className="text-amber-400" />}
-                  </button>
                 </div>
               </div>
             )}
