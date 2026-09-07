@@ -14,6 +14,7 @@ import {
   Monitor,
   Gavel,
   AlertOctagon,
+  Tv,
 } from 'lucide-react';
 import { ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -78,6 +79,24 @@ export const Footer: React.FC<FooterProps> = ({
               <Monitor size={13} />
               <span>Versão para computador</span>
               {deviceMode === 'desktop' && <span className="text-[9px] bg-blue-500 text-white px-1 rounded-xs uppercase">Ativo</span>}
+            </button>
+
+            <button
+              id="btn-footer-tv-view"
+              onClick={() => {
+                onToggleDeviceMode?.('tv');
+                onNavigate('smart-tv');
+              }}
+              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
+                deviceMode === 'tv'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700'
+              }`}
+              title="Ativar interface 10-foot otimizada para Smart TVs e controle remoto"
+            >
+              <Tv size={13} />
+              <span>Modo Smart TV</span>
+              {deviceMode === 'tv' && <span className="text-[9px] bg-indigo-500 text-white px-1 rounded-xs uppercase">Ativo</span>}
             </button>
           </div>
         </div>

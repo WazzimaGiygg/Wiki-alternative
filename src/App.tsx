@@ -39,6 +39,8 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileSearchModal } from './components/MobileSearchModal';
 import { MobileDrawerMenu } from './components/MobileDrawerMenu';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { SmartTVView } from './components/SmartTVView';
+import { SmartTVInstallModal } from './components/SmartTVInstallModal';
 import { StorageService } from './services/storageService';
 import {
   WikiPage,
@@ -69,6 +71,7 @@ export default function App() {
   const [showMyDataModal, setShowMyDataModal] = useState<boolean>(false);
   const [showLanguageModal, setShowLanguageModal] = useState<boolean>(false);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [showSmartTVModal, setShowSmartTVModal] = useState<boolean>(false);
 
   const [currentView, setCurrentView] = useState<ViewMode>('hub');
   const [selectedPageUid, setSelectedPageUid] = useState<string | null>(null);
@@ -85,7 +88,7 @@ export default function App() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState<boolean>(false);
   const [deviceMode, setDeviceMode] = useState<DeviceMode>(() => {
     const saved = localStorage.getItem('wikizero_device_mode');
-    if (saved === 'mobile' || saved === 'desktop' || saved === 'auto') {
+    if (saved === 'mobile' || saved === 'desktop' || saved === 'auto' || saved === 'tv') {
       return saved as DeviceMode;
     }
     return 'auto';
@@ -94,6 +97,9 @@ export default function App() {
   const handleToggleDeviceMode = (mode: DeviceMode) => {
     setDeviceMode(mode);
     localStorage.setItem('wikizero_device_mode', mode);
+    if (mode === 'tv') {
+      setCurrentView('smart-tv');
+    }
   };
   const [isDark, setIsDark] = useState<boolean>(() => {
     return (
@@ -712,6 +718,7 @@ export default function App() {
         onMarkNotificationsAsRead={handleMarkNotificationsAsRead}
         onNotificationClick={handleNotificationClick}
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
+        onOpenSmartTVModal={() => setShowSmartTVModal(true)}
       />
 
       {/* 2. Main Workspace Layout */}
@@ -728,6 +735,7 @@ export default function App() {
           totalPages={pages.length}
           totalArticles={articles.length}
           onOpenLanguagesModal={() => setShowLanguageModal(true)}
+          onOpenSmartTVModal={() => setShowSmartTVModal(true)}
         />
 
         {/* Content Body Container */}
@@ -1045,6 +1053,7 @@ export default function App() {
               articles={articles}
               onNavigateToArticle={handleSelectArticle}
               onOpenEditor={() => handleOpenNewEditor()}
+              onOpenSmartTVModal={() => setShowSmartTVModal(true)}
             />
           )}
 
@@ -1120,6 +1129,10 @@ export default function App() {
           setIsMobileDrawerOpen(false);
           setShowLanguageModal(true);
         }}
+        onOpenSmartTVModal={() => {
+          setIsMobileDrawerOpen(false);
+          setShowSmartTVModal(true);
+        }}
       />
 
       {/* 7. Modals & Overlays */}
@@ -1185,6 +1198,33 @@ export default function App() {
           onAcceptAll={handleAcceptAllCookies}
           onRejectAll={handleRejectCookies}
           onSaveCustom={handleSaveCustomCookies}
+        />
+      )}
+
+      {/* Smart TV Modal & Guide */}
+      <SmartTVInstallModal
+        isOpen={showSmartTVModal}
+        onClose={() => setShowSmartTVModal(false)}
+        onLaunchTVMode={() => {
+          handleToggleDeviceMode('tv');
+          handleNavigate('smart-tv');
+        }}
+      />
+
+      {/* Smart TV 10-Foot Standalone Screen */}
+      {currentView === 'smart-tv' && (
+        <SmartTVView
+          articles={articles}
+          pages={pages}
+          currentUser={user}
+          onExitTVMode={() => {
+            handleToggleDeviceMode('auto');
+            handleNavigate('hub');
+          }}
+          onSelectArticleInDesktop={(artId) => {
+            handleToggleDeviceMode('desktop');
+            handleSelectArticle(artId);
+          }}
         />
       )}
 

@@ -17,6 +17,7 @@ import {
   ArrowRight,
   LifeBuoy,
   Smartphone,
+  Tv,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle } from '../types';
 import { formatExternalUrl } from '../utils/linkUtils';
@@ -28,6 +29,7 @@ interface InformativeViewsProps {
   articles: WikiArticle[];
   onNavigateToArticle: (id: string) => void;
   onOpenEditor: () => void;
+  onOpenSmartTVModal?: () => void;
 }
 
 // === 1. SECURITY VIEW ===
@@ -391,7 +393,7 @@ export const BetaModeView: React.FC<InformativeViewsProps> = ({
 };
 
 // === 6. OFFLINE MODE VIEW ===
-export const OfflineModeView: React.FC<InformativeViewsProps> = ({ articles, pages }) => {
+export const OfflineModeView: React.FC<InformativeViewsProps> = ({ articles, pages, onOpenSmartTVModal }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in select-none">
       <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-6 shadow-xs">
@@ -452,6 +454,30 @@ export const OfflineModeView: React.FC<InformativeViewsProps> = ({ articles, pag
             </div>
             <div className="shrink-0 w-full sm:w-auto">
               <PWAInstallPrompt buttonStyle="header" />
+            </div>
+          </div>
+
+          {/* Smart TV App Card */}
+          <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 border border-indigo-200 dark:border-indigo-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Tv className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                  Aplicativo WikiZero para Smart TV (10-Foot UI)
+                </h4>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Acesse a enciclopédia no sofá com tipografia para TV, navegação por controle remoto, sintetizador de voz e compatibilidade com Samsung Tizen, LG webOS, Android TV e Fire TV.
+              </p>
+            </div>
+            <div className="shrink-0 w-full sm:w-auto">
+              <button
+                onClick={onOpenSmartTVModal}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <Tv size={14} />
+                <span>Abrir no Modo Smart TV</span>
+              </button>
             </div>
           </div>
         </div>

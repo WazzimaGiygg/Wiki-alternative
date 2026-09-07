@@ -23,6 +23,7 @@ import {
   Smartphone,
   Monitor,
   Users,
+  Tv,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -51,6 +52,7 @@ interface HeaderProps {
   onMarkNotificationsAsRead: () => void;
   onNotificationClick: (notif: NotificationItem) => void;
   onOpenLanguagesModal?: () => void;
+  onOpenSmartTVModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -74,6 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
   onMarkNotificationsAsRead,
   onNotificationClick,
   onOpenLanguagesModal,
+  onOpenSmartTVModal,
 }) => {
   const { currentLanguage, setLanguage, t, allLanguages } = useLanguage();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -570,6 +573,16 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Android App PWA Install Button */}
           <PWAInstallPrompt buttonStyle="header" />
+
+          {/* Smart TV App Quick Button */}
+          <button
+            onClick={onOpenSmartTVModal}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800/60 transition cursor-pointer"
+            title="Disponibilidade e aplicativo para Smart TV (Samsung, LG, Android TV, Fire TV)"
+          >
+            <Tv size={13} className="text-indigo-600 dark:text-indigo-400" />
+            <span>App Smart TV</span>
+          </button>
 
           {/* User Profile / Auth Area */}
           {user ? (

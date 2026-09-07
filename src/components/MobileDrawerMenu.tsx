@@ -32,6 +32,7 @@ import {
   Upload,
   Image as ImageIcon,
   Gavel,
+  Tv,
 } from 'lucide-react';
 import { UserProfile, ViewMode, DeviceMode } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -51,6 +52,7 @@ interface MobileDrawerMenuProps {
   onToggleTheme: () => void;
   onToggleDeviceMode: (mode: DeviceMode) => void;
   onOpenLanguagesModal: () => void;
+  onOpenSmartTVModal?: () => void;
   onCreatePageClick: () => void;
   onLoginClick: () => void;
   onLogoutClick: () => void;
@@ -69,6 +71,7 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
   onToggleTheme,
   onToggleDeviceMode,
   onOpenLanguagesModal,
+  onOpenSmartTVModal,
   onCreatePageClick,
   onLoginClick,
   onLogoutClick,
@@ -214,8 +217,28 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
         {/* Scrollable Navigation Sections */}
         <div className="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
           {/* Android PWA App Quick Action */}
-          <div className="pb-1">
+          <div className="pb-1 space-y-1.5">
             <PWAInstallPrompt buttonStyle="full" />
+
+            <button
+              onClick={() => {
+                onClose();
+                if (onOpenSmartTVModal) {
+                  onOpenSmartTVModal();
+                } else {
+                  onNavigate('smart-tv');
+                }
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/40 dark:to-blue-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 hover:scale-[1.01] transition shadow-xs cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <Tv size={15} className="text-indigo-600 dark:text-indigo-400" />
+                <span>Aplicativo Smart TV</span>
+              </div>
+              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-600 text-white font-bold">
+                10-Foot
+              </span>
+            </button>
           </div>
 
           {/* Main Wiki Navigation */}
