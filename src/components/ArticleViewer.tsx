@@ -269,7 +269,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 animate-in fade-in select-none">
+    <div className="w-full space-y-4 animate-in fade-in select-none">
       {/* High Density Breadcrumb & Action Bar */}
       <div className="flex items-center justify-between flex-wrap gap-2 text-xs border-b border-slate-200 dark:border-slate-800 pb-2">
         <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 flex-wrap">

@@ -281,7 +281,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-3 animate-in fade-in select-none">
+    <div className="w-full space-y-3 animate-in fade-in select-none">
       {/* Save Reason Modal (Mandatory on save) */}
       <SaveReasonModal
         isOpen={showSaveModal}

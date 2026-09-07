@@ -75,6 +75,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { currentLanguage, t } = useLanguage();
 
+  const isGoogleTheme = theme === 'google' || theme === 'google-dark';
+  const isWin95 = theme === 'win95';
+  const isGenshin = theme === 'genshin';
+
   const visibilityClass =
     deviceMode === 'mobile'
       ? 'hidden'
@@ -85,27 +89,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       id="desktop-sidebar"
-      className={`relative flex-col bg-[#f8f9fa] dark:bg-[#0b0f17] border-r border-slate-200 dark:border-slate-800 transition-all duration-200 z-30 select-none ${visibilityClass} ${
-        isCollapsed ? 'w-14' : 'w-56'
-      }`}
+      className={`relative flex-col transition-all duration-200 z-20 select-none shrink-0 sticky top-16 self-start max-h-[calc(100vh-5rem)] overflow-hidden flex ${
+        isWin95
+          ? 'win95-window !border-2 !rounded-none !bg-[#c0c0c0]'
+          : isGenshin
+          ? 'bg-[#14192b]/95 border border-[#d3bc8e]/30 rounded-xl shadow-lg backdrop-blur-md'
+          : isGoogleTheme
+          ? 'bg-[#f8fafd] dark:bg-[#202124] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xs'
+          : 'bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 rounded-xl shadow-2xs'
+      } ${visibilityClass} ${isCollapsed ? 'w-14' : 'w-56'}`}
     >
-      {/* Collapse Toggle Button */}
-      <button
-        onClick={onToggleCollapse}
-        title={isCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
-        className="absolute -right-3 top-4 w-5 h-5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition z-40"
-      >
-        {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-      </button>
+      {/* Sidebar Header with Title & Collapse Action */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
+        {!isCollapsed && (
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-mono">
+            {t('sidebar.navigation')}
+          </span>
+        )}
+        <button
+          onClick={onToggleCollapse}
+          title={isCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+          className={`p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition ${
+            isCollapsed ? 'mx-auto' : ''
+          }`}
+        >
+          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
+      </div>
 
-      <div className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+      <div className="flex-1 overflow-y-auto py-2.5 px-2 space-y-4">
         {/* Navigation Section: Principal */}
         <div>
-          {!isCollapsed && (
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center gap-1 font-mono">
-              <span>{t('sidebar.navigation')}</span>
-            </h3>
-          )}
           <nav className="space-y-0.5">
             <button
               onClick={() => onNavigate('hub')}

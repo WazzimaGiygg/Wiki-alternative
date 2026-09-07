@@ -47,7 +47,7 @@ export const Footer: React.FC<FooterProps> = ({
 
   return (
     <footer className="mt-12 bg-[#f8f9fa] dark:bg-[#0b0f17] border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 py-6 pb-24 md:pb-6 transition-colors select-none font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
         {/* Official Wikimedia-style Mobile / Desktop View Selector Bar */}
         <div className="bg-slate-200/70 dark:bg-slate-850 p-2 rounded-lg flex flex-wrap items-center justify-between gap-2 border border-slate-300/80 dark:border-slate-800">
           <div className="flex items-center gap-2">

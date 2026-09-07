@@ -182,7 +182,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 animate-in fade-in select-none">
+    <div className="w-full space-y-5 animate-in fade-in select-none">
       {/* Header Banner */}
       <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

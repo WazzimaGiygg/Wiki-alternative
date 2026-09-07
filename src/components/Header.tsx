@@ -167,60 +167,62 @@ export const Header: React.FC<HeaderProps> = ({
       {isGenshin && <div className="genshin-accent-bar w-full" />}
 
       {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 flex justify-between items-center font-mono`}>
-        <div className="flex items-center gap-2">
-          {isWin95 ? (
-            <div className="flex items-center gap-2">
-              <span className="bg-[#000080] text-white px-1.5 py-0.2 text-[10px] font-bold border-t border-l border-white border-r border-b border-black">
-                START 95
-              </span>
-              <div className="hidden sm:flex items-center gap-3 text-black text-xs font-sans">
-                <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline"><u>A</u>rquivo</span>
-                <span onClick={() => onNavigate('editor')} className="cursor-pointer hover:underline"><u>E</u>ditar</span>
-                <span onClick={onOpenLanguagesModal} className="cursor-pointer hover:underline"><u>E</u>xibir</span>
-                <span onClick={() => onNavigate('history')} className="cursor-pointer hover:underline"><u>F</u>avoritos</span>
-                <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline">A<u>j</u>uda</span>
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
+        <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full">
+          <div className="flex items-center gap-2">
+            {isWin95 ? (
+              <div className="flex items-center gap-2">
+                <span className="bg-[#000080] text-white px-1.5 py-0.2 text-[10px] font-bold border-t border-l border-white border-r border-b border-black">
+                  START 95
+                </span>
+                <div className="hidden sm:flex items-center gap-3 text-black text-xs font-sans">
+                  <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline"><u>A</u>rquivo</span>
+                  <span onClick={() => onNavigate('editor')} className="cursor-pointer hover:underline"><u>E</u>ditar</span>
+                  <span onClick={onOpenLanguagesModal} className="cursor-pointer hover:underline"><u>E</u>xibir</span>
+                  <span onClick={() => onNavigate('history')} className="cursor-pointer hover:underline"><u>F</u>avoritos</span>
+                  <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline">A<u>j</u>uda</span>
+                </div>
               </div>
-            </div>
-          ) : isGenshin ? (
-            <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold genshin-primogem-badge">
-              <Sparkles size={10} className="text-amber-300 animate-pulse" />
-              GENSHIN IMPACT ✦ TEYVAT ARCHIVES
-            </span>
-          ) : isGoogleTheme ? (
-            <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#4285F4] text-white">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
-              GOOGLE THEME v3.0
-            </span>
-          ) : (
-            <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold">WIKIZERO v3.0</span>
-          )}
-          {!isWin95 && <span className={isGenshin ? "text-[#a0947d]" : "text-slate-400"}>{t('header.open_encyclopedia')}</span>}
-        </div>
-        <div className={`flex items-center gap-4 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : 'text-slate-400'} text-[11px]`}>
-          <button
-            onClick={onOpenLanguagesModal}
-            className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-300 text-slate-300'} flex items-center gap-1 transition`}
-          >
-            <Globe2 size={11} className={isWin95 ? 'text-[#000080]' : isGenshin ? 'text-[#72e2db]' : 'text-blue-400'} />
-            <span>{currentLanguage.flag} {currentLanguage.nativeName} ({currentLanguage.code})</span>
-          </button>
-          <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
-          <span className="hidden sm:inline">GNU GPL v3.0</span>
-          <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden md:inline text-slate-600'}>|</span>
-          <a
-            href={formatExternalUrl("https://github.com/WazzimaGiygg/Wiki-alternative")}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${isWin95 ? 'hover:underline text-[#000080]' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-400 text-slate-300'} flex items-center gap-1`}
-          >
-            GitHub <ExternalLink size={10} />
-          </a>
+            ) : isGenshin ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold genshin-primogem-badge">
+                <Sparkles size={10} className="text-amber-300 animate-pulse" />
+                GENSHIN IMPACT ✦ TEYVAT ARCHIVES
+              </span>
+            ) : isGoogleTheme ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#4285F4] text-white">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
+                GOOGLE THEME v3.0
+              </span>
+            ) : (
+              <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold">WIKIZERO v3.0</span>
+            )}
+            {!isWin95 && <span className={isGenshin ? "text-[#a0947d]" : "text-slate-400"}>{t('header.open_encyclopedia')}</span>}
+          </div>
+          <div className={`flex items-center gap-4 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : 'text-slate-400'} text-[11px]`}>
+            <button
+              onClick={onOpenLanguagesModal}
+              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-300 text-slate-300'} flex items-center gap-1 transition`}
+            >
+              <Globe2 size={11} className={isWin95 ? 'text-[#000080]' : isGenshin ? 'text-[#72e2db]' : 'text-blue-400'} />
+              <span>{currentLanguage.flag} {currentLanguage.nativeName} ({currentLanguage.code})</span>
+            </button>
+            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
+            <span className="hidden sm:inline">GNU GPL v3.0</span>
+            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden md:inline text-slate-600'}>|</span>
+            <a
+              href={formatExternalUrl("https://github.com/WazzimaGiygg/Wiki-alternative")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${isWin95 ? 'hover:underline text-[#000080]' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-400 text-slate-300'} flex items-center gap-1`}
+            >
+              GitHub <ExternalLink size={10} />
+            </a>
+          </div>
         </div>
       </div>
 
       {/* Main High Density Header Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-13 flex items-center justify-between gap-2 sm:gap-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-3">
         {/* Left Side: Mobile Menu Button + Brand Logo & Title */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* Hamburger Menu Trigger for Mobile Drawer */}

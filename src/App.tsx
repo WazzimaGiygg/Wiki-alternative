@@ -750,7 +750,7 @@ export default function App() {
       />
 
       {/* 2. Main Workspace Layout */}
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
+      <div className="flex-1 flex max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 gap-4 lg:gap-6">
         {/* Collapsible Navigation Sidebar */}
         <Sidebar
           currentView={currentView}
@@ -770,7 +770,7 @@ export default function App() {
         />
 
         {/* Content Body Container */}
-        <main className="flex-1 p-3 sm:p-6 md:p-8 overflow-hidden">
+        <main className="flex-1 min-w-0">
           {currentView === 'hub' && (
             <WikiHub
               pages={pages}
