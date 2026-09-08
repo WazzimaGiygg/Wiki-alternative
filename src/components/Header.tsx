@@ -22,6 +22,9 @@ import {
   Monitor,
   Users,
   Tv,
+  AlertTriangle,
+  Radio,
+  Palette,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -97,6 +100,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isGenshin = theme === 'genshin';
   const isAndroid = theme === 'android15';
   const isStardew = theme === 'stardew';
+  const isRepo = theme === 'repo';
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
@@ -215,6 +219,39 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Stardew Valley Prismatic & Golden Wheat Accent Line */}
       {isStardew && <div className="stardew-accent-bar w-full" />}
 
+      {/* R.E.P.O. (Semiwork) Hazard Warning Stripes Line */}
+      {isRepo && <div className="repo-hazard-bar w-full" />}
+
+      {/* R.E.P.O. Semiwork Tactical Extraction HUD Strip */}
+      {isRepo && (
+        <div className="repo-notice-bar text-[11px] font-mono flex items-center justify-between px-3 py-1 select-none">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="flex items-center gap-1.5 font-bold text-[#f59e0b]">
+              <AlertTriangle size={13} className="text-[#f59e0b] animate-pulse" />
+              <span>SEMIWORK OS // REPO CONTRATO ATIVO</span>
+            </span>
+            <span className="text-[#4b5563] hidden xs:inline">|</span>
+            <span className="text-[#22d3ee] text-[10px] hidden sm:inline flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#22d3ee] animate-ping inline-block" />
+              <span>RADAR DE EXTRAÇÃO: ATIVO</span>
+            </span>
+            <span className="text-[#4b5563] hidden md:inline">|</span>
+            <span className="text-[#ef4444] text-[10px] hidden md:inline font-bold">
+              NÍVEL DE PERIGO: GRAU V (EXTREMO)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 font-mono font-bold text-slate-100">
+            <span className="text-[#f59e0b] text-[11px] flex items-center gap-1 bg-black/80 px-2 py-0.5 rounded border border-[#f59e0b]/60 shadow-[0_0_8px_rgba(245,158,11,0.3)]">
+              <span>COTA:</span> $150,000 / $84,500
+            </span>
+            <span className="text-xs text-[#22d3ee] flex items-center gap-1">
+              <span className="text-[10px] text-slate-400">VITAIS:</span> 100%
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Stardew Valley Farm Clock & HUD Strip */}
       {isStardew && (
         <div className="stardew-notice-bar text-[11px] font-sans flex items-center justify-between px-3 py-1 select-none">
@@ -243,7 +280,7 @@ export const Header: React.FC<HeaderProps> = ({
       )}
 
       {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
         <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full">
           <div className="flex items-center gap-2">
             {isWin95 ? (
@@ -259,6 +296,11 @@ export const Header: React.FC<HeaderProps> = ({
                   <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline">A<u>j</u>uda</span>
                 </div>
               </div>
+            ) : isRepo ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#f59e0b] text-black tracking-wider font-mono">
+                <AlertTriangle size={10} className="text-black" />
+                R.E.P.O. // SEMIWORK TERMINAL
+              </span>
             ) : isGenshin ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold genshin-primogem-badge">
                 <Sparkles size={10} className="text-amber-300 animate-pulse" />
@@ -283,7 +325,7 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold">WIKIZERO v3.0</span>
             )}
-            {!isWin95 && <span className={isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : isStardew ? "text-[#fed88b]" : "text-slate-400"}>{t('header.open_encyclopedia')}</span>}
+            {!isWin95 && <span className={isRepo ? "text-[#22d3ee]/80" : isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : isStardew ? "text-[#fed88b]" : "text-slate-400"}>{t('header.open_encyclopedia')}</span>}
           </div>
           <div className={`flex items-center gap-4 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : isStardew ? 'text-[#fed88b]' : 'text-slate-400'} text-[11px]`}>
             <button
@@ -390,6 +432,31 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <p className="text-[10px] text-[#A4C639]/80 font-sans leading-none mt-0.5 hidden xs:block">
                   Android 1.5 Cupcake OS (2009)
+                </p>
+              </div>
+            </div>
+          ) : isRepo ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              title="WikiZero - Tema R.E.P.O. (Semiwork Studios)"
+            >
+              <div className="w-8 h-8 rounded bg-[#0b0e14] border-2 border-[#f59e0b] flex items-center justify-center shadow-[0_0_10px_rgba(245,158,11,0.35)] group-hover:scale-105 transition">
+                <span className="text-[11px] font-black text-[#f59e0b] font-mono tracking-tighter">
+                  REPO
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-bold text-base sm:text-lg text-[#f3f4f6] tracking-tight font-mono">
+                    WikiZero <span className="text-[#f59e0b] text-xs">R.E.P.O.</span>
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/70 px-1.5 py-0.2 rounded-xs font-mono">
+                    SEMIWORK
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#22d3ee]/90 font-mono leading-none mt-0.5 hidden xs:block">
+                  Semiwork Salvage & Extraction Terminal OS
                 </p>
               </div>
             </div>
@@ -600,6 +667,43 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
           </div>
+        ) : isRepo ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div
+              onClick={handleSearchInputClick}
+              className="relative repo-search-widget flex items-center px-3 py-1.5 transition-all cursor-pointer font-mono"
+            >
+              <div className="mr-2 flex items-center text-[#f59e0b] shrink-0 text-sm" title="R.E.P.O. Terminal">
+                <Radio size={15} className="text-[#f59e0b] animate-pulse" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onClick={handleSearchInputClick}
+                onFocus={handleSearchInputClick}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="SEMIWORK REPO // BUSCAR ARTEFATO OU SUCATA..."
+                className="w-full text-xs bg-transparent border-none outline-none text-[#22d3ee] placeholder:text-[#22d3ee]/50 font-mono cursor-text"
+              />
+              <div className="flex items-center gap-1.5 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={onSearchSubmit}
+                  className="repo-btn px-2.5 py-1 text-[11px] cursor-pointer"
+                  title="Executar Varredura e Busca Avançada"
+                >
+                  [ EXTRAIR ]
+                </button>
+                <button
+                  onClick={onRandomPage}
+                  title="Artefato Aleatório"
+                  className="repo-btn px-2 py-1 text-[11px] cursor-pointer"
+                >
+                  [ SUCATA ]
+                </button>
+              </div>
+            </div>
+          </div>
         ) : isStardew ? (
           <div className="flex-1 max-w-xl mx-2 hidden md:block">
             <div
@@ -787,6 +891,19 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-[9px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1 py-0.2 rounded-xs font-mono font-bold">
                 v3.3
               </span>
+            </button>
+            <button
+              id="btn-header-appearance"
+              onClick={() => onNavigate('appearance')}
+              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 transition font-semibold ${
+                currentView === 'appearance'
+                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+              title="Aparência & Temas Visuais (R.E.P.O. Semiwork, Stardew Valley, Genshin, Android 1.5, Windows 95, Google)"
+            >
+              <Palette size={13} className="text-amber-500" />
+              <span>Aparência</span>
             </button>
           </nav>
 

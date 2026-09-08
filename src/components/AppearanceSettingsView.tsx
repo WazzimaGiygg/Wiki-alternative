@@ -16,6 +16,8 @@ import {
   Layers,
   ArrowLeft,
   ExternalLink,
+  AlertTriangle,
+  Terminal,
 } from 'lucide-react';
 import { AppTheme, DeviceMode, ViewMode } from '../types';
 
@@ -194,6 +196,17 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       bgPreview: 'bg-[#fffaf0] border-[#6b401b] border-2 text-[#3b2816]',
       badgeStyle: 'bg-[#d49e3d]/25 text-[#7a4611] border border-[#d49e3d]/70 font-bold',
       icon: <span className="text-base select-none leading-none">🍏</span>,
+    },
+    {
+      id: 'repo',
+      name: 'R.E.P.O. (Semiwork Studios)',
+      subtitle: 'Terminal de Extração e Salvamento Industrial',
+      description: 'Inspirado no jogo cooperativo de extração e terror sci-fi R.E.P.O. do estúdio Semiwork. Fundo industrial sombrio de carcaça espacial, faixas de perigo amarelo e preto (hazard stripes), fósforo ciano CRT, dados de telemetria e botões mecânicos táteis de salvamento de sucata.',
+      tag: 'Semiwork R.E.P.O.',
+      accentColor: '#f59e0b',
+      bgPreview: 'bg-[#090c10] border-[#f59e0b] border-2 text-[#22d3ee] font-mono shadow-[0_0_12px_rgba(245,158,11,0.2)]',
+      badgeStyle: 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/70 font-mono font-bold tracking-wider',
+      icon: <AlertTriangle size={18} className="text-amber-400 animate-pulse" />,
     },
   ];
 

@@ -79,6 +79,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
   const isWin95 = theme === 'win95';
   const isGenshin = theme === 'genshin';
+  const isAndroid = theme === 'android15';
+  const isStardew = theme === 'stardew';
+  const isRepo = theme === 'repo';
 
   const visibilityClass =
     deviceMode === 'mobile'
@@ -93,8 +96,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       className={`relative flex-col transition-all duration-200 z-20 select-none shrink-0 sticky top-16 self-start max-h-[calc(100vh-5rem)] overflow-hidden flex ${
         isWin95
           ? 'win95-window !border-2 !rounded-none !bg-[#c0c0c0]'
+          : isRepo
+          ? 'bg-[#080c13]/95 border-2 border-[#f59e0b]/50 rounded-lg shadow-[0_0_16px_rgba(245,158,11,0.15)] font-mono'
           : isGenshin
           ? 'bg-[#14192b]/95 border border-[#d3bc8e]/30 rounded-xl shadow-lg backdrop-blur-md'
+          : isStardew
+          ? 'stardew-box bg-[#fffbf2] rounded-xl'
+          : isAndroid
+          ? 'bg-[#1c1d21] border border-[#303338] rounded-xl shadow-xs'
           : isGoogleTheme
           ? 'bg-[#f8fafd] dark:bg-[#202124] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xs'
           : 'bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 rounded-xl shadow-2xs'

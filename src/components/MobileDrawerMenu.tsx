@@ -256,6 +256,27 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <Sparkles size={14} className={theme === 'genshin' ? 'text-amber-300 animate-pulse' : 'text-amber-500'} />
             </button>
 
+            {/* Quick R.E.P.O. Semiwork Toggle */}
+            <button
+              id="btn-drawer-quick-repo-theme"
+              onClick={() => {
+                if (theme === 'repo') {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('repo');
+                }
+              }}
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 font-mono text-[10px] font-bold ${
+                theme === 'repo'
+                  ? 'bg-[#090c10] border-[#f59e0b] text-[#f59e0b] ring-1 ring-[#f59e0b]/50 shadow-[0_0_8px_rgba(245,158,11,0.3)]'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={theme === 'repo' ? 'Desativar Tema R.E.P.O.' : 'Ativar Tema R.E.P.O. Semiwork'}
+            >
+              <AlertTriangle size={13} className={theme === 'repo' ? 'text-amber-400 animate-pulse' : 'text-amber-500'} />
+              <span className="hidden xs:inline">REPO</span>
+            </button>
+
             {/* Dark Mode Toggle */}
             <button
               onClick={onToggleTheme}

@@ -1,6 +1,6 @@
 {
   "name": "WikiZero - Enciclopédia Livre",
-  "description": "WikiZero - Enciclopédia colaborativa e livre com editor wikitexto otimizado, tema Google (Material Design 3), tema Windows 95 retrô, tema Genshin Impact (Teyvat & Primogem), aplicativo para celular Android e Smart TV (PWA 10-Foot), sincronização em tempo real e conformidade LGPD.",
+  "description": "WikiZero - Enciclopédia colaborativa e livre com editor wikitexto otimizado, temas visuais (R.E.P.O. Semiwork OS, Stardew Valley, Genshin Impact, Android 1.5, Windows 95, Google Material 3), aplicativo móvel e Smart TV (PWA 10-Foot), sincronização em tempo real e conformidade LGPD.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

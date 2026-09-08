@@ -104,21 +104,21 @@ export default function App() {
       setCurrentView('smart-tv');
     }
   };
-  // Multi-theme state supporting light, dark, google, google-dark, win95, genshin, android15, stardew
+  // Multi-theme state supporting light, dark, google, google-dark, win95, genshin, android15, stardew, repo
   const [theme, setTheme] = useState<AppTheme>(() => {
     const saved = localStorage.getItem('wikizero_theme_v3') as AppTheme | null;
-    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'genshin' || saved === 'android15' || saved === 'stardew')) {
+    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'genshin' || saved === 'android15' || saved === 'stardew' || saved === 'repo')) {
       return saved;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
-  const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'genshin' || theme === 'android15';
+  const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'genshin' || theme === 'android15' || theme === 'repo';
 
   // Apply appropriate theme classes to document root
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-genshin', 'theme-android15', 'theme-stardew');
+    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -134,6 +134,8 @@ export default function App() {
       root.classList.add('dark', 'theme-android15');
     } else if (theme === 'stardew') {
       root.classList.add('theme-stardew');
+    } else if (theme === 'repo') {
+      root.classList.add('dark', 'theme-repo');
     }
 
     localStorage.setItem('wikizero_theme_v3', theme);

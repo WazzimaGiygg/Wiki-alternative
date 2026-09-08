@@ -45,6 +45,21 @@ export const Footer: React.FC<FooterProps> = ({
   return (
     <footer className="mt-12 bg-[#f8f9fa] dark:bg-[#0b0f17] border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 py-6 pb-24 md:pb-6 transition-colors select-none font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        {/* R.E.P.O. Semiwork Tactical Contractor Mission Footer Strip */}
+        {theme === 'repo' && (
+          <div className="p-3 bg-[#070a0e] border border-[#f59e0b]/50 rounded text-xs font-mono text-slate-300 flex flex-wrap items-center justify-between gap-3 shadow-[0_0_12px_rgba(245,158,11,0.15)]">
+            <div className="flex items-center gap-2 text-[#f59e0b]">
+              <AlertTriangle size={15} className="animate-pulse" />
+              <span className="font-bold">CONTRATO DE SALVAMENTO SEMIWORK // DIRETRIZ DE OPERAÇÃO</span>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] text-slate-400">
+              <span>STATUS: SUCATA COLETADA</span>
+              <span className="text-[#22d3ee]">TRANSMISSÃO TELEMÉTRICA SEGURA</span>
+              <span className="text-amber-400 font-bold">R.E.P.O. v1.0.4</span>
+            </div>
+          </div>
+        )}
+
         {/* Official Wikimedia-style Mobile / Desktop View Selector Bar */}
         <div className="bg-slate-200/70 dark:bg-slate-850 p-2 rounded-lg flex flex-wrap items-center justify-between gap-2 border border-slate-300/80 dark:border-slate-800">
           <div className="flex items-center gap-2">

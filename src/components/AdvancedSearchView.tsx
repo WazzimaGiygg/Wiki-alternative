@@ -334,6 +334,7 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
   const isGenshin = theme === 'genshin';
   const isWin95 = theme === 'win95';
   const isAndroid = theme === 'android15';
+  const isRepo = theme === 'repo';
 
   return (
     <div className="space-y-6">
@@ -346,6 +347,8 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
             ? 'bg-[#151a2d] border-[#d3bc8e]/40 text-[#f2dfb7]'
             : isStardew
             ? 'stardew-box bg-[#fffaf0]'
+            : isRepo
+            ? 'repo-box bg-[#090d14] border-2 border-[#f59e0b]/60 text-slate-100 font-mono shadow-[0_0_15px_rgba(245,158,11,0.15)]'
             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs'
         }`}
       >
@@ -360,6 +363,8 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
                     ? 'bg-[#212946] text-[#e0c48e]'
                     : isStardew
                     ? 'bg-[#5c3716] text-[#ffd54f]'
+                    : isRepo
+                    ? 'bg-[#151c28] text-[#f59e0b] border border-[#f59e0b]/50'
                     : 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'
                 }`}
               >
@@ -427,6 +432,8 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
                   ? 'bg-[#101423] border-[#d3bc8e]/50 text-[#f2dfb7] placeholder:text-[#a0947d]'
                   : isStardew
                   ? 'bg-[#fffdf7] border-[#6b401b] text-[#3e2613] placeholder:text-[#8a6843]'
+                  : isRepo
+                  ? 'bg-[#06080e] border-2 border-[#f59e0b]/80 text-[#22d3ee] placeholder:text-[#22d3ee]/40 font-mono focus:border-[#22d3ee]'
                   : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400'
               }`}
             />
@@ -454,6 +461,8 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
                 ? 'genshin-gold-btn text-black'
                 : isStardew
                 ? 'stardew-btn'
+                : isRepo
+                ? 'repo-btn px-6'
                 : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
             }`}
           >
