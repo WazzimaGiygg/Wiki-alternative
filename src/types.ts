@@ -883,6 +883,6 @@ export interface EmergencyReport {
   actionLogs: EmergencyReportActionLog[];
 }
 
-export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'genshin';
+export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'genshin' | 'android15';
 
 

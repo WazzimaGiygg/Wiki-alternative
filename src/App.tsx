@@ -103,21 +103,21 @@ export default function App() {
       setCurrentView('smart-tv');
     }
   };
-  // Multi-theme state supporting light, dark, google, google-dark, win95, genshin
+  // Multi-theme state supporting light, dark, google, google-dark, win95, genshin, android15
   const [theme, setTheme] = useState<AppTheme>(() => {
     const saved = localStorage.getItem('wikizero_theme_v3') as AppTheme | null;
-    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'genshin')) {
+    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'genshin' || saved === 'android15')) {
       return saved;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
-  const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'genshin';
+  const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'genshin' || theme === 'android15';
 
   // Apply appropriate theme classes to document root
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-genshin');
+    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-genshin', 'theme-android15');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -129,6 +129,8 @@ export default function App() {
       root.classList.add('theme-win95');
     } else if (theme === 'genshin') {
       root.classList.add('dark', 'theme-genshin');
+    } else if (theme === 'android15') {
+      root.classList.add('dark', 'theme-android15');
     }
 
     localStorage.setItem('wikizero_theme_v3', theme);

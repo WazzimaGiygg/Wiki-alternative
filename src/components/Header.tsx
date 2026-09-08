@@ -95,6 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
   const isWin95 = theme === 'win95';
   const isGenshin = theme === 'genshin';
+  const isAndroid = theme === 'android15';
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
@@ -160,14 +161,52 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
+      {/* Android 1.5 Notification Status Bar */}
+      {isAndroid && (
+        <div className="android-statusbar bg-black text-[#c4c4c4] text-[10px] font-sans flex items-center justify-between px-3 py-1 select-none border-b border-[#282828]">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1 font-mono font-bold text-[#A4C639]">
+              <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
+              </svg>
+              <span>Android 1.5</span>
+            </span>
+            <span className="text-[#555] hidden sm:inline">|</span>
+            <span className="text-[#A4C639] font-bold text-[9px] px-1.5 py-0.2 rounded bg-[#A4C639]/15 border border-[#A4C639]/40 hidden sm:inline">
+              Cupcake
+            </span>
+            <span className="text-[#888] text-[9px] hidden md:inline">HTC Dream • T-Mobile G1</span>
+          </div>
+
+          <div className="flex items-center gap-2.5 text-[10px]">
+            <span className="text-[#A4C639] font-mono font-bold text-[9px]">3G</span>
+            <div className="flex items-end gap-0.5 h-2.5" title="Sinal Celular">
+              <span className="w-0.5 h-1 bg-[#A4C639]" />
+              <span className="w-0.5 h-1.5 bg-[#A4C639]" />
+              <span className="w-0.5 h-2 bg-[#A4C639]" />
+              <span className="w-0.5 h-2.5 bg-[#A4C639]" />
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-2 border border-[#777] rounded-xs p-0.5 flex items-center">
+                <div className="w-full h-full bg-[#A4C639]" />
+              </div>
+            </div>
+            <span className="font-mono text-white text-[10px] font-semibold">12:30</span>
+          </div>
+        </div>
+      )}
+
       {/* Google 4-Color Accent Line when Google Theme is active */}
       {isGoogleTheme && <div className="google-gradient-bar w-full" />}
 
       {/* Genshin Impact Celestial & 7-Elements Accent Line */}
       {isGenshin && <div className="genshin-accent-bar w-full" />}
 
+      {/* Android 1.5 Robot Green Accent Line */}
+      {isAndroid && <div className="android-accent-bar w-full" />}
+
       {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
         <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full">
           <div className="flex items-center gap-2">
             {isWin95 ? (
@@ -188,6 +227,13 @@ export const Header: React.FC<HeaderProps> = ({
                 <Sparkles size={10} className="text-amber-300 animate-pulse" />
                 GENSHIN IMPACT ✦ TEYVAT ARCHIVES
               </span>
+            ) : isAndroid ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#A4C639] text-black">
+                <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
+                </svg>
+                ANDROID 1.5 CUPCAKE
+              </span>
             ) : isGoogleTheme ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#4285F4] text-white">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
@@ -196,7 +242,7 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold">WIKIZERO v3.0</span>
             )}
-            {!isWin95 && <span className={isGenshin ? "text-[#a0947d]" : "text-slate-400"}>{t('header.open_encyclopedia')}</span>}
+            {!isWin95 && <span className={isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : "text-slate-400"}>{t('header.open_encyclopedia')}</span>}
           </div>
           <div className={`flex items-center gap-4 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : 'text-slate-400'} text-[11px]`}>
             <button
@@ -278,6 +324,31 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <p className="text-[10px] text-[#cca567] font-sans leading-none mt-0.5 hidden xs:block">
                   Adventurer's Handbook & Lore
+                </p>
+              </div>
+            </div>
+          ) : isAndroid ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              title="WikiZero - Tema Android 1.5 Cupcake (2009)"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#25272a] border-2 border-[#A4C639] flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                <svg className="w-4 h-4 fill-current text-[#A4C639]" viewBox="0 0 24 24">
+                  <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
+                </svg>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-bold text-base sm:text-lg text-white tracking-tight font-sans">
+                    WikiZero <span className="text-[#A4C639] font-mono text-xs">1.5</span>
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-[#A4C639]/20 text-[#A4C639] border border-[#A4C639]/50 px-1.5 py-0.2 rounded-xs">
+                    Cupcake
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#A4C639]/80 font-sans leading-none mt-0.5 hidden xs:block">
+                  Android 1.5 Cupcake OS (2009)
                 </p>
               </div>
             </div>
@@ -408,6 +479,39 @@ export const Header: React.FC<HeaderProps> = ({
                   className="px-2 py-1 text-[11px] font-medium rounded-full bg-[#242c47] hover:bg-[#2f395d] text-[#e4ca95] border border-[#d3bc8e]/40 transition flex items-center gap-1 cursor-pointer"
                 >
                   <span>✦ Desejo</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : isAndroid ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div className="relative android-search-widget flex items-center px-3 py-1.5 transition-all">
+              <div className="mr-2 flex items-center text-[#A4C639] shrink-0">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Pesquisa rápida Google / WikiZero Android..."
+                className="w-full text-xs bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-500 font-sans"
+              />
+              <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                <button
+                  onClick={onSearchSubmit}
+                  className="android-btn px-2.5 py-1 text-[11px] font-bold cursor-pointer"
+                >
+                  {t('header.search_btn')}
+                </button>
+                <button
+                  onClick={onRandomPage}
+                  title="Artigo Aleatório"
+                  className="android-btn px-2 py-1 text-[11px] font-medium cursor-pointer"
+                >
+                  Aleatório
                 </button>
               </div>
             </div>

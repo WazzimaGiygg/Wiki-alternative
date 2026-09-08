@@ -169,6 +169,21 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       badgeStyle: 'bg-gradient-to-r from-[#715ae0] to-[#35a5ea] text-white border-amber-300/40',
       icon: <Sparkles size={18} className="text-amber-400 animate-pulse" />,
     },
+    {
+      id: 'android15',
+      name: 'Android 1.5 Cupcake (2009)',
+      subtitle: 'Retrô Droid OS & HTC Dream',
+      description: 'Estética clássica do início do sistema Android (1.5 Cupcake): barra de notificações preta, linhas verde-robô (#A4C639), botões cinza escovado e widget de busca.',
+      tag: 'Cupcake 2009',
+      accentColor: '#A4C639',
+      bgPreview: 'bg-[#1e2023] border-[#383a3d] border-t-2 border-t-[#A4C639] text-[#e2e4e8]',
+      badgeStyle: 'bg-[#A4C639]/20 text-[#A4C639] border border-[#A4C639]/50 font-bold',
+      icon: (
+        <svg className="w-4 h-4 fill-current text-[#A4C639]" viewBox="0 0 24 24">
+          <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
+        </svg>
+      ),
+    },
   ];
 
   return (
@@ -242,7 +257,7 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
             </h2>
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400">
-            6 estilos disponíveis
+            {themesList.length} estilos disponíveis
           </span>
         </div>
 

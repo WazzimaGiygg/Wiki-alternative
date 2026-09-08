@@ -640,4 +640,153 @@ html.theme-genshin footer {
   border-top: 1px solid rgba(211, 188, 142, 0.25) !important;
 }
 
+/* ========================================================================== */
+/* TEMA ANDROID 1.5 (Cupcake OS 2009 - Early Android Robot & Droid Aesthetic) */
+/* ========================================================================== */
+html.theme-android15 {
+  color-scheme: dark;
+}
+
+html.theme-android15 body {
+  background-color: #191a1c;
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, rgba(164, 198, 57, 0.12) 0%, transparent 65%),
+    linear-gradient(180deg, #1f2023 0%, #141517 100%);
+  color: #e2e4e8;
+  font-family: 'Droid Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Android 1.5 Notification Status Bar */
+.android-statusbar {
+  background-color: #000000;
+  border-bottom: 1px solid #282828;
+  color: #c4c4c4;
+}
+
+/* Android 1.5 Characteristic Robot Green Accent Line */
+.android-accent-bar {
+  height: 3px;
+  background-color: #A4C639;
+  box-shadow: 0 0 10px rgba(164, 198, 57, 0.55);
+}
+
+/* Android 1.5 Metallic / Brushed Dark Grey Header */
+html.theme-android15 header {
+  background: linear-gradient(180deg, #37393d 0%, #292a2d 50%, #202123 100%) !important;
+  border-bottom: 2px solid #A4C639 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* Android 1.5 Search Box Widget */
+html.theme-android15 .android-search-widget {
+  background-color: #ffffff;
+  border: 2px solid #3d4044;
+  border-radius: 9999px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25), 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+html.theme-android15 .android-search-widget:focus-within {
+  border-color: #A4C639;
+  box-shadow: 0 0 10px rgba(164, 198, 57, 0.6);
+}
+
+/* Android 1.5 Classic Beveled Buttons */
+.android-btn {
+  background: linear-gradient(180deg, #505256 0%, #3a3b3e 50%, #2a2b2d 100%);
+  border: 1px solid #1c1d1f;
+  color: #ffffff;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.7);
+  transition: all 0.15s ease;
+}
+
+.android-btn:hover {
+  background: linear-gradient(180deg, #5c5f63 0%, #44464a 50%, #323336 100%);
+  border-color: #A4C639;
+}
+
+.android-btn:active {
+  background: linear-gradient(180deg, #1f2022 0%, #2d2e31 100%);
+  border-color: #FF9000;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 8px rgba(255, 144, 0, 0.5);
+}
+
+/* Android 1.5 Cards and Surfaces */
+html.theme-android15 .bg-white,
+html.theme-android15 .dark\:bg-slate-900,
+html.theme-android15 .dark\:bg-\[\#0f172a\] {
+  background-color: #232528 !important;
+  border-color: #37393d !important;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+html.theme-android15 .bg-slate-50,
+html.theme-android15 .dark\:bg-slate-800,
+html.theme-android15 .dark\:bg-\[\#1e293b\] {
+  background-color: #2b2d31 !important;
+  border-color: #3e4146 !important;
+  border-radius: 8px;
+}
+
+/* Android 1.5 Article Content */
+html.theme-android15 .wiki-rendered-content {
+  background-color: #212326;
+  border: 1px solid #36393d;
+  border-top: 3px solid #A4C639;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  color: #e4e6ea;
+}
+
+html.theme-android15 .wiki-rendered-content h1,
+html.theme-android15 .wiki-rendered-content h2,
+html.theme-android15 .wiki-rendered-content h3 {
+  color: #ffffff;
+  border-bottom: 1px solid #383a3e;
+  border-left: 3px solid #A4C639;
+  padding-left: 8px;
+}
+
+html.theme-android15 .wiki-rendered-content .wiki-link {
+  color: #A4C639;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+html.theme-android15 .wiki-rendered-content .wiki-link:hover {
+  color: #c4ec4d;
+  text-decoration: underline;
+}
+
+html.theme-android15 .wiki-rendered-content .wikitable {
+  border: 1px solid #3a3d42;
+  background-color: #282a2e;
+}
+
+html.theme-android15 .wiki-rendered-content .wikitable th {
+  background: linear-gradient(180deg, #3a3d42 0%, #2c2e32 100%);
+  color: #A4C639;
+  border-color: #42454a;
+}
+
+html.theme-android15 .wiki-rendered-content .wikitable td {
+  border-color: #33363a;
+}
+
+/* Android 1.5 Sidebar & Navigation */
+html.theme-android15 aside {
+  background-color: #1c1d1f !important;
+  border-right: 1px solid #323539 !important;
+}
+
+/* Android 1.5 Footer */
+html.theme-android15 footer {
+  background-color: #141517 !important;
+  border-top: 2px solid #A4C639 !important;
+}
+
+
 
