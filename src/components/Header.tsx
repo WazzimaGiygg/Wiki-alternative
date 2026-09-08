@@ -96,6 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isWin95 = theme === 'win95';
   const isGenshin = theme === 'genshin';
   const isAndroid = theme === 'android15';
+  const isStardew = theme === 'stardew';
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
@@ -128,6 +129,12 @@ export const Header: React.FC<HeaderProps> = ({
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       onSearchSubmit();
+    }
+  };
+
+  const handleSearchInputClick = () => {
+    if (currentView !== 'search') {
+      onNavigate('search');
     }
   };
 
@@ -205,8 +212,38 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Android 1.5 Robot Green Accent Line */}
       {isAndroid && <div className="android-accent-bar w-full" />}
 
+      {/* Stardew Valley Prismatic & Golden Wheat Accent Line */}
+      {isStardew && <div className="stardew-accent-bar w-full" />}
+
+      {/* Stardew Valley Farm Clock & HUD Strip */}
+      {isStardew && (
+        <div className="stardew-notice-bar text-[11px] font-sans flex items-center justify-between px-3 py-1 select-none">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="flex items-center gap-1 font-bold text-[#ffeb99]">
+              <span className="text-amber-400">🌱</span>
+              <span>Primavera, Dia 28</span>
+            </span>
+            <span className="text-[#8c5e29] hidden xs:inline">•</span>
+            <span className="text-[#fce4a6] text-[10px] hidden sm:inline flex items-center gap-1">
+              <span>☀️</span> Ensolarado
+            </span>
+            <span className="text-[#8c5e29] hidden md:inline">•</span>
+            <span className="text-[#e2be78] text-[10px] hidden md:inline">Fazenda Vale da Estrela</span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 font-mono font-bold text-[#fffae0]">
+            <span className="text-[#ffd54f] text-[11px] flex items-center gap-1 bg-[#251506]/60 px-2 py-0.5 rounded border border-[#b87a28]/50">
+              <span>🪙</span> 45.280g
+            </span>
+            <span className="text-xs text-[#fed88b] flex items-center gap-1">
+              <span>⏰</span> 10:40 AM
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
         <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full">
           <div className="flex items-center gap-2">
             {isWin95 ? (
@@ -234,6 +271,10 @@ export const Header: React.FC<HeaderProps> = ({
                 </svg>
                 ANDROID 1.5 CUPCAKE
               </span>
+            ) : isStardew ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#c6892e] text-[#2c1605] border border-[#f5cb74]">
+                <span>★</span> STARDEW VALLEY ✦ PELICAN TOWN
+              </span>
             ) : isGoogleTheme ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#4285F4] text-white">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
@@ -242,9 +283,9 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold">WIKIZERO v3.0</span>
             )}
-            {!isWin95 && <span className={isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : "text-slate-400"}>{t('header.open_encyclopedia')}</span>}
+            {!isWin95 && <span className={isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : isStardew ? "text-[#fed88b]" : "text-slate-400"}>{t('header.open_encyclopedia')}</span>}
           </div>
-          <div className={`flex items-center gap-4 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : 'text-slate-400'} text-[11px]`}>
+          <div className={`flex items-center gap-4 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : isStardew ? 'text-[#fed88b]' : 'text-slate-400'} text-[11px]`}>
             <button
               onClick={onOpenLanguagesModal}
               className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-300 text-slate-300'} flex items-center gap-1 transition`}
@@ -352,6 +393,31 @@ export const Header: React.FC<HeaderProps> = ({
                 </p>
               </div>
             </div>
+          ) : isStardew ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              title="WikiZero - Tema Stardew Valley (Vale da Estrela)"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#533113] border-2 border-[#d49e3d] flex items-center justify-center shadow-md group-hover:scale-105 transition">
+                <span className="text-base select-none leading-none" role="img" aria-label="Junimo">
+                  🍏
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-bold text-base sm:text-lg text-[#ffefc4] tracking-tight font-sans drop-shadow-sm">
+                    WikiZero <span className="text-[#ffd54f] text-xs">Valley</span>
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-[#d49e3d]/20 text-[#ffe082] border border-[#d49e3d]/60 px-1.5 py-0.2 rounded-xs">
+                    Stardew
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#fdd87f]/90 font-sans leading-none mt-0.5 hidden xs:block">
+                  Pelican Town Archives • Vale da Estrela
+                </p>
+              </div>
+            </div>
           ) : isGoogleTheme ? (
             <div
               onClick={() => onNavigate('hub')}
@@ -418,20 +484,26 @@ export const Header: React.FC<HeaderProps> = ({
         {isWin95 ? (
           <div className="flex-1 max-w-xl mx-2 hidden md:block">
             <div className="flex items-center gap-1.5">
-              <div className="flex-1 win95-sunken flex items-center px-2 py-1 bg-white">
+              <div
+                onClick={handleSearchInputClick}
+                className="flex-1 win95-sunken flex items-center px-2 py-1 bg-white cursor-pointer"
+              >
                 <Search className="w-3.5 h-3.5 text-[#000080] mr-1.5 shrink-0" />
                 <input
                   type="text"
                   value={searchQuery}
+                  onClick={handleSearchInputClick}
+                  onFocus={handleSearchInputClick}
                   onChange={(e) => onSearchChange(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="C:\WIKIZERO\BUSCAR.EXE..."
-                  className="w-full text-xs bg-transparent border-none outline-none text-black font-mono placeholder:text-slate-500"
+                  placeholder="C:\WIKIZERO\BUSCA_AVANCADA.EXE..."
+                  className="w-full text-xs bg-transparent border-none outline-none text-black font-mono placeholder:text-slate-500 cursor-text"
                 />
               </div>
               <button
                 onClick={onSearchSubmit}
                 className="win95-button font-bold flex items-center gap-1"
+                title="Ir para a Busca Avançada"
               >
                 <Search size={11} />
                 {t('header.search_btn')}
@@ -447,17 +519,22 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         ) : isGenshin ? (
           <div className="flex-1 max-w-xl mx-2 hidden md:block">
-            <div className="relative genshin-search-box flex items-center px-3.5 py-1.5 transition-all">
+            <div
+              onClick={handleSearchInputClick}
+              className="relative genshin-search-box flex items-center px-3.5 py-1.5 transition-all cursor-pointer"
+            >
               <Sparkles className="w-4 h-4 text-[#d3bc8e] mr-2 shrink-0 animate-pulse" />
               <input
                 type="text"
                 value={searchQuery}
+                onClick={handleSearchInputClick}
+                onFocus={handleSearchInputClick}
                 onChange={(e) => onSearchChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="Consultar o Guia de Teyvat (artigos, personagens, lore)..."
-                className="w-full text-xs bg-transparent border-none outline-none text-[#f2dfb7] placeholder:text-[#a0947d] font-sans"
+                placeholder="Busca Avançada de Teyvat (artigos, lore, tags)..."
+                className="w-full text-xs bg-transparent border-none outline-none text-[#f2dfb7] placeholder:text-[#a0947d] font-sans cursor-text"
               />
-              <div className="flex items-center gap-1.5 ml-2 shrink-0">
+              <div className="flex items-center gap-1.5 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#161a2c] border border-[#d3bc8e]/30" title="Sete Elementos de Teyvat">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#74c2a8]" title="Anemo" />
                   <span className="w-1.5 h-1.5 rounded-full bg-[#fab632]" title="Geo" />
@@ -470,6 +547,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   onClick={onSearchSubmit}
                   className="px-2.5 py-1 text-[11px] font-bold rounded-full genshin-gold-btn cursor-pointer"
+                  title="Abrir Busca Avançada"
                 >
                   {t('header.search_btn')}
                 </button>
@@ -485,7 +563,10 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         ) : isAndroid ? (
           <div className="flex-1 max-w-xl mx-2 hidden md:block">
-            <div className="relative android-search-widget flex items-center px-3 py-1.5 transition-all">
+            <div
+              onClick={handleSearchInputClick}
+              className="relative android-search-widget flex items-center px-3 py-1.5 transition-all cursor-pointer"
+            >
               <div className="mr-2 flex items-center text-[#A4C639] shrink-0">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                   <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
@@ -494,15 +575,18 @@ export const Header: React.FC<HeaderProps> = ({
               <input
                 type="text"
                 value={searchQuery}
+                onClick={handleSearchInputClick}
+                onFocus={handleSearchInputClick}
                 onChange={(e) => onSearchChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="Pesquisa rápida Google / WikiZero Android..."
-                className="w-full text-xs bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-500 font-sans"
+                placeholder="Busca Avançada WikiZero Android..."
+                className="w-full text-xs bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-500 font-sans cursor-text"
               />
-              <div className="flex items-center gap-1.5 ml-2 shrink-0">
+              <div className="flex items-center gap-1.5 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={onSearchSubmit}
                   className="android-btn px-2.5 py-1 text-[11px] font-bold cursor-pointer"
+                  title="Abrir Busca Avançada"
                 >
                   {t('header.search_btn')}
                 </button>
@@ -516,19 +600,61 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
           </div>
+        ) : isStardew ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div
+              onClick={handleSearchInputClick}
+              className="relative stardew-search-widget flex items-center px-3 py-1.5 transition-all cursor-pointer"
+            >
+              <div className="mr-2 flex items-center text-amber-600 shrink-0 text-sm" title="Stardew Junimo">
+                🌱
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onClick={handleSearchInputClick}
+                onFocus={handleSearchInputClick}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Busca Avançada no Vale da Estrela..."
+                className="w-full text-xs bg-transparent border-none outline-none text-[#3e2613] placeholder:text-[#8a6843] font-sans cursor-text"
+              />
+              <div className="flex items-center gap-1.5 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={onSearchSubmit}
+                  className="stardew-btn px-2.5 py-1 text-[11px] cursor-pointer"
+                  title="Abrir Busca Avançada"
+                >
+                  {t('header.search_btn')}
+                </button>
+                <button
+                  onClick={onRandomPage}
+                  title="Artigo Aleatório (Sorte Diária)"
+                  className="stardew-btn px-2 py-1 text-[11px] cursor-pointer"
+                >
+                  ★ Sorte
+                </button>
+              </div>
+            </div>
+          </div>
         ) : isGoogleTheme ? (
           <div className="flex-1 max-w-xl mx-2 hidden md:block">
-            <div className="relative google-search-container flex items-center px-3.5 py-1.5 transition-all">
+            <div
+              onClick={handleSearchInputClick}
+              className="relative google-search-container flex items-center px-3.5 py-1.5 transition-all cursor-pointer"
+            >
               <Search className="w-4 h-4 text-[#4285F4] mr-2 shrink-0" />
               <input
                 type="text"
                 value={searchQuery}
+                onClick={handleSearchInputClick}
+                onFocus={handleSearchInputClick}
                 onChange={(e) => onSearchChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="Pesquisar na Enciclopédia Google ou digitar artigo..."
-                className="w-full text-xs bg-transparent border-none outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                placeholder="Busca Avançada de Artigos na Enciclopédia..."
+                className="w-full text-xs bg-transparent border-none outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 cursor-text"
               />
-              <div className="flex items-center gap-1 ml-2 shrink-0">
+              <div className="flex items-center gap-1 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700/50" title="Cores do Google">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
                   <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
@@ -537,14 +663,15 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <button
                   onClick={onSearchSubmit}
-                  className="px-2.5 py-1 text-[11px] font-semibold rounded-full bg-[#f8f9fa] dark:bg-[#303134] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-slate-700 dark:text-slate-200 border border-[#dadce0] dark:border-[#5f6368] transition shadow-2xs"
+                  className="px-2.5 py-1 text-[11px] font-semibold rounded-full bg-[#f8f9fa] dark:bg-[#303134] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-slate-700 dark:text-slate-200 border border-[#dadce0] dark:border-[#5f6368] transition shadow-2xs cursor-pointer"
+                  title="Abrir Busca Avançada"
                 >
                   {t('header.search_btn')}
                 </button>
                 <button
                   onClick={onRandomPage}
                   title="Estou com sorte (Artigo Aleatório)"
-                  className="px-2 py-1 text-[11px] font-semibold rounded-full bg-[#f8f9fa] dark:bg-[#303134] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#1a73e8] dark:text-[#8ab4f8] border border-[#dadce0] dark:border-[#5f6368] transition shadow-2xs"
+                  className="px-2 py-1 text-[11px] font-semibold rounded-full bg-[#f8f9fa] dark:bg-[#303134] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#1a73e8] dark:text-[#8ab4f8] border border-[#dadce0] dark:border-[#5f6368] transition shadow-2xs cursor-pointer"
                 >
                   Sorte
                 </button>
@@ -553,27 +680,33 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         ) : (
           <div className="flex-1 max-w-lg mx-2 hidden md:block">
-            <div className="relative">
+            <div
+              onClick={handleSearchInputClick}
+              className="relative cursor-pointer"
+            >
               <input
                 type="text"
                 value={searchQuery}
+                onClick={handleSearchInputClick}
+                onFocus={handleSearchInputClick}
                 onChange={(e) => onSearchChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder={t('header.search_placeholder')}
-                className="w-full pl-8 pr-20 py-1 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                placeholder="Busca avançada de artigos (clique para abrir)..."
+                className="w-full pl-8 pr-24 py-1 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 cursor-text"
               />
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={onSearchSubmit}
-                  className="px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition"
+                  className="px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition cursor-pointer"
+                  title="Abrir Busca Avançada"
                 >
                   {t('header.search_btn')}
                 </button>
                 <button
                   onClick={onRandomPage}
                   title={t('header.random_page')}
-                  className="p-1 text-slate-500 dark:text-slate-400 hover:text-blue-600 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                  className="p-1 text-slate-500 dark:text-slate-400 hover:text-blue-600 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
                 >
                   <Shuffle size={12} />
                 </button>
@@ -604,6 +737,18 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               {t('header.nav_hub')}
+            </button>
+            <button
+              onClick={() => onNavigate('search')}
+              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1 transition font-semibold ${
+                currentView === 'search'
+                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+              title="Busca Avançada de Artigos"
+            >
+              <Search size={13} />
+              <span>Busca Avançada</span>
             </button>
             <button
               onClick={() => onNavigate('editor')}

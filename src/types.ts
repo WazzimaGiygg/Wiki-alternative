@@ -491,6 +491,7 @@ export interface AdminContactTicket {
 export type ViewMode =
   | 'hub'
   | 'article'
+  | 'search'
   | 'editor'
   | 'create-page'
   | 'create-article'
@@ -883,6 +884,6 @@ export interface EmergencyReport {
   actionLogs: EmergencyReportActionLog[];
 }
 
-export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'genshin' | 'android15';
+export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'genshin' | 'android15' | 'stardew';
 
 

@@ -788,5 +788,186 @@ html.theme-android15 footer {
   border-top: 2px solid #A4C639 !important;
 }
 
+/* ========================================================================== */
+/* TEMA STARDEW VALLEY (Pelican Town, Farm, Parchment & Wood Aesthetic)       */
+/* ========================================================================== */
+html.theme-stardew {
+  color-scheme: light;
+}
+
+html.theme-stardew body {
+  background-color: #f3ebd9;
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, rgba(247, 185, 78, 0.18) 0%, transparent 70%),
+    linear-gradient(180deg, #faefdc 0%, #ebe0ca 100%);
+  color: #3b2816;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Stardew Top Season & Farm Notice Bar */
+.stardew-notice-bar {
+  background: linear-gradient(180deg, #3d230e 0%, #2b1809 100%);
+  border-bottom: 2px solid #b87a28;
+  color: #fed88b;
+  text-shadow: 1px 1px 0px #180d04;
+}
+
+/* Golden Stardew Accent Bar */
+.stardew-accent-bar {
+  height: 4px;
+  background: linear-gradient(90deg, #e65100 0%, #f57c00 20%, #fbc02d 40%, #7cb342 60%, #43a047 80%, #fbc02d 100%);
+  box-shadow: 0 1px 4px rgba(230, 81, 0, 0.4);
+}
+
+/* Stardew Rustic Wooden Header */
+html.theme-stardew header {
+  background: linear-gradient(180deg, #6c411c 0%, #523114 50%, #3e230c 100%) !important;
+  border-bottom: 3px solid #b57b29 !important;
+  box-shadow: 0 4px 12px rgba(43, 24, 9, 0.35);
+}
+
+/* Stardew Dialogue Box Style for Cards and Main Content */
+.stardew-box,
+html.theme-stardew .bg-white,
+html.theme-stardew .dark\:bg-slate-900,
+html.theme-stardew .dark\:bg-\[\#0f172a\] {
+  background-color: #fffaf0 !important;
+  border: 3px solid #6b401b !important;
+  outline: 2px solid #d49e3d;
+  outline-offset: -5px;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(60, 36, 15, 0.15), inset 0 0 10px rgba(230, 195, 130, 0.25) !important;
+  color: #3e2613 !important;
+}
+
+html.theme-stardew .bg-slate-50,
+html.theme-stardew .dark\:bg-slate-800,
+html.theme-stardew .dark\:bg-\[\#1e293b\] {
+  background-color: #f7eedb !important;
+  border: 2px solid #a87635 !important;
+  border-radius: 8px !important;
+  color: #3e2613 !important;
+}
+
+/* Stardew Search Box */
+html.theme-stardew .stardew-search-widget {
+  background-color: #fffbf2;
+  border: 2px solid #5a3415;
+  outline: 1px solid #d49e3d;
+  outline-offset: -3px;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 4px rgba(60, 35, 15, 0.15);
+}
+
+html.theme-stardew .stardew-search-widget:focus-within {
+  border-color: #388e3c;
+  outline-color: #81c784;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+}
+
+/* Stardew Wooden Pixel-style Button */
+.stardew-btn {
+  background: linear-gradient(180deg, #d4973b 0%, #b87b28 60%, #9a631c 100%);
+  border: 2px solid #5a3415;
+  color: #ffffff;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 235, 170, 0.5), 0 2px 4px rgba(60, 35, 15, 0.25);
+  text-shadow: 1px 1px 1px #4a280e;
+  font-weight: 600;
+  transition: all 0.12s ease;
+}
+
+.stardew-btn:hover {
+  background: linear-gradient(180deg, #e3a647 0%, #c8882e 60%, #a86c20 100%);
+  border-color: #42240b;
+  transform: translateY(-1px);
+}
+
+.stardew-btn:active {
+  background: linear-gradient(180deg, #8a5515 0%, #b07424 100%);
+  box-shadow: inset 0 2px 4px rgba(40, 20, 5, 0.5);
+  transform: translateY(1px);
+}
+
+/* Stardew Badge */
+.stardew-badge {
+  background: #fdf3d8;
+  border: 1px solid #b87b28;
+  color: #7a4611;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Stardew Article Content */
+html.theme-stardew .wiki-rendered-content {
+  background-color: #fffef8;
+  border: 3px solid #6b401b;
+  outline: 2px solid #d49e3d;
+  outline-offset: -5px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(60, 36, 15, 0.15), inset 0 0 14px rgba(240, 210, 150, 0.2);
+  color: #3b2614;
+}
+
+html.theme-stardew .wiki-rendered-content h1,
+html.theme-stardew .wiki-rendered-content h2,
+html.theme-stardew .wiki-rendered-content h3 {
+  color: #5c3513;
+  border-bottom: 2px solid #d49e3d;
+  font-family: inherit;
+}
+
+html.theme-stardew .wiki-rendered-content h1::before {
+  content: '✦ ';
+  color: #f57c00;
+  font-size: 0.9em;
+}
+
+html.theme-stardew .wiki-rendered-content .wiki-link {
+  color: #2e7d32;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: #a5d6a7;
+  text-underline-offset: 3px;
+}
+
+html.theme-stardew .wiki-rendered-content .wiki-link:hover {
+  color: #e65100;
+  text-decoration-color: #ffb74d;
+}
+
+html.theme-stardew .wiki-rendered-content .wikitable {
+  border: 2px solid #8d5924;
+  background-color: #fff9ee;
+}
+
+html.theme-stardew .wiki-rendered-content .wikitable th {
+  background: linear-gradient(180deg, #8d5924 0%, #6e4117 100%);
+  color: #ffefc4;
+  text-shadow: 1px 1px 0 #3a1e08;
+  border-color: #573311;
+}
+
+html.theme-stardew .wiki-rendered-content .wikitable td {
+  border-color: #e6cb9d;
+}
+
+/* Stardew Sidebar */
+html.theme-stardew aside {
+  background-color: #f7eedd !important;
+  border-right: 2px solid #b87b28 !important;
+}
+
+/* Stardew Footer */
+html.theme-stardew footer {
+  background: linear-gradient(180deg, #533215 0%, #3a210b 100%) !important;
+  border-top: 3px solid #b57b29 !important;
+  color: #fed992 !important;
+}
+
+html.theme-stardew footer a {
+  color: #ffd276 !important;
+}
+
 
 

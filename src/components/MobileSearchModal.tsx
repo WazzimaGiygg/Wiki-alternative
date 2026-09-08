@@ -11,6 +11,7 @@ interface MobileSearchModalProps {
   onSelectArticle: (articleId: string) => void;
   onSelectPage: (pageUid: string) => void;
   onSearchQuerySubmit?: (query: string) => void;
+  onOpenAdvancedSearch?: (query: string) => void;
 }
 
 export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
@@ -21,6 +22,7 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
   onSelectArticle,
   onSelectPage,
   onSearchQuerySubmit,
+  onOpenAdvancedSearch,
 }) => {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -112,6 +114,22 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
 
       {/* Search Results / Suggestions List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {onOpenAdvancedSearch && (
+          <button
+            onClick={() => {
+              onOpenAdvancedSearch(query);
+              onClose();
+            }}
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-semibold text-xs hover:bg-blue-100 dark:hover:bg-blue-900/50 transition cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-blue-600 dark:text-blue-400" />
+              <span>Abrir Página de Busca Avançada de Artigos</span>
+            </div>
+            <ChevronRight size={16} />
+          </button>
+        )}
+
         {/* Pages / Topic Portals */}
         {matchedPages.length > 0 && (
           <div>

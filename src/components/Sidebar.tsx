@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Home,
+  Search,
   History,
   Shuffle,
   PlusCircle,
@@ -132,6 +133,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Home size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
               {!isCollapsed && <span className="truncate">{t('sidebar.home')}</span>}
+            </button>
+
+            <button
+              onClick={() => onNavigate('search')}
+              title="Busca Avançada de Artigos"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'search'
+                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Search size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Busca Avançada</span>}
             </button>
 
             <button

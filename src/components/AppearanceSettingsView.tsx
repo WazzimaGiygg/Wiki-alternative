@@ -184,6 +184,17 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
         </svg>
       ),
     },
+    {
+      id: 'stardew',
+      name: 'Stardew Valley (Vale da Estrela)',
+      subtitle: 'Pelican Town, Madeira & Pergaminho',
+      description: 'Estética acolhedora da fazenda de Stardew Valley: caixas de diálogo em pergaminho suave, molduras em madeira rústica, relógio da fazenda e acentos dourados e rurais.',
+      tag: 'Pelican Town',
+      accentColor: '#d49e3d',
+      bgPreview: 'bg-[#fffaf0] border-[#6b401b] border-2 text-[#3b2816]',
+      badgeStyle: 'bg-[#d49e3d]/25 text-[#7a4611] border border-[#d49e3d]/70 font-bold',
+      icon: <span className="text-base select-none leading-none">🍏</span>,
+    },
   ];
 
   return (
@@ -653,7 +664,7 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                 </div>
                 <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1">
                   <span className="text-slate-400">Temas:</span>
-                  <span className="font-semibold">6 Opções Nativas</span>
+                  <span className="font-semibold">{themesList.length} Opções Nativas</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Conformidade:</span>

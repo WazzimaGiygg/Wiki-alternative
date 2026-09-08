@@ -42,6 +42,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { SmartTVView } from './components/SmartTVView';
 import { SmartTVInstallModal } from './components/SmartTVInstallModal';
 import { AppearanceSettingsView } from './components/AppearanceSettingsView';
+import { AdvancedSearchView } from './components/AdvancedSearchView';
 import { StorageService } from './services/storageService';
 import {
   WikiPage,
@@ -103,10 +104,10 @@ export default function App() {
       setCurrentView('smart-tv');
     }
   };
-  // Multi-theme state supporting light, dark, google, google-dark, win95, genshin, android15
+  // Multi-theme state supporting light, dark, google, google-dark, win95, genshin, android15, stardew
   const [theme, setTheme] = useState<AppTheme>(() => {
     const saved = localStorage.getItem('wikizero_theme_v3') as AppTheme | null;
-    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'genshin' || saved === 'android15')) {
+    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'genshin' || saved === 'android15' || saved === 'stardew')) {
       return saved;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -117,7 +118,7 @@ export default function App() {
   // Apply appropriate theme classes to document root
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-genshin', 'theme-android15');
+    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-genshin', 'theme-android15', 'theme-stardew');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -131,6 +132,8 @@ export default function App() {
       root.classList.add('dark', 'theme-genshin');
     } else if (theme === 'android15') {
       root.classList.add('dark', 'theme-android15');
+    } else if (theme === 'stardew') {
+      root.classList.add('theme-stardew');
     }
 
     localStorage.setItem('wikizero_theme_v3', theme);
@@ -503,7 +506,11 @@ export default function App() {
   };
 
   const handleSearchSubmit = () => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      setCurrentView('search');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     const query = searchQuery.trim();
 
     // Check if query is a UID parameter, prefix, or special route
@@ -533,19 +540,9 @@ export default function App() {
       return;
     }
 
-    // Direct or partial match on article title
-    const directMatch = articles.find((a) => a.titulo.toLowerCase() === query.toLowerCase());
-    if (directMatch) {
-      handleSelectArticle(directMatch.id);
-      return;
-    }
-
-    const partialMatch = articles.find((a) => a.titulo.toLowerCase().includes(query.toLowerCase()));
-    if (partialMatch) {
-      handleSelectArticle(partialMatch.id);
-    } else {
-      setCurrentView('hub');
-    }
+    // Navigate to Advanced Search View with results, filters, and highlighters
+    setCurrentView('search');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Auth Handlers
@@ -1111,6 +1108,21 @@ export default function App() {
             />
           )}
 
+          {currentView === 'search' && (
+            <AdvancedSearchView
+              articles={articles}
+              pages={pages}
+              user={user}
+              initialQuery={searchQuery}
+              theme={theme}
+              onSearchQueryChange={(q) => setSearchQuery(q)}
+              onSelectArticle={handleSelectArticle}
+              onSelectPage={handleSelectPage}
+              onOpenNewEditor={() => handleOpenNewEditor()}
+              onNavigateHome={() => handleNavigate('hub')}
+            />
+          )}
+
           {currentView === 'mydata' && (
             <div className="max-w-xl mx-auto">
               <button
@@ -1151,7 +1163,16 @@ export default function App() {
         pages={pages}
         onSelectArticle={(id) => handleSelectArticle(id)}
         onSelectPage={(uid) => handleSelectPage(uid)}
-        onRandomPage={handleRandomPage}
+        onSearchQuerySubmit={(q) => {
+          setSearchQuery(q);
+          setCurrentView('search');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenAdvancedSearch={(q) => {
+          if (q) setSearchQuery(q);
+          setCurrentView('search');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       {/* 6. Mobile Side Drawer Navigation Menu */}
