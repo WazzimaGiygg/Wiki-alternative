@@ -204,6 +204,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
+              onClick={() => onNavigate('appearance')}
+              title="Aparência e Temas (Special:Appearance)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'appearance'
+                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Palette size={15} className="text-amber-500 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Aparência & Temas</span>}
+            </button>
+
+            <button
               onClick={() => onNavigate('special-pages')}
               title="Páginas Especiais (Special:SpecialPages)"
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
@@ -599,99 +612,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </span>
                 </button>
 
-                {/* Visual Theme Selector in Sidebar */}
+                {/* Link to Dedicated Centralized Appearance Page */}
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <div className="flex items-center justify-between px-1 mb-1">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                      <Palette size={11} className="text-blue-500" />
-                      Tema Visual
+                  <button
+                    onClick={() => onNavigate('appearance')}
+                    className="w-full flex items-center justify-between p-2 rounded-lg text-xs font-semibold bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition group shadow-2xs"
+                    title="Mudar temas visuais, contraste e tipografia de forma centralizada"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Palette size={14} className="text-amber-500 group-hover:scale-110 transition-transform" />
+                      <span>Aparência & Temas</span>
+                    </div>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-bold uppercase text-slate-500">
+                      {theme}
                     </span>
-                    <span className="text-[9px] font-mono font-bold text-slate-500 uppercase">{theme}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1">
-                    <button
-                      onClick={() => {
-                        if (theme === 'google') {
-                          onSetTheme?.('light');
-                        } else if (theme === 'google-dark') {
-                          onSetTheme?.('dark');
-                        } else {
-                          onSetTheme?.(isDark ? 'google-dark' : 'google');
-                        }
-                      }}
-                      className={`px-1.5 py-1 rounded text-[10px] font-semibold flex items-center justify-center gap-1 transition ${
-                        theme === 'google' || theme === 'google-dark'
-                          ? 'bg-[#4285F4] text-white shadow-xs font-bold'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                      }`}
-                      title="Ativar/Desativar Tema Google Material 3"
-                    >
-                      <div className="flex items-center gap-0.5">
-                        <span className="w-1 h-1 rounded-full bg-[#4285F4]" />
-                        <span className="w-1 h-1 rounded-full bg-[#EA4335]" />
-                        <span className="w-1 h-1 rounded-full bg-[#FBBC05]" />
-                        <span className="w-1 h-1 rounded-full bg-[#34A853]" />
-                      </div>
-                      <span>Google</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        if (theme === 'win95') {
-                          onSetTheme?.('light');
-                        } else {
-                          onSetTheme?.('win95');
-                        }
-                      }}
-                      className={`px-1.5 py-1 rounded text-[10px] font-semibold flex items-center justify-center gap-1 transition ${
-                        theme === 'win95'
-                          ? 'bg-[#000080] text-white shadow-xs font-bold'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                      }`}
-                      title="Ativar/Desativar Tema Windows 95 Retrô"
-                    >
-                      <Monitor size={11} className={theme === 'win95' ? 'text-amber-300' : 'text-slate-500'} />
-                      <span>Win95</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        if (theme === 'genshin') {
-                          onSetTheme?.('light');
-                        } else {
-                          onSetTheme?.('genshin');
-                        }
-                      }}
-                      className={`px-1.5 py-1 rounded text-[10px] font-semibold flex items-center justify-center gap-1 transition ${
-                        theme === 'genshin'
-                          ? 'bg-gradient-to-r from-[#715ae0] to-[#35a5ea] text-white shadow-xs font-bold border border-amber-300/40'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                      }`}
-                      title="Ativar/Desativar Tema Genshin Impact (Teyvat)"
-                    >
-                      <Sparkles size={11} className={theme === 'genshin' ? 'text-amber-300 animate-pulse' : 'text-amber-500'} />
-                      <span>Genshin ✦</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        if (theme === 'google') {
-                          onSetTheme?.('google-dark');
-                        } else if (theme === 'google-dark') {
-                          onSetTheme?.('google');
-                        } else if (theme === 'dark' || theme === 'genshin') {
-                          onSetTheme?.('light');
-                        } else {
-                          onSetTheme?.('dark');
-                        }
-                      }}
-                      className="px-1.5 py-1 rounded text-[10px] font-semibold flex items-center justify-center gap-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                      title="Alternar Modo Noturno / Claro"
-                    >
-                      {isDark ? <Moon size={11} className="text-blue-400" /> : <Sun size={11} className="text-amber-500" />}
-                      <span>{isDark ? 'Escuro' : 'Claro'}</span>
-                    </button>
-                  </div>
+                  </button>
                 </div>
               </div>
             )}

@@ -41,6 +41,7 @@ import { MobileDrawerMenu } from './components/MobileDrawerMenu';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { SmartTVView } from './components/SmartTVView';
 import { SmartTVInstallModal } from './components/SmartTVInstallModal';
+import { AppearanceSettingsView } from './components/AppearanceSettingsView';
 import { StorageService } from './services/storageService';
 import {
   WikiPage,
@@ -861,6 +862,7 @@ export default function App() {
               onNavigateToUpload={() => handleNavigateToUpload()}
               onNavigateToFilesList={() => handleNavigate('files-list')}
               onNavigateToArbitration={() => handleNavigate('arbitration')}
+              onNavigateToAppearance={() => handleNavigate('appearance')}
               initialTab="all"
             />
           )}
@@ -882,6 +884,7 @@ export default function App() {
               onNavigateToUpload={() => handleNavigateToUpload()}
               onNavigateToFilesList={() => handleNavigate('files-list')}
               onNavigateToArbitration={() => handleNavigate('arbitration')}
+              onNavigateToAppearance={() => handleNavigate('appearance')}
               initialTab="watchlist"
             />
           )}
@@ -1093,6 +1096,16 @@ export default function App() {
               currentUser={user}
               onNavigateHome={() => handleNavigate('hub')}
               onSelectSpecialPage={(p) => handleNavigate(p as any)}
+            />
+          )}
+
+          {currentView === 'appearance' && (
+            <AppearanceSettingsView
+              currentTheme={theme}
+              onSetTheme={handleSetTheme}
+              deviceMode={deviceMode}
+              onToggleDeviceMode={handleToggleDeviceMode}
+              onNavigate={handleNavigate}
             />
           )}
 

@@ -31,6 +31,7 @@ import {
   Check,
   FileDown,
   AlertOctagon,
+  Palette,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -53,6 +54,7 @@ interface SpecialPagesViewProps {
   onNavigateToUpload?: () => void;
   onNavigateToFilesList?: () => void;
   onNavigateToArbitration?: () => void;
+  onNavigateToAppearance?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -72,6 +74,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToUpload,
   onNavigateToFilesList,
   onNavigateToArbitration,
+  onNavigateToAppearance,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -205,6 +208,25 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
 
       {/* Admin & Community Special Portals Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
+        {onNavigateToAppearance && (
+          <button
+            onClick={onNavigateToAppearance}
+            className="p-3 rounded-lg border border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/70 dark:hover:bg-amber-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-amber-500 text-white shrink-0 shadow-2xs">
+              <Palette size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-amber-900 dark:text-amber-200 truncate group-hover:underline">
+                Special:Appearance
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Aparência & 6 Temas
+              </div>
+            </div>
+          </button>
+        )}
+
         {onNavigateToUpload && (
           <button
             onClick={onNavigateToUpload}

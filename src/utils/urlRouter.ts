@@ -215,6 +215,9 @@ export function getCanonicalUid(
     case 'offline':
       return 'Special:Offline';
 
+    case 'appearance':
+      return 'Special:Appearance';
+
     case 'create-page':
       return 'Special:CreatePage';
 
@@ -375,6 +378,18 @@ export function resolveNavigationUid(
 
     'special:offline': { view: 'offline' },
     'offline': { view: 'offline' },
+
+    'special:appearance': { view: 'appearance' },
+    'special:aparencia': { view: 'appearance' },
+    'special:theme': { view: 'appearance' },
+    'special:themes': { view: 'appearance' },
+    'special:temas': { view: 'appearance' },
+    'special:skin': { view: 'appearance' },
+    'special:preferences': { view: 'appearance' },
+    'appearance': { view: 'appearance' },
+    'aparencia': { view: 'appearance' },
+    'themes': { view: 'appearance' },
+    'temas': { view: 'appearance' },
 
     'special:createpage': { view: 'create-page' },
     'create-page': { view: 'create-page' },

@@ -268,124 +268,29 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
 
         {/* Scrollable Navigation Sections */}
         <div className="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
-          {/* Theme Selector Section */}
-          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 border border-slate-200 dark:border-slate-700/60">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Palette size={12} className="text-blue-600 dark:text-blue-400" />
-                Tema Visual
-              </span>
-              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold uppercase">
+          {/* Dedicated Centralized Appearance Page Button */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-200 dark:border-slate-700/60">
+            <button
+              onClick={() => handleItemClick('appearance')}
+              className="w-full flex items-center justify-between text-left transition group"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  <Palette size={16} />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                    Aparência e Temas
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    6 temas, tipografia & contraste
+                  </div>
+                </div>
+              </div>
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold uppercase">
                 {theme}
               </span>
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                onClick={() => onSetTheme?.('light')}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] ${
-                  theme === 'light'
-                    ? 'bg-blue-600 text-white font-bold shadow-xs'
-                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <Sun size={12} className={theme === 'light' ? 'text-white' : 'text-amber-500'} />
-                  Claro
-                </span>
-                {theme === 'light' && <Check size={11} />}
-              </button>
-
-              <button
-                onClick={() => onSetTheme?.('dark')}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] ${
-                  theme === 'dark'
-                    ? 'bg-blue-600 text-white font-bold shadow-xs'
-                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <Moon size={12} className={theme === 'dark' ? 'text-white' : 'text-indigo-400'} />
-                  Escuro
-                </span>
-                {theme === 'dark' && <Check size={11} />}
-              </button>
-
-              <button
-                onClick={() => onSetTheme?.('google')}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] col-span-1 ${
-                  theme === 'google'
-                    ? 'bg-[#4285F4] text-white font-bold shadow-xs ring-1 ring-blue-300'
-                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-1">
-                  <div className="flex items-center gap-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
-                  </div>
-                  <span className="truncate">Google</span>
-                </div>
-                {theme === 'google' && <Check size={11} />}
-              </button>
-
-              <button
-                onClick={() => onSetTheme?.('google-dark')}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] col-span-1 ${
-                  theme === 'google-dark'
-                    ? 'bg-[#8ab4f8] text-slate-900 font-bold shadow-xs ring-1 ring-blue-300'
-                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-1">
-                  <div className="flex items-center gap-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#8ab4f8]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#f28b82]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#fdd663]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#81c995]" />
-                  </div>
-                  <span className="truncate">G. Dark</span>
-                </div>
-                {theme === 'google-dark' && <Check size={11} />}
-              </button>
-
-              {/* Windows 95 Theme in Drawer */}
-              <button
-                onClick={() => onSetTheme?.('win95')}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] col-span-2 ${
-                  theme === 'win95'
-                    ? 'bg-[#000080] text-white font-bold shadow-xs'
-                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-[#c0c0c0] border border-black flex items-center justify-center text-[8px] font-bold text-[#000080]">
-                    95
-                  </div>
-                  <span>Tema Windows 95 (Retrô 90s)</span>
-                </div>
-                {theme === 'win95' && <Check size={11} />}
-              </button>
-
-              {/* Genshin Impact Theme in Drawer */}
-              <button
-                onClick={() => onSetTheme?.('genshin')}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition text-[11px] col-span-2 ${
-                  theme === 'genshin'
-                    ? 'bg-amber-500/15 text-amber-200 font-bold shadow-xs ring-1 ring-[#d3bc8e]'
-                    : 'bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-gradient-to-br from-[#715ae0] to-[#35a5ea] border border-amber-300/60 flex items-center justify-center text-[9px] text-amber-300 font-bold">
-                    ✦
-                  </div>
-                  <span>Tema Genshin Impact (Teyvat & Primogem)</span>
-                </div>
-                {theme === 'genshin' && <Check size={11} className="text-amber-400" />}
-              </button>
-            </div>
+            </button>
           </div>
 
           {/* Android PWA App Quick Action */}
@@ -470,6 +375,23 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               >
                 <Layers size={16} className="text-purple-600" />
                 <span>{t('sidebar.special_pages')}</span>
+              </button>
+
+              <button
+                onClick={() => handleItemClick('appearance')}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition ${
+                  currentView === 'appearance'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Palette size={16} className="text-amber-500" />
+                  <span>Aparência e Temas</span>
+                </div>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold uppercase">
+                  {theme}
+                </span>
               </button>
 
               <button
