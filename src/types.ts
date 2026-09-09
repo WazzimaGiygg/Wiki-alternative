@@ -519,7 +519,8 @@ export type ViewMode =
   | 'file-page'
   | 'files-list'
   | 'smart-tv'
-  | 'appearance';
+  | 'appearance'
+  | 'comparison';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)

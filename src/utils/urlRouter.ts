@@ -218,6 +218,9 @@ export function getCanonicalUid(
     case 'appearance':
       return 'Special:Appearance';
 
+    case 'comparison':
+      return 'Special:Comparison';
+
     case 'create-page':
       return 'Special:CreatePage';
 
@@ -390,6 +393,18 @@ export function resolveNavigationUid(
     'aparencia': { view: 'appearance' },
     'themes': { view: 'appearance' },
     'temas': { view: 'appearance' },
+
+    'special:comparison': { view: 'comparison' },
+    'special:comparativo': { view: 'comparison' },
+    'special:compare': { view: 'comparison' },
+    'comparison': { view: 'comparison' },
+    'comparativo': { view: 'comparison' },
+    'compare': { view: 'comparison' },
+    'wikipedia': { view: 'comparison' },
+    'fandom': { view: 'comparison' },
+    'mediawiki': { view: 'comparison' },
+    'wikidot': { view: 'comparison' },
+    'wikizero-vs-wikipedia': { view: 'comparison' },
 
     'special:createpage': { view: 'create-page' },
     'create-page': { view: 'create-page' },

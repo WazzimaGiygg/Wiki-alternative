@@ -19,6 +19,7 @@ import {
   Sparkles,
   Pickaxe,
   Gamepad2,
+  Award,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -202,6 +203,15 @@ export const Footer: React.FC<FooterProps> = ({
               <span>Suporte & Tickets</span>
               <ExternalLink size={9} />
             </a>
+            <button
+              id="btn-footer-comparison"
+              onClick={() => onNavigate('comparison')}
+              title="Comparativo: WikiZero vs Wikipédia, MediaWiki, Fandom e Wikidot"
+              className="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 transition shadow-xs"
+            >
+              <Award size={11} className="text-emerald-600 dark:text-emerald-400" />
+              <span>Comparativo: WikiZero vs Wikipédia / Fandom</span>
+            </button>
             <button
               onClick={() => onNavigate('recent-changes')}
               className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-medium"

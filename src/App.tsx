@@ -43,6 +43,8 @@ import { SmartTVView } from './components/SmartTVView';
 import { SmartTVInstallModal } from './components/SmartTVInstallModal';
 import { AppearanceSettingsView } from './components/AppearanceSettingsView';
 import { AdvancedSearchView } from './components/AdvancedSearchView';
+import { WikiCompetitorComparisonView } from './components/WikiCompetitorComparisonView';
+import { updateSEO } from './utils/seoManager';
 import { StorageService } from './services/storageService';
 import {
   WikiPage,
@@ -392,6 +394,31 @@ export default function App() {
     articles,
     pages,
   ]);
+
+  // Keep SEO, document title, meta tags, OpenGraph and Schema.org JSON-LD dynamically in sync
+  useEffect(() => {
+    const currentActiveArticle =
+      currentView === 'article'
+        ? articles.find((a) => a.id === selectedArticleId) || null
+        : null;
+
+    const currentActivePage = selectedPageUid
+      ? pages.find((p) => p.uid === selectedPageUid) || null
+      : null;
+
+    updateSEO({
+      view: currentView,
+      article: currentActiveArticle,
+      page: currentActivePage,
+      breadcrumbs: currentActiveArticle
+        ? [
+            { name: 'Início', url: '/?uid=hub' },
+            { name: currentActivePage?.titulo || 'Coleção', url: `/?uid=${currentActiveArticle.pageUid}` },
+            { name: currentActiveArticle.titulo, url: `/?uid=${currentActiveArticle.id}` },
+          ]
+        : undefined,
+    });
+  }, [currentView, selectedArticleId, selectedPageUid, articles, pages]);
 
   // === HANDLERS ===
   const handleSetTheme = (newTheme: AppTheme) => {
@@ -1126,6 +1153,13 @@ export default function App() {
               onSelectPage={handleSelectPage}
               onOpenNewEditor={() => handleOpenNewEditor()}
               onNavigateHome={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'comparison' && (
+            <WikiCompetitorComparisonView
+              onNavigate={handleNavigate}
+              onOpenEditor={() => handleOpenNewEditor()}
             />
           )}
 

@@ -1,0 +1,67 @@
+# ==============================================================================
+# WikiZero - Robots.txt & Web Crawler Directives
+# Optimized for Google, Bing, Yahoo, DuckDuckGo, Baidu, Yandex, and Global Search Engines
+# Competing against: Wikipedia, MediaWiki, Wikidot, Fandom
+# ==============================================================================
+
+User-agent: *
+Allow: /
+Allow: /?*
+Allow: /sitemap.xml
+Allow: /opensearch.xml
+Allow: /icon.svg
+Allow: /favicon.svg
+
+# Disallow administrative and private ephemeral actions from indexing clutter
+Disallow: /api/admin/
+Disallow: /?view=firebase-admin
+Disallow: /?uid=special:firebase-admin
+
+# Priority Crawlers
+User-agent: Googlebot
+Allow: /
+Allow: /?*
+Crawl-delay: 0
+
+User-agent: Googlebot-Image
+Allow: /
+Allow: /icon.svg
+Allow: /favicon.svg
+Allow: /*.png
+Allow: /*.svg
+
+User-agent: Bingbot
+Allow: /
+Allow: /?*
+Crawl-delay: 0
+
+User-agent: DuckDuckBot
+Allow: /
+Allow: /?*
+
+User-agent: Slurp
+Allow: /
+Allow: /?*
+
+User-agent: Baiduspider
+Allow: /
+Allow: /?*
+
+User-agent: YandexBot
+Allow: /
+Allow: /?*
+
+User-agent: Applebot
+Allow: /
+Allow: /?*
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+# Sitemaps declaration
+Sitemap: /sitemap.xml
+Sitemap: https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/sitemap.xml
+Host: ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app

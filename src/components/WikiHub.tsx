@@ -376,6 +376,36 @@ export const WikiHub: React.FC<WikiHubProps> = ({
         )}
       </div>
 
+      {/* Direct Competitor Comparison Section (SEO & Value proposition) */}
+      {onNavigate && (
+        <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 text-white rounded-xl p-4 sm:p-5 border border-blue-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold font-mono tracking-wider uppercase bg-blue-500/30 text-blue-200 px-2 py-0.5 rounded border border-blue-400/40">
+                Alternativa Aberta e Rápida
+              </span>
+              <h3 className="font-bold text-sm sm:text-base text-white">
+                WikiZero vs Wikipédia, MediaWiki, Fandom e Wikidot
+              </h3>
+            </div>
+            <p className="text-xs text-blue-100/90 leading-relaxed">
+              Descubra por que a WikiZero é superior: <strong>100% livre de anúncios invasivos</strong> (ao contrário do Fandom),
+              <strong>sem panelas burocráticas</strong> (ao contrário da Wikipédia), com <strong>arquitetura SPA ultrarrápida</strong> (superando o MediaWiki clássico)
+              e <strong>11 temas visuais exclusivos</strong> (Minecraft, Roblox, REPO, Win95 e mais).
+            </p>
+          </div>
+
+          <button
+            id="btn-hub-open-comparison"
+            onClick={() => onNavigate('comparison')}
+            className="px-4 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-400 text-white font-bold text-xs flex items-center gap-2 transition shadow-xs flex-shrink-0 cursor-pointer active:scale-95"
+          >
+            <span>Ver Comparativo Detalhado</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
+
       {/* System Changelog & Updates Quick Access Banner */}
       {onNavigate && (
         <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-slate-50 dark:from-slate-900 dark:via-blue-950/40 dark:to-slate-900 border border-blue-200 dark:border-blue-800/80 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+  <!-- Página Principal / Enciclopédia Hub -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Comparativo Competitivo: WikiZero vs Wikipédia, MediaWiki, Fandom e Wikidot -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=comparison</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Motor de Busca WikiZero (Alternativa Rápida e Sem Rastreamento) -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=search</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Editor Wikitexto Aberto (Alternativa ao Editor MediaWiki e Wikidot) -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=editor</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Mudanças Recentes / Feed de Contribuições Livres -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=recent-changes</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Galeria de Arquivos e Mídia Livre -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=files</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Páginas Especiais do Sistema -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=special:pages</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Estatísticas do Projeto e Transparência -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=special:statistics</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Políticas de Privacidade e Conformidade LGPD -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=privacy</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Termos de Uso e Licenciamento Aberto -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=terms</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Notas de Versão e Atualizações -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=site-updates</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Suporte Smart TV & PWA 10-Foot -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=smart-tv</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>
