@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Check, RotateCw, ShieldCheck, AlertCircle, RefreshCw, HelpCircle } from 'lucide-react';
+import { Check, ShieldCheck, AlertCircle, Gamepad2 } from 'lucide-react';
+import { MazeRecaptcha } from './MazeRecaptcha';
 
 interface RecaptchaWidgetProps {
   onVerify: (token: string) => void;
@@ -18,8 +19,6 @@ export const RecaptchaWidget: React.FC<RecaptchaWidgetProps> = ({
 }) => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [showChallenge, setShowChallenge] = useState(false);
-  const [selectedTiles, setSelectedTiles] = useState<number[]>([]);
-  const [challengeError, setChallengeError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -40,61 +39,16 @@ export const RecaptchaWidget: React.FC<RecaptchaWidgetProps> = ({
 
   const handleCheckboxClick = () => {
     if (isVerified || isVerifying) return;
-
-    setIsVerifying(true);
-    setChallengeError(null);
-
-    // Realistic bot-analysis delay (1000ms - 1500ms)
-    setTimeout(() => {
-      // 80% direct auto-pass (typical reCAPTCHA behavior for normal users)
-      // 20% prompt interactive challenge or if user was unverified
-      setIsVerifying(false);
-      const generatedToken = `03AFcWeA7_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-      setToken(generatedToken);
-      setIsVerified(true);
-      onVerify(generatedToken);
-    }, 1200);
-  };
-
-  const handleOpenChallenge = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isVerified) return;
+    // Always open the maze challenge to let the user play and solve!
     setShowChallenge(true);
   };
 
-  // Image tiles for challenge
-  const challengeTiles = [
-    { id: 0, isTarget: true, label: 'Semáforo Vermelho' },
-    { id: 1, isTarget: false, label: 'Edifício Comercial' },
-    { id: 2, isTarget: true, label: 'Semáforo Pedestre' },
-    { id: 3, isTarget: false, label: 'Ônibus Metropolitano' },
-    { id: 4, isTarget: true, label: 'Semáforo Cruzamento' },
-    { id: 5, isTarget: false, label: 'Faixa de Pedestres' },
-    { id: 6, isTarget: false, label: 'Calçada' },
-    { id: 7, isTarget: true, label: 'Semáforo Duplo' },
-    { id: 8, isTarget: false, label: 'Árvores' },
-  ];
-
-  const toggleTile = (index: number) => {
-    setSelectedTiles((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
-    );
-  };
-
-  const verifyChallenge = () => {
-    const requiredTargets = [0, 2, 4, 7];
-    const correctCount = selectedTiles.filter((idx) => requiredTargets.includes(idx)).length;
-    const wrongCount = selectedTiles.filter((idx) => !requiredTargets.includes(idx)).length;
-
-    if (correctCount >= 3 && wrongCount === 0) {
-      setShowChallenge(false);
-      const generatedToken = `03AFcWeA7_challenge_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-      setToken(generatedToken);
-      setIsVerified(true);
-      onVerify(generatedToken);
-    } else {
-      setChallengeError('Por favor, selecione todas as imagens correspondentes e tente novamente.');
-    }
+  const handleMazeSuccess = (generatedToken: string) => {
+    setShowChallenge(false);
+    setIsVerifying(false);
+    setToken(generatedToken);
+    setIsVerified(true);
+    onVerify(generatedToken);
   };
 
   return (
@@ -122,13 +76,15 @@ export const RecaptchaWidget: React.FC<RecaptchaWidgetProps> = ({
                 ? 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 cursor-wait'
                 : 'bg-white dark:bg-slate-900 border-slate-400 dark:border-slate-600 hover:border-blue-500 cursor-pointer shadow-inner'
             }`}
-            aria-label="Verificação reCAPTCHA Não sou um robô"
+            aria-label="Verificação reCAPTCHA Desafio do Labirinto"
           >
             {isVerified ? (
               <Check size={18} className="stroke-[3] animate-in zoom-in-50 duration-200" />
             ) : isVerifying ? (
               <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            ) : null}
+            ) : (
+              <Gamepad2 size={13} className="text-slate-400" />
+            )}
           </button>
 
           <div>
@@ -137,10 +93,10 @@ export const RecaptchaWidget: React.FC<RecaptchaWidgetProps> = ({
               className={`text-xs font-medium cursor-pointer transition ${
                 isVerified
                   ? 'text-emerald-700 dark:text-emerald-300 font-semibold'
-                  : 'text-slate-800 dark:text-slate-200'
+                  : 'text-slate-800 dark:text-slate-200 hover:text-blue-600'
               }`}
             >
-              {isVerified ? 'Verificação concluída' : 'Não sou um robô'}
+              {isVerified ? 'Labirinto Concluído ✓' : 'Resolver Desafio do Labirinto'}
             </label>
             {isVerified && token && (
               <span className="block text-[9px] font-mono text-slate-400 truncate max-w-[140px]">
@@ -190,23 +146,15 @@ export const RecaptchaWidget: React.FC<RecaptchaWidgetProps> = ({
             reCAPTCHA
           </span>
           <div className="text-[8px] text-slate-400 dark:text-slate-500 mt-0.5 space-x-1 font-sans">
-            <a
-              href="https://www.google.com/intl/pt-BR/policies/privacy/"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:underline hover:text-blue-600"
+            <button
+              type="button"
+              onClick={() => setShowChallenge(true)}
+              className="hover:underline hover:text-blue-600 text-blue-500"
             >
-              Privacidade
-            </a>
+              Labirinto
+            </button>
             <span>•</span>
-            <a
-              href="https://www.google.com/intl/pt-BR/policies/terms/"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:underline hover:text-blue-600"
-            >
-              Termos
-            </a>
+            <span className="text-slate-400">v2 Maze</span>
           </div>
         </div>
       </div>
@@ -227,78 +175,32 @@ export const RecaptchaWidget: React.FC<RecaptchaWidgetProps> = ({
         </div>
       )}
 
-      {/* Optional Interactive Challenge Dialog */}
+      {/* Maze Challenge Modal */}
       {showChallenge && (
-        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg max-w-sm w-full p-4 shadow-2xl">
-            <div className="bg-blue-600 text-white p-3 rounded-t -m-4 mb-3">
-              <h4 className="text-sm font-bold">Selecione todos os quadrados com</h4>
-              <p className="text-base font-extrabold uppercase tracking-wide">Semáforos de Trânsito</p>
-              <p className="text-[10px] opacity-90 mt-0.5">Se não houver nenhum, clique em pular.</p>
-            </div>
-
-            {challengeError && (
-              <p className="text-xs text-red-500 mb-2 font-medium">{challengeError}</p>
-            )}
-
-            <div className="grid grid-cols-3 gap-1.5 mb-4">
-              {challengeTiles.map((tile) => (
-                <button
-                  key={tile.id}
-                  type="button"
-                  onClick={() => toggleTile(tile.id)}
-                  className={`aspect-square rounded border relative flex flex-col items-center justify-center p-1 text-center transition cursor-pointer ${
-                    selectedTiles.includes(tile.id)
-                      ? 'border-blue-600 ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/50'
-                      : 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200'
-                  }`}
-                >
-                  <div className="text-xl mb-1">
-                    {tile.id === 0 || tile.id === 2 || tile.id === 4 || tile.id === 7 ? '🚦' : '🏙️'}
-                  </div>
-                  <span className="text-[9px] font-medium leading-tight line-clamp-2">
-                    {tile.label}
-                  </span>
-                  {selectedTiles.includes(tile.id) && (
-                    <div className="absolute top-1 right-1 w-4 h-4 bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold">
-                      ✓
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-2 text-slate-400">
-                <button
-                  type="button"
-                  onClick={() => setSelectedTiles([])}
-                  className="p-1 hover:text-slate-600"
-                  title="Recarregar desafio"
-                >
-                  <RefreshCw size={14} />
-                </button>
-                <button type="button" className="p-1 hover:text-slate-600" title="Informações">
-                  <HelpCircle size={14} />
-                </button>
-              </div>
+        <div className="fixed inset-0 z-60 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-4 sm:p-5 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowChallenge(false)}
-                  className="px-3 py-1 text-xs text-slate-600 dark:text-slate-400 hover:underline"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={verifyChallenge}
-                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold transition shadow-xs"
-                >
-                  Verificar
-                </button>
+                <Gamepad2 size={18} className="text-blue-400" />
+                <h4 className="text-sm font-bold text-white">Desafio do Labirinto</h4>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowChallenge(false)}
+                className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded hover:bg-slate-800 cursor-pointer"
+              >
+                Fechar
+              </button>
             </div>
+
+            <p className="text-xs text-slate-300 mb-3">
+              Guie o ponto do início até o final para verificar que é humano e liberar o acesso.
+            </p>
+
+            <MazeRecaptcha
+              onSuccess={handleMazeSuccess}
+              compact={false}
+            />
           </div>
         </div>
       )}
