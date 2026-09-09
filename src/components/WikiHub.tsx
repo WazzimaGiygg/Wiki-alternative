@@ -406,6 +406,34 @@ export const WikiHub: React.FC<WikiHubProps> = ({
         </div>
       )}
 
+      {/* WazzimaGiygg Official Projects & Dossier Spotlight */}
+      {onNavigate && (
+        <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-black text-amber-100 rounded-xl p-4 sm:p-5 border border-amber-600/50 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold font-mono tracking-wider uppercase bg-amber-500/30 text-amber-300 px-2 py-0.5 rounded border border-amber-400/40">
+                Criador & Portal Oficial
+              </span>
+              <h3 className="font-bold text-sm sm:text-base text-white">
+                WazzimaGiygg: Projetos Oficiais e Esclarecimento sobre o Caso Wikipédia
+              </h3>
+            </div>
+            <p className="text-xs text-amber-200/90 leading-relaxed">
+              Conheça o ecossistema de software livre desenvolvido por <strong>WazzimaGiygg</strong> (WikiZero, GitHub Wiki-alternative, Central de Suporte) e acerte as contas com a verdade: documentação detalhada e refutação cabal contra as perseguições administrativas e abusos de CheckUser da Wikipédia em língua portuguesa.
+            </p>
+          </div>
+
+          <button
+            id="btn-hub-open-wazzimagiygg"
+            onClick={() => onNavigate('wazzimagiygg')}
+            className="px-4 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition shadow-xs flex-shrink-0 cursor-pointer active:scale-95"
+          >
+            <span>Conhecer Projetos & Dossiê</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
+
       {/* System Changelog & Updates Quick Access Banner */}
       {onNavigate && (
         <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-slate-50 dark:from-slate-900 dark:via-blue-950/40 dark:to-slate-900 border border-blue-200 dark:border-blue-800/80 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">

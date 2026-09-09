@@ -7,6 +7,9 @@
 User-agent: *
 Allow: /
 Allow: /?*
+Allow: /?uid=wazzimagiygg*
+Allow: /?uid=caso-wazzimagiygg*
+Allow: /?uid=averdade*
 Allow: /sitemap.xml
 Allow: /opensearch.xml
 Allow: /icon.svg

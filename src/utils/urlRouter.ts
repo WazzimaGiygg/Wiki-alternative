@@ -221,6 +221,9 @@ export function getCanonicalUid(
     case 'comparison':
       return 'Special:Comparison';
 
+    case 'wazzimagiygg':
+      return 'Special:WazzimaGiygg';
+
     case 'create-page':
       return 'Special:CreatePage';
 
@@ -405,6 +408,17 @@ export function resolveNavigationUid(
     'mediawiki': { view: 'comparison' },
     'wikidot': { view: 'comparison' },
     'wikizero-vs-wikipedia': { view: 'comparison' },
+
+    'special:wazzimagiygg': { view: 'wazzimagiygg' },
+    'wazzimagiygg': { view: 'wazzimagiygg' },
+    'wazzima': { view: 'wazzimagiygg' },
+    'caso-wazzimagiygg': { view: 'wazzimagiygg' },
+    'casowazzimagiygg': { view: 'wazzimagiygg' },
+    'projetos-wazzimagiygg': { view: 'wazzimagiygg' },
+    'wazzimagiygg-projetos': { view: 'wazzimagiygg' },
+    'averdade': { view: 'wazzimagiygg' },
+    'a-verdade': { view: 'wazzimagiygg' },
+    'special:averdade': { view: 'wazzimagiygg' },
 
     'special:createpage': { view: 'create-page' },
     'create-page': { view: 'create-page' },

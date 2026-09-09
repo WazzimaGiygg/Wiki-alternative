@@ -520,7 +520,8 @@ export type ViewMode =
   | 'files-list'
   | 'smart-tv'
   | 'appearance'
-  | 'comparison';
+  | 'comparison'
+  | 'wazzimagiygg';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)

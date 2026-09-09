@@ -44,6 +44,7 @@ import { SmartTVInstallModal } from './components/SmartTVInstallModal';
 import { AppearanceSettingsView } from './components/AppearanceSettingsView';
 import { AdvancedSearchView } from './components/AdvancedSearchView';
 import { WikiCompetitorComparisonView } from './components/WikiCompetitorComparisonView';
+import { WazzimaGiyggProfileView } from './components/WazzimaGiyggProfileView';
 import { updateSEO } from './utils/seoManager';
 import { StorageService } from './services/storageService';
 import {
@@ -1158,6 +1159,13 @@ export default function App() {
 
           {currentView === 'comparison' && (
             <WikiCompetitorComparisonView
+              onNavigate={handleNavigate}
+              onOpenEditor={() => handleOpenNewEditor()}
+            />
+          )}
+
+          {currentView === 'wazzimagiygg' && (
+            <WazzimaGiyggProfileView
               onNavigate={handleNavigate}
               onOpenEditor={() => handleOpenNewEditor()}
             />

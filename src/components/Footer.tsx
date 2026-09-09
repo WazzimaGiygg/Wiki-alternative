@@ -213,6 +213,15 @@ export const Footer: React.FC<FooterProps> = ({
               <span>Comparativo: WikiZero vs Wikipédia / Fandom</span>
             </button>
             <button
+              id="btn-footer-wazzimagiygg"
+              onClick={() => onNavigate('wazzimagiygg')}
+              title="WazzimaGiygg: Portal Oficial, Projetos e A Verdade sobre a Wikipédia"
+              className="hover:text-amber-600 dark:hover:text-amber-400 flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/60 transition shadow-xs"
+            >
+              <Shield size={11} className="text-amber-600 dark:text-amber-400" />
+              <span>WazzimaGiygg (Projetos & Dossiê)</span>
+            </button>
+            <button
               onClick={() => onNavigate('recent-changes')}
               className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-medium"
             >

@@ -28,6 +28,13 @@ const DEFAULT_DESC =
   'WikiZero - A Enciclopédia Livre, Rápida e Sem Anúncios. Uma alternativa moderna e aberta à Wikipédia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, auditoria descentralizada, temas visuais e conformidade LGPD.';
 const DEFAULT_KEYWORDS = [
   'WikiZero',
+  'WazzimaGiygg',
+  'Wazzimagiygg',
+  'Caso Wazzimagiygg',
+  'Caso Wazzimagiygg Wikipedia',
+  'projetos WazzimaGiygg',
+  'quem é WazzimaGiygg',
+  'WazzimaGiygg a verdade',
   'alternativa à wikipedia',
   'alternativa wikipedia',
   'alternativa fandom',
@@ -161,6 +168,107 @@ export function updateSEO(config: SEOConfig) {
     removeJsonLd('dynamic-article-jsonld');
 
     // 2. View-specific SEO targeting
+    if (config.view === 'wazzimagiygg') {
+      finalTitle = 'WazzimaGiygg - Portal Oficial, Projetos e A Verdade sobre o Caso Wikipédia';
+      finalDesc =
+        'Portal oficial e ecossistema de projetos de WazzimaGiygg (WikiZero, Wiki-alternative, Dossiê A Verdade e Suporte). Conheça a verdade factual e documental sobre o Caso Wazzimagiygg na Wikipédia.';
+      canonicalUrl = `${BASE_URL}/?uid=wazzimagiygg`;
+      keywords.push(
+        'WazzimaGiygg',
+        'Wazzimagiygg',
+        'Caso Wazzimagiygg',
+        'Caso Wazzimagiygg Wikipedia',
+        'Wikipédia:Pedidos a verificadores/Caso/Wazzimagiygg',
+        'pedidos a verificadores caso wazzimagiygg',
+        'quem é WazzimaGiygg',
+        'WazzimaGiygg projetos',
+        'WazzimaGiygg a verdade',
+        'WazzimaGiygg dossie',
+        'wazzimagiygg.com',
+        'wazzimagiygg.com/averdade',
+        'support.wazzimagiygg.com',
+        'WazzimaGiygg WikiZero',
+        'WazzimaGiygg wiki alternative',
+        'resposta caso wazzimagiygg'
+      );
+
+      // Injeta Schema.org específico para desbancar o link difamatório da Wikipédia
+      setJsonLd('dynamic-wazzima-jsonld', {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'ProfilePage',
+            '@id': `${BASE_URL}/?uid=wazzimagiygg#profilepage`,
+            'url': `${BASE_URL}/?uid=wazzimagiygg`,
+            'name': 'WazzimaGiygg - Portal Oficial, Projetos e A Verdade sobre o Caso Wikipédia',
+            'description':
+              'Página oficial e central de projetos desenvolvidos por WazzimaGiygg, com esclarecimento detalhado e provas documentais sobre perseguições burocráticas e abusos de verificadores da Wikipédia.',
+            'mainEntity': {
+              '@type': 'Person',
+              '@id': 'https://wazzimagiygg.com/#person',
+              'name': 'WazzimaGiygg',
+              'alternateName': ['Wazzimagiygg', 'Wazzima Giygg', 'Criador WikiZero'],
+              'url': 'https://wazzimagiygg.com/',
+              'sameAs': [
+                'https://wazzimagiygg.com/',
+                'https://wazzimagiygg.com/averdade/',
+                'https://support.wazzimagiygg.com/',
+                'https://github.com/WazzimaGiygg/Wiki-alternative',
+                `${BASE_URL}/?uid=wazzimagiygg`
+              ],
+              'jobTitle': 'Desenvolvedor de Software e Criador da WikiZero',
+              'knowsAbout': [
+                'Enciclopédias Colaborativas Livres',
+                'Wikitexto MediaWiki',
+                'Software Livre Open Source',
+                'Transparência Editorial ArbCom',
+                'Sistemas Distribuídos em Tempo Real'
+              ]
+            },
+            'mentions': [
+              {
+                '@type': 'WebPage',
+                'name': 'Wikipédia:Pedidos a verificadores/Caso/Wazzimagiygg',
+                'url': 'https://pt.wikipedia.org/wiki/Wikip%C3%A9dia:Pedidos_a_verificadores/Caso/Wazzimagiygg',
+                'description':
+                  'Página de pedido a verificadores na Wikipédia refutada documentalmente no dossiê A Verdade de WazzimaGiygg.'
+              }
+            ],
+            'significantLink': [
+              'https://wazzimagiygg.com/averdade/',
+              'https://github.com/WazzimaGiygg/Wiki-alternative',
+              'https://support.wazzimagiygg.com/',
+              'https://wazzimagiygg.com/'
+            ]
+          },
+          {
+            '@type': 'Article',
+            '@id': `${BASE_URL}/?uid=wazzimagiygg#article`,
+            'headline': 'A Verdade dos Fatos sobre o Caso Wazzimagiygg na Wikipédia e os Projetos Oficiais',
+            'description':
+              'Esclarecimento oficial, refutação documentada sobre os pedidos a verificadores da Wikipédia e apresentação de todos os projetos de tecnologia livre de WazzimaGiygg.',
+            'inLanguage': 'pt-BR',
+            'author': {
+              '@type': 'Person',
+              'name': 'WazzimaGiygg',
+              'url': 'https://wazzimagiygg.com/'
+            },
+            'publisher': {
+              '@type': 'Organization',
+              'name': 'WikiZero',
+              'url': `${BASE_URL}/`,
+              'logo': {
+                '@type': 'ImageObject',
+                'url': `${BASE_URL}/pwa-512x512.png`
+              }
+            }
+          }
+        ]
+      });
+    } else {
+      removeJsonLd('dynamic-wazzima-jsonld');
+    }
+
     if (config.view === 'comparison') {
       finalTitle = 'Comparativo: WikiZero vs Wikipédia, MediaWiki, Wikidot e Fandom';
       finalDesc =

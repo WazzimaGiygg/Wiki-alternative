@@ -274,6 +274,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
+              id="btn-sidebar-wazzimagiygg"
+              onClick={() => onNavigate('wazzimagiygg')}
+              title="WazzimaGiygg: Portal Oficial, Projetos e Dossiê A Verdade"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'wazzimagiygg'
+                  ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Shield size={15} className="text-amber-500 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">WazzimaGiygg</span>}
+            </button>
+
+            <button
               onClick={() => onNavigate('watchlist')}
               title="Páginas Vigiadas (Watchlist)"
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${

@@ -12,6 +12,30 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- WazzimaGiygg: Portal Oficial, Projetos e Esclarecimento sobre o Caso Wikipédia -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=wazzimagiygg</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Resposta e Dossiê Factual sobre o Caso Wazzimagiygg na Wikipédia -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=caso-wazzimagiygg</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.98</priority>
+  </url>
+
+  <!-- Dossiê Oficial A Verdade - WazzimaGiygg -->
+  <url>
+    <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=averdade</loc>
+    <lastmod>2026-09-09T06:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
   <!-- Comparativo Competitivo: WikiZero vs Wikipédia, MediaWiki, Fandom e Wikidot -->
   <url>
     <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=comparison</loc>
