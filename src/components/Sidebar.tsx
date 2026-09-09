@@ -82,6 +82,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isAndroid = theme === 'android15';
   const isStardew = theme === 'stardew';
   const isRepo = theme === 'repo';
+  const isMinecraft = theme === 'minecraft';
+  const isRoblox = theme === 'roblox';
 
   const visibilityClass =
     deviceMode === 'mobile'
@@ -98,6 +100,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ? 'win95-window !border-2 !rounded-none !bg-[#c0c0c0]'
           : isRepo
           ? 'bg-[#080c13]/95 border-2 border-[#f59e0b]/50 rounded-lg shadow-[0_0_16px_rgba(245,158,11,0.15)] font-mono'
+          : isMinecraft
+          ? 'bg-[#1b1815]/95 border-2 border-[#3d3630] rounded-xs shadow-[0_4px_16px_rgba(0,0,0,0.6)] font-mono text-stone-200'
+          : isRoblox
+          ? 'bg-[#16171b]/98 border border-[#2d3036] rounded-xl shadow-lg font-sans text-white'
           : isGenshin
           ? 'bg-[#14192b]/95 border border-[#d3bc8e]/30 rounded-xl shadow-lg backdrop-blur-md'
           : isStardew

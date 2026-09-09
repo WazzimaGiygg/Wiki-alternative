@@ -1154,6 +1154,387 @@ html.theme-repo footer a {
   color: #f59e0b !important;
 }
 
+/* ========================================================================== */
+/* TEMA MINECRAFT (Mojang Studios - Blocos, XP Bar, Nether & Redstone)        */
+/* ========================================================================== */
+html.theme-minecraft {
+  color-scheme: dark;
+}
+
+html.theme-minecraft body {
+  background-color: #181512;
+  background-image: 
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0),
+    linear-gradient(rgba(24, 21, 18, 0.97), rgba(18, 15, 13, 0.99));
+  background-size: 16px 16px, 100% 100%;
+  color: #f3f4f6;
+}
+
+/* Minecraft Grass & Dirt Block Accent Bar */
+.minecraft-accent-bar {
+  height: 6px;
+  background: linear-gradient(180deg, #5b8731 0%, #466c25 50%, #866043 51%, #573d26 100%);
+  border-bottom: 1px solid #3a2818;
+  box-shadow: 0 1px 6px rgba(91, 135, 49, 0.4);
+}
+
+/* Minecraft HUD Notice & XP Status Bar */
+.minecraft-notice-bar {
+  background: #14110f;
+  border-bottom: 2px solid #2d2824;
+  box-shadow: inset 0 -1px 0 #3d3630;
+}
+
+/* Minecraft XP Progress Line */
+.minecraft-xp-gauge {
+  height: 4px;
+  background: #111111;
+  border-radius: 1px;
+  overflow: hidden;
+  border: 1px solid #000;
+}
+
+.minecraft-xp-gauge-fill {
+  height: 100%;
+  width: 72%;
+  background: linear-gradient(90deg, #55ff55 0%, #85ff85 100%);
+  box-shadow: 0 0 6px #55ff55;
+}
+
+/* Minecraft Header */
+html.theme-minecraft header {
+  background-color: rgba(26, 22, 19, 0.97) !important;
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid #3a342e !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+/* Minecraft Stone Button */
+.minecraft-btn {
+  background: #494541;
+  border-top: 2px solid #6c6660;
+  border-left: 2px solid #6c6660;
+  border-right: 2px solid #221f1d;
+  border-bottom: 2px solid #221f1d;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #000;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  border-radius: 2px;
+  transition: all 0.1s ease;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.minecraft-btn:hover {
+  background: #595550;
+  border-color: #7d7770 #1c1a18 #1c1a18 #7d7770;
+  color: #ffff55;
+  text-shadow: 1px 1px 0 #000, 0 0 4px rgba(255, 255, 85, 0.5);
+}
+
+.minecraft-btn:active {
+  border-color: #221f1d #6c6660 #6c6660 #221f1d;
+  transform: translateY(1px);
+}
+
+/* Minecraft Search Widget */
+html.theme-minecraft .minecraft-search-widget {
+  background-color: #0f0d0b;
+  border: 2px solid #55ff55;
+  border-radius: 3px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9), 0 0 10px rgba(85, 255, 85, 0.2);
+}
+
+html.theme-minecraft .minecraft-search-widget:focus-within {
+  border-color: #55ffff;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9), 0 0 14px rgba(85, 255, 255, 0.35);
+}
+
+/* Minecraft Containers & Card Overrides */
+html.theme-minecraft .bg-white,
+html.theme-minecraft .dark\:bg-slate-900,
+html.theme-minecraft .dark\:bg-\[\#0f172a\] {
+  background-color: #201c18 !important;
+  border-color: #3d3630 !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+}
+
+html.theme-minecraft .bg-slate-50,
+html.theme-minecraft .dark\:bg-slate-800,
+html.theme-minecraft .dark\:bg-\[\#1e293b\] {
+  background-color: #171412 !important;
+  border-color: #332d28 !important;
+}
+
+/* Minecraft Box */
+.minecraft-box {
+  background-color: #201c18;
+  border: 2px solid #3d3630;
+  border-radius: 4px;
+  box-shadow: inset 1px 1px 0 #4a423b, inset -1px -1px 0 #13110f, 0 3px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Minecraft Article Content */
+html.theme-minecraft .wiki-rendered-content {
+  background-color: #1c1815;
+  border: 2px solid #3a342e;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.5), 0 4px 20px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  color: #e5e7eb;
+}
+
+html.theme-minecraft .wiki-rendered-content h1 {
+  color: #55ff55;
+  border-bottom: 2px solid #3a342e;
+  text-shadow: 1px 1px 0 #000;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+html.theme-minecraft .wiki-rendered-content h2 {
+  color: #ffaa00;
+  border-bottom: 1px dashed #3a342e;
+  text-shadow: 1px 1px 0 #000;
+}
+
+html.theme-minecraft .wiki-rendered-content h3 {
+  color: #55ffff;
+}
+
+html.theme-minecraft .wiki-rendered-content .wiki-link {
+  color: #55ffff;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(85, 255, 255, 0.4);
+}
+
+html.theme-minecraft .wiki-rendered-content .wiki-link:hover {
+  color: #55ff55;
+  text-shadow: 0 0 6px rgba(85, 255, 85, 0.6);
+  text-decoration-color: #55ff55;
+}
+
+html.theme-minecraft .wiki-rendered-content .wikitable {
+  border: 2px solid #4a423b;
+  background-color: #151210;
+}
+
+html.theme-minecraft .wiki-rendered-content .wikitable th {
+  background: #2a2420;
+  color: #55ff55;
+  border-color: #4a423b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+html.theme-minecraft .wiki-rendered-content .wikitable td {
+  border-color: #332d28;
+  color: #e5e7eb;
+}
+
+/* Minecraft Sidebar & Footer */
+html.theme-minecraft aside {
+  background-color: #171412 !important;
+  border-right: 2px solid #332d28 !important;
+}
+
+html.theme-minecraft footer {
+  background-color: #13100e !important;
+  border-top: 2px solid #332d28 !important;
+  color: #9ca3af !important;
+}
+
+html.theme-minecraft footer a {
+  color: #55ff55 !important;
+}
+
+/* ========================================================================== */
+/* TEMA ROBLOX (Roblox Corporation - Gaming Dark Mode, Blox UI & Robux Green) */
+/* ========================================================================== */
+html.theme-roblox {
+  color-scheme: dark;
+}
+
+html.theme-roblox body {
+  background-color: #111216;
+  background-image: linear-gradient(180deg, #16171d 0%, #111216 160px);
+  color: #ffffff;
+}
+
+/* Roblox Accent Bar */
+.roblox-accent-bar {
+  height: 4px;
+  background: linear-gradient(90deg, #e2231a 0%, #ff334b 35%, #00a2ff 65%, #00b06f 100%);
+  box-shadow: 0 1px 8px rgba(226, 35, 26, 0.35);
+}
+
+/* Roblox Top HUD Strip */
+.roblox-notice-bar {
+  background: #191b1f;
+  border-bottom: 1px solid #2d3036;
+}
+
+/* Roblox Header */
+html.theme-roblox header {
+  background-color: rgba(17, 18, 22, 0.98) !important;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #292b30 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Roblox Button Styles */
+.roblox-btn {
+  background-color: #272a30;
+  border: 1px solid #393b42;
+  color: #ffffff;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.roblox-btn:hover {
+  background-color: #3b3f47;
+  border-color: #52565f;
+  color: #ffffff;
+}
+
+.roblox-btn-primary {
+  background-color: #00b06f;
+  border: 1px solid #00965e;
+  color: #ffffff;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  box-shadow: 0 0 10px rgba(0, 176, 111, 0.3);
+}
+
+.roblox-btn-primary:hover {
+  background-color: #00c77d;
+  box-shadow: 0 0 14px rgba(0, 176, 111, 0.5);
+}
+
+.roblox-btn-accent {
+  background-color: #e2231a;
+  border: 1px solid #b81c15;
+  color: #ffffff;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.roblox-btn-accent:hover {
+  background-color: #ff3344;
+}
+
+/* Roblox Search Widget */
+html.theme-roblox .roblox-search-widget {
+  background-color: #202227;
+  border: 1px solid #363940;
+  border-radius: 9999px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+}
+
+html.theme-roblox .roblox-search-widget:focus-within {
+  background-color: #272a31;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2), inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Roblox Containers & Cards Overrides */
+html.theme-roblox .bg-white,
+html.theme-roblox .dark\:bg-slate-900,
+html.theme-roblox .dark\:bg-\[\#0f172a\] {
+  background-color: #191b1f !important;
+  border-color: #292b30 !important;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+html.theme-roblox .bg-slate-50,
+html.theme-roblox .dark\:bg-slate-800,
+html.theme-roblox .dark\:bg-\[\#1e293b\] {
+  background-color: #212429 !important;
+  border-color: #2e3138 !important;
+}
+
+/* Roblox Box */
+.roblox-box {
+  background-color: #191b1f;
+  border: 1px solid #2d3036;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Roblox Article Content */
+html.theme-roblox .wiki-rendered-content {
+  background-color: #191b1f;
+  border: 1px solid #2d3036;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  border-radius: 12px;
+  color: #f1f2f4;
+}
+
+html.theme-roblox .wiki-rendered-content h1 {
+  color: #ffffff;
+  border-bottom: 1px solid #31353c;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+html.theme-roblox .wiki-rendered-content h2 {
+  color: #00b06f;
+  border-bottom: 1px solid #2d3036;
+}
+
+html.theme-roblox .wiki-rendered-content h3 {
+  color: #00a2ff;
+}
+
+html.theme-roblox .wiki-rendered-content .wiki-link {
+  color: #00a2ff;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 162, 255, 0.4);
+}
+
+html.theme-roblox .wiki-rendered-content .wiki-link:hover {
+  color: #38bdf8;
+  text-decoration-color: #38bdf8;
+}
+
+html.theme-roblox .wiki-rendered-content .wikitable {
+  border: 1px solid #363940;
+  background-color: #16171b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+html.theme-roblox .wiki-rendered-content .wikitable th {
+  background: #25282e;
+  color: #00b06f;
+  border-color: #363940;
+}
+
+html.theme-roblox .wiki-rendered-content .wikitable td {
+  border-color: #292b30;
+  color: #e5e7eb;
+}
+
+/* Roblox Sidebar & Footer */
+html.theme-roblox aside {
+  background-color: #16171b !important;
+  border-right: 1px solid #292b30 !important;
+}
+
+html.theme-roblox footer {
+  background-color: #111216 !important;
+  border-top: 1px solid #292b30 !important;
+  color: #9ba0a8 !important;
+}
+
+html.theme-roblox footer a {
+  color: #00a2ff !important;
+}
+
 
 
 

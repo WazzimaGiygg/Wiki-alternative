@@ -884,6 +884,6 @@ export interface EmergencyReport {
   actionLogs: EmergencyReportActionLog[];
 }
 
-export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'genshin' | 'android15' | 'stardew' | 'repo';
+export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'genshin' | 'android15' | 'stardew' | 'repo' | 'minecraft' | 'roblox';
 
 

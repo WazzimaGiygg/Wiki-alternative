@@ -18,6 +18,8 @@ import {
   ExternalLink,
   AlertTriangle,
   Terminal,
+  Pickaxe,
+  Gamepad2,
 } from 'lucide-react';
 import { AppTheme, DeviceMode, ViewMode } from '../types';
 
@@ -207,6 +209,28 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       bgPreview: 'bg-[#090c10] border-[#f59e0b] border-2 text-[#22d3ee] font-mono shadow-[0_0_12px_rgba(245,158,11,0.2)]',
       badgeStyle: 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/70 font-mono font-bold tracking-wider',
       icon: <AlertTriangle size={18} className="text-amber-400 animate-pulse" />,
+    },
+    {
+      id: 'minecraft',
+      name: 'Minecraft (Mojang Studios)',
+      subtitle: 'Blocos, Nether, Redstone & Barra de XP',
+      description: 'Estética clássica em blocos cúbicos do Minecraft: bordas chanfradas em pedra esculpida e cobblestone, barra de nível de experiência XP verde vibrante (#55ff55), corações de vida, inventário rústico e botões em pedra polida.',
+      tag: 'Mojang Minecraft',
+      accentColor: '#55ff55',
+      bgPreview: 'bg-[#1b1815] border-[#4a423d] border-2 text-[#55ff55] font-mono shadow-[0_0_14px_rgba(85,255,85,0.25)]',
+      badgeStyle: 'bg-[#10b981]/20 text-[#55ff55] border border-[#55ff55]/70 font-mono font-bold tracking-wider',
+      icon: <Pickaxe size={18} className="text-[#55ff55] animate-bounce" />,
+    },
+    {
+      id: 'roblox',
+      name: 'Roblox (Roblox Corporation)',
+      subtitle: 'Gaming Dark Mode, Blox Tilt & Robux Accent',
+      description: 'Interface moderna inspirada no cliente e site da Roblox: fundo ultra-escuro grafite (#111216 / #191b1f), ícone de cubo inclinado Blox, acentos em vermelho carmesim e verde Robux, badges limpos e barra superior de experiência.',
+      tag: 'Roblox Blox UI',
+      accentColor: '#00b06f',
+      bgPreview: 'bg-[#111216] border-[#393b3d] border-2 text-[#ffffff] font-sans shadow-[0_0_14px_rgba(0,176,111,0.2)]',
+      badgeStyle: 'bg-[#00b06f]/20 text-[#00b06f] border border-[#00b06f]/70 font-bold tracking-wide',
+      icon: <Gamepad2 size={18} className="text-[#00b06f]" />,
     },
   ];
 

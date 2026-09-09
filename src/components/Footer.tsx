@@ -17,6 +17,8 @@ import {
   Tv,
   Palette,
   Sparkles,
+  Pickaxe,
+  Gamepad2,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -56,6 +58,36 @@ export const Footer: React.FC<FooterProps> = ({
               <span>STATUS: SUCATA COLETADA</span>
               <span className="text-[#22d3ee]">TRANSMISSÃO TELEMÉTRICA SEGURA</span>
               <span className="text-amber-400 font-bold">R.E.P.O. v1.0.4</span>
+            </div>
+          </div>
+        )}
+
+        {/* Minecraft Survival Edition World Seed Footer Strip */}
+        {theme === 'minecraft' && (
+          <div className="p-3 bg-[#191512] border-2 border-[#55ff55]/50 rounded-xs text-xs font-mono text-slate-300 flex flex-wrap items-center justify-between gap-3 shadow-[0_0_12px_rgba(85,255,85,0.15)]">
+            <div className="flex items-center gap-2 text-[#55ff55]">
+              <Pickaxe size={15} className="text-[#55ff55]" />
+              <span className="font-bold">MINECRAFT SURVIVAL // SEED DO MUNDO: -48291039572910</span>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] text-slate-400">
+              <span className="text-[#ffaa00]">DIFICULDADE: DIFÍCIL</span>
+              <span className="text-[#55ffff]">MODO HARDCORE ATIVO</span>
+              <span className="text-[#55ff55] font-bold">MINECRAFT v1.21</span>
+            </div>
+          </div>
+        )}
+
+        {/* Roblox Experience Footer Strip */}
+        {theme === 'roblox' && (
+          <div className="p-3 bg-[#14151a] border border-[#00b06f]/50 rounded-lg text-xs font-sans text-slate-300 flex flex-wrap items-center justify-between gap-3 shadow-[0_0_12px_rgba(0,176,111,0.15)]">
+            <div className="flex items-center gap-2 text-[#00b06f]">
+              <Gamepad2 size={15} className="text-[#00b06f]" />
+              <span className="font-bold">ROBLOX CORPORATION // EXPERIÊNCIA WIKIZERO PLACE</span>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] text-slate-400 font-sans">
+              <span className="text-[#00a2ff]">STATUS: JOGANDO COM 14.8K AMIGOS</span>
+              <span className="text-emerald-400 font-semibold">98% AVALIAÇÃO POSITIVA</span>
+              <span className="text-white font-bold">ROBLOX ENGINE v624</span>
             </div>
           </div>
         )}

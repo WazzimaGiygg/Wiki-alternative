@@ -25,6 +25,8 @@ import {
   AlertTriangle,
   Radio,
   Palette,
+  Pickaxe,
+  Gamepad2,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -101,6 +103,8 @@ export const Header: React.FC<HeaderProps> = ({
   const isAndroid = theme === 'android15';
   const isStardew = theme === 'stardew';
   const isRepo = theme === 'repo';
+  const isMinecraft = theme === 'minecraft';
+  const isRoblox = theme === 'roblox';
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
@@ -222,6 +226,73 @@ export const Header: React.FC<HeaderProps> = ({
       {/* R.E.P.O. (Semiwork) Hazard Warning Stripes Line */}
       {isRepo && <div className="repo-hazard-bar w-full" />}
 
+      {/* Minecraft Grass & Dirt Block Accent Bar */}
+      {isMinecraft && <div className="minecraft-accent-bar w-full" />}
+
+      {/* Roblox Accent Line */}
+      {isRoblox && <div className="roblox-accent-bar w-full" />}
+
+      {/* Minecraft In-Game Level XP & Survival HUD Strip */}
+      {isMinecraft && (
+        <div className="minecraft-notice-bar text-[11px] font-mono flex items-center justify-between px-3 py-1 select-none">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="flex items-center gap-1.5 font-bold text-[#55ff55]">
+              <Pickaxe size={13} className="text-[#55ff55]" />
+              <span>MINECRAFT // MUNDO SOBREVIVÊNCIA</span>
+            </span>
+            <span className="text-[#4a423b] hidden xs:inline">|</span>
+            <span className="text-[#ffaa00] text-[10px] hidden sm:inline flex items-center gap-1">
+              <span>XYZ: 124, 64, -89</span>
+            </span>
+            <span className="text-[#4a423b] hidden md:inline">|</span>
+            <span className="text-[#55ffff] text-[10px] hidden md:inline">
+              BIOMA: PLANÍCIES (DIA)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 font-mono font-bold text-slate-100">
+            <div className="hidden sm:flex items-center gap-1 text-[10px] text-red-500">
+              <span>❤❤❤❤❤</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-black/70 px-2 py-0.5 rounded border border-[#55ff55]/50">
+              <span className="text-[#55ff55] text-xs">NV 42</span>
+              <div className="w-16 minecraft-xp-gauge hidden xs:block">
+                <div className="minecraft-xp-gauge-fill" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Roblox Gaming Top HUD Strip */}
+      {isRoblox && (
+        <div className="roblox-notice-bar text-[11px] font-sans flex items-center justify-between px-3 py-1 select-none">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="flex items-center gap-1.5 font-bold text-[#ffffff]">
+              <Gamepad2 size={13} className="text-[#00b06f]" />
+              <span>ROBLOX // EXPERIÊNCIA WIKIZERO</span>
+            </span>
+            <span className="text-[#363940] hidden xs:inline">|</span>
+            <span className="text-[#00a2ff] text-[10px] hidden sm:inline">
+              SERVIDOR PÚBLICO • 60 FPS
+            </span>
+            <span className="text-[#363940] hidden md:inline">|</span>
+            <span className="text-slate-400 text-[10px] hidden md:inline">
+              LATÊNCIA: 24ms
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 font-sans font-bold text-slate-100">
+            <span className="text-[#00b06f] text-[11px] flex items-center gap-1 bg-[#202227] px-2 py-0.5 rounded-md border border-[#00b06f]/40">
+              <span>R$</span> 2.450
+            </span>
+            <span className="text-xs text-white bg-[#e2231a] px-2 py-0.5 rounded-md font-bold text-[10px]">
+              JOGAR
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* R.E.P.O. Semiwork Tactical Extraction HUD Strip */}
       {isRepo && (
         <div className="repo-notice-bar text-[11px] font-mono flex items-center justify-between px-3 py-1 select-none">
@@ -280,7 +351,7 @@ export const Header: React.FC<HeaderProps> = ({
       )}
 
       {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
         <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full">
           <div className="flex items-center gap-2">
             {isWin95 ? (
@@ -296,6 +367,16 @@ export const Header: React.FC<HeaderProps> = ({
                   <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline">A<u>j</u>uda</span>
                 </div>
               </div>
+            ) : isMinecraft ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#55ff55] text-black tracking-wider font-mono">
+                <Pickaxe size={10} className="text-black" />
+                MINECRAFT // MOJANG
+              </span>
+            ) : isRoblox ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#00b06f] text-white tracking-wide font-sans">
+                <Gamepad2 size={10} className="text-white" />
+                ROBLOX // BLOX
+              </span>
             ) : isRepo ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#f59e0b] text-black tracking-wider font-mono">
                 <AlertTriangle size={10} className="text-black" />
@@ -432,6 +513,54 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <p className="text-[10px] text-[#A4C639]/80 font-sans leading-none mt-0.5 hidden xs:block">
                   Android 1.5 Cupcake OS (2009)
+                </p>
+              </div>
+            </div>
+          ) : isMinecraft ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              title="WikiZero - Tema Minecraft (Mojang Studios)"
+            >
+              <div className="w-8 h-8 rounded-xs bg-[#1f1a16] border-2 border-[#55ff55] flex items-center justify-center shadow-[0_0_10px_rgba(85,255,85,0.3)] group-hover:scale-105 transition">
+                <Pickaxe size={16} className="text-[#55ff55]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-bold text-base sm:text-lg text-[#f3f4f6] tracking-tight font-mono drop-shadow-[1px_1px_0px_#000]">
+                    WikiZero <span className="text-[#55ff55] text-xs">Craft</span>
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-[#55ff55]/20 text-[#55ff55] border border-[#55ff55]/70 px-1.5 py-0.2 rounded-xs font-mono">
+                    MOJANG
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#ffaa00] font-mono leading-none mt-0.5 hidden xs:block">
+                  Enciclopédia de Blocos & Redstone
+                </p>
+              </div>
+            </div>
+          ) : isRoblox ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              title="WikiZero - Tema Roblox (Roblox Corporation)"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#191b1f] border-2 border-[#00b06f] flex items-center justify-center shadow-[0_0_10px_rgba(0,176,111,0.3)] group-hover:scale-105 transition">
+                <div className="w-4 h-4 bg-white rounded-xs rotate-12 flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 bg-[#191b1f] rounded-xs" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-extrabold text-base sm:text-lg text-[#ffffff] tracking-tight font-sans">
+                    WikiZero <span className="text-[#00b06f] text-xs">Blox</span>
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-[#00b06f]/20 text-[#00b06f] border border-[#00b06f]/70 px-1.5 py-0.2 rounded-md font-sans">
+                    ROBLOX
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#00a2ff] font-sans leading-none mt-0.5 hidden xs:block font-medium">
+                  Roblox Metaverse Knowledge Base
                 </p>
               </div>
             </div>
@@ -663,6 +792,78 @@ export const Header: React.FC<HeaderProps> = ({
                   className="android-btn px-2 py-1 text-[11px] font-medium cursor-pointer"
                 >
                   Aleatório
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : isMinecraft ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div
+              onClick={handleSearchInputClick}
+              className="relative minecraft-search-widget flex items-center px-3 py-1.5 transition-all cursor-pointer font-mono"
+            >
+              <div className="mr-2 flex items-center text-[#55ff55] shrink-0 text-sm" title="Minecraft Search">
+                <Pickaxe size={15} className="text-[#55ff55]" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onClick={handleSearchInputClick}
+                onFocus={handleSearchInputClick}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="MINECRAFT // BUSCAR BLOCOS, RECEITAS E ITENS..."
+                className="w-full text-xs bg-transparent border-none outline-none text-[#55ff55] placeholder:text-[#55ff55]/50 font-mono cursor-text"
+              />
+              <div className="flex items-center gap-1.5 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={onSearchSubmit}
+                  className="minecraft-btn px-2.5 py-1 text-[11px] cursor-pointer"
+                  title="Executar Busca de Artigos"
+                >
+                  [ CRAFTAR ]
+                </button>
+                <button
+                  onClick={onRandomPage}
+                  title="Artigo de Bioma Aleatório"
+                  className="minecraft-btn px-2 py-1 text-[11px] cursor-pointer"
+                >
+                  [ BIOMA ]
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : isRoblox ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div
+              onClick={handleSearchInputClick}
+              className="relative roblox-search-widget flex items-center px-3.5 py-1.5 transition-all cursor-pointer font-sans"
+            >
+              <Search className="w-4 h-4 text-[#00b06f] mr-2 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onClick={handleSearchInputClick}
+                onFocus={handleSearchInputClick}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Buscar experiências, itens e artigos no Roblox..."
+                className="w-full text-xs bg-transparent border-none outline-none text-white placeholder:text-slate-400 font-sans cursor-text"
+              />
+              <div className="flex items-center gap-1.5 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={onSearchSubmit}
+                  className="roblox-btn-primary px-3 py-1 text-[11px] cursor-pointer"
+                  title="Buscar Artigos"
+                >
+                  Buscar
+                </button>
+                <button
+                  onClick={onRandomPage}
+                  title="Artigo Aleatório no Roblox"
+                  className="roblox-btn px-2.5 py-1 text-[11px] cursor-pointer"
+                >
+                  Descobrir
                 </button>
               </div>
             </div>
