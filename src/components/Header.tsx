@@ -18,10 +18,8 @@ import {
   ChevronRight,
   Database,
   Menu,
-  Smartphone,
   Monitor,
   Users,
-  Tv,
   AlertTriangle,
   Radio,
   Palette,
@@ -32,7 +30,6 @@ import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '.
 import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { StorageService } from '../services/storageService';
-import { PWAInstallPrompt } from './PWAInstallPrompt';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -1067,17 +1064,6 @@ export const Header: React.FC<HeaderProps> = ({
               {t('header.nav_editor')}
             </button>
             <button
-              onClick={() => onNavigate('beta')}
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1 transition font-semibold ${
-                currentView === 'beta'
-                  ? 'bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
-                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              <Sparkles size={13} className="text-purple-500" />
-              {t('header.nav_beta')}
-            </button>
-            <button
               id="btn-header-site-updates"
               onClick={() => onNavigate('site-updates')}
               className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 transition font-semibold ${
@@ -1381,19 +1367,6 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             )}
           </div>
-
-          {/* Android App PWA Install Button */}
-          <PWAInstallPrompt buttonStyle="header" />
-
-          {/* Smart TV App Quick Button */}
-          <button
-            onClick={onOpenSmartTVModal}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800/60 transition cursor-pointer"
-            title="Disponibilidade e aplicativo para Smart TV (Samsung, LG, Android TV, Fire TV)"
-          >
-            <Tv size={13} className="text-indigo-600 dark:text-indigo-400" />
-            <span>App Smart TV</span>
-          </button>
 
           {/* User Profile / Auth Area */}
           {user ? (
