@@ -101,7 +101,33 @@ export interface UserProfile {
   isOnline?: boolean;
   warningCount?: number;
   editsCount?: number;
+  isGeminiPremium?: boolean;
+  geminiPlan?: 'free' | 'premium';
+  geminiUsage?: UserGeminiUsage;
   recentActivity?: UserActivityLogEntry[];
+}
+
+export interface UserGeminiUsage {
+  chatsUsed: number;
+  imageUploadsUsed: number;
+  notebookRunsUsed: number;
+  dateKey: string;
+}
+
+export interface GeminiQuotaInfo {
+  isPremium: boolean;
+  chatsLimit: number;
+  chatsUsed: number;
+  chatsRemaining: number;
+  imagesLimit: number;
+  imagesUsed: number;
+  imagesRemaining: number;
+  notebookLimit: number;
+  notebookUsed: number;
+  notebookRemaining: number;
+  canChat: boolean;
+  canUploadImage: boolean;
+  canUseNotebook: boolean;
 }
 
 export interface UserActivityLogEntry {
@@ -521,7 +547,8 @@ export type ViewMode =
   | 'smart-tv'
   | 'appearance'
   | 'comparison'
-  | 'wazzimagiygg';
+  | 'wazzimagiygg'
+  | 'gemini-notebook';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)
@@ -905,10 +932,51 @@ export interface GeminiChatMessage {
   role: 'user' | 'model' | 'system';
   content: string;
   timestamp: string;
+  imageUrl?: string;
+  imageMimeType?: string;
+  offerPremium?: boolean;
+  quotaExceeded?: boolean;
+  quotaType?: 'chats' | 'images' | 'notebook';
   metadata?: {
     actionType?: 'article' | 'collection' | 'wtext_snippet';
     suggestedData?: any;
+    userId?: string;
+    isGuest?: boolean;
   };
+}
+
+export type GeminiNotebookSourceType = 'wiki_article' | 'text' | 'url' | 'image';
+
+export interface GeminiNotebookSource {
+  id: string;
+  title: string;
+  type: GeminiNotebookSourceType;
+  content: string;
+  articleId?: string;
+  imageUrl?: string;
+  addedAt: string;
+}
+
+export interface GeminiNotebookNote {
+  id: string;
+  title: string;
+  content: string;
+  generatedByGemini?: boolean;
+  actionUsed?: string;
+  insertedIntoArticleTitle?: string;
+  createdAt: string;
+}
+
+export interface GeminiNotebookItem {
+  id: string;
+  title: string;
+  description?: string;
+  userId?: string;
+  userEmail?: string;
+  sources: GeminiNotebookSource[];
+  notes: GeminiNotebookNote[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 

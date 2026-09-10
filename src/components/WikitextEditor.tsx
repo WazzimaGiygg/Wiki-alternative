@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   Clock,
   AlertTriangle,
+  BookOpen,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus } from '../types';
@@ -49,6 +50,9 @@ interface WikitextEditorProps {
     isMinor?: boolean
   ) => Promise<void>;
   onCancel: () => void;
+  onOpenLoginModal?: () => void;
+  onOpenPremiumModal?: (quotaType?: 'chats' | 'images' | 'notebook') => void;
+  onOpenNotebookModal?: () => void;
 }
 
 export const WikitextEditor: React.FC<WikitextEditorProps> = ({
@@ -58,6 +62,9 @@ export const WikitextEditor: React.FC<WikitextEditorProps> = ({
   user,
   onSave,
   onCancel,
+  onOpenLoginModal,
+  onOpenPremiumModal,
+  onOpenNotebookModal,
 }) => {
   const [titulo, setTitulo] = useState(initialArticle?.titulo || '');
   const [pageUid, setPageUid] = useState(
@@ -415,6 +422,23 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             >
               <Sparkles size={13} className="text-amber-300 animate-pulse shrink-0" />
               <span>Chatbot Gemini</span>
+            </button>
+
+            {/* Botão de Integração do Gemini Notebook */}
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenNotebookModal) {
+                  onOpenNotebookModal();
+                } else {
+                  setShowGeminiDrawer(true);
+                }
+              }}
+              className="px-2.5 py-1 rounded bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white transition text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer border border-purple-400/30"
+              title="Gemini Notebook - Síntese de múltiplas fontes e inserção automática no artigo"
+            >
+              <BookOpen size={13} className="text-amber-300 shrink-0" />
+              <span>Gemini Notebook</span>
             </button>
 
             <button
@@ -875,6 +899,12 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           descricao,
         }}
         onApplyToArticle={handleApplyFromGemini}
+        onOpenLoginModal={onOpenLoginModal}
+        onOpenPremiumModal={onOpenPremiumModal}
+        onOpenNotebook={() => {
+          setShowGeminiDrawer(false);
+          if (onOpenNotebookModal) onOpenNotebookModal();
+        }}
       />
     </div>
   );

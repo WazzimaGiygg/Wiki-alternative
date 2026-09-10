@@ -12,6 +12,8 @@
         "role": { "type": "string", "enum": ["admin", "moderador", "editor", "leitor", "convidado"] },
         "isBanned": { "type": "boolean" },
         "banReason": { "type": "string" },
+        "isGeminiPremium": { "type": "boolean" },
+        "geminiPlan": { "type": "string" },
         "createdAt": { "type": "string" }
       },
       "required": ["uid", "email", "role"]
@@ -180,9 +182,28 @@
         "isLatest": { "type": "boolean" }
       },
       "required": ["id", "version", "title", "date", "category", "author", "summary", "highlights"]
+    },
+    "GeminiNotebook": {
+      "title": "GeminiNotebook",
+      "description": "Cadernos de pesquisa, fontes e síntese de artigos do Gemini Notebook",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "userId": { "type": "string" },
+        "sources": { "type": "array" },
+        "notes": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "title", "createdAt"]
     }
   },
   "firestore": {
+    "/gemini_notebooks/{notebookId}": {
+      "schema": "GeminiNotebook",
+      "description": "Cadernos de pesquisa e notas do Gemini Notebook para inserção em artigos"
+    },
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "Documentos de usuários e permissões"

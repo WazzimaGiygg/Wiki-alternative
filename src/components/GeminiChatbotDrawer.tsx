@@ -19,6 +19,10 @@ import {
   ChevronRight,
   Minimize2,
   Maximize2,
+  Crown,
+  Image as ImageIcon,
+  BookOpen,
+  Zap,
 } from 'lucide-react';
 import {
   GeminiChatbotConfig,
@@ -31,6 +35,7 @@ import {
   GeminiChatbotService,
   DEFAULT_GEMINI_CHATBOT_CONFIG,
 } from '../services/geminiChatbotService';
+import { GeminiQuotaService } from '../services/geminiQuotaService';
 
 interface GeminiChatbotDrawerProps {
   isOpen: boolean;
@@ -53,6 +58,9 @@ interface GeminiChatbotDrawerProps {
     icon: string;
     tags: string[];
   }) => void;
+  onOpenLoginModal?: () => void;
+  onOpenPremiumModal?: (quotaType?: 'chats' | 'images' | 'notebook') => void;
+  onOpenNotebook?: () => void;
 }
 
 export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
@@ -64,6 +72,9 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
   currentCollection,
   onApplyToArticle,
   onApplyToCollection,
+  onOpenLoginModal,
+  onOpenPremiumModal,
+  onOpenNotebook,
 }) => {
   const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -73,11 +84,22 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Upload de Imagem multimodal
+  const [selectedImage, setSelectedImage] = useState<{
+    data: string;
+    mimeType: string;
+    preview: string;
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Informações de Cota do Usuário
+  const quotaInfo = GeminiQuotaService.getQuotaInfo(currentUser);
+
   // Formulário do Administrador
   const [adminChatbotId, setAdminChatbotId] = useState('');
   const [adminEnabled, setAdminEnabled] = useState(true);
   const [adminDisplayName, setAdminDisplayName] = useState('');
-  const [adminModel, setAdminModel] = useState('gemini-3.8-flash');
+  const [adminModel, setAdminModel] = useState('gemini-2.5-flash');
   const [adminSystemPrompt, setAdminSystemPrompt] = useState('');
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [configSaveSuccess, setConfigSaveSuccess] = useState(false);
@@ -136,24 +158,32 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
 
   const handleSendMessage = async (customText?: string) => {
     const textToSend = customText || inputValue;
-    if (!textToSend.trim() || isLoading) return;
+    if ((!textToSend.trim() && !selectedImage) || isLoading) return;
+
+    const messageText = textToSend.trim() || (selectedImage ? 'Analise a imagem enviada para criação de conteúdo na WikiZero.' : '');
 
     const userMessage: GeminiChatMessage = {
       id: `usr-${Date.now()}`,
       role: 'user',
-      content: textToSend.trim(),
+      content: messageText,
+      imageUrl: selectedImage?.preview,
+      imageMimeType: selectedImage?.mimeType,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     const newHistory = [...messages, userMessage];
     setMessages(newHistory);
     setInputValue('');
+    const imagePayload = selectedImage ? { data: selectedImage.data, mimeType: selectedImage.mimeType } : undefined;
+    setSelectedImage(null);
     setIsLoading(true);
 
     try {
       const response = await GeminiChatbotService.sendMessage({
-        message: textToSend,
+        message: messageText,
         history: newHistory,
+        user: currentUser,
+        image: imagePayload,
         context: {
           mode: (contextMode || 'general') as 'collection' | 'article' | 'general',
           currentArticle: {
@@ -178,6 +208,9 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
         role: 'model',
         content: response.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        offerPremium: response.offerPremium,
+        quotaExceeded: response.quotaExceeded,
+        quotaType: response.quotaType,
         metadata: {
           actionType: contextMode === 'article' ? 'article' : contextMode === 'collection' ? 'collection' : 'wtext_snippet',
           suggestedData: response.suggestedData,
@@ -196,6 +229,38 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Selecione um arquivo de imagem válido (JPEG, PNG, WEBP).');
+      return;
+    }
+
+    // Verifica cota se não for premium
+    if (!quotaInfo.isPremium && quotaInfo.imagesRemaining <= 0) {
+      if (onOpenPremiumModal) {
+        onOpenPremiumModal('images');
+      } else {
+        alert('Limite diário de envio de imagens atingido. Faça upgrade para o Gemini Premium.');
+      }
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setSelectedImage({
+        data: dataUrl,
+        mimeType: file.type,
+        preview: dataUrl,
+      });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const handleSaveAdminConfig = async (e: React.FormEvent) => {
@@ -368,6 +433,67 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
             )}
           </div>
 
+          {/* Faixa de Identidade do Usuário & Cotas Gemini */}
+          <div className="bg-slate-50 dark:bg-slate-800/40 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] shrink-0">
+            <div className="flex items-center gap-2 truncate">
+              {currentUser && !currentUser.isGuest ? (
+                <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200 truncate">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="truncate font-medium">{currentUser.displayName}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    (ID: {currentUser.uid.slice(0, 6)}...)
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  <span>Modo Convidado / Deslogado</span>
+                  {onOpenLoginModal && (
+                    <button
+                      onClick={onOpenLoginModal}
+                      className="underline font-bold text-[10px] ml-1 hover:text-amber-700"
+                    >
+                      Login
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {quotaInfo.isPremium ? (
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-semibold text-[10px] flex items-center gap-1 border border-amber-300/40">
+                  <Crown size={11} /> Gemini Premium
+                </span>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-500 text-[10px]">
+                    Chats: {quotaInfo.chatsRemaining}/{quotaInfo.chatsLimit}
+                  </span>
+                  {onOpenPremiumModal && (
+                    <button
+                      onClick={() => onOpenPremiumModal('chats')}
+                      className="px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-purple-600 text-white font-bold text-[10px] hover:opacity-90 shadow-xs flex items-center gap-1"
+                    >
+                      <Crown size={10} /> Upgrade
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {onOpenNotebook && (
+                <button
+                  onClick={onOpenNotebook}
+                  className="px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[10px] font-semibold hover:bg-indigo-100 flex items-center gap-1"
+                  title="Abrir Gemini Notebook para cruzar fontes e artigos"
+                >
+                  <BookOpen size={10} />
+                  <span>Notebook</span>
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Área de Mensagens */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-sans">
             {messages.map((msg) => {
@@ -390,10 +516,46 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
                         : 'bg-slate-100 dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 rounded-bl-none border border-slate-200 dark:border-slate-700/80 shadow-xs'
                     }`}
                   >
+                    {/* Imagem enviada pelo usuário */}
+                    {msg.imageUrl && (
+                      <div className="mb-2 rounded-lg overflow-hidden border border-white/20 dark:border-slate-700 max-w-[240px]">
+                        <img
+                          src={msg.imageUrl}
+                          alt="Imagem enviada"
+                          className="w-full h-auto max-h-48 object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
+
                     {/* Conteúdo formatado da mensagem */}
                     <div className="whitespace-pre-wrap select-text break-words">
                       {msg.content}
                     </div>
+
+                    {/* Card de Oferta ou Upgrade para Gemini Premium */}
+                    {!isUser && (msg.offerPremium || msg.quotaExceeded) && (
+                      <div className="mt-3 p-3 bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-indigo-500/10 border border-amber-300 dark:border-amber-600/50 rounded-xl space-y-2">
+                        <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-bold text-xs">
+                          <Crown size={14} className="text-amber-500" />
+                          <span>Gemini Premium WikiZero</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                          {msg.quotaExceeded
+                            ? 'Você atingiu o limite gratuito. Desbloqueie chats ilimitados, envio de imagens e o Gemini Notebook completo.'
+                            : 'Aproveite o máximo do Google AI Studio com acesso ilimitado a modelos avançados e o Gemini Notebook.'}
+                        </p>
+                        {onOpenPremiumModal && (
+                          <button
+                            onClick={() => onOpenPremiumModal(msg.quotaType)}
+                            className="w-full py-1.5 px-3 bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <Crown size={12} />
+                            <span>Ver Planos & Ativar Gemini Premium</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
 
                     {/* Barra de Ações Rápidas em respostas do bot */}
                     {!isUser && (
@@ -554,8 +716,31 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
             )}
           </div>
 
-          {/* Campo de Entrada de Mensagem */}
-          <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+          {/* Campo de Entrada de Mensagem com Suporte a Imagens Multimodais */}
+          <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 space-y-2">
+            {/* Preview da Imagem Selecionada */}
+            {selectedImage && (
+              <div className="flex items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 w-fit">
+                <img
+                  src={selectedImage.preview}
+                  alt="Preview"
+                  className="w-10 h-10 object-cover rounded"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="text-[11px] text-slate-700 dark:text-slate-200 max-w-[180px] truncate">
+                  Imagem pronta para análise
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedImage(null)}
+                  className="p-1 text-slate-400 hover:text-red-500 rounded"
+                  title="Remover imagem"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            )}
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -563,6 +748,28 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
               }}
               className="flex items-end gap-2"
             >
+              {/* Botão Anexar Imagem */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+                accept="image/*"
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition flex items-center justify-center shrink-0 cursor-pointer border border-slate-300 dark:border-slate-700 disabled:opacity-40"
+                title={
+                  quotaInfo.isPremium
+                    ? 'Anexar imagem/documento (Visão Ilimitada)'
+                    : `Anexar imagem/documento (${quotaInfo.imagesRemaining}/${quotaInfo.imagesLimit} restantes hoje)`
+                }
+              >
+                <ImageIcon size={16} />
+              </button>
+
               <textarea
                 ref={inputRef}
                 value={inputValue}
@@ -577,7 +784,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
                   contextMode === 'collection'
                     ? 'Peça ao chatbot ideias, títulos ou JSON para sua coleção...'
                     : contextMode === 'article'
-                    ? 'Peça texto em wikitext, infobox, seções ou revisões...'
+                    ? 'Peça texto em wikitext, infobox, seções ou envie uma imagem...'
                     : 'Converse com o Chatbot Gemini AI Studio...'
                 }
                 rows={2}
@@ -586,7 +793,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
 
               <button
                 type="submit"
-                disabled={isLoading || !inputValue.trim()}
+                disabled={isLoading || (!inputValue.trim() && !selectedImage)}
                 className="p-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white transition flex items-center justify-center shrink-0 cursor-pointer shadow-xs"
                 title="Enviar mensagem"
               >

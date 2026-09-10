@@ -36,6 +36,8 @@ import {
   Sun,
   Moon,
   Monitor,
+  BookOpen,
+  Crown,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -57,6 +59,9 @@ interface SidebarProps {
   onSetTheme?: (theme: AppTheme) => void;
   onOpenLanguagesModal?: () => void;
   onOpenSmartTVModal?: () => void;
+  onOpenGeminiChatbot?: () => void;
+  onOpenGeminiNotebook?: () => void;
+  onOpenGeminiPremium?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -74,6 +79,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSetTheme,
   onOpenLanguagesModal,
   onOpenSmartTVModal,
+  onOpenGeminiChatbot,
+  onOpenGeminiNotebook,
+  onOpenGeminiPremium,
 }) => {
   const { currentLanguage, t } = useLanguage();
 
@@ -506,6 +514,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Database size={15} className="text-amber-500 flex-shrink-0" />
               {!isCollapsed && <span className="truncate">Admin Firebase DB</span>}
+            </button>
+          </nav>
+        </div>
+
+        {/* Section: Inteligência Artificial (Google Gemini AI Studio) */}
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+          {!isCollapsed && (
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center justify-between font-mono">
+              <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
+                <Sparkles size={11} />
+                <span>IA Gemini Studio</span>
+              </span>
+            </h3>
+          )}
+          <nav className="space-y-0.5">
+            <button
+              onClick={onOpenGeminiChatbot}
+              title="Abrir Chatbot Assistente Gemini"
+              className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-300 cursor-pointer"
+            >
+              <Sparkles size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Assistente Gemini</span>}
+            </button>
+
+            <button
+              onClick={onOpenGeminiNotebook}
+              title="Abrir Gemini Notebook - Síntese e Inserção de Artigos"
+              className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-600 dark:hover:text-purple-300 cursor-pointer"
+            >
+              <BookOpen size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Gemini Notebook</span>}
+            </button>
+
+            <button
+              onClick={onOpenGeminiPremium}
+              title="Conhecer Plano Gemini Premium"
+              className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 font-medium cursor-pointer"
+            >
+              <Crown size={15} className="text-amber-500 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Gemini Premium</span>}
             </button>
           </nav>
         </div>

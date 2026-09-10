@@ -17,6 +17,8 @@ import { EmergencyContactView } from './components/EmergencyContactView';
 import { FirebaseAdminDashboard } from './components/FirebaseAdminDashboard';
 import { CreatePageModal } from './components/CreatePageModal';
 import { GeminiChatbotDrawer } from './components/GeminiChatbotDrawer';
+import { GeminiPremiumModal } from './components/GeminiPremiumModal';
+import { GeminiNotebook } from './components/GeminiNotebook';
 import { CookieBanner } from './components/CookieBanner';
 import { BannedOverlay } from './components/BannedOverlay';
 import { LgpdConsentModal } from './components/LgpdConsentModal';
@@ -81,6 +83,9 @@ export default function App() {
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [showSmartTVModal, setShowSmartTVModal] = useState<boolean>(false);
   const [showGeminiChatbot, setShowGeminiChatbot] = useState<boolean>(false);
+  const [showPremiumModal, setShowPremiumModal] = useState<boolean>(false);
+  const [premiumQuotaType, setPremiumQuotaType] = useState<'chats' | 'images' | 'notebook' | undefined>();
+  const [showNotebookModal, setShowNotebookModal] = useState<boolean>(false);
 
   const [currentView, setCurrentView] = useState<ViewMode>('hub');
   const [selectedPageUid, setSelectedPageUid] = useState<string | null>(null);

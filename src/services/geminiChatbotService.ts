@@ -1,6 +1,7 @@
-import { GeminiChatbotConfig, GeminiChatMessage } from '../types';
+import { GeminiChatbotConfig, GeminiChatMessage, UserProfile } from '../types';
 import { getDbSafe } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { GeminiQuotaService } from './geminiQuotaService';
 
 export const DEFAULT_GEMINI_CHATBOT_CONFIG: GeminiChatbotConfig = {
   chatbotId: '0a14dc90-3ab3-47bc-8306-ca5bc2953699', // Google AI Studio Applet / Chatbot ID padrão
@@ -118,10 +119,14 @@ export class GeminiChatbotService {
 
   /**
    * Envia uma mensagem interativa ao Chatbot do Gemini AI Studio.
+   * Utiliza o ID do usuário conectado ou identifica como visitante anônimo.
+   * Valida cotas gratuitas e oferece o plano pago quando o limite for ultrapassado.
    */
   static async sendMessage(params: {
     message: string;
     history?: GeminiChatMessage[];
+    user?: UserProfile | null;
+    image?: { data: string; mimeType: string };
     context?: {
       mode: 'article' | 'collection' | 'general';
       currentArticle?: {
@@ -137,12 +142,27 @@ export class GeminiChatbotService {
       };
     };
     configOverride?: Partial<GeminiChatbotConfig>;
-  }): Promise<{ reply: string; suggestedData?: any }> {
+  }): Promise<{ reply: string; suggestedData?: any; offerPremium?: boolean; quotaExceeded?: boolean; quotaType?: 'chats' | 'images' | 'notebook' }> {
     const config = await this.getConfig();
     const activeConfig = { ...config, ...params.configOverride };
 
     if (!activeConfig.enabled) {
       throw new Error('O assistente Chatbot do Gemini está desativado pelo administrador.');
+    }
+
+    const isImageRequest = !!params.image;
+    const quotaType = isImageRequest ? 'images' : 'chats';
+    const quotaCheck = await GeminiQuotaService.consumeQuota(quotaType, params.user || null);
+
+    if (!quotaCheck.allowed) {
+      const quotaName = isImageRequest ? 'envio e análise de imagens' : 'chats e consultas enciclopédicas';
+      const offerReply = `🌟 **Limite gratuito atingido!**\n\nVocê atingiu o limite gratuito diário de **${quotaName}** da WikiZero.\n\nComo assistente oficial do Google AI Studio na WikiZero, estou autorizado a lhe oferecer o **Plano Gemini Premium**!\n\n💎 **Benefícios do Gemini Premium:**\n• Chats e consultas ilimitadas em tempo real\n• Envio e análise visual ilimitada de imagens e infográficos\n• Gemini Notebook completo com síntese e inserção direta em artigos\n• Modelos Gemini mais rápidos e potentes de última geração\n\nDeseja ativar seu acesso premium agora?`;
+      return {
+        reply: offerReply,
+        offerPremium: true,
+        quotaExceeded: true,
+        quotaType,
+      };
     }
 
     const payload = {
@@ -152,6 +172,13 @@ export class GeminiChatbotService {
       chatbotId: activeConfig.chatbotId,
       customSystemInstruction: activeConfig.systemInstruction,
       model: activeConfig.model,
+      image: params.image || null,
+      userId: params.user?.uid || null,
+      userEmail: params.user?.email || null,
+      userDisplayName: params.user?.displayName || params.user?.username || null,
+      userRole: params.user?.role || 'visitante',
+      isGuest: !params.user || params.user.isGuest,
+      isPremium: !!(params.user?.isGeminiPremium || params.user?.geminiPlan === 'premium'),
     };
 
     const res = await fetch('/api/gemini/chat', {
@@ -162,6 +189,14 @@ export class GeminiChatbotService {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
+      if (res.status === 429 || errorData.quotaExceeded) {
+        return {
+          reply: errorData.error || 'Limite de uso gratuito atingido. Deseja conhecer o Plano Gemini Premium?',
+          offerPremium: true,
+          quotaExceeded: true,
+          quotaType,
+        };
+      }
       throw new Error(errorData.error || `Erro na comunicação com o Gemini (HTTP ${res.status})`);
     }
 

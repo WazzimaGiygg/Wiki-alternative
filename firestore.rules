@@ -249,6 +249,13 @@ service cloud.firestore {
       allow write: if isAuthenticated() && isNotBanned();
     }
 
+    // ✅ Gemini Notebooks - pesquisa e notas de artigos
+    match /gemini_notebooks/{notebookId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && isNotBanned();
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
     // ✅ Mudanças e logs recentes
     match /recent_changes/{changeId} {
       allow read: if true;
