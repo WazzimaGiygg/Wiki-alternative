@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Sparkles } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { WikiHub } from './components/WikiHub';
@@ -15,6 +16,7 @@ import { ContactAdminView } from './components/ContactAdminView';
 import { EmergencyContactView } from './components/EmergencyContactView';
 import { FirebaseAdminDashboard } from './components/FirebaseAdminDashboard';
 import { CreatePageModal } from './components/CreatePageModal';
+import { GeminiChatbotDrawer } from './components/GeminiChatbotDrawer';
 import { CookieBanner } from './components/CookieBanner';
 import { BannedOverlay } from './components/BannedOverlay';
 import { LgpdConsentModal } from './components/LgpdConsentModal';
@@ -78,6 +80,7 @@ export default function App() {
   const [showLanguageModal, setShowLanguageModal] = useState<boolean>(false);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [showSmartTVModal, setShowSmartTVModal] = useState<boolean>(false);
+  const [showGeminiChatbot, setShowGeminiChatbot] = useState<boolean>(false);
 
   const [currentView, setCurrentView] = useState<ViewMode>('hub');
   const [selectedPageUid, setSelectedPageUid] = useState<string | null>(null);
@@ -1351,6 +1354,36 @@ export default function App() {
 
       {/* Network & PWA Offline Indicator */}
       <OfflineIndicator />
+
+      {/* Floating Gemini Chatbot Launcher (Accessible across all views except TV mode) */}
+      {currentView !== 'smart-tv' && (
+        <button
+          id="wikizero-gemini-floating-trigger"
+          type="button"
+          onClick={() => setShowGeminiChatbot(true)}
+          className="fixed bottom-16 sm:bottom-6 right-4 sm:right-6 z-40 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-900 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 text-xs font-bold border border-white/20 select-none cursor-pointer"
+          title="Abrir Chatbot Gemini (Google AI Studio) - Auxílio em Artigos e Coleções"
+        >
+          <Sparkles size={16} className="text-amber-300 animate-pulse" />
+          <span className="hidden sm:inline">Assistente Gemini</span>
+        </button>
+      )}
+
+      {/* Global Gemini Chatbot Drawer */}
+      <GeminiChatbotDrawer
+        isOpen={showGeminiChatbot}
+        onClose={() => setShowGeminiChatbot(false)}
+        contextMode="general"
+        currentUser={user}
+        onApplyCollection={(col) => {
+          setShowGeminiChatbot(false);
+          setShowCreatePageModal(true);
+        }}
+        onApplyArticle={(art) => {
+          setShowGeminiChatbot(false);
+          handleOpenNewEditor();
+        }}
+      />
     </div>
   );
-}
+};

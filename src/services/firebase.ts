@@ -86,6 +86,14 @@ export function getDb(): Firestore {
   return dbInstance;
 }
 
+export function getDbSafe(): Firestore | null {
+  try {
+    return getDb();
+  } catch {
+    return null;
+  }
+}
+
 export function getAuthSafe() {
   if (!authInstance) {
     try {

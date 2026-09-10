@@ -21,9 +21,13 @@ import {
   UploadCloud,
   Lock,
   FileCode,
+  Sparkles,
+  Bot,
+  Save,
 } from 'lucide-react';
-import { UserProfile, WikiPage, WikiArticle } from '../types';
+import { UserProfile, WikiPage, WikiArticle, GeminiChatbotConfig } from '../types';
 import { StorageService } from '../services/storageService';
+import { GeminiChatbotService, DEFAULT_GEMINI_CHATBOT_CONFIG } from '../services/geminiChatbotService';
 
 interface FirebaseAdminDashboardProps {
   currentUser: UserProfile | null;
@@ -44,7 +48,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
   onNavigateToUpdates,
   onBack,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'devconfig' | 'collections' | 'sync' | 'security' | 'raw'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'gemini' | 'devconfig' | 'collections' | 'sync' | 'security' | 'raw'>('overview');
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; latencyMs?: number } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -56,11 +60,20 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [systemUpdates, setSystemUpdates] = useState<any[]>([]);
 
+  // Estados do Chatbot Gemini (Google AI Studio)
+  const [geminiConfig, setGeminiConfig] = useState<GeminiChatbotConfig>(DEFAULT_GEMINI_CHATBOT_CONFIG);
+  const [isSavingGemini, setIsSavingGemini] = useState(false);
+  const [geminiSaveSuccess, setGeminiSaveSuccess] = useState(false);
+  const [geminiApiStatus, setGeminiApiStatus] = useState<{ status: string; hasApiKey: boolean; appletId: string } | null>(null);
+  const [isTestingGemini, setIsTestingGemini] = useState(false);
+  const [geminiTestOutput, setGeminiTestOutput] = useState<string | null>(null);
+
   const firebaseStatus = StorageService.getFirebaseStatus();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'moderador' || currentUser?.email === 'pedrohenriquecardonaperes@gmail.com';
 
   useEffect(() => {
     loadAuxData();
+    loadGeminiData();
   }, []);
 
   const loadAuxData = async () => {
@@ -70,6 +83,52 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
     setAuditLogs(logs);
     const updates = await StorageService.getSystemUpdates();
     setSystemUpdates(updates);
+  };
+
+  const loadGeminiData = async () => {
+    try {
+      const cfg = await GeminiChatbotService.getConfig();
+      setGeminiConfig(cfg);
+      const st = await GeminiChatbotService.getStatus();
+      setGeminiApiStatus(st);
+    } catch (err) {
+      console.warn('Erro ao carregar dados do Gemini:', err);
+    }
+  };
+
+  const handleSaveGeminiConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingGemini(true);
+    setGeminiSaveSuccess(false);
+    try {
+      const updated = await GeminiChatbotService.saveConfig(
+        geminiConfig,
+        currentUser?.email || currentUser?.displayName || 'Administrador'
+      );
+      setGeminiConfig(updated);
+      setGeminiSaveSuccess(true);
+      setTimeout(() => setGeminiSaveSuccess(false), 3000);
+    } catch (err: any) {
+      alert(`Erro ao salvar configurações do Chatbot: ${err?.message || err}`);
+    } finally {
+      setIsSavingGemini(false);
+    }
+  };
+
+  const handleTestGeminiChat = async () => {
+    setIsTestingGemini(true);
+    setGeminiTestOutput(null);
+    try {
+      const res = await GeminiChatbotService.sendMessage({
+        message: 'Faça um breve teste de resposta enciclopédica confirmando a conexão com o Google AI Studio.',
+        configOverride: geminiConfig,
+      });
+      setGeminiTestOutput(res.reply);
+    } catch (err: any) {
+      setGeminiTestOutput(`⚠️ Erro no teste: ${err?.message || err}`);
+    } finally {
+      setIsTestingGemini(false);
+    }
   };
 
   const handleTestConnection = async () => {
@@ -215,6 +274,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
       <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 mb-6 overflow-x-auto pb-0.5">
         {[
           { id: 'overview', label: 'Visão Geral & Parâmetros', icon: Server },
+          { id: 'gemini', label: 'Chatbot Gemini (AI Studio)', icon: Sparkles },
           { id: 'devconfig', label: 'Configuração do Desenvolvedor (Arquivo)', icon: HardDrive },
           { id: 'collections', label: 'Explorador de Coleções', icon: Layers },
           { id: 'sync', label: 'Sincronização & Backup', icon: UploadCloud },
@@ -879,6 +939,288 @@ service cloud.firestore {
   ]
 }`}
           </pre>
+        </div>
+      )}
+
+      {/* TAB: GEMINI CHATBOT (GOOGLE AI STUDIO) */}
+      {activeTab === 'gemini' && (
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-xl p-5 text-white shadow-lg border border-blue-500/30">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shadow-inner">
+                  <Sparkles size={24} className="text-amber-300 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-base">Chatbot Gemini (Google AI Studio)</h3>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-500/30 border border-blue-400/40 text-blue-200 uppercase">
+                      ID Personalizado
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-100/80 mt-1 max-w-xl">
+                    Configure o <strong>ID do Chatbot do Google AI Studio</strong> para gerenciar o assistente que auxilia usuários e administradores na criação de coleções e redação enciclopédica de artigos.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${
+                  geminiConfig.enabled
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${geminiConfig.enabled ? 'bg-emerald-400 animate-ping' : 'bg-rose-400'}`} />
+                  {geminiConfig.enabled ? 'Chatbot Ativo' : 'Chatbot Desativado'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Cards de Métricas e Conectividade */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-xs">
+              <span className="text-xs text-slate-500 font-medium">Chatbot ID do AI Studio</span>
+              <p className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400 truncate mt-1" title={geminiConfig.chatbotId}>
+                {geminiConfig.chatbotId}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-1">Identificador configurado pelo administrador</p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-xs">
+              <span className="text-xs text-slate-500 font-medium">Status da Conexão Gemini</span>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <p className="text-sm font-bold text-slate-900 dark:text-white">API Pronta</p>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1 font-mono">
+                SDK @google/genai • {geminiConfig.model}
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-xs">
+              <span className="text-xs text-slate-500 font-medium">Última Atualização</span>
+              <p className="text-sm font-bold text-slate-900 dark:text-white mt-1 truncate">
+                {geminiConfig.updatedBy || 'Sistema'}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-1">
+                {geminiConfig.updatedAt ? new Date(geminiConfig.updatedAt).toLocaleString('pt-BR') : 'Original'}
+              </p>
+            </div>
+          </div>
+
+          {/* Formulário de Configuração do Chatbot */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 shadow-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
+              <div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <Bot size={16} className="text-blue-600" />
+                  Parâmetros do Chatbot Administrador
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Estas opções são persistidas de forma centralizada no Cloud Firestore e sincronizadas para todos os usuários.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveGeminiConfig} className="space-y-4">
+              {/* Campo ID do Chatbot */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  ID do Chatbot do Google AI Studio (Applet / Custom Agent ID) *
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={geminiConfig.chatbotId}
+                    onChange={(e) =>
+                      setGeminiConfig((prev) => ({ ...prev, chatbotId: e.target.value }))
+                    }
+                    placeholder="Ex: 0a14dc90-3ab3-47bc-8306-ca5bc2953699"
+                    required
+                    className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-mono outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(geminiConfig.chatbotId);
+                      setCopiedKey('chatbotId');
+                      setTimeout(() => setCopiedKey(null), 2000);
+                    }}
+                    className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs flex items-center gap-1 transition"
+                  >
+                    {copiedKey === 'chatbotId' ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    <span>Copiar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setGeminiConfig((prev) => ({
+                        ...prev,
+                        chatbotId: '0a14dc90-3ab3-47bc-8306-ca5bc2953699',
+                      }))
+                    }
+                    className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs transition"
+                    title="Restaurar ID padrão do AI Studio"
+                  >
+                    Padrão
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  O ID inserido aqui será usado para identificar o chatbot nas requisições ao Google AI Studio.
+                </p>
+              </div>
+
+              {/* Grid: Nome de Exibição e Modelo */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Nome de Exibição do Assistente
+                  </label>
+                  <input
+                    type="text"
+                    value={geminiConfig.displayName}
+                    onChange={(e) =>
+                      setGeminiConfig((prev) => ({ ...prev, displayName: e.target.value }))
+                    }
+                    placeholder="Ex: Gemini Wiki Assistant"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Modelo Gemini Padrão
+                  </label>
+                  <select
+                    value={geminiConfig.model}
+                    onChange={(e) =>
+                      setGeminiConfig((prev) => ({ ...prev, model: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white font-mono"
+                  >
+                    <option value="gemini-3.8-flash">gemini-3.8-flash (Recomendado para artigos enciclopédicos)</option>
+                    <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Raciocínio complexo)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Toggles de Ativação e Permissões */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <label className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={geminiConfig.enabled}
+                    onChange={(e) =>
+                      setGeminiConfig((prev) => ({ ...prev, enabled: e.target.checked }))
+                    }
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <div className="text-xs">
+                    <span className="font-bold block">Chatbot Ativo</span>
+                    <span className="text-[10px] text-slate-500">Disponibiliza o assistente na Wiki</span>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={geminiConfig.allowArticleGeneration}
+                    onChange={(e) =>
+                      setGeminiConfig((prev) => ({ ...prev, allowArticleGeneration: e.target.checked }))
+                    }
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <div className="text-xs">
+                    <span className="font-bold block">Redação de Artigos</span>
+                    <span className="text-[10px] text-slate-500">Auxílio no editor Wikitexto</span>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={geminiConfig.allowCollectionGeneration}
+                    onChange={(e) =>
+                      setGeminiConfig((prev) => ({ ...prev, allowCollectionGeneration: e.target.checked }))
+                    }
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <div className="text-xs">
+                    <span className="font-bold block">Criação de Coleções</span>
+                    <span className="text-[10px] text-slate-500">Sugestão de tópicos e tags</span>
+                  </div>
+                </label>
+              </div>
+
+              {/* Instruções do Sistema */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Instruções Adicionais do Sistema (System Prompt)
+                </label>
+                <textarea
+                  rows={3}
+                  value={geminiConfig.systemInstruction || ''}
+                  onChange={(e) =>
+                    setGeminiConfig((prev) => ({ ...prev, systemInstruction: e.target.value }))
+                  }
+                  placeholder="Instruções editoriais e diretrizes da WikiZero que o chatbot deve seguir..."
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              {geminiSaveSuccess && (
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 rounded-lg text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2">
+                  <CheckCircle2 size={16} />
+                  <span>Configurações do Chatbot salvas com sucesso no Cloud Firestore!</span>
+                </div>
+              )}
+
+              {/* Botões de Ação */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={handleTestGeminiChat}
+                  disabled={isTestingGemini}
+                  className="px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles size={14} className={isTestingGemini ? 'animate-spin text-amber-500' : 'text-blue-500'} />
+                  <span>{isTestingGemini ? 'Testando Chatbot...' : 'Testar Resposta do Chatbot'}</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSavingGemini}
+                  className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingGemini ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span>Salvando no Firestore...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save size={14} />
+                      <span>Salvar Configurações do Chatbot</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+
+            {/* Resultado do Teste */}
+            {geminiTestOutput && (
+              <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-sans">
+                <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Resposta do Teste (Chatbot ID: {geminiConfig.chatbotId}):
+                </span>
+                <p className="text-slate-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                  {geminiTestOutput}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

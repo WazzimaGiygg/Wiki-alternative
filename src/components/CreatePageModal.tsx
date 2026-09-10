@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { PlusCircle, X, Layers, Tag } from 'lucide-react';
+import { PlusCircle, X, Layers, Tag, Sparkles, Bot } from 'lucide-react';
 import { WikiPage, UserProfile } from '../types';
+import { GeminiChatbotDrawer } from './GeminiChatbotDrawer';
 
 interface CreatePageModalProps {
   isOpen: boolean;
@@ -22,8 +23,27 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
   const [icon, setIcon] = useState('📄');
   const [tagsInput, setTagsInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGeminiChat, setShowGeminiChat] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleApplyFromGemini = (colData: {
+    titulo: string;
+    uid: string;
+    descricao: string;
+    categoria: string;
+    icon: string;
+    tags: string[];
+  }) => {
+    if (colData.titulo) setTitulo(colData.titulo);
+    if (colData.uid) setUid(slugify(colData.uid));
+    if (colData.descricao) setDescricao(colData.descricao);
+    if (colData.categoria) setCategoria(colData.categoria);
+    if (colData.icon) setIcon(colData.icon);
+    if (colData.tags && colData.tags.length > 0) {
+      setTagsInput(colData.tags.join(', '));
+    }
+  };
 
   const handleTituloChange = (val: string) => {
     setTitulo(val);
@@ -88,6 +108,22 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
             className="text-white/70 hover:text-white p-0.5"
           >
             <X size={16} />
+          </button>
+        </div>
+
+        {/* Banner de Auxílio do Chatbot Gemini AI Studio */}
+        <div className="bg-gradient-to-r from-blue-900/40 via-indigo-900/30 to-purple-900/20 px-4 py-2 border-b border-blue-200/40 dark:border-blue-800/40 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[11px] text-blue-700 dark:text-blue-300">
+            <Sparkles size={14} className="text-amber-400 animate-pulse shrink-0" />
+            <span>Precisa de sugestões ou estruturação temática?</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowGeminiChat(true)}
+            className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-medium flex items-center gap-1 transition shadow-xs cursor-pointer"
+          >
+            <Bot size={12} />
+            <span>Chatbot Gemini</span>
           </button>
         </div>
 
@@ -198,6 +234,21 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Assistente Chatbot Gemini em Modo Coleção */}
+      <GeminiChatbotDrawer
+        isOpen={showGeminiChat}
+        onClose={() => setShowGeminiChat(false)}
+        currentUser={user}
+        contextMode="collection"
+        currentCollection={{
+          titulo,
+          uid,
+          descricao,
+          categoria,
+        }}
+        onApplyToCollection={handleApplyFromGemini}
+      />
     </div>
   );
 };

@@ -36,6 +36,7 @@ import { StorageService } from '../services/storageService';
 import { SaveReasonModal } from './SaveReasonModal';
 import { PdfExportModal } from './PdfExportModal';
 import { htmlToWikitext } from '../utils/wikitextConverters';
+import { GeminiChatbotDrawer } from './GeminiChatbotDrawer';
 
 interface WikitextEditorProps {
   initialArticle?: WikiArticle | null;
@@ -87,10 +88,19 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [draftSaved, setDraftSaved] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showGeminiDrawer, setShowGeminiDrawer] = useState(false);
   const [dailyLimitStatus, setDailyLimitStatus] = useState<DailyEditLimitStatus | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
+
+  const handleApplyFromGemini = (wikitext: string, mode: 'insert' | 'replace') => {
+    if (mode === 'replace') {
+      setDescricao(wikitext);
+    } else {
+      setDescricao((prev) => (prev ? `${prev}\n\n${wikitext}` : wikitext));
+    }
+  };
 
   const refreshDailyLimit = async () => {
     if (user) {
@@ -395,6 +405,17 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 <Eye size={12} /> Prévia
               </button>
             </div>
+
+            {/* Botão de Auxílio do Chatbot Gemini AI Studio */}
+            <button
+              type="button"
+              onClick={() => setShowGeminiDrawer(true)}
+              className="px-2.5 py-1 rounded bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-900 hover:from-blue-700 hover:to-indigo-800 text-white transition text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer border border-blue-400/30"
+              title="Chatbot Gemini (Google AI Studio) - Auxílio para criação, redação e estruturação de artigos"
+            >
+              <Sparkles size={13} className="text-amber-300 animate-pulse shrink-0" />
+              <span>Chatbot Gemini</span>
+            </button>
 
             <button
               type="button"
@@ -840,6 +861,21 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           onClose={() => setShowPdfModal(false)}
         />
       )}
+
+      {/* Assistente Chatbot Gemini em Modo Artigo */}
+      <GeminiChatbotDrawer
+        isOpen={showGeminiDrawer}
+        onClose={() => setShowGeminiDrawer(false)}
+        currentUser={user}
+        contextMode="article"
+        currentArticle={{
+          titulo: titulo || 'Novo Artigo',
+          categoria: categoria || 'Geral',
+          pageUid: pageUid || 'geral',
+          descricao,
+        }}
+        onApplyToArticle={handleApplyFromGemini}
+      />
     </div>
   );
 };

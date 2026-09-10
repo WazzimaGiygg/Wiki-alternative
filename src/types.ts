@@ -888,4 +888,28 @@ export interface EmergencyReport {
 
 export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'genshin' | 'android15' | 'stardew' | 'repo' | 'minecraft' | 'roblox' | 'nokia3310';
 
+export interface GeminiChatbotConfig {
+  chatbotId: string;
+  enabled: boolean;
+  displayName: string;
+  model: string;
+  systemInstruction?: string;
+  allowArticleGeneration: boolean;
+  allowCollectionGeneration: boolean;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export interface GeminiChatMessage {
+  id: string;
+  role: 'user' | 'model' | 'system';
+  content: string;
+  timestamp: string;
+  metadata?: {
+    actionType?: 'article' | 'collection' | 'wtext_snippet';
+    suggestedData?: any;
+  };
+}
+
+
 
