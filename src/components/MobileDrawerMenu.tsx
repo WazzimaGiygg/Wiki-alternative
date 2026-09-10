@@ -277,6 +277,27 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <span className="hidden xs:inline">REPO</span>
             </button>
 
+            {/* Quick Nokia 3310 Toggle */}
+            <button
+              id="btn-drawer-quick-nokia-theme"
+              onClick={() => {
+                if (theme === 'nokia3310') {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('nokia3310');
+                }
+              }}
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 font-mono text-[10px] font-bold ${
+                theme === 'nokia3310'
+                  ? 'bg-[#b4c995] border-[#1f281b] text-[#1f281b] ring-1 ring-[#1f281b]/50 shadow-[1px_1px_0px_#1f281b]'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={theme === 'nokia3310' ? 'Desativar Tema Nokia 3310' : 'Ativar Tema Nokia 3310 LCD'}
+            >
+              <Smartphone size={13} className={theme === 'nokia3310' ? 'text-[#1f281b]' : 'text-slate-600 dark:text-slate-400'} />
+              <span className="hidden xs:inline">3310</span>
+            </button>
+
             {/* Dark Mode Toggle */}
             <button
               onClick={onToggleTheme}

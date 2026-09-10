@@ -25,6 +25,7 @@ import {
   Palette,
   Pickaxe,
   Gamepad2,
+  Smartphone,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -102,6 +103,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isRepo = theme === 'repo';
   const isMinecraft = theme === 'minecraft';
   const isRoblox = theme === 'roblox';
+  const isNokia = theme === 'nokia3310';
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
@@ -229,6 +231,39 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Roblox Accent Line */}
       {isRoblox && <div className="roblox-accent-bar w-full" />}
 
+      {/* Nokia 3310 Graphic Monochrome LCD Status Bar & Accent Bar */}
+      {isNokia && (
+        <div className="nokia-statusbar bg-[#b4c995] text-[#1f281b] text-[10px] font-mono flex items-center justify-between px-3 py-1 select-none border-b-2 border-[#1f281b]">
+          <div className="flex items-center gap-2">
+            <div className="flex items-end gap-0.5 h-3" title="Sinal Celular GSM">
+              <span className="w-1 h-1 bg-[#1f281b]" />
+              <span className="w-1 h-1.5 bg-[#1f281b]" />
+              <span className="w-1 h-2 bg-[#1f281b]" />
+              <span className="w-1 h-2.5 bg-[#1f281b]" />
+            </div>
+            <span className="font-bold tracking-wider text-[11px]">NOKIA 3310</span>
+            <span className="text-[#1f281b]/60 hidden xs:inline">|</span>
+            <span className="text-[9px] uppercase px-1.5 py-0.2 bg-[#1f281b] text-[#c2d6a4] font-bold hidden xs:inline">
+              WIKIZERO GSM
+            </span>
+            <span className="text-[#1f281b]/80 text-[9px] hidden sm:inline font-bold">84×48 MONO LCD</span>
+          </div>
+
+          <div className="flex items-center gap-3 font-mono font-bold text-[10px]">
+            <span className="hidden sm:inline" title="SMS Inbox">✉ 0</span>
+            <span className="hidden sm:inline" title="Bloqueio de Teclado">🔒</span>
+            <span className="font-bold text-[#1f281b]">12:00</span>
+            <div className="flex items-center gap-0.5 border border-[#1f281b] p-0.5 h-3 w-6" title="Bateria">
+              <span className="w-1 h-1.5 bg-[#1f281b]" />
+              <span className="w-1 h-1.5 bg-[#1f281b]" />
+              <span className="w-1 h-1.5 bg-[#1f281b]" />
+              <span className="w-1 h-1.5 bg-[#1f281b]" />
+            </div>
+          </div>
+        </div>
+      )}
+      {isNokia && <div className="nokia-accent-bar w-full" />}
+
       {/* Minecraft In-Game Level XP & Survival HUD Strip */}
       {isMinecraft && (
         <div className="minecraft-notice-bar text-[11px] font-mono flex items-center justify-between px-3 py-1 select-none">
@@ -348,7 +383,7 @@ export const Header: React.FC<HeaderProps> = ({
       )}
 
       {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
         <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full">
           <div className="flex items-center gap-2">
             {isWin95 ? (
@@ -363,6 +398,18 @@ export const Header: React.FC<HeaderProps> = ({
                   <span onClick={() => onNavigate('history')} className="cursor-pointer hover:underline"><u>F</u>avoritos</span>
                   <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline">A<u>j</u>uda</span>
                 </div>
+              </div>
+            ) : isNokia ? (
+              <div className="flex items-center gap-2 font-mono">
+                <span className="flex items-center gap-1 px-2 py-0.2 text-[10px] font-bold bg-[#1f281b] text-[#c2d6a4] tracking-wider font-mono">
+                  <Smartphone size={10} className="text-[#c2d6a4]" />
+                  NOKIA // 3310
+                </span>
+                <span className="text-[#1f281b] hidden xs:inline font-bold">[ MENU ]</span>
+                <span className="text-[#1f281b]/60 hidden xs:inline">|</span>
+                <span className="text-[#1f281b] text-[10px] hidden sm:inline font-bold">
+                  CONNECTING PEOPLE // SNAKE II
+                </span>
               </div>
             ) : isMinecraft ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#55ff55] text-black tracking-wider font-mono">
@@ -558,6 +605,29 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <p className="text-[10px] text-[#00a2ff] font-sans leading-none mt-0.5 hidden xs:block font-medium">
                   Roblox Metaverse Knowledge Base
+                </p>
+              </div>
+            </div>
+          ) : isNokia ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              title="WikiZero - Tema Nokia 3310 (Display Monocromático LCD)"
+            >
+              <div className="w-8 h-8 rounded-none bg-[#b4c995] border-2 border-[#1f281b] flex items-center justify-center shadow-[2px_2px_0px_#1f281b] group-hover:scale-105 transition">
+                <Smartphone size={16} className="text-[#1f281b]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-bold text-base sm:text-lg text-[#1f281b] tracking-tight font-mono">
+                    WikiZero <span className="text-xs font-black bg-[#1f281b] text-[#c2d6a4] px-1 py-0.2">3310</span>
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-[#1f281b] text-[#c2d6a4] border border-[#1f281b] px-1.5 py-0.2 font-mono">
+                    NOKIA
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#1f281b]/80 font-mono leading-none mt-0.5 hidden xs:block font-bold">
+                  Connecting People • 84×48 LCD
                 </p>
               </div>
             </div>
@@ -935,6 +1005,43 @@ export const Header: React.FC<HeaderProps> = ({
                   className="stardew-btn px-2 py-1 text-[11px] cursor-pointer"
                 >
                   ★ Sorte
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : isNokia ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div
+              onClick={handleSearchInputClick}
+              className="relative nokia-search-widget flex items-center px-3 py-1.5 transition-all cursor-pointer font-mono"
+            >
+              <div className="mr-2 flex items-center text-[#1f281b] shrink-0 text-xs font-bold" title="Nokia 3310">
+                &gt;
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onClick={handleSearchInputClick}
+                onFocus={handleSearchInputClick}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="BUSCA NOKIA 3310..."
+                className="w-full text-xs bg-transparent border-none outline-none text-[#1f281b] placeholder:text-[#1f281b]/60 font-mono cursor-text font-bold"
+              />
+              <div className="flex items-center gap-1.5 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={onSearchSubmit}
+                  className="nokia-btn px-2.5 py-1 text-[11px] cursor-pointer"
+                  title="Buscar Artigos"
+                >
+                  [ BUSCAR ]
+                </button>
+                <button
+                  onClick={onRandomPage}
+                  title="Artigo Aleatório (Snake II)"
+                  className="nokia-btn px-2 py-1 text-[11px] cursor-pointer"
+                >
+                  [ SNAKE ]
                 </button>
               </div>
             </div>

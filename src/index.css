@@ -1535,6 +1535,237 @@ html.theme-roblox footer a {
   color: #00a2ff !important;
 }
 
+/* ========================================================================== */
+/* TEMA NOKIA 3310 (Display Gráfico Monocromático LCD 84x48 - Ano 2000)      */
+/* ========================================================================== */
+html.theme-nokia3310 {
+  color-scheme: light;
+}
+
+html.theme-nokia3310 body {
+  background-color: #c2d6a4;
+  background-image: 
+    radial-gradient(#1f281b 0.65px, transparent 0.65px),
+    linear-gradient(180deg, #c2d6a4 0%, #b8cca0 100%);
+  background-size: 3px 3px, 100% 100%;
+  color: #1f281b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: -0.01em;
+}
+
+/* Nokia 3310 Selection invert */
+html.theme-nokia3310 ::selection {
+  background-color: #1f281b;
+  color: #c2d6a4;
+}
+
+/* Nokia 3310 Dotted Pixel Accent Bar */
+.nokia-accent-bar {
+  height: 4px;
+  background-color: #1f281b;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #1f281b 0px,
+    #1f281b 6px,
+    #b4c995 6px,
+    #b4c995 9px
+  );
+  border-bottom: 1px solid #1f281b;
+}
+
+/* Nokia 3310 Top Header */
+html.theme-nokia3310 header {
+  background-color: #b4c995 !important;
+  border-bottom: 2px solid #1f281b !important;
+  box-shadow: 0 2px 0px #1f281b !important;
+}
+
+/* Nokia 3310 Search Widget */
+html.theme-nokia3310 .nokia-search-widget {
+  background-color: #c2d6a4;
+  border: 2px solid #1f281b;
+  border-radius: 0px !important;
+  box-shadow: inset 1px 1px 0px rgba(31, 40, 27, 0.4), 2px 2px 0px #1f281b;
+  color: #1f281b;
+}
+
+html.theme-nokia3310 .nokia-search-widget:focus-within {
+  border-color: #161e12;
+  box-shadow: inset 2px 2px 0px rgba(31, 40, 27, 0.7), 2px 2px 0px #1f281b;
+}
+
+/* Nokia 3310 Keypad Action Button */
+.nokia-btn {
+  background-color: #1f281b;
+  color: #c2d6a4;
+  border: 1px solid #1f281b;
+  border-radius: 0px !important;
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  box-shadow: 1px 1px 0px #1f281b;
+  transition: all 0.08s ease;
+}
+
+.nokia-btn:hover {
+  background-color: #2e3d28;
+  color: #d8e8be;
+}
+
+.nokia-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px;
+}
+
+/* Nokia 3310 Cards & Surface Overrides */
+html.theme-nokia3310 .bg-white,
+html.theme-nokia3310 .dark\:bg-slate-900,
+html.theme-nokia3310 .dark\:bg-\[\#0f172a\],
+html.theme-nokia3310 .dark\:bg-slate-850 {
+  background-color: #b7cc98 !important;
+  border: 2px solid #1f281b !important;
+  border-radius: 0px !important;
+  box-shadow: 2px 2px 0px #1f281b !important;
+  color: #1f281b !important;
+}
+
+html.theme-nokia3310 .bg-slate-50,
+html.theme-nokia3310 .dark\:bg-slate-800,
+html.theme-nokia3310 .dark\:bg-\[\#1e293b\] {
+  background-color: #acc28c !important;
+  border: 1px solid #1f281b !important;
+  border-radius: 0px !important;
+  color: #1f281b !important;
+}
+
+html.theme-nokia3310 .border-slate-200,
+html.theme-nokia3310 .border-slate-300,
+html.theme-nokia3310 .border-slate-700,
+html.theme-nokia3310 .border-slate-800,
+html.theme-nokia3310 .dark\:border-slate-800,
+html.theme-nokia3310 .dark\:border-slate-700 {
+  border-color: #1f281b !important;
+}
+
+html.theme-nokia3310 .text-slate-900,
+html.theme-nokia3310 .text-slate-800,
+html.theme-nokia3310 .text-slate-700,
+html.theme-nokia3310 .text-slate-600,
+html.theme-nokia3310 .dark\:text-white,
+html.theme-nokia3310 .dark\:text-slate-100,
+html.theme-nokia3310 .dark\:text-slate-200,
+html.theme-nokia3310 .dark\:text-slate-300 {
+  color: #1f281b !important;
+}
+
+html.theme-nokia3310 .text-slate-500,
+html.theme-nokia3310 .text-slate-400,
+html.theme-nokia3310 .dark\:text-slate-400,
+html.theme-nokia3310 .dark\:text-slate-500 {
+  color: #2b3925 !important;
+}
+
+/* Nokia 3310 Article Rendered Content */
+html.theme-nokia3310 .wiki-rendered-content {
+  background-color: #b7cc98;
+  border: 2px solid #1f281b;
+  border-radius: 0px !important;
+  box-shadow: 3px 3px 0px #1f281b;
+  color: #1f281b;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+html.theme-nokia3310 .wiki-rendered-content h1 {
+  color: #1f281b;
+  border-bottom: 2px solid #1f281b;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+html.theme-nokia3310 .wiki-rendered-content h2 {
+  color: #1f281b;
+  border-bottom: 1px dashed #1f281b;
+  font-weight: 800;
+}
+
+html.theme-nokia3310 .wiki-rendered-content h3 {
+  color: #1f281b;
+  font-weight: 700;
+}
+
+html.theme-nokia3310 .wiki-rendered-content .wiki-link {
+  color: #1f281b;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+}
+
+html.theme-nokia3310 .wiki-rendered-content .wiki-link:hover {
+  background-color: #1f281b;
+  color: #c2d6a4;
+  text-decoration: none;
+}
+
+html.theme-nokia3310 .wiki-rendered-content .wikitable {
+  border: 2px solid #1f281b;
+  background-color: #b2c892;
+  border-radius: 0px !important;
+}
+
+html.theme-nokia3310 .wiki-rendered-content .wikitable th {
+  background: #1f281b;
+  color: #c2d6a4;
+  border: 1px solid #1f281b;
+  font-family: ui-monospace, monospace;
+  text-transform: uppercase;
+}
+
+html.theme-nokia3310 .wiki-rendered-content .wikitable td {
+  border: 1px solid #1f281b;
+  color: #1f281b;
+}
+
+/* Nokia 3310 Sidebar & Footer */
+html.theme-nokia3310 aside {
+  background-color: #b4c995 !important;
+  border-right: 2px solid #1f281b !important;
+  border-radius: 0px !important;
+}
+
+html.theme-nokia3310 footer {
+  background-color: #acc28c !important;
+  border-top: 2px solid #1f281b !important;
+  color: #1f281b !important;
+  border-radius: 0px !important;
+}
+
+html.theme-nokia3310 footer a {
+  color: #1f281b !important;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* Nokia 3310 Scrollbars */
+html.theme-nokia3310 ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.theme-nokia3310 ::-webkit-scrollbar-track {
+  background: #acc28c;
+  border-left: 1px solid #1f281b;
+}
+
+html.theme-nokia3310 ::-webkit-scrollbar-thumb {
+  background: #1f281b;
+  border-radius: 0px;
+}
+
+html.theme-nokia3310 ::-webkit-scrollbar-thumb:hover {
+  background: #2e3d28;
+}
+
+
 
 
 

@@ -85,6 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isRepo = theme === 'repo';
   const isMinecraft = theme === 'minecraft';
   const isRoblox = theme === 'roblox';
+  const isNokia = theme === 'nokia3310';
 
   const visibilityClass =
     deviceMode === 'mobile'
@@ -99,6 +100,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       className={`relative flex-col transition-all duration-200 z-20 select-none shrink-0 sticky top-16 self-start max-h-[calc(100vh-5rem)] overflow-hidden flex ${
         isWin95
           ? 'win95-window !border-2 !rounded-none !bg-[#c0c0c0]'
+          : isNokia
+          ? 'bg-[#b4c995] border-2 border-[#1f281b] !rounded-none shadow-[3px_3px_0px_#1f281b] font-mono text-[#1f281b]'
           : isRepo
           ? 'bg-[#080c13]/95 border-2 border-[#f59e0b]/50 rounded-lg shadow-[0_0_16px_rgba(245,158,11,0.15)] font-mono'
           : isMinecraft

@@ -335,6 +335,7 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
   const isWin95 = theme === 'win95';
   const isAndroid = theme === 'android15';
   const isRepo = theme === 'repo';
+  const isNokia = theme === 'nokia3310';
 
   return (
     <div className="space-y-6">
@@ -343,6 +344,8 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
         className={`p-5 rounded-2xl border transition-all ${
           isWin95
             ? 'win95-window'
+            : isNokia
+            ? 'bg-[#b7cc98] border-2 border-[#1f281b] text-[#1f281b] !rounded-none shadow-[3px_3px_0px_#1f281b] font-mono'
             : isGenshin
             ? 'bg-[#151a2d] border-[#d3bc8e]/40 text-[#f2dfb7]'
             : isStardew
@@ -359,6 +362,8 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
                 className={`p-2 rounded-xl flex items-center justify-center ${
                   isWin95
                     ? 'win95-sunken bg-white text-black'
+                    : isNokia
+                    ? 'bg-[#1f281b] text-[#c2d6a4] !rounded-none shadow-[1px_1px_0px_#1f281b]'
                     : isGenshin
                     ? 'bg-[#212946] text-[#e0c48e]'
                     : isStardew

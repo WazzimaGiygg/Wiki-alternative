@@ -232,6 +232,17 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       badgeStyle: 'bg-[#00b06f]/20 text-[#00b06f] border border-[#00b06f]/70 font-bold tracking-wide',
       icon: <Gamepad2 size={18} className="text-[#00b06f]" />,
     },
+    {
+      id: 'nokia3310',
+      name: 'Nokia 3310 Monocromático (2000)',
+      subtitle: 'Display Gráfico LCD 84×48 & Snake II',
+      description: 'Inspirado no lendário visor monocromático do clássico celular Nokia 3310: matriz de pontos LCD verde oliva (#c2d6a4), pixels pretos de alto contraste, bordas nítidas de pixel, menus invertidos e pura nostalgia de Snake II e Connecting People.',
+      tag: 'Nokia 3310 LCD',
+      accentColor: '#435436',
+      bgPreview: 'bg-[#b7cc98] border-2 border-[#1f281b] text-[#1f281b] font-mono shadow-[2px_2px_0px_#1f281b]',
+      badgeStyle: 'bg-[#1f281b] text-[#c2d6a4] font-mono font-bold tracking-wider',
+      icon: <Smartphone size={18} className="text-[#1f281b]" />,
+    },
   ];
 
   return (

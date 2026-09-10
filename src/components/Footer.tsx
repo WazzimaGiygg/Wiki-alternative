@@ -93,6 +93,22 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
         )}
 
+        {/* Nokia 3310 Monochromatic LCD Footer Strip */}
+        {theme === 'nokia3310' && (
+          <div className="p-3 bg-[#b4c995] border-2 border-[#1f281b] rounded-none text-xs font-mono text-[#1f281b] flex flex-wrap items-center justify-between gap-3 shadow-[2px_2px_0px_#1f281b]">
+            <div className="flex items-center gap-2 text-[#1f281b]">
+              <Smartphone size={15} className="text-[#1f281b]" />
+              <span className="font-bold">NOKIA 3310 // DISPLAY MONOCROMÁTICO 84×48 LCD</span>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] font-bold">
+              <span>SINAL: [||||]</span>
+              <span>BATERIA: [||||]</span>
+              <span className="bg-[#1f281b] text-[#c2d6a4] px-1.5 py-0.5">SNAKE II PRONTO</span>
+              <span>CONNECTING PEOPLE</span>
+            </div>
+          </div>
+        )}
+
         {/* Official Wikimedia-style Mobile / Desktop View Selector Bar */}
         <div className="bg-slate-200/70 dark:bg-slate-850 p-2 rounded-lg flex flex-wrap items-center justify-between gap-2 border border-slate-300/80 dark:border-slate-800">
           <div className="flex items-center gap-2">
