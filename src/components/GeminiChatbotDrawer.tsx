@@ -893,8 +893,9 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
                   onChange={(e) => setAdminModel(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                 >
-                  <option value="gemini-3.8-flash">gemini-3.8-flash (Rápido, versátil e ideal para artigos)</option>
-                  <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Raciocínio aprofundado)</option>
+                  <option value="gemini-2.5-flash">gemini-2.5-flash (Recomendado - Ultra rápido, estável e alta disponibilidade)</option>
+                  <option value="gemini-flash-latest">gemini-flash-latest (Última geração Flash)</option>
+                  <option value="gemini-3.8-flash">gemini-3.8-flash (Rápido e versátil)</option>
                 </select>
               </div>
 

@@ -7,7 +7,7 @@ export const DEFAULT_GEMINI_CHATBOT_CONFIG: GeminiChatbotConfig = {
   chatbotId: '0a14dc90-3ab3-47bc-8306-ca5bc2953699', // Google AI Studio Applet / Chatbot ID padrão
   enabled: true,
   displayName: 'Gemini Wiki Assistant (AI Studio)',
-  model: 'gemini-3.8-flash',
+  model: 'gemini-2.5-flash',
   systemInstruction:
     'Você é o assistente oficial do Google AI Studio integrado à WikiZero. Auxilie os usuários na estruturação e redação de coleções temáticas e artigos enciclopédicos completos com neutralidade, verificabilidade, sintaxe Wikitext e clareza informativa.',
   allowArticleGeneration: true,
@@ -17,6 +17,15 @@ export const DEFAULT_GEMINI_CHATBOT_CONFIG: GeminiChatbotConfig = {
 };
 
 const LOCAL_STORAGE_KEY = 'wikizero_gemini_chatbot_config';
+
+function sanitizeModelName(model?: string): string {
+  if (!model) return 'gemini-2.5-flash';
+  // Modela descontinuados que retornam 404 NOT FOUND ou restritos
+  if (model.includes('lite') || model.includes('pro')) {
+    return 'gemini-2.5-flash';
+  }
+  return model;
+}
 
 export class GeminiChatbotService {
   /**
@@ -35,6 +44,7 @@ export class GeminiChatbotService {
           const merged: GeminiChatbotConfig = {
             ...DEFAULT_GEMINI_CHATBOT_CONFIG,
             ...data,
+            model: sanitizeModelName(data.model),
           };
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(merged));
           return merged;
@@ -48,9 +58,11 @@ export class GeminiChatbotService {
     try {
       const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (cached) {
+        const parsed = JSON.parse(cached);
         return {
           ...DEFAULT_GEMINI_CHATBOT_CONFIG,
-          ...JSON.parse(cached),
+          ...parsed,
+          model: sanitizeModelName(parsed.model),
         };
       }
     } catch (err) {
@@ -111,7 +123,7 @@ export class GeminiChatbotService {
       return {
         status: 'error',
         hasApiKey: false,
-        defaultModel: 'gemini-3.8-flash',
+        defaultModel: 'gemini-2.5-flash',
         appletId: '0a14dc90-3ab3-47bc-8306-ca5bc2953699',
       };
     }

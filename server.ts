@@ -1,3 +1,9 @@
+import dns from 'dns';
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch {
+  // Ignora se não suportado na versão
+}
 import express, { Request, Response } from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -31,7 +37,7 @@ function getGemini(): GoogleGenAI {
   return geminiClient;
 }
 
-// Fallback resiliente para garantir disponibilidade contra picos temporários de demanda
+// Fallback resiliente para garantir disponibilidade contra indisponibilidade ou picos temporários
 async function generateWithFallback(
   ai: GoogleGenAI,
   primaryModel: string,
@@ -40,26 +46,37 @@ async function generateWithFallback(
     config?: any;
   }
 ) {
-  // Modelos suportados pela SDK moderna: prioriza modelo solicitado, com alternativas flash de alta disponibilidade
+  // Modelo estável e de resposta ultra-rápida (2s) no Google AI Studio
+  const requested = primaryModel || 'gemini-2.5-flash';
+  // Sanitiza modelos descontinuados que retornam 404 (como gemini-2.5-flash-lite ou pro)
+  const safePrimary = (requested.includes('lite') || requested.includes('pro'))
+    ? 'gemini-2.5-flash'
+    : requested;
+
   const modelsToTry = [
-    primaryModel,
+    safePrimary,
     'gemini-2.5-flash',
     'gemini-flash-latest',
-    'gemini-3.1-flash-lite',
     'gemini-3.8-flash',
   ].filter((m, i, arr) => m && arr.indexOf(m) === i);
 
   let lastErr: any = null;
   for (const modelName of modelsToTry) {
     try {
-      const response = await ai.models.generateContent({
-        ...params,
-        model: modelName,
-      });
-      return { response, usedModel: modelName };
+      // Timeout seguro de 14s por modelo para não travar a experiência do usuário
+      const response = await Promise.race([
+        ai.models.generateContent({
+          ...params,
+          model: modelName,
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Tempo limite excedido ao comunicar com ${modelName}`)), 14000)
+        ),
+      ]);
+      return { response: response as any, usedModel: modelName };
     } catch (err: any) {
+      console.warn(`[Gemini Fallback] Tentativa com modelo ${modelName} falhou:`, err?.message || err);
       lastErr = err;
-      // Passa silenciosamente para o próximo modelo caso ocorra 503 (alta demanda) ou indisponibilidade temporária
     }
   }
   throw lastErr;
@@ -75,7 +92,7 @@ app.get('/api/gemini/status', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     hasApiKey: hasKey,
-    defaultModel: 'gemini-3.8-flash',
+    defaultModel: 'gemini-2.5-flash',
     appletId: '0a14dc90-3ab3-47bc-8306-ca5bc2953699',
     provider: 'Google AI Studio & Gemini API',
   });
