@@ -760,6 +760,43 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Gemini Premium & Notebook Handlers
+  const handleOpenPremiumModal = (quotaType?: 'chats' | 'images' | 'notebook') => {
+    setPremiumQuotaType(quotaType);
+    setShowPremiumModal(true);
+  };
+
+  const handleOpenNotebookModal = () => {
+    setShowNotebookModal(true);
+  };
+
+  const handleInsertFromNotebook = (articleData: {
+    titulo: string;
+    categoria: string;
+    pageUid: string;
+    descricao: string;
+    resumo: string;
+  }) => {
+    setSelectedArticleId(null);
+    setEditingArticle({
+      id: '',
+      titulo: articleData.titulo,
+      categoria: articleData.categoria,
+      pageUid: articleData.pageUid,
+      idioma: 'Português',
+      descricao: articleData.descricao,
+      resumo: articleData.resumo,
+      autor: user?.displayName || user?.username || 'Editor Gemini Notebook',
+      dataCriacao: new Date().toISOString(),
+      dataModificacao: new Date().toISOString(),
+      versao: 1,
+    } as WikiArticle);
+    setSelectedPageUid(articleData.pageUid);
+    setCurrentView('editor');
+    setShowNotebookModal(false);
+    handleNotify(`Artigo "${articleData.titulo}" gerado pelo Gemini Notebook e inserido no editor!`, 'success');
+  };
+
   // Find active article and page
   const activeArticle = articles.find((a) => a.id === selectedArticleId) || articles[0];
   const activePage = pages.find((p) => p.uid === (activeArticle?.pageUid || selectedPageUid)) || pages[0];
@@ -811,6 +848,9 @@ export default function App() {
           onSetTheme={handleSetTheme}
           onOpenLanguagesModal={() => setShowLanguageModal(true)}
           onOpenSmartTVModal={() => setShowSmartTVModal(true)}
+          onOpenGeminiChatbot={() => setShowGeminiChatbot(true)}
+          onOpenGeminiNotebook={handleOpenNotebookModal}
+          onOpenGeminiPremium={() => handleOpenPremiumModal()}
         />
 
         {/* Content Body Container */}
@@ -1070,6 +1110,9 @@ export default function App() {
               user={user}
               onSave={handleSaveArticle}
               onCancel={() => handleNavigate(selectedArticleId ? 'article' : 'hub')}
+              onOpenLoginModal={handleLoginClick}
+              onOpenPremiumModal={handleOpenPremiumModal}
+              onOpenNotebookModal={handleOpenNotebookModal}
             />
           )}
 
@@ -1380,6 +1423,9 @@ export default function App() {
         onClose={() => setShowGeminiChatbot(false)}
         contextMode="general"
         currentUser={user}
+        onOpenLoginModal={handleLoginClick}
+        onOpenPremiumModal={handleOpenPremiumModal}
+        onOpenNotebook={handleOpenNotebookModal}
         onApplyCollection={(col) => {
           setShowGeminiChatbot(false);
           setShowCreatePageModal(true);
@@ -1389,6 +1435,34 @@ export default function App() {
           handleOpenNewEditor();
         }}
       />
+
+      {/* Gemini Premium Upsell Modal */}
+      <GeminiPremiumModal
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        currentUser={user}
+        triggerQuotaType={premiumQuotaType}
+        onOpenLogin={handleLoginClick}
+        onUpgradeSuccess={() => {
+          handleNotify('Plano Gemini Premium ativado com sucesso! Aproveite recursos ilimitados.', 'success');
+        }}
+      />
+
+      {/* Gemini Notebook Modal & Article Synthesis Generator */}
+      {showNotebookModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto">
+            <GeminiNotebook
+              currentUser={user}
+              pages={pages}
+              existingArticles={articles}
+              onInsertArticle={handleInsertFromNotebook}
+              onOpenPremiumModal={handleOpenPremiumModal}
+              onClose={() => setShowNotebookModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
