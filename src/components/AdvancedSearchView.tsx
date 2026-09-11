@@ -145,7 +145,8 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
     const now = new Date().getTime();
 
     // Filtra primeiro por critérios fixos (categoria, coleção, idioma, tempo)
-    const candidates = articles.filter((article) => {
+    const candidates = (articles || []).filter((article) => {
+      if (!article) return false;
       // Categoria
       if (selectedCategory !== 'all') {
         const matchesCategory =

@@ -486,18 +486,19 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
 
   // Filter updates
   const filteredUpdates = useMemo(() => {
-    return updates.filter((item) => {
+    return (updates || []).filter((item) => {
+      if (!item) return false;
       const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
       const q = searchQuery.toLowerCase().trim();
       if (!q) return matchesCategory;
 
       const matchesSearch =
-        item.title.toLowerCase().includes(q) ||
-        item.version.toLowerCase().includes(q) ||
-        item.summary.toLowerCase().includes(q) ||
-        item.author.toLowerCase().includes(q) ||
-        item.highlights.some((h) => h.toLowerCase().includes(q)) ||
-        (item.affectedComponents && item.affectedComponents.some((c) => c.toLowerCase().includes(q)));
+        (item.title && item.title.toLowerCase().includes(q)) ||
+        (item.version && item.version.toLowerCase().includes(q)) ||
+        (item.summary && item.summary.toLowerCase().includes(q)) ||
+        (item.author && item.author.toLowerCase().includes(q)) ||
+        (item.highlights && item.highlights.some((h) => h && h.toLowerCase().includes(q))) ||
+        (item.affectedComponents && item.affectedComponents.some((c) => c && c.toLowerCase().includes(q)));
 
       return matchesCategory && matchesSearch;
     });
@@ -505,17 +506,18 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
 
   // Commits filtrados para a aba de Diffs do GitHub
   const filteredGitCommits = useMemo(() => {
-    return gitCommits.filter((c) => {
+    return (gitCommits || []).filter((c) => {
+      if (!c) return false;
       const q = gitSearchQuery.toLowerCase().trim();
       if (!q) return true;
-      const matchMessage = c.message.toLowerCase().includes(q);
+      const matchMessage = c.message && c.message.toLowerCase().includes(q);
       const matchAuthor =
-        c.authorName.toLowerCase().includes(q) ||
+        (c.authorName && c.authorName.toLowerCase().includes(q)) ||
         (c.authorLogin && c.authorLogin.toLowerCase().includes(q));
       const matchSha =
-        c.sha.toLowerCase().includes(q) || c.shortSha.toLowerCase().includes(q);
+        (c.sha && c.sha.toLowerCase().includes(q)) || (c.shortSha && c.shortSha.toLowerCase().includes(q));
       const matchFiles =
-        c.files && c.files.some((f) => f.filename.toLowerCase().includes(q));
+        c.files && c.files.some((f) => f && f.filename && f.filename.toLowerCase().includes(q));
       return matchMessage || matchAuthor || matchSha || matchFiles;
     });
   }, [gitCommits, gitSearchQuery]);

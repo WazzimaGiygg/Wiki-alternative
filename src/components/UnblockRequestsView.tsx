@@ -199,17 +199,18 @@ export const UnblockRequestsView: React.FC<UnblockRequestsViewProps> = ({
     };
   }, []);
 
-  const selectedRequest = requests.find((r) => r.id === selectedId) || requests[0] || null;
+  const safeRequests = requests || [];
+  const selectedRequest = safeRequests.find((r) => r.id === selectedId) || safeRequests[0] || null;
 
   // Counters
-  const totalCount = requests.length;
-  const pendingCount = requests.filter((r) => r.status === 'pendente').length;
-  const inReviewCount = requests.filter((r) => r.status === 'em_analise').length;
-  const approvedCount = requests.filter((r) => r.status === 'aprovado').length;
-  const rejectedCount = requests.filter((r) => r.status === 'recusado').length;
+  const totalCount = safeRequests.length;
+  const pendingCount = safeRequests.filter((r) => r.status === 'pendente').length;
+  const inReviewCount = safeRequests.filter((r) => r.status === 'em_analise').length;
+  const approvedCount = safeRequests.filter((r) => r.status === 'aprovado').length;
+  const rejectedCount = safeRequests.filter((r) => r.status === 'recusado').length;
 
   // Filtered List
-  const filteredRequests = requests.filter((req) => {
+  const filteredRequests = safeRequests.filter((req) => {
     if (statusFilter !== 'all' && req.status !== statusFilter) return false;
     if (categoryFilter !== 'all' && req.category !== categoryFilter) return false;
     if (searchQuery.trim()) {

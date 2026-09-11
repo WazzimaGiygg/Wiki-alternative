@@ -31,9 +31,9 @@ export const PopularRecentPages: React.FC<PopularRecentPagesProps> = ({
     try {
       const all = await PageService.getAllPages();
       // Ordena por updatedAt decrescente
-      const sorted = all
-        .filter((p) => p.namespace === 'main' || !p.namespace)
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      const sorted = (all || [])
+        .filter((p) => p && (p.namespace === 'main' || !p.namespace))
+        .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
         .slice(0, limitCount);
       setRecentPages(sorted);
     } catch (err) {

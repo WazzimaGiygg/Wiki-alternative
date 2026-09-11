@@ -173,28 +173,57 @@ function purgePredefinedNonDatabaseData() {
   localStorage.setItem(PURGE_PREDEFINED_FLAG, 'true');
 }
 
+// Helper seguro para leitura de arrays do localStorage sem risco de null/undefined
+export function safeGetArray<T>(key: string, fallback: T[] = []): T[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw || raw === 'null' || raw === 'undefined') return fallback;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 // Inicializar armazenamento local apenas com estruturas limpas e dados legítimos
 function initializeLocalStorage() {
   purgePredefinedNonDatabaseData();
 
-  if (!localStorage.getItem(STORAGE_KEYS.PAGES)) localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.ARTICLES)) localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.TALK_THREADS)) localStorage.setItem(STORAGE_KEYS.TALK_THREADS, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.WATCHLIST)) localStorage.setItem(STORAGE_KEYS.WATCHLIST, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.COMMUNITY_USERS)) localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES)) localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.USER_AUDIT_LOGS)) localStorage.setItem(STORAGE_KEYS.USER_AUDIT_LOGS, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES)) localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.SOCKPUPPET_CASES)) localStorage.setItem(STORAGE_KEYS.SOCKPUPPET_CASES, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.CHECKUSER_LOGS)) localStorage.setItem(STORAGE_KEYS.CHECKUSER_LOGS, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS)) localStorage.setItem(STORAGE_KEYS.CHECKUSER_ACCOUNTS, JSON.stringify({}));
-  if (!localStorage.getItem(STORAGE_KEYS.UNBLOCK_REQUESTS)) localStorage.setItem(STORAGE_KEYS.UNBLOCK_REQUESTS, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.PROMOTION_REQUESTS)) localStorage.setItem(STORAGE_KEYS.PROMOTION_REQUESTS, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.ADMIN_TICKETS)) localStorage.setItem(STORAGE_KEYS.ADMIN_TICKETS, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.ARBITRATION_CASES)) localStorage.setItem(STORAGE_KEYS.ARBITRATION_CASES, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.ARBITRATION_MEMBERS)) localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify([]));
-  if (!localStorage.getItem(STORAGE_KEYS.EMERGENCY_REPORTS)) localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify([]));
+  const ensureKey = (key: string, isObj = false) => {
+    try {
+      const val = localStorage.getItem(key);
+      if (!val || val === 'null' || val === 'undefined') {
+        localStorage.setItem(key, JSON.stringify(isObj ? {} : []));
+      } else {
+        const parsed = JSON.parse(val);
+        if (isObj ? (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) : !Array.isArray(parsed)) {
+          localStorage.setItem(key, JSON.stringify(isObj ? {} : []));
+        }
+      }
+    } catch {
+      localStorage.setItem(key, JSON.stringify(isObj ? {} : []));
+    }
+  };
+
+  ensureKey(STORAGE_KEYS.PAGES);
+  ensureKey(STORAGE_KEYS.ARTICLES);
+  ensureKey(STORAGE_KEYS.NOTIFICATIONS);
+  ensureKey(STORAGE_KEYS.TALK_THREADS);
+  ensureKey(STORAGE_KEYS.WATCHLIST);
+  ensureKey(STORAGE_KEYS.COMMUNITY_USERS);
+  ensureKey(STORAGE_KEYS.USER_TALK_MESSAGES);
+  ensureKey(STORAGE_KEYS.USER_AUDIT_LOGS);
+  ensureKey(STORAGE_KEYS.SYSTEM_UPDATES);
+  ensureKey(STORAGE_KEYS.SOCKPUPPET_CASES);
+  ensureKey(STORAGE_KEYS.CHECKUSER_LOGS);
+  ensureKey(STORAGE_KEYS.CHECKUSER_ACCOUNTS, true);
+  ensureKey(STORAGE_KEYS.UNBLOCK_REQUESTS);
+  ensureKey(STORAGE_KEYS.PROMOTION_REQUESTS);
+  ensureKey(STORAGE_KEYS.ADMIN_TICKETS);
+  ensureKey(STORAGE_KEYS.ARBITRATION_CASES);
+  ensureKey(STORAGE_KEYS.ARBITRATION_MEMBERS);
+  ensureKey(STORAGE_KEYS.EMERGENCY_REPORTS);
+  ensureKey(STORAGE_KEYS.RATINGS, true);
 }
 
 initializeLocalStorage();
@@ -203,12 +232,7 @@ export const StorageService = {
   // === PAGES / TOPICS ===
   async getPages(): Promise<WikiPage[]> {
     initializeLocalStorage();
-    let localPages: WikiPage[] = [];
-    try {
-      localPages = JSON.parse(localStorage.getItem(STORAGE_KEYS.PAGES) || '[]');
-    } catch {
-      localPages = [];
-    }
+    const localPages: WikiPage[] = safeGetArray<WikiPage>(STORAGE_KEYS.PAGES, []);
 
     if (firebaseActive && db) {
       try {
@@ -251,23 +275,25 @@ export const StorageService = {
         }
 
         // Recalcular contagens reais de artigos para cada tópico
+        const safeRealArticles = Array.isArray(realArticles) ? realArticles : [];
         const updated = remotePages.map((page) => ({
           ...page,
-          articleCount: realArticles.filter((a) => a.pageUid.toLowerCase() === page.uid.toLowerCase()).length,
+          articleCount: safeRealArticles.filter((a) => a && a.pageUid && page && page.uid && a.pageUid.toLowerCase() === page.uid.toLowerCase()).length,
         }));
 
         localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(updated));
         return updated;
       } catch (err) {
         console.warn('[StorageService] Aviso ao sincronizar páginas do Firestore, usando cache local:', err);
-        return localPages;
+        return Array.isArray(localPages) ? localPages : [];
       }
     }
 
     const articles = await this.getArticles();
-    return localPages.map((page) => ({
+    const safeArticles = Array.isArray(articles) ? articles : [];
+    return (localPages || []).map((page) => ({
       ...page,
-      articleCount: articles.filter((a) => a.pageUid.toLowerCase() === page.uid.toLowerCase()).length,
+      articleCount: safeArticles.filter((a) => a && a.pageUid && page && page.uid && a.pageUid.toLowerCase() === page.uid.toLowerCase()).length,
     }));
   },
 
@@ -310,12 +336,7 @@ export const StorageService = {
   // === ARTICLES ===
   async getArticles(): Promise<WikiArticle[]> {
     initializeLocalStorage();
-    let localArticles: WikiArticle[] = [];
-    try {
-      localArticles = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARTICLES) || '[]');
-    } catch {
-      localArticles = [];
-    }
+    const localArticles: WikiArticle[] = safeGetArray<WikiArticle>(STORAGE_KEYS.ARTICLES, []);
 
     if (firebaseActive && db) {
       try {
@@ -495,15 +516,10 @@ export const StorageService = {
               tags: Array.isArray(data.tags) ? data.tags : [],
             });
           });
-          let currentArticles: WikiArticle[] = [];
-          try {
-            currentArticles = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARTICLES) || '[]');
-          } catch {
-            currentArticles = [];
-          }
+          let currentArticles: WikiArticle[] = safeGetArray<WikiArticle>(STORAGE_KEYS.ARTICLES, []);
           const existingUids = new Set(list.map((p) => p.uid.toLowerCase()));
           for (const art of currentArticles) {
-            if (art.pageUid && !existingUids.has(art.pageUid.toLowerCase())) {
+            if (art && art.pageUid && !existingUids.has(art.pageUid.toLowerCase())) {
               list.push({
                 uid: art.pageUid,
                 titulo: art.categoria || art.pageUid,
@@ -517,9 +533,10 @@ export const StorageService = {
               existingUids.add(art.pageUid.toLowerCase());
             }
           }
+          const safeCurrentArticles = Array.isArray(currentArticles) ? currentArticles : [];
           const updated = list.map((page) => ({
             ...page,
-            articleCount: currentArticles.filter((a) => a.pageUid.toLowerCase() === page.uid.toLowerCase()).length,
+            articleCount: safeCurrentArticles.filter((a) => a && a.pageUid && page && page.uid && a.pageUid.toLowerCase() === page.uid.toLowerCase()).length,
           }));
           localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(updated));
           callback(updated);
@@ -1240,9 +1257,7 @@ export const StorageService = {
   // === NOTIFICATIONS ===
   getNotifications(): NotificationItem[] {
     initializeLocalStorage();
-    const raw = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-    const notifs: NotificationItem[] = raw ? JSON.parse(raw) : [];
-    return notifs;
+    return safeGetArray<NotificationItem>(STORAGE_KEYS.NOTIFICATIONS, []);
   },
 
   async fetchNotificationsFromFirestore(): Promise<NotificationItem[]> {

@@ -383,9 +383,10 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
       return;
     }
 
-    const inFavor = selectedCase.deliberations.filter((d) => d.vote === 'sancionar' || d.vote === 'acolher').length;
-    const against = selectedCase.deliberations.filter((d) => d.vote === 'absolver' || d.vote === 'rejeitar').length;
-    const abstain = selectedCase.deliberations.filter((d) => d.vote === 'abster').length;
+    const deliberations = selectedCase.deliberations || [];
+    const inFavor = deliberations.filter((d) => d.vote === 'sancionar' || d.vote === 'acolher').length;
+    const against = deliberations.filter((d) => d.vote === 'absolver' || d.vote === 'rejeitar').length;
+    const abstain = deliberations.filter((d) => d.vote === 'abster').length;
 
     const findings = rulingFindings
       .split('\n')
@@ -808,9 +809,9 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
                       </div>
 
                       <div className="flex items-center gap-3">
-                        {c.deliberations.length > 0 && (
+                        {(c.deliberations?.length || 0) > 0 && (
                           <span className="text-[11px] font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded">
-                            ⚖️ {c.deliberations.length} Voto(s) de Árbitro
+                            ⚖️ {c.deliberations?.length} Voto(s) de Árbitro
                           </span>
                         )}
                         <span className="text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-0.5 text-xs group-hover:translate-x-0.5 transition-transform">
@@ -1087,20 +1088,20 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white font-serif-heading text-sm sm:text-base">
                 <Scale size={18} className="text-purple-600" />
-                <span>Votos e Pareceres dos Árbitros ({selectedCase.deliberations.length})</span>
+                <span>Votos e Pareceres dos Árbitros ({selectedCase.deliberations?.length || 0})</span>
               </div>
               <span className="text-xs text-slate-500">
                 Quórum regimental mínimo: 2 árbitros
               </span>
             </div>
 
-            {selectedCase.deliberations.length === 0 ? (
+            {(selectedCase.deliberations?.length || 0) === 0 ? (
               <p className="text-xs text-slate-500 italic py-2">
                 Nenhum voto de árbitro foi juntado até o presente momento. O caso está na fase de instrução ou aguardando deliberação da mesa.
               </p>
             ) : (
               <div className="space-y-3">
-                {selectedCase.deliberations.map((d) => {
+                {(selectedCase.deliberations || []).map((d) => {
                   let voteColor = 'bg-slate-100 text-slate-700';
                   if (d.vote === 'sancionar' || d.vote === 'acolher') voteColor = 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-300 dark:border-rose-800';
                   if (d.vote === 'absolver') voteColor = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';

@@ -241,9 +241,9 @@ export default function App() {
       const c = StorageService.getCookieConsent();
       const lgpdAccepted = StorageService.isLgpdTermsAccepted();
 
-      setPages(p);
-      setArticles(a);
-      setNotifications(n);
+      setPages(Array.isArray(p) ? p : []);
+      setArticles(Array.isArray(a) ? a : []);
+      setNotifications(Array.isArray(n) ? n : []);
       setCookieConsent(c);
 
       // Verificar banimento do usuário em cache ao carregar
@@ -302,7 +302,7 @@ export default function App() {
             break;
           case 'page':
             setSelectedPageUid(target.pageUid);
-            const pageArticles = a.filter((item) => item.pageUid === target.pageUid);
+            const pageArticles = (a || []).filter((item) => item && item.pageUid === target.pageUid);
             if (pageArticles.length > 0) {
               setSelectedArticleId(pageArticles[0].id);
               setCurrentView('article');
@@ -348,10 +348,14 @@ export default function App() {
 
     // Inscrição em tempo real com o Firestore para sincronização entre múltiplos navegadores e sessões anônimas
     const unsubArticles = StorageService.subscribeToArticles((updatedArticles) => {
-      setArticles(updatedArticles);
+      if (Array.isArray(updatedArticles)) {
+        setArticles(updatedArticles);
+      }
     });
     const unsubPages = StorageService.subscribeToPages((updatedPages) => {
-      setPages(updatedPages);
+      if (Array.isArray(updatedPages)) {
+        setPages(updatedPages);
+      }
     });
 
     return () => {
@@ -499,7 +503,7 @@ export default function App() {
 
   const handleSelectPage = (pageUid: string) => {
     setSelectedPageUid(pageUid);
-    const pageArticles = articles.filter((a) => a.pageUid === pageUid);
+    const pageArticles = (articles || []).filter((a) => a && a.pageUid === pageUid);
     if (pageArticles.length > 0) {
       setSelectedArticleId(pageArticles[0].id);
       StorageService.incrementArticleViews(pageArticles[0].id);

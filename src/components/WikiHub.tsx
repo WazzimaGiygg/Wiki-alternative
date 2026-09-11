@@ -51,38 +51,42 @@ export const WikiHub: React.FC<WikiHubProps> = ({
   const [selectedLanguageFilter, setSelectedLanguageFilter] = useState<string>('all');
 
   // Extract all categories
-  const categories = ['Todas', ...Array.from(new Set(pages.map((p) => p.categoria)))];
+  const safePages = pages || [];
+  const safeArticles = articles || [];
+  const categories = ['Todas', ...Array.from(new Set(safePages.map((p) => p?.categoria).filter(Boolean)))];
 
   // Filter pages
   const filteredPages = useMemo(() => {
-    return pages.filter((page) => {
+    return safePages.filter((page) => {
+      if (!page) return false;
       const matchesCat = selectedCategory === 'Todas' || page.categoria === selectedCategory;
       const matchesSearch =
         !searchQuery ||
-        page.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        page.descricao.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        page.uid.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (page.tags && page.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())));
+        (page.titulo && page.titulo.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (page.descricao && page.descricao.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (page.uid && page.uid.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (page.tags && page.tags.some((t) => t && t.toLowerCase().includes(searchQuery.toLowerCase())));
       return matchesCat && matchesSearch;
     });
-  }, [pages, selectedCategory, searchQuery]);
+  }, [safePages, selectedCategory, searchQuery]);
 
   // Filter articles based on search query and language filter
   const matchingArticles = useMemo(() => {
-    return articles.filter((a) => {
+    return safeArticles.filter((a) => {
+      if (!a) return false;
       const matchesLang =
         selectedLanguageFilter === 'all' ||
         (a.idioma || 'pt').toLowerCase().startsWith(selectedLanguageFilter.toLowerCase());
       const matchesSearch =
         !searchQuery ||
-        a.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.descricao.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (a.titulo && a.titulo.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (a.descricao && a.descricao.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (a.resumo && a.resumo.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesLang && matchesSearch;
     });
-  }, [articles, selectedLanguageFilter, searchQuery]);
+  }, [safeArticles, selectedLanguageFilter, searchQuery]);
 
-  const totalViews = articles.reduce((acc, a) => acc + (a.visualizacoes || 0), 0);
+  const totalViews = safeArticles.reduce((acc, a) => acc + (a?.visualizacoes || 0), 0);
 
   return (
     <div className="space-y-5 animate-in fade-in select-none font-sans">
@@ -281,7 +285,8 @@ export const WikiHub: React.FC<WikiHubProps> = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {filteredPages.map((page) => {
-              const pageArticles = articles.filter((a) => {
+              const pageArticles = safeArticles.filter((a) => {
+                if (!a) return false;
                 const matchesUid = a.pageUid === page.uid;
                 const matchesLang =
                   selectedLanguageFilter === 'all' ||

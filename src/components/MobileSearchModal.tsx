@@ -41,23 +41,28 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
 
   const normalizedQuery = query.trim().toLowerCase();
 
+  const safeArticles = articles || [];
+  const safePages = pages || [];
+
   // Filter matching articles
   const matchedArticles = normalizedQuery
-    ? articles.filter(
+    ? safeArticles.filter(
         (a) =>
-          a.titulo.toLowerCase().includes(normalizedQuery) ||
-          a.descricao.toLowerCase().includes(normalizedQuery) ||
+          a &&
+          ((a.titulo && a.titulo.toLowerCase().includes(normalizedQuery)) ||
+          (a.descricao && a.descricao.toLowerCase().includes(normalizedQuery)) ||
           (a.categoria && a.categoria.toLowerCase().includes(normalizedQuery)) ||
-          (a.resumo && a.resumo.toLowerCase().includes(normalizedQuery))
+          (a.resumo && a.resumo.toLowerCase().includes(normalizedQuery)))
       ).slice(0, 15)
-    : articles.slice(0, 8); // Recent/recommended articles
+    : safeArticles.slice(0, 8); // Recent/recommended articles
 
   // Filter matching collections/pages
   const matchedPages = normalizedQuery
-    ? pages.filter(
+    ? safePages.filter(
         (p) =>
-          p.titulo.toLowerCase().includes(normalizedQuery) ||
-          p.descricao.toLowerCase().includes(normalizedQuery)
+          p &&
+          ((p.titulo && p.titulo.toLowerCase().includes(normalizedQuery)) ||
+          (p.descricao && p.descricao.toLowerCase().includes(normalizedQuery)))
       ).slice(0, 5)
     : [];
 

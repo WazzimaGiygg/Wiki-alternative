@@ -333,9 +333,9 @@ export class TemplateService {
 
     const local = this.getFromLocalCache();
     if (category) {
-      return local.filter((t) => t.category?.toLowerCase() === category.toLowerCase());
+      return (local || []).filter((t) => t && t.category?.toLowerCase() === category.toLowerCase());
     }
-    return local;
+    return Array.isArray(local) ? local : (SEED_TEMPLATES || []);
   }
 
   // ==========================================
@@ -346,19 +346,24 @@ export class TemplateService {
     try {
       const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (raw) {
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {
       // Ignora erro de JSON
     }
     // Inicializa com templates seed
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(SEED_TEMPLATES));
-    return SEED_TEMPLATES;
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(SEED_TEMPLATES));
+    } catch {
+      // ignore
+    }
+    return SEED_TEMPLATES || [];
   }
 
   private static saveToLocalCache(template: WikiTemplate): void {
-    const list = this.getFromLocalCache();
-    const idx = list.findIndex((t) => t.id === template.id || t.name.toLowerCase() === template.name.toLowerCase());
+    const list = [...this.getFromLocalCache()];
+    const idx = list.findIndex((t) => t && (t.id === template.id || t.name.toLowerCase() === template.name.toLowerCase()));
     if (idx >= 0) {
       list[idx] = template;
     } else {
@@ -368,7 +373,7 @@ export class TemplateService {
   }
 
   private static deleteFromLocalCache(id: string): void {
-    const list = this.getFromLocalCache().filter((t) => t.id !== id);
+    const list = (this.getFromLocalCache() || []).filter((t) => t && t.id !== id);
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(list));
   }
 }

@@ -104,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isMinecraft = theme === 'minecraft';
   const isRoblox = theme === 'roblox';
   const isNokia = theme === 'nokia3310';
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = (notifications || []).filter((n) => !n.read).length;
 
   useEffect(() => {
     StorageService.getOnlineUsers().then((users) => setOnlineUsers(users));

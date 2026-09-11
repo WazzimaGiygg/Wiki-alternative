@@ -92,48 +92,55 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
     setTimeout(() => setCopiedShortcut(null), 2000);
   };
 
+  const safeArticles = articles || [];
+  const safePages = pages || [];
+
   // Calculate Orphan pages (articles with 0 incoming links)
   const orphanArticles = useMemo(() => {
-    return articles.filter((art) => {
-      const backlinks = StorageService.getBacklinks(art.titulo, articles);
+    return safeArticles.filter((art) => {
+      if (!art) return false;
+      const backlinks = StorageService.getBacklinks(art.titulo, safeArticles);
       return backlinks.length === 0;
     });
-  }, [articles]);
+  }, [safeArticles]);
 
   // Calculate Stubs (short articles < 800 bytes or tagged with Esboço)
   const stubArticles = useMemo(() => {
-    return articles.filter(
+    return safeArticles.filter(
       (art) =>
-        art.descricao.length < 800 ||
-        art.descricao.includes('{{Esboço') ||
-        art.descricao.includes('{{Stub')
+        art &&
+        ((art.descricao?.length || 0) < 800 ||
+        (art.descricao && art.descricao.includes('{{Esboço')) ||
+        (art.descricao && art.descricao.includes('{{Stub')))
     );
-  }, [articles]);
+  }, [safeArticles]);
 
   // Categories aggregation
   const categoryMap = useMemo(() => {
     const map = new Map<string, WikiArticle[]>();
-    articles.forEach((art) => {
+    safeArticles.forEach((art) => {
+      if (!art) return;
       const cat = art.categoria || 'Geral';
       const list = map.get(cat) || [];
       list.push(art);
       map.set(cat, list);
     });
     return map;
-  }, [articles]);
+  }, [safeArticles]);
 
   // General Wiki Statistics
   const stats = useMemo(() => {
-    const totalBytes = articles.reduce((acc, a) => acc + (a.descricao?.length || 0), 0);
-    const totalViews = articles.reduce((acc, a) => acc + (a.visualizacoes || 0), 0);
-    const totalRevisions = articles.reduce((acc, a) => acc + (a.historico?.length || 1), 0);
-    const totalWords = articles.reduce(
-      (acc, a) => acc + (a.descricao ? a.descricao.trim().split(/\s+/).length : 0),
+    const totalBytes = safeArticles.reduce((acc, a) => acc + (a?.descricao?.length || 0), 0);
+    const totalViews = safeArticles.reduce((acc, a) => acc + (a?.visualizacoes || 0), 0);
+    const totalRevisions = safeArticles.reduce((acc, a) => acc + (a?.historico?.length || 1), 0);
+    const totalWords = safeArticles.reduce(
+      (acc, a) => acc + (a?.descricao ? a.descricao.trim().split(/\s+/).length : 0),
       0
     );
 
     const authorMap: Record<string, number> = {};
-    articles.forEach((a) => {
+    safeArticles.forEach((a) => {
+      if (!a) return;
       const author = a.autor || 'Anônimo';
       authorMap[author] = (authorMap[author] || 0) + 1;
     });
@@ -143,23 +150,24 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
       .slice(0, 5);
 
     return {
-      totalArticles: articles.length,
-      totalPages: pages.length,
+      totalArticles: safeArticles.length,
+      totalPages: safePages.length,
       totalBytes,
       totalViews,
       totalRevisions,
       totalWords,
-      avgBytes: Math.round(totalBytes / (articles.length || 1)),
+      avgBytes: Math.round(totalBytes / (safeArticles.length || 1)),
       topAuthors,
     };
-  }, [articles, pages]);
+  }, [safeArticles, safePages]);
 
   // Filtered A-Z articles
   const sortedArticles = useMemo(() => {
-    return [...articles]
-      .sort((a, b) => a.titulo.localeCompare(b.titulo))
-      .filter((a) => a.titulo.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [articles, searchQuery]);
+    return [...safeArticles]
+      .filter(Boolean)
+      .sort((a, b) => (a.titulo || '').localeCompare(b.titulo || ''))
+      .filter((a) => (a.titulo || '').toLowerCase().includes((searchQuery || '').toLowerCase()));
+  }, [safeArticles, searchQuery]);
 
   const handleToggleWatch = (art: WikiArticle) => {
     StorageService.toggleWatchlist(art);

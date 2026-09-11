@@ -405,9 +405,9 @@ export class PageService {
     }
 
     const localPages = this.getFromLocalCache();
-    return localPages
-      .filter((p) => p.namespace === cleanNamespace)
-      .sort((a, b) => a.title.localeCompare(b.title));
+    return (localPages || [])
+      .filter((p) => p && p.namespace === cleanNamespace)
+      .sort((a, b) => (a.title || '').localeCompare(b.title || ''));
   }
 
   /**
@@ -437,8 +437,8 @@ export class PageService {
     }
 
     const localPages = this.getFromLocalCache();
-    return localPages.filter((p) =>
-      p.categories?.some((c) => c.toLowerCase() === cleanCategory.toLowerCase())
+    return (localPages || []).filter((p) =>
+      p && p.categories?.some((c) => c && c.toLowerCase() === cleanCategory.toLowerCase())
     );
   }
 
@@ -458,7 +458,8 @@ export class PageService {
       console.warn('[PageService] Erro ao buscar todas as páginas no Firestore, usando cache:', error);
     }
 
-    return this.getFromLocalCache();
+    const cached = this.getFromLocalCache();
+    return Array.isArray(cached) ? cached : (SEED_PAGES || []);
   }
 
   /**
@@ -581,18 +582,23 @@ export class PageService {
     try {
       const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (raw) {
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {
       // Ignora erro de JSON
     }
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(SEED_PAGES));
-    return SEED_PAGES;
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(SEED_PAGES));
+    } catch {
+      // localStorage quota or private browsing
+    }
+    return SEED_PAGES || [];
   }
 
   private static saveToLocalCache(page: Page): void {
-    const list = this.getFromLocalCache();
-    const idx = list.findIndex((p) => p.id === page.id);
+    const list = [...this.getFromLocalCache()];
+    const idx = list.findIndex((p) => p && p.id === page.id);
     if (idx >= 0) {
       list[idx] = page;
     } else {
@@ -602,7 +608,7 @@ export class PageService {
   }
 
   private static deleteFromLocalCache(id: string): void {
-    const list = this.getFromLocalCache().filter((p) => p.id !== id);
+    const list = (this.getFromLocalCache() || []).filter((p) => p && p.id !== id);
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(list));
   }
 }

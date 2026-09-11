@@ -177,9 +177,9 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
   }, [requests, activeTab, roleFilter, searchQuery]);
 
   // Metrics
-  const activeCount = requests.filter((r) => r.status === 'em_votacao').length;
-  const approvedCount = requests.filter((r) => r.status === 'aprovada').length;
-  const totalVotesCount = requests.reduce((acc, r) => acc + (r.votes?.length || 0), 0);
+  const activeCount = (requests || []).filter((r) => r.status === 'em_votacao').length;
+  const approvedCount = (requests || []).filter((r) => r.status === 'aprovada').length;
+  const totalVotesCount = (requests || []).reduce((acc, r) => acc + (r.votes?.length || 0), 0);
 
   // Voting metrics for selected request
   const selectedStats = useMemo(() => {
@@ -507,7 +507,7 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Em Votação ({requests.filter((r) => r.status === 'em_votacao').length})
+                Em Votação ({(requests || []).filter((r) => r.status === 'em_votacao').length})
               </button>
               <button
                 onClick={() => setActiveTab('aprovada')}
@@ -517,7 +517,7 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Aprovadas ({requests.filter((r) => r.status === 'aprovada').length})
+                Aprovadas ({(requests || []).filter((r) => r.status === 'aprovada').length})
               </button>
               <button
                 onClick={() => setActiveTab('todas')}
@@ -581,10 +581,11 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
             ) : (
               filteredRequests.map((req) => {
                 const isSelected = req.id === selectedId;
-                const proCount = req.votes.filter((v) => v.vote === 'a_favor').length;
-                const contraCount = req.votes.filter((v) => v.vote === 'contra').length;
-                const neutroCount = req.votes.filter((v) => v.vote === 'neutro').length;
-                const voteCount = req.votes.length;
+                const reqVotes = req.votes || [];
+                const proCount = reqVotes.filter((v) => v.vote === 'a_favor').length;
+                const contraCount = reqVotes.filter((v) => v.vote === 'contra').length;
+                const neutroCount = reqVotes.filter((v) => v.vote === 'neutro').length;
+                const voteCount = reqVotes.length;
                 const maxVotes = req.maxVotes || 10;
                 const substantive = proCount + contraCount;
                 const approvalPct = substantive > 0 ? Math.round((proCount / substantive) * 100) : 0;
@@ -1229,8 +1230,8 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
                     className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   >
                     <option value="">-- Selecione um usuário --</option>
-                    {communityUsers
-                      .filter((u) => u.uid !== currentUser?.uid && !u.isBanned)
+                    {(communityUsers || [])
+                      .filter((u) => u && u.uid !== currentUser?.uid && !u.isBanned)
                       .map((u) => (
                         <option key={u.uid} value={u.uid}>
                           {u.displayName || u.username} (@{u.username}) - Cargo atual: {u.role}

@@ -547,8 +547,8 @@ export const ACTIVE_FIREBASE_CONFIG = {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {pages.map((p) => {
-                    const artsInPage = articles.filter((a) => a.pageUid === p.uid);
+                  {(pages || []).map((p) => {
+                    const artsInPage = (articles || []).filter((a) => a && a.pageUid === p.uid);
                     return (
                       <tr key={p.uid} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                         <td className="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">

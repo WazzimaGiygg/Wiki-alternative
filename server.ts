@@ -44,9 +44,10 @@ async function generateWithFallback(
   params: {
     contents: any;
     config?: any;
-  }
+  },
+  timeoutMs = 25000
 ) {
-  // Modelo estável e de resposta ultra-rápida (2s) no Google AI Studio
+  // Modelo estável e de resposta ultra-rápida no Google AI Studio
   const requested = primaryModel || 'gemini-2.5-flash';
   // Sanitiza modelos descontinuados que retornam 404 (como gemini-2.5-flash-lite ou pro)
   const safePrimary = (requested.includes('lite') || requested.includes('pro'))
@@ -63,14 +64,14 @@ async function generateWithFallback(
   let lastErr: any = null;
   for (const modelName of modelsToTry) {
     try {
-      // Timeout seguro de 14s por modelo para não travar a experiência do usuário
+      // Timeout seguro por modelo para não travar a experiência do usuário
       const response = await Promise.race([
         ai.models.generateContent({
           ...params,
           model: modelName,
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Tempo limite excedido ao comunicar com ${modelName}`)), 14000)
+          setTimeout(() => reject(new Error(`Tempo limite excedido ao comunicar com ${modelName}`)), timeoutMs)
         ),
       ]);
       return { response: response as any, usedModel: modelName };
@@ -441,7 +442,8 @@ Responda APENAS com o texto em wikitext formatado, sem preâmbulos e sem blocos 
         config: {
           temperature: 0.6,
         },
-      }
+      },
+      40000
     );
 
     const wikitext = response.text || '';
