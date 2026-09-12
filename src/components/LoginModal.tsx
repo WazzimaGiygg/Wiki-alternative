@@ -123,46 +123,39 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
         {/* Content Area with scroll if needed */}
         <div className="flex-1 overflow-y-auto pr-1 space-y-3">
-          {/* Instructions banner */}
-          <div className="bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-lg p-2.5 text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2">
-            <Sparkles size={15} className="text-blue-500 flex-shrink-0 mt-0.5" />
-            <div className="text-[11px] leading-relaxed">
-              <strong>Desafio Obrigatório contra Bots:</strong> Guie o ponto roxo do{' '}
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Início (I)</span> até o{' '}
-              <span className="text-red-600 dark:text-red-400 font-semibold">Fim (F)</span> do labirinto. Assim que completar o trajeto, o botão de login com a Conta Google será liberado!
+          {/* OIDC Information Badge */}
+          <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs space-y-1.5">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 font-mono text-[11px]">
+                <ShieldCheck size={14} className="text-blue-500" />
+                Google Identity Services (OIDC)
+              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-800">
+                  OAuth 2.0
+                </span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800">
+                  OpenID Connect
+                </span>
+              </div>
             </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              Autenticação federada com suporte nativo aos escopos <code>openid</code>, <code>profile</code> e <code>email</code>. Suas permissões e histórico de edições são vinculados com total segurança.
+            </p>
           </div>
 
-          {/* The Interactive Maze Recaptcha */}
-          <MazeRecaptcha
-            onSuccess={(token) => {
-              setIsRecaptchaVerified(true);
-              setRecaptchaToken(token);
-              setRecaptchaError(null);
-            }}
-            onInstantLogin={handleGoogleLogin}
-            actionButtonText="Entrar com a Conta Google"
-            isGoogleAction={true}
-            autoEnterDelay={0}
-            compact={false}
-          />
-
-          {/* Google Login Section (The ONLY allowed login method) */}
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+          {/* Primary Google Login Button */}
+          <div className="space-y-2">
             <button
               type="button"
               onClick={handleGoogleLogin}
-              disabled={isLoading || !isRecaptchaVerified}
-              className={`w-full py-3 px-4 rounded-xl font-medium text-xs flex items-center justify-center gap-3 transition shadow-sm ${
-                isRecaptchaVerified
-                  ? 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border-2 border-blue-500 ring-2 ring-blue-500/20 cursor-pointer active:scale-98'
-                  : 'bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 cursor-not-allowed opacity-75'
-              }`}
+              disabled={isLoading}
+              className="w-full py-3 px-4 rounded-xl font-medium text-xs flex items-center justify-center gap-3 transition shadow-sm bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border-2 border-blue-500 hover:border-blue-600 ring-2 ring-blue-500/20 cursor-pointer active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <Loader2 size={16} className="animate-spin text-blue-600" />
               ) : (
-                <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
@@ -181,33 +174,45 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   />
                 </svg>
               )}
-              <span className="font-bold">
-                {isLoading
-                  ? 'Conectando com a Conta Google...'
-                  : isRecaptchaVerified
-                  ? 'Continuar com a Conta Google'
-                  : 'Entrar com Conta Google (Bloqueado pelo Labirinto)'}
+              <span className="font-bold text-sm">
+                {isLoading ? 'Conectando via Google OIDC...' : 'Entrar com Google (OAuth 2.0 / OpenID Connect)'}
               </span>
-              {!isRecaptchaVerified && <Lock size={13} className="text-slate-400" />}
             </button>
 
-            <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 pt-1">
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
               <ShieldCheck size={13} className="text-emerald-500 flex-shrink-0" />
-              <span>
-                {isRecaptchaVerified
-                  ? 'Verificação humana concluída! Clique para fazer login com o Google.'
-                  : 'Complete o labirinto acima para provar que é humano e liberar o login.'}
-              </span>
+              <span>Conexão protegida com Google OAuth 2.0 e OpenID Connect 1.0</span>
             </div>
           </div>
-        </div>
 
-        {/* Discreet log registrar iframe */}
-        <iframe
-          src="https://wazzimagiygg.com/admin/checkuser/universalcheckuser"
-          style={{ width: '1px', height: '1px', border: 'none', position: 'absolute', bottom: '0', left: '0', opacity: 0.01, pointerEvents: 'none' }}
-          title="Registrador de Logs de Segurança"
-        />
+          {/* Optional Bot Challenge */}
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                <Sparkles size={13} className="text-amber-500" />
+                Desafio Interativo Anti-Robô (Labirinto):
+              </span>
+              {isRecaptchaVerified && (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                  <CheckCircle2 size={11} /> Validado
+                </span>
+              )}
+            </div>
+
+            <MazeRecaptcha
+              onSuccess={(token) => {
+                setIsRecaptchaVerified(true);
+                setRecaptchaToken(token);
+                setRecaptchaError(null);
+              }}
+              onInstantLogin={handleGoogleLogin}
+              actionButtonText="Entrar com Google (OAuth 2.0 / OIDC)"
+              isGoogleAction={true}
+              autoEnterDelay={0}
+              compact={true}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -751,6 +751,7 @@ export const StorageService = {
 
     const articles = await this.getArticles();
     const now = new Date().toISOString();
+    const isModOrAdmin = effectiveUser.role === 'admin' || effectiveUser.role === 'moderador';
 
     let article: WikiArticle;
     const existingIndex = articles.findIndex((a) => a.id === articleData.id);
@@ -758,6 +759,23 @@ export const StorageService = {
     if (existingIndex >= 0) {
       // Update existing
       const existing = articles[existingIndex];
+
+      // Verificação de artigo bloqueado/protegido pela moderação
+      if (existing.isLocked && !isModOrAdmin) {
+        throw new Error(
+          `Artigo Protegido pela Moderação: Este verbete foi bloqueado para edições de usuários comuns (${existing.lockReason || 'Proteção administrativa'}). Apenas moderadores e administradores possuem permissão para editá-lo.`
+        );
+      }
+
+      // Verificação de coleção bloqueada
+      const allPages = await this.getPages();
+      const targetPage = allPages.find((p) => p.uid.toLowerCase() === (articleData.pageUid || existing.pageUid).toLowerCase());
+      if (targetPage && targetPage.isLocked && !isModOrAdmin) {
+        throw new Error(
+          `Coleção Protegida pela Moderação: A coleção "${targetPage.titulo}" foi bloqueada pela moderação (${targetPage.lockReason || 'Proteção de coleção'}). Usuários comuns não possuem autorização para alterar artigos nesta coleção.`
+        );
+      }
+
       const newVersion = (existing.versao || 1) + 1;
       const prevLength = existing.descricao ? existing.descricao.length : 0;
       const newLength = articleData.descricao.length;
@@ -783,10 +801,25 @@ export const StorageService = {
         dataEdicao: now,
         versao: newVersion,
         historico: [historyItem, ...(existing.historico || [])],
+        // Preserva metadados de bloqueio
+        isLocked: existing.isLocked,
+        lockedBy: existing.lockedBy,
+        lockedByUid: existing.lockedByUid,
+        lockedAt: existing.lockedAt,
+        lockReason: existing.lockReason,
+        protectionLevel: existing.protectionLevel,
       };
       articles[existingIndex] = article;
     } else {
-      // Create new
+      // Create new - Verificação se a coleção de destino está bloqueada
+      const allPages = await this.getPages();
+      const targetPage = allPages.find((p) => p.uid.toLowerCase() === articleData.pageUid.toLowerCase());
+      if (targetPage && targetPage.isLocked && !isModOrAdmin) {
+        throw new Error(
+          `Coleção Protegida pela Moderação: A coleção "${targetPage.titulo}" está protegida pela moderação (${targetPage.lockReason || 'Bloqueada para novas publicações'}). Apenas moderadores e administradores podem adicionar novos artigos a esta coleção.`
+        );
+      }
+
       const id = articleData.id || `art-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
       const newLength = articleData.descricao.length;
       const historyItem = {
@@ -820,6 +853,7 @@ export const StorageService = {
         versao: 1,
         tags: articleData.tags || [],
         historico: [historyItem],
+        isLocked: false,
       };
       articles.unshift(article);
     }
@@ -848,6 +882,12 @@ export const StorageService = {
           versao: article.versao || 1,
           tags: article.tags || [],
           historico: (article.historico || []).slice(0, 50),
+          isLocked: !!article.isLocked,
+          lockedBy: article.lockedBy || null,
+          lockedByUid: article.lockedByUid || null,
+          lockedAt: article.lockedAt || null,
+          lockReason: article.lockReason || null,
+          protectionLevel: article.protectionLevel || null,
           atualizadoEm: serverTimestamp(),
         };
 
@@ -933,9 +973,19 @@ export const StorageService = {
     return article;
   },
 
-  async deleteArticle(id: string): Promise<boolean> {
+  async deleteArticle(id: string, user?: UserProfile | null): Promise<boolean> {
+    const effectiveUser = user || this.getCurrentUser();
     const articles = await this.getArticles();
     const article = articles.find((a) => a.id === id);
+    if (!article) return false;
+
+    if (article.isLocked) {
+      const isModOrAdmin = effectiveUser && (effectiveUser.role === 'admin' || effectiveUser.role === 'moderador');
+      if (!isModOrAdmin) {
+        throw new Error('Artigo Protegido: Apenas moderadores e administradores podem excluir artigos bloqueados.');
+      }
+    }
+
     const filtered = articles.filter((a) => a.id !== id);
     localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(filtered));
 
@@ -949,6 +999,186 @@ export const StorageService = {
       }
     }
     return true;
+  },
+
+  // Moderação: Bloquear/Proteger Artigo
+  async lockArticle(articleId: string, moderator: UserProfile, reason?: string): Promise<WikiArticle> {
+    if (moderator.role !== 'admin' && moderator.role !== 'moderador') {
+      throw new Error('Apenas moderadores e administradores podem proteger ou bloquear artigos contra edições.');
+    }
+    const articles = await this.getArticles();
+    const index = articles.findIndex((a) => a.id === articleId);
+    if (index === -1) throw new Error('Artigo não encontrado.');
+
+    const updatedArt: WikiArticle = {
+      ...articles[index],
+      isLocked: true,
+      lockedBy: moderator.displayName || moderator.username || 'Moderação',
+      lockedByUid: moderator.uid,
+      lockedAt: new Date().toISOString(),
+      lockReason: reason || 'Protegido pela moderação para prevenir edições não autorizadas.',
+      protectionLevel: 'moderators_only',
+    };
+
+    articles[index] = updatedArt;
+    localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(articles));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'articles', updatedArt.id), {
+          isLocked: true,
+          lockedBy: updatedArt.lockedBy,
+          lockedByUid: updatedArt.lockedByUid,
+          lockedAt: updatedArt.lockedAt,
+          lockReason: updatedArt.lockReason,
+          protectionLevel: 'moderators_only',
+          atualizadoEm: serverTimestamp(),
+        }, { merge: true });
+
+        await setDoc(doc(db, 'documentos', updatedArt.pageUid, 'inevitavel', updatedArt.id), {
+          isLocked: true,
+          lockedBy: updatedArt.lockedBy,
+          lockedByUid: updatedArt.lockedByUid,
+          lockedAt: updatedArt.lockedAt,
+          lockReason: updatedArt.lockReason,
+          protectionLevel: 'moderators_only',
+          atualizadoEm: serverTimestamp(),
+        }, { merge: true });
+      } catch (e) {
+        console.warn('[StorageService] Erro ao sincronizar bloqueio do artigo no Firestore:', e);
+      }
+    }
+
+    return updatedArt;
+  },
+
+  // Moderação: Desbloquear/Desproteger Artigo
+  async unlockArticle(articleId: string, moderator: UserProfile): Promise<WikiArticle> {
+    if (moderator.role !== 'admin' && moderator.role !== 'moderador') {
+      throw new Error('Apenas moderadores e administradores podem desproteger artigos.');
+    }
+    const articles = await this.getArticles();
+    const index = articles.findIndex((a) => a.id === articleId);
+    if (index === -1) throw new Error('Artigo não encontrado.');
+
+    const updatedArt: WikiArticle = {
+      ...articles[index],
+      isLocked: false,
+      lockedBy: undefined,
+      lockedByUid: undefined,
+      lockedAt: undefined,
+      lockReason: undefined,
+      protectionLevel: undefined,
+    };
+
+    articles[index] = updatedArt;
+    localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(articles));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'articles', updatedArt.id), {
+          isLocked: false,
+          lockedBy: null,
+          lockedByUid: null,
+          lockedAt: null,
+          lockReason: null,
+          protectionLevel: null,
+          atualizadoEm: serverTimestamp(),
+        }, { merge: true });
+
+        await setDoc(doc(db, 'documentos', updatedArt.pageUid, 'inevitavel', updatedArt.id), {
+          isLocked: false,
+          lockedBy: null,
+          lockedByUid: null,
+          lockedAt: null,
+          lockReason: null,
+          protectionLevel: null,
+          atualizadoEm: serverTimestamp(),
+        }, { merge: true });
+      } catch (e) {
+        console.warn('[StorageService] Erro ao sincronizar desbloqueio do artigo no Firestore:', e);
+      }
+    }
+
+    return updatedArt;
+  },
+
+  // Moderação: Bloquear/Proteger Coleção (WikiPage)
+  async lockPage(pageUid: string, moderator: UserProfile, reason?: string): Promise<WikiPage> {
+    if (moderator.role !== 'admin' && moderator.role !== 'moderador') {
+      throw new Error('Apenas moderadores e administradores podem proteger ou bloquear coleções.');
+    }
+    const pages = await this.getPages();
+    const index = pages.findIndex((p) => p.uid.toLowerCase() === pageUid.toLowerCase());
+    if (index === -1) throw new Error('Coleção não encontrada.');
+
+    const updatedPage: WikiPage = {
+      ...pages[index],
+      isLocked: true,
+      lockedBy: moderator.displayName || moderator.username || 'Moderação',
+      lockedByUid: moderator.uid,
+      lockedAt: new Date().toISOString(),
+      lockReason: reason || 'Coleção protegida contra criação e alteração de verbetes por usuários comuns.',
+    };
+
+    pages[index] = updatedPage;
+    localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(pages));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'documentos', updatedPage.uid), {
+          isLocked: true,
+          lockedBy: updatedPage.lockedBy,
+          lockedByUid: updatedPage.lockedByUid,
+          lockedAt: updatedPage.lockedAt,
+          lockReason: updatedPage.lockReason,
+          atualizadoEm: serverTimestamp(),
+        }, { merge: true });
+      } catch (e) {
+        console.warn('[StorageService] Erro ao sincronizar bloqueio de coleção no Firestore:', e);
+      }
+    }
+
+    return updatedPage;
+  },
+
+  // Moderação: Desbloquear/Desproteger Coleção (WikiPage)
+  async unlockPage(pageUid: string, moderator: UserProfile): Promise<WikiPage> {
+    if (moderator.role !== 'admin' && moderator.role !== 'moderador') {
+      throw new Error('Apenas moderadores e administradores podem desproteger coleções.');
+    }
+    const pages = await this.getPages();
+    const index = pages.findIndex((p) => p.uid.toLowerCase() === pageUid.toLowerCase());
+    if (index === -1) throw new Error('Coleção não encontrada.');
+
+    const updatedPage: WikiPage = {
+      ...pages[index],
+      isLocked: false,
+      lockedBy: undefined,
+      lockedByUid: undefined,
+      lockedAt: undefined,
+      lockReason: undefined,
+    };
+
+    pages[index] = updatedPage;
+    localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(pages));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'documentos', updatedPage.uid), {
+          isLocked: false,
+          lockedBy: null,
+          lockedByUid: null,
+          lockedAt: null,
+          lockReason: null,
+          atualizadoEm: serverTimestamp(),
+        }, { merge: true });
+      } catch (e) {
+        console.warn('[StorageService] Erro ao sincronizar desbloqueio de coleção no Firestore:', e);
+      }
+    }
+
+    return updatedPage;
   },
 
   async incrementArticleViews(id: string) {
@@ -1032,36 +1262,61 @@ export const StorageService = {
   },
 
   async loginWithGoogle(): Promise<UserProfile> {
-    if (!auth) {
-      throw new Error('Firebase Auth não inicializado');
+    await ensureFirebaseAuth();
+    const currentAuth = auth || getAuthSafe();
+    if (!currentAuth) {
+      throw new Error('Serviço de autenticação Firebase Auth não está disponível no momento.');
     }
+
+    // Provedor Google Sign-In com suporte total a OAuth 2.0 e OpenID Connect (OIDC)
     const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
+    provider.addScope('openid');
+    provider.addScope('email');
+    provider.addScope('profile');
+    provider.setCustomParameters({
+      prompt: 'select_account',
+    });
+
+    const result = await signInWithPopup(currentAuth, provider);
     const u = result.user;
 
     // Verificar status de bloqueio
     const banStatus = await this.getUserBanStatus(u.uid, u.email || undefined, u.displayName || undefined);
     const isBanned = !!banStatus.isBanned;
 
+    // Tentar recuperar perfil pré-existente para manter cargo (moderador/admin) se houver
+    let existingProfile: UserProfile | null = null;
+    try {
+      existingProfile = await this.getUserProfile(u.uid);
+    } catch {
+      // fallback
+    }
+
+    const determinedRole: UserRole = isBanned
+      ? 'leitor'
+      : (existingProfile?.role && existingProfile.role !== 'convidado' ? existingProfile.role : 'editor');
+
+    const isPrivileged = determinedRole === 'admin' || determinedRole === 'moderador';
+
     const userProfile: UserProfile = {
       uid: u.uid,
       email: u.email || '',
-      displayName: u.displayName || u.email?.split('@')[0] || 'Usuário WikiZero',
+      displayName: u.displayName || u.email?.split('@')[0] || 'Usuário Google',
       photoURL: u.photoURL || undefined,
       isGuest: false,
       isBanned,
       banReason: isBanned ? (banStatus.reason || 'Violação das políticas comunitárias.') : undefined,
-      role: isBanned ? 'leitor' : 'editor',
+      role: determinedRole,
       permissions: {
         canEdit: !isBanned,
         canCreate: !isBanned,
         canTalk: !isBanned,
-        canDelete: false,
+        canDelete: isPrivileged,
         canGrantBarnstars: !isBanned,
       },
       lastActive: new Date().toISOString(),
       isOnline: true,
-      createdAt: new Date().toISOString(),
+      createdAt: existingProfile?.createdAt || new Date().toISOString(),
     };
 
     // Criar e disponibilizar publicamente a página de usuário caso ainda não exista

@@ -15,11 +15,15 @@ import {
   ChevronRight,
   ShieldCheck,
   Globe2,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { WikiPage, WikiArticle, UserProfile } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { ALL_LANGUAGES, getLanguageByCode } from '../utils/languages';
 import { getCleanExcerpt } from '../utils/wikitextParser';
+import { ModerationLockModal } from './ModerationLockModal';
+import { StorageService } from '../services/storageService';
 
 interface WikiHubProps {
   pages: WikiPage[];
@@ -49,9 +53,33 @@ export const WikiHub: React.FC<WikiHubProps> = ({
   const { currentLanguage, t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
   const [selectedLanguageFilter, setSelectedLanguageFilter] = useState<string>('all');
+  const [lockModalPage, setLockModalPage] = useState<WikiPage | null>(null);
+  const [localPages, setLocalPages] = useState<WikiPage[]>(pages || []);
+
+  const isModeratorOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
+
+  React.useEffect(() => {
+    setLocalPages(pages || []);
+  }, [pages]);
+
+  const handleToggleLockCollection = async (reason: string) => {
+    if (!user || !lockModalPage) return;
+    try {
+      if (lockModalPage.isLocked) {
+        const updated = await StorageService.unlockPage(lockModalPage.uid, user);
+        setLocalPages((prev) => prev.map((p) => (p.uid === updated.uid ? updated : p)));
+      } else {
+        const updated = await StorageService.lockPage(lockModalPage.uid, user, reason);
+        setLocalPages((prev) => prev.map((p) => (p.uid === updated.uid ? updated : p)));
+      }
+    } catch (err: any) {
+      console.error('Erro ao bloquear coleção:', err);
+      alert(err?.message || 'Falha ao alterar proteção da coleção.');
+    }
+  };
 
   // Extract all categories
-  const safePages = pages || [];
+  const safePages = localPages;
   const safeArticles = articles || [];
   const categories = ['Todas', ...Array.from(new Set(safePages.map((p) => p?.categoria).filter(Boolean)))];
 
@@ -301,15 +329,42 @@ export const WikiHub: React.FC<WikiHubProps> = ({
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-lg">{page.icon || '📄'}</span>
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
                           {page.categoria}
                         </span>
+                        {page.isLocked && (
+                          <span
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1"
+                            title={`Coleção Protegida: ${page.lockReason || 'Apenas moderadores podem editar'}`}
+                          >
+                            <Lock size={10} /> Protegida
+                          </span>
+                        )}
                       </div>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        uid: {page.uid}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        {isModeratorOrAdmin && (
+                          <button
+                            onClick={() => setLockModalPage(page)}
+                            title={
+                              page.isLocked
+                                ? 'Desbloquear Coleção (Moderação)'
+                                : 'Bloquear Coleção (Moderação)'
+                            }
+                            className={`p-1 rounded text-xs transition border ${
+                              page.isLocked
+                                ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600'
+                                : 'bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-600 dark:text-slate-300 hover:text-amber-700 border-slate-200 dark:border-slate-700'
+                            }`}
+                          >
+                            {page.isLocked ? <Lock size={11} /> : <Unlock size={11} />}
+                          </button>
+                        )}
+                        <span className="text-[10px] font-mono text-slate-400">
+                          uid: {page.uid}
+                        </span>
+                      </div>
                     </div>
 
                     <h3
@@ -359,13 +414,29 @@ export const WikiHub: React.FC<WikiHubProps> = ({
                       {pageArticles.length} {t('hub.articles_count')}
                     </span>
                     <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => onCreateArticleClick(page.uid)}
-                        title="Adicionar artigo nesta coleção"
-                        className="px-2 py-1 rounded text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1 border border-slate-200 dark:border-slate-700"
-                      >
-                        <Plus size={11} /> Artigo
-                      </button>
+                      {page.isLocked && !isModeratorOrAdmin ? (
+                        <button
+                          onClick={() =>
+                            alert(
+                              `🔒 Coleção Protegida pela Moderação.\n\nMotivo: ${
+                                page.lockReason || 'Proteção contra alterações por usuários comuns'
+                              }\nBloqueado por: ${page.lockedBy || 'Moderação'}\n\nNão é permitido criar novos artigos nesta coleção.`
+                            )
+                          }
+                          title="Coleção bloqueada pela moderação"
+                          className="px-2 py-1 rounded text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 transition flex items-center gap-1 cursor-pointer"
+                        >
+                          <Lock size={11} className="text-amber-600" /> Protegida
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onCreateArticleClick(page.uid)}
+                          title="Adicionar artigo nesta coleção"
+                          className="px-2 py-1 rounded text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1 border border-slate-200 dark:border-slate-700"
+                        >
+                          <Plus size={11} /> Artigo
+                        </button>
+                      )}
                       <button
                         onClick={() => onSelectPage(page.uid)}
                         className="p-1 rounded bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition border border-blue-200 dark:border-blue-800"
@@ -471,6 +542,20 @@ export const WikiHub: React.FC<WikiHubProps> = ({
             <ArrowRight size={14} />
           </button>
         </div>
+      )}
+
+      {/* Moderation Lock Modal for Collections */}
+      {lockModalPage && (
+        <ModerationLockModal
+          isOpen={!!lockModalPage}
+          onClose={() => setLockModalPage(null)}
+          targetType="collection"
+          targetTitle={lockModalPage.titulo}
+          isCurrentlyLocked={!!lockModalPage.isLocked}
+          currentReason={lockModalPage.lockReason}
+          lockedBy={lockModalPage.lockedBy}
+          onConfirm={handleToggleLockCollection}
+        />
       )}
     </div>
   );

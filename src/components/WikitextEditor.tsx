@@ -29,6 +29,7 @@ import {
   Clock,
   AlertTriangle,
   BookOpen,
+  Lock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus } from '../types';
@@ -97,6 +98,12 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [showGeminiDrawer, setShowGeminiDrawer] = useState(false);
   const [dailyLimitStatus, setDailyLimitStatus] = useState<DailyEditLimitStatus | null>(null);
+
+  const isModeratorOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
+  const currentSelectedPage = pages.find((p) => p.uid === pageUid);
+  const isArticleLocked = !!initialArticle?.isLocked;
+  const isPageLocked = !!currentSelectedPage?.isLocked;
+  const isTargetLocked = (isArticleLocked || isPageLocked) && !isModeratorOrAdmin;
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
@@ -469,6 +476,28 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             </button>
           </div>
         </div>
+
+        {/* Banner de Bloqueio da Moderação (Se o artigo ou a coleção estiverem protegidos) */}
+        {isTargetLocked && (
+          <div className="mt-3 p-3 rounded border-2 border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 flex items-start gap-2.5 shadow-xs">
+            <Lock size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center gap-2">
+                <strong className="text-xs font-bold uppercase tracking-wider font-mono text-amber-800 dark:text-amber-300">
+                  {isArticleLocked ? 'Artigo Protegido pela Moderação' : 'Coleção Bloqueada pela Moderação'}
+                </strong>
+                <span className="text-[10px] bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200 px-1.5 py-0.2 rounded font-mono font-semibold">
+                  Edição Restrita a Moderadores & Admins
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-700 dark:text-slate-300">
+                {isArticleLocked
+                  ? `Este verbete foi bloqueado pela moderação (${initialArticle?.lockReason || 'proteção editorial'}). Usuários comuns não possuem permissão para salvar alterações neste artigo.`
+                  : `A coleção "${currentSelectedPage?.titulo}" está bloqueada pela moderação. Não é permitido criar novos artigos nesta coleção.`}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Banner de Aviso de Limite Diário de 5 Edições Atingido */}
         {dailyLimitStatus && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed && (
@@ -850,16 +879,22 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             <button
               type="button"
               onClick={handleOpenSaveModal}
-              disabled={isSaving || (dailyLimitStatus !== null && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed)}
+              disabled={isSaving || (dailyLimitStatus !== null && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed) || isTargetLocked}
               title={
-                dailyLimitStatus && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed
+                isTargetLocked
+                  ? 'Bloqueado pela moderação: Apenas moderadores e administradores podem salvar alterações neste verbete ou coleção.'
+                  : dailyLimitStatus && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed
                   ? 'Você atingiu o limite de 5 edições diárias para o perfil de editor. Moderadores e administradores têm edições ilimitadas.'
                   : 'Salvar e Publicar Alterações'
               }
-              className="px-4 py-1.5 text-xs font-semibold rounded bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1.5 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+              className={`px-4 py-1.5 text-xs font-semibold rounded transition flex items-center gap-1.5 flex-shrink-0 shadow-xs ${
+                isTargetLocked
+                  ? 'bg-amber-600/70 text-white cursor-not-allowed opacity-75'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
+              }`}
             >
-              <Save size={13} />
-              {isSaving ? 'Salvando...' : 'Salvar e Publicar Alterações'}
+              {isTargetLocked ? <Lock size={13} /> : <Save size={13} />}
+              {isSaving ? 'Salvando...' : isTargetLocked ? 'Bloqueado pela Moderação' : 'Salvar e Publicar Alterações'}
             </button>
           </div>
         </div>

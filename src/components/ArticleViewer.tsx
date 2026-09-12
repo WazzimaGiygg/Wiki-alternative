@@ -31,6 +31,10 @@ import {
   Send,
   FileDown,
   FileText,
+  Lock,
+  Unlock,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   WikiArticle,
@@ -47,6 +51,7 @@ import { TalkPageView } from './TalkPageView';
 import { WhatLinksHereView } from './WhatLinksHereView';
 import { MobileArticleTOC } from './MobileArticleTOC';
 import { PdfExportModal } from './PdfExportModal';
+import { ModerationLockModal } from './ModerationLockModal';
 import { StorageService } from '../services/storageService';
 
 interface ArticleViewerProps {
@@ -63,6 +68,7 @@ interface ArticleViewerProps {
   onNavigateToUser?: (identifier: string) => void;
   onBack: () => void;
   onRestoreRevision?: (historyItem: ArticleHistoryItem) => void;
+  onArticleUpdated?: (article: WikiArticle) => void;
 }
 
 export const ArticleViewer: React.FC<ArticleViewerProps> = ({
@@ -79,6 +85,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   onNavigateToUser,
   onBack,
   onRestoreRevision,
+  onArticleUpdated,
 }) => {
   const [fontSize, setFontSize] = useState<number>(15);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -97,14 +104,43 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const [ratingComment, setRatingComment] = useState('');
   const [hasRated, setHasRated] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showLockModal, setShowLockModal] = useState(false);
+  const [localArticle, setLocalArticle] = useState<WikiArticle>(article);
+
+  const isModeratorOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
+  const isArticleLocked = !!localArticle.isLocked;
+  const isPageLocked = !!page?.isLocked;
 
   const contentRef = useRef<HTMLDivElement>(null);
 
+  // Sync article when prop changes
+  useEffect(() => {
+    setLocalArticle(article);
+  }, [article]);
+
   // Parse wikitext (with callouts, refs, categories, infoboxes)
   const { html, toc, references, categories } = useMemo(
-    () => parseWikitext(article.descricao),
-    [article.descricao]
+    () => parseWikitext(localArticle.descricao),
+    [localArticle.descricao]
   );
+
+  const handleToggleLockArticle = async (reason: string) => {
+    if (!user) return;
+    try {
+      if (isArticleLocked) {
+        const updated = await StorageService.unlockArticle(localArticle.id, user);
+        setLocalArticle(updated);
+        onArticleUpdated?.(updated);
+      } else {
+        const updated = await StorageService.lockArticle(localArticle.id, user, reason);
+        setLocalArticle(updated);
+        onArticleUpdated?.(updated);
+      }
+    } catch (err: any) {
+      console.error('Erro ao modificar bloqueio de moderação:', err);
+      alert(err?.message || 'Falha ao alterar status de proteção do artigo.');
+    }
+  };
 
   // Sync watched status on article change
   useEffect(() => {
@@ -324,13 +360,53 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             <span className="hidden sm:inline">{isWatched ? 'Vigiando' : 'Vigiar'}</span>
           </button>
 
-          <button
-            onClick={() => onEdit(article)}
-            className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition flex items-center gap-1 shadow-xs"
-          >
-            <Edit3 size={12} />
-            Editar
-          </button>
+          {/* Edit or Lock Indicator Button */}
+          {isArticleLocked && !isModeratorOrAdmin ? (
+            <button
+              onClick={() =>
+                alert(
+                  `🔒 Artigo Protegido pela Moderação.\n\nMotivo: ${
+                    localArticle.lockReason || 'Proteção contra edições de usuários comuns'
+                  }\nProtegido por: ${localArticle.lockedBy || 'Moderação'}\n\nApenas moderadores e administradores têm permissão para editar este verbete.`
+                )
+              }
+              title={`Artigo Bloqueado pela Moderação: ${localArticle.lockReason || 'Edição restrita'}`}
+              className="px-2.5 py-1 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-semibold text-xs transition flex items-center gap-1 shadow-xs cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-900"
+            >
+              <Lock size={12} className="text-amber-600 dark:text-amber-400" />
+              <span>Bloqueado</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => onEdit(localArticle)}
+              className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition flex items-center gap-1 shadow-xs"
+            >
+              <Edit3 size={12} />
+              Editar
+            </button>
+          )}
+
+          {/* Botão de Moderação: Proteger / Desproteger Artigo */}
+          {isModeratorOrAdmin && (
+            <button
+              onClick={() => setShowLockModal(true)}
+              title={
+                isArticleLocked
+                  ? 'Remover proteção do artigo (permitir edições de usuários comuns)'
+                  : 'Proteger artigo contra edições de usuários comuns'
+              }
+              className={`px-2.5 py-1 rounded text-xs font-semibold transition flex items-center gap-1 border shadow-xs ${
+                isArticleLocked
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-700'
+                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-amber-950/50 text-slate-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-300 border-slate-300 dark:border-slate-700'
+              }`}
+            >
+              {isArticleLocked ? <Lock size={12} /> : <Unlock size={12} />}
+              <span className="hidden sm:inline">
+                {isArticleLocked ? 'Protegido' : 'Proteger'}
+              </span>
+            </button>
+          )}
 
           <button
             onClick={toggleSpeech}
@@ -641,22 +717,73 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
           {/* Article Content Pane (3 columns) */}
           <article ref={contentRef} className="lg:col-span-3 bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-7 shadow-xs space-y-6">
+            {/* Wikipedia-style Moderation Protection Banner */}
+            {isArticleLocked && (
+              <div className="p-3 sm:p-3.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/80 text-amber-950 dark:text-amber-200 text-xs space-y-1.5 shadow-xs">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-100">
+                    <span className="p-1 rounded bg-amber-200/80 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200">
+                      <Lock size={14} />
+                    </span>
+                    <span>Artigo Protegido pela Moderação</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+                    Apenas Moderadores & Admins
+                  </span>
+                </div>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[11px]">
+                  Este verbete foi temporária ou permanentemente bloqueado para impedir edições de usuários comuns ou não autorizados.
+                </p>
+                {localArticle.lockReason && (
+                  <div className="text-[11px] bg-white/70 dark:bg-slate-900/60 p-2 rounded border border-amber-200 dark:border-amber-800/80 text-slate-800 dark:text-slate-200">
+                    <strong>Motivo da Proteção:</strong> {localArticle.lockReason}
+                  </div>
+                )}
+                {localArticle.lockedBy && (
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                    Protegido por <strong>{localArticle.lockedBy}</strong>
+                    {localArticle.lockedAt && ` em ${new Date(localArticle.lockedAt).toLocaleDateString('pt-BR')}`}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Collection Protection Banner */}
+            {isPageLocked && (
+              <div className="p-2.5 sm:p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 text-xs flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Lock size={13} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                  <span>
+                    A coleção <strong>{page?.titulo}</strong> está protegida pela moderação.
+                  </span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-mono">
+                  Coleção Bloqueada
+                </span>
+              </div>
+            )}
+
             {/* Article Header */}
             <header className="border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  {article.categoria || 'Geral'}
+                  {localArticle.categoria || 'Geral'}
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
-                  Versão {article.versao || 1}.0
+                  Versão {localArticle.versao || 1}.0
                 </span>
+                {isArticleLocked && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 px-1.5 py-0.2 rounded border border-amber-300 dark:border-amber-700">
+                    <Lock size={10} /> Protegido
+                  </span>
+                )}
                 <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-mono font-bold bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.2 rounded border border-amber-200 dark:border-amber-800">
                   <Star size={10} fill="currentColor" /> {ratingData.averageScore.toFixed(1)}/5 ({ratingData.totalVotes} votos)
                 </div>
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-normal font-serif-heading text-slate-900 dark:text-white leading-tight">
-                {article.titulo}
+                {localArticle.titulo}
               </h1>
 
               {/* Metadata Badges */}
@@ -971,11 +1098,25 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       {/* PDF Export Modal */}
       {showPdfModal && (
         <PdfExportModal
-          article={article}
+          article={localArticle}
           pageName={page?.titulo || 'WikiZero'}
           articleContentRef={contentRef}
           isOpen={showPdfModal}
           onClose={() => setShowPdfModal(false)}
+        />
+      )}
+
+      {/* Moderation Lock Modal */}
+      {showLockModal && (
+        <ModerationLockModal
+          isOpen={showLockModal}
+          onClose={() => setShowLockModal(false)}
+          targetType="article"
+          targetTitle={localArticle.titulo}
+          isCurrentlyLocked={isArticleLocked}
+          currentReason={localArticle.lockReason}
+          lockedBy={localArticle.lockedBy}
+          onConfirm={handleToggleLockArticle}
         />
       )}
     </div>

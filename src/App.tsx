@@ -752,12 +752,31 @@ export default function App() {
   };
 
   const handleOpenEditorForEdit = (article: WikiArticle) => {
+    const isModOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
+    if (article.isLocked && !isModOrAdmin) {
+      handleNotify(
+        `O artigo "${article.titulo}" está protegido pela moderação (${article.lockReason || 'bloqueio administrativo'}). Apenas moderadores e administradores podem editar.`,
+        'warning'
+      );
+      return;
+    }
     setEditingArticle(article);
     setCurrentView('editor');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenNewEditor = (defaultUid?: string) => {
+    const isModOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
+    if (defaultUid && !isModOrAdmin) {
+      const targetPage = pages.find((p) => p.uid.toLowerCase() === defaultUid.toLowerCase());
+      if (targetPage && targetPage.isLocked) {
+        handleNotify(
+          `A coleção "${targetPage.titulo}" está protegida pela moderação. Não é permitido criar novos artigos nela.`,
+          'warning'
+        );
+        return;
+      }
+    }
     setEditingArticle(null);
     if (defaultUid) setSelectedPageUid(defaultUid);
     setCurrentView('editor');
@@ -904,6 +923,9 @@ export default function App() {
                 onNavigateToUser={handleNavigateToUser}
                 onBack={() => handleNavigate('hub')}
                 onRestoreRevision={handleRestoreRevision}
+                onArticleUpdated={(updated) =>
+                  setArticles((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
+                }
               />
             ) : (
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center max-w-xl mx-auto my-12 space-y-4">

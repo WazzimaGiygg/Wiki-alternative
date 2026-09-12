@@ -15,6 +15,13 @@ export interface WikiArticle {
   versao?: number;
   tags?: string[];
   historico?: ArticleHistoryItem[];
+  // Moderação e Proteção contra edição de usuários comuns
+  isLocked?: boolean;
+  lockedBy?: string;
+  lockedByUid?: string;
+  lockedAt?: string;
+  lockReason?: string;
+  protectionLevel?: 'moderators_only' | 'all';
 }
 
 export interface ArticleHistoryItem {
@@ -42,6 +49,12 @@ export interface WikiPage {
   icon?: string;
   tags?: string[];
   status?: 'ativo' | 'rascunho' | 'arquivado';
+  // Moderação e Proteção da Coleção contra novos artigos/edições de usuários comuns
+  isLocked?: boolean;
+  lockedBy?: string;
+  lockedByUid?: string;
+  lockedAt?: string;
+  lockReason?: string;
 }
 
 export type UserRole = 'admin' | 'moderador' | 'editor' | 'leitor' | 'convidado';
