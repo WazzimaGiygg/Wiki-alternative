@@ -112,13 +112,15 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
   // Filtered Changes
   const filteredChanges = useMemo(() => {
     const now = new Date().getTime();
+    const safeChanges = Array.isArray(changes) ? changes : [];
 
-    return changes.filter((item) => {
+    return safeChanges.filter((item) => {
+      if (!item) return false;
       // 1. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchTitle = item.articleTitle.toLowerCase().includes(q);
-        const matchAuthor = item.autor.toLowerCase().includes(q);
+        const matchTitle = (item.articleTitle || '').toLowerCase().includes(q);
+        const matchAuthor = (item.autor || '').toLowerCase().includes(q);
         const matchSummary = (item.resumo || '').toLowerCase().includes(q);
         const matchPage = (item.pageTitle || '').toLowerCase().includes(q);
         if (!matchTitle && !matchAuthor && !matchSummary && !matchPage) return false;
@@ -162,10 +164,11 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
 
   // Statistics
   const stats = useMemo(() => {
-    const total = changes.length;
-    const newArticles = changes.filter((c) => c.type === 'new_article').length;
-    const uniqueAuthors = new Set(changes.map((c) => c.autor.toLowerCase())).size;
-    const netBytes = changes.reduce((acc, c) => acc + (c.deltaBytes || 0), 0);
+    const safeChangesList = Array.isArray(changes) ? changes : [];
+    const total = safeChangesList.length;
+    const newArticles = safeChangesList.filter((c) => c?.type === 'new_article').length;
+    const uniqueAuthors = new Set(safeChangesList.map((c) => (c?.autor || '').toLowerCase())).size;
+    const netBytes = safeChangesList.reduce((acc, c) => acc + (c?.deltaBytes || 0), 0);
 
     return {
       total,

@@ -205,8 +205,8 @@ export const CheckUserView: React.FC<CheckUserViewProps> = ({
 
   // Bulk ban all detected sockpuppets
   const handleBulkBanSockpuppets = async () => {
-    const targetsToBan = matchedAccounts
-      .filter((a) => a.username !== targetInput && !a.isBanned)
+    const targetsToBan = (Array.isArray(matchedAccounts) ? matchedAccounts : [])
+      .filter((a) => a && a.username !== targetInput && !a.isBanned)
       .map((a) => a.uid);
 
     if (targetsToBan.length === 0) {
@@ -303,27 +303,31 @@ export const CheckUserView: React.FC<CheckUserViewProps> = ({
 
   // Filtered Cases & Logs
   const filteredCases = useMemo(() => {
-    return cases.filter((c) => {
+    const safeCases = Array.isArray(cases) ? cases : [];
+    return safeCases.filter((c) => {
+      if (!c) return false;
       const matchStatus = caseFilterStatus === 'all' || c.status === caseFilterStatus;
       const matchSearch =
         !caseSearchQuery.trim() ||
-        c.title.toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
-        c.caseNumber.toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
-        c.masterAccount.toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
-        c.suspectedAccounts.some((s) => s.toLowerCase().includes(caseSearchQuery.toLowerCase()));
+        (c.title || '').toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
+        (c.caseNumber || '').toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
+        (c.masterAccount || '').toLowerCase().includes(caseSearchQuery.toLowerCase()) ||
+        (Array.isArray(c.suspectedAccounts) && c.suspectedAccounts.some((s) => (s || '').toLowerCase().includes(caseSearchQuery.toLowerCase())));
       return matchStatus && matchSearch;
     });
   }, [cases, caseFilterStatus, caseSearchQuery]);
 
   const filteredLogs = useMemo(() => {
-    return logs.filter((l) => {
+    const safeLogs = Array.isArray(logs) ? logs : [];
+    return safeLogs.filter((l) => {
+      if (!l) return false;
       if (!logSearchQuery.trim()) return true;
       const clean = logSearchQuery.toLowerCase();
       return (
-        l.target.toLowerCase().includes(clean) ||
-        l.performedBy.toLowerCase().includes(clean) ||
-        l.reason.toLowerCase().includes(clean) ||
-        l.targetType.toLowerCase().includes(clean)
+        (l.target || '').toLowerCase().includes(clean) ||
+        (l.performedBy || '').toLowerCase().includes(clean) ||
+        (l.reason || '').toLowerCase().includes(clean) ||
+        (l.targetType || '').toLowerCase().includes(clean)
       );
     });
   }, [logs, logSearchQuery]);

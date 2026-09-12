@@ -66,17 +66,19 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   const handleUnwatch = async (pageId: string) => {
     if (!user?.uid) return;
     await WatchlistService.removeFromWatchlist(user.uid, pageId);
-    setWatchedList((prev) => prev.filter((item) => item.pageId !== pageId));
+    setWatchedList((prev) => (Array.isArray(prev) ? prev : []).filter((item) => item.pageId !== pageId));
     setActionSuccessMessage(`Página "${pageId}" removida da sua lista de vigilância.`);
     setTimeout(() => setActionSuccessMessage(null), 3000);
   };
 
-  const filteredItems = watchedList.filter((item) => {
-    const titleMatch = (item.page?.title || item.pageId).toLowerCase().includes(searchQuery.toLowerCase());
+  const safeWatchedList = Array.isArray(watchedList) ? watchedList : [];
+  const filteredItems = safeWatchedList.filter((item) => {
+    if (!item) return false;
+    const titleMatch = (item.page?.title || item.pageId || '').toLowerCase().includes(searchQuery.toLowerCase());
     if (!titleMatch) return false;
 
     if (filterNamespace !== 'all') {
-      const ns = item.page?.namespace || item.pageId.split(':')[0] || 'main';
+      const ns = item.page?.namespace || item.pageId?.split(':')[0] || 'main';
       if (ns !== filterNamespace) return false;
     }
     return true;

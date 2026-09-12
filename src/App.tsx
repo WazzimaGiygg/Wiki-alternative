@@ -1457,9 +1457,12 @@ export default function App() {
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto">
             <GeminiNotebook
+              user={user}
               currentUser={user}
               pages={pages}
+              articles={articles}
               existingArticles={articles}
+              onOpenArticle={handleSelectArticle}
               onInsertArticle={handleInsertFromNotebook}
               onOpenPremiumModal={handleOpenPremiumModal}
               onClose={() => setShowNotebookModal(false)}

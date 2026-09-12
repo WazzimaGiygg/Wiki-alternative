@@ -157,7 +157,9 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
 
   // Filtered requests list
   const filteredRequests = useMemo(() => {
-    return requests.filter((r) => {
+    const safeRequests = Array.isArray(requests) ? requests : [];
+    return safeRequests.filter((r) => {
+      if (!r) return false;
       // Tab filter
       if (activeTab !== 'todas' && r.status !== activeTab) return false;
       // Role filter
@@ -166,10 +168,10 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesName =
-          r.candidateDisplayName.toLowerCase().includes(q) ||
-          r.candidateUsername.toLowerCase().includes(q);
-        const matchesStatement = r.statement.toLowerCase().includes(q);
-        const matchesNominator = r.nominatedBy.toLowerCase().includes(q);
+          (r.candidateDisplayName || '').toLowerCase().includes(q) ||
+          (r.candidateUsername || '').toLowerCase().includes(q);
+        const matchesStatement = (r.statement || '').toLowerCase().includes(q);
+        const matchesNominator = (r.nominatedBy || '').toLowerCase().includes(q);
         if (!matchesName && !matchesStatement && !matchesNominator) return false;
       }
       return true;
@@ -177,17 +179,18 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
   }, [requests, activeTab, roleFilter, searchQuery]);
 
   // Metrics
-  const activeCount = (requests || []).filter((r) => r.status === 'em_votacao').length;
-  const approvedCount = (requests || []).filter((r) => r.status === 'aprovada').length;
-  const totalVotesCount = (requests || []).reduce((acc, r) => acc + (r.votes?.length || 0), 0);
+  const safeRequestsList = Array.isArray(requests) ? requests : [];
+  const activeCount = safeRequestsList.filter((r) => r && r.status === 'em_votacao').length;
+  const approvedCount = safeRequestsList.filter((r) => r && r.status === 'aprovada').length;
+  const totalVotesCount = safeRequestsList.reduce((acc, r) => acc + (Array.isArray(r?.votes) ? r.votes.length : 0), 0);
 
   // Voting metrics for selected request
   const selectedStats = useMemo(() => {
     if (!selectedRequest) return null;
-    const votes = selectedRequest.votes || [];
-    const proVotes = votes.filter((v) => v.vote === 'a_favor').length;
-    const contraVotes = votes.filter((v) => v.vote === 'contra').length;
-    const neutroVotes = votes.filter((v) => v.vote === 'neutro').length;
+    const votes = Array.isArray(selectedRequest.votes) ? selectedRequest.votes : [];
+    const proVotes = votes.filter((v) => v && v.vote === 'a_favor').length;
+    const contraVotes = votes.filter((v) => v && v.vote === 'contra').length;
+    const neutroVotes = votes.filter((v) => v && v.vote === 'neutro').length;
     const totalVotes = votes.length;
     const maxVotes = selectedRequest.maxVotes || 10;
     
@@ -507,7 +510,7 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Em Votação ({(requests || []).filter((r) => r.status === 'em_votacao').length})
+                Em Votação ({activeCount})
               </button>
               <button
                 onClick={() => setActiveTab('aprovada')}
@@ -517,7 +520,7 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Aprovadas ({(requests || []).filter((r) => r.status === 'aprovada').length})
+                Aprovadas ({approvedCount})
               </button>
               <button
                 onClick={() => setActiveTab('todas')}
@@ -527,7 +530,7 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Todas ({requests.length})
+                Todas ({safeRequestsList.length})
               </button>
             </div>
 
@@ -581,10 +584,10 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
             ) : (
               filteredRequests.map((req) => {
                 const isSelected = req.id === selectedId;
-                const reqVotes = req.votes || [];
-                const proCount = reqVotes.filter((v) => v.vote === 'a_favor').length;
-                const contraCount = reqVotes.filter((v) => v.vote === 'contra').length;
-                const neutroCount = reqVotes.filter((v) => v.vote === 'neutro').length;
+                const reqVotes = Array.isArray(req.votes) ? req.votes : [];
+                const proCount = reqVotes.filter((v) => v && v.vote === 'a_favor').length;
+                const contraCount = reqVotes.filter((v) => v && v.vote === 'contra').length;
+                const neutroCount = reqVotes.filter((v) => v && v.vote === 'neutro').length;
                 const voteCount = reqVotes.length;
                 const maxVotes = req.maxVotes || 10;
                 const substantive = proCount + contraCount;

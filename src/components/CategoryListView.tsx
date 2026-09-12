@@ -39,8 +39,9 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
     }
   };
 
-  const filteredPages = pages.filter((p) =>
-    p.title.toLowerCase().includes(searchFilter.toLowerCase())
+  const safePages = Array.isArray(pages) ? pages : [];
+  const filteredPages = safePages.filter((p) =>
+    p?.title?.toLowerCase().includes(searchFilter.toLowerCase())
   );
 
   return (

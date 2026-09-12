@@ -240,20 +240,23 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
     };
   }, [currentUser]);
 
+  const safeTickets = Array.isArray(tickets) ? tickets : [];
+
   const selectedTicket = useMemo(() => {
-    return tickets.find((t) => t.id === selectedTicketId) || null;
-  }, [tickets, selectedTicketId]);
+    return safeTickets.find((t) => t && t.id === selectedTicketId) || null;
+  }, [safeTickets, selectedTicketId]);
 
   const filteredTickets = useMemo(() => {
-    return tickets.filter((t) => {
+    return safeTickets.filter((t) => {
+      if (!t) return false;
       // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesSubject = t.subject.toLowerCase().includes(q);
-        const matchesAuthor = t.userDisplayName.toLowerCase().includes(q) || t.userUsername.toLowerCase().includes(q);
+        const matchesSubject = (t.subject || '').toLowerCase().includes(q);
+        const matchesAuthor = (t.userDisplayName || '').toLowerCase().includes(q) || (t.userUsername || '').toLowerCase().includes(q);
         const matchesArticle = (t.relatedArticleTitle || '').toLowerCase().includes(q);
-        const matchesId = t.id.toLowerCase().includes(q);
-        const matchesDesc = t.description.toLowerCase().includes(q);
+        const matchesId = (t.id || '').toLowerCase().includes(q);
+        const matchesDesc = (t.description || '').toLowerCase().includes(q);
         if (!matchesSubject && !matchesAuthor && !matchesArticle && !matchesId && !matchesDesc) {
           return false;
         }
@@ -407,15 +410,15 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
 
     const ok = await StorageService.deleteAdminTicket(ticketId, currentUser);
     if (ok) {
-      const remaining = tickets.filter((t) => t.id !== ticketId);
+      const remaining = safeTickets.filter((t) => t && t.id !== ticketId);
       setTickets(remaining);
       setSelectedTicketId(remaining.length > 0 ? remaining[0].id : null);
       setFeedback({ type: 'success', message: 'Chamado excluído com sucesso.' });
     }
   };
 
-  const activeCount = tickets.filter((t) => t.status === 'aberto' || t.status === 'em_analise').length;
-  const resolvedCount = tickets.filter((t) => t.status === 'resolvido').length;
+  const activeCount = safeTickets.filter((t) => t && (t.status === 'aberto' || t.status === 'em_analise')).length;
+  const resolvedCount = safeTickets.filter((t) => t && t.status === 'resolvido').length;
 
   return (
     <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 py-6 transition-colors">

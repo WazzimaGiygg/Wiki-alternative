@@ -287,7 +287,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
         currentUser
       );
 
-      setTalkMessages((prev) => [newMsg, ...prev.filter((m) => m.id !== newMsg.id)]);
+      setTalkMessages((prev) => [newMsg, ...(Array.isArray(prev) ? prev : []).filter((m) => m && m.id !== newMsg.id)]);
       setNewTopicTitle('');
       setNewTopicContent('');
       setShowNewTopicModal(false);
@@ -487,12 +487,13 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
 
   // Filtered Talk Messages
   const filteredTalkMessages = useMemo(() => {
-    if (talkFilter === 'todos') return talkMessages;
-    if (talkFilter === 'aviso') return talkMessages.filter((m) => m.tipo === 'aviso_admin');
-    if (talkFilter === 'barnstar') return talkMessages.filter((m) => m.tipo === 'barnstar');
-    if (talkFilter === 'duvida') return talkMessages.filter((m) => m.tipo === 'duvida');
-    if (talkFilter === 'aberto') return talkMessages.filter((m) => m.status === 'aberto' || m.status === 'em_discussao');
-    return talkMessages;
+    const safeTalkMessages = Array.isArray(talkMessages) ? talkMessages : [];
+    if (talkFilter === 'todos') return safeTalkMessages;
+    if (talkFilter === 'aviso') return safeTalkMessages.filter((m) => m?.tipo === 'aviso_admin');
+    if (talkFilter === 'barnstar') return safeTalkMessages.filter((m) => m?.tipo === 'barnstar');
+    if (talkFilter === 'duvida') return safeTalkMessages.filter((m) => m?.tipo === 'duvida');
+    if (talkFilter === 'aberto') return safeTalkMessages.filter((m) => m && (m.status === 'aberto' || m.status === 'em_discussao'));
+    return safeTalkMessages;
   }, [talkMessages, talkFilter]);
 
   if (isLoading) {

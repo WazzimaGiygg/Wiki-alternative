@@ -194,12 +194,14 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
 
   // Filtered articles list
   const filteredArticles = useMemo(() => {
-    return articles.filter((a) => {
+    const safeArticles = Array.isArray(articles) ? articles : [];
+    return safeArticles.filter((a) => {
+      if (!a) return false;
       const matchCat = selectedCategory === 'Todas' || a.categoria === selectedCategory;
       const matchSearch =
         !searchQuery.trim() ||
-        a.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.descricao.toLowerCase().includes(searchQuery.toLowerCase());
+        (a.titulo || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (a.descricao || '').toLowerCase().includes(searchQuery.toLowerCase());
       return matchCat && matchSearch;
     });
   }, [articles, selectedCategory, searchQuery]);
@@ -207,8 +209,9 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
   // Categories list
   const categoriesList = useMemo(() => {
     const set = new Set<string>();
-    articles.forEach((a) => {
-      if (a.categoria) set.add(a.categoria);
+    const safeArticles = Array.isArray(articles) ? articles : [];
+    safeArticles.forEach((a) => {
+      if (a?.categoria) set.add(a.categoria);
     });
     return ['Todas', ...Array.from(set)];
   }, [articles]);

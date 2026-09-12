@@ -194,24 +194,25 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
 
   // Category counts
   const counts = useMemo(() => {
-    const adminCount = users.filter((u) => u.role === 'admin').length;
-    const modCount = users.filter((u) => u.role === 'moderador').length;
-    const editorCount = users.filter((u) => u.role === 'editor').length;
-    const leitorCount = users.filter((u) => u.role === 'leitor' || u.role === 'convidado').length;
-    const bannedCount = users.filter((u) => u.isBanned).length;
-    const outrosCount = users.filter((u) => u.role !== 'admin' && u.role !== 'moderador').length;
-    const totalReputation = users.reduce((acc, u) => acc + (u.reputationScore || 0), 0);
-    const totalBarnstars = users.reduce((acc, u) => acc + (u.barnstars?.length || 0), 0);
+    const safeUsers = Array.isArray(users) ? users : [];
+    const adminCount = safeUsers.filter((u) => u?.role === 'admin').length;
+    const modCount = safeUsers.filter((u) => u?.role === 'moderador').length;
+    const editorCount = safeUsers.filter((u) => u?.role === 'editor').length;
+    const leitorCount = safeUsers.filter((u) => u?.role === 'leitor' || u?.role === 'convidado').length;
+    const bannedCount = safeUsers.filter((u) => u?.isBanned).length;
+    const outrosCount = safeUsers.filter((u) => u?.role !== 'admin' && u?.role !== 'moderador').length;
+    const totalReputation = safeUsers.reduce((acc, u) => acc + (u?.reputationScore || 0), 0);
+    const totalBarnstars = safeUsers.reduce((acc, u) => acc + (u?.barnstars?.length || 0), 0);
 
     return {
-      total: users.length,
+      total: safeUsers.length,
       admin: adminCount,
       moderador: modCount,
       outros: outrosCount,
       editor: editorCount,
       leitor: leitorCount,
       banned: bannedCount,
-      avgReputation: Math.round(totalReputation / (users.length || 1)),
+      avgReputation: Math.round(totalReputation / (safeUsers.length || 1)),
       totalBarnstars,
     };
   }, [users]);
@@ -262,7 +263,9 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
 
   // Filter and Sort Users with Full Advanced Logic
   const filteredUsers = useMemo(() => {
-    const list = users.filter((u) => {
+    const safeUsers = Array.isArray(users) ? users : [];
+    const list = safeUsers.filter((u) => {
+      if (!u) return false;
       // 1. Primary Text Search
       const name = (u.displayName || u.username || '').toLowerCase();
       const email = (u.email || '').toLowerCase();

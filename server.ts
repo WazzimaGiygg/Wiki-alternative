@@ -279,6 +279,16 @@ Quando o usuário pedir texto, seções ou um artigo completo, forneça sempre a
     });
   } catch (err: any) {
     console.error('Erro na rota /api/gemini/chat:', err);
+    const isQuota = err?.message?.includes('RESOURCE_EXHAUSTED') || err?.message?.includes('429') || err?.status === 429;
+    if (isQuota) {
+      return res.json({
+        reply: '⚠️ **Aviso de Cota Temporária da IA**: O limite de requisições por minuto/dia do plano gratuito do Google Gemini foi atingido para este projeto. Por favor, aguarde alguns instantes (cerca de 20 a 60 segundos) e envie sua mensagem novamente.',
+        chatbotId: req.body?.chatbotId || '0a14dc90-3ab3-47bc-8306-ca5bc2953699',
+        model: 'gemini-cota-limit',
+        suggestedData: null,
+        offerPremium: true,
+      });
+    }
     res.status(500).json({
       error: err.message || 'Erro ao processar solicitação com o Chatbot Gemini.',
       details: err.toString(),

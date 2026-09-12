@@ -352,7 +352,7 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
     }
     try {
       await StorageService.deleteSystemUpdate(id);
-      setUpdates((prev) => prev.filter((u) => u.id !== id));
+      setUpdates((prev) => (Array.isArray(prev) ? prev : []).filter((u) => u && u.id !== id));
       showToast(`Registro de atualização ${version} removido.`);
     } catch (err) {
       console.error('Erro ao deletar:', err);

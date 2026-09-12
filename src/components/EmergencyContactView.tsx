@@ -548,18 +548,20 @@ Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
 
   // Relatórios filtrados para a visão administrativa
   const filteredReports = useMemo(() => {
-    return reports.filter((r) => {
+    const safeReports = Array.isArray(reports) ? reports : [];
+    return safeReports.filter((r) => {
+      if (!r) return false;
       const matchStatus = adminStatusFilter === 'todos' || r.status === adminStatusFilter;
       const matchCategory = adminCategoryFilter === 'todas' || r.category === adminCategoryFilter;
       const matchUrgency = adminUrgencyFilter === 'todas' || r.urgencyLevel === adminUrgencyFilter;
       const query = adminSearchQuery.toLowerCase().trim();
       const matchQuery =
         !query ||
-        r.protocolNumber.toLowerCase().includes(query) ||
-        r.title.toLowerCase().includes(query) ||
-        r.description.toLowerCase().includes(query) ||
-        (r.involvedUsers && r.involvedUsers.some((u) => u.toLowerCase().includes(query))) ||
-        (r.involvedUrlsOrPages && r.involvedUrlsOrPages.some((u) => u.toLowerCase().includes(query))) ||
+        (r.protocolNumber || '').toLowerCase().includes(query) ||
+        (r.title || '').toLowerCase().includes(query) ||
+        (r.description || '').toLowerCase().includes(query) ||
+        (r.involvedUsers && r.involvedUsers.some((u) => (u || '').toLowerCase().includes(query))) ||
+        (r.involvedUrlsOrPages && r.involvedUrlsOrPages.some((u) => (u || '').toLowerCase().includes(query))) ||
         (r.reporterName && r.reporterName.toLowerCase().includes(query));
       return matchStatus && matchCategory && matchUrgency && matchQuery;
     });
@@ -729,9 +731,9 @@ Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
                 <span className="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-mono font-bold">
                   ADMIN
                 </span>
-                {reports.filter((r) => r.status === 'urgente_recebido').length > 0 && (
+                {(Array.isArray(reports) ? reports : []).filter((r) => r && r.status === 'urgente_recebido').length > 0 && (
                   <span className="px-1.5 py-0.5 rounded-full bg-red-600 text-white text-[9px] font-mono font-bold animate-pulse">
-                    {reports.filter((r) => r.status === 'urgente_recebido').length} novos
+                    {(Array.isArray(reports) ? reports : []).filter((r) => r && r.status === 'urgente_recebido').length} novos
                   </span>
                 )}
               </div>
@@ -1708,8 +1710,8 @@ Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
                 <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60 shadow-xs">
                   <span className="text-[10px] uppercase font-bold text-red-600 dark:text-red-400 block">Aguardando Plantão</span>
                   <span className="text-xl font-bold font-mono text-red-700 dark:text-red-300 mt-0.5 flex items-center gap-2">
-                    {reports.filter((r) => r.status === 'urgente_recebido').length}
-                    {reports.filter((r) => r.status === 'urgente_recebido').length > 0 && (
+                    {(Array.isArray(reports) ? reports : []).filter((r) => r?.status === 'urgente_recebido').length}
+                    {(Array.isArray(reports) ? reports : []).filter((r) => r?.status === 'urgente_recebido').length > 0 && (
                       <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
                     )}
                   </span>
@@ -1719,7 +1721,7 @@ Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
                 <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 shadow-xs">
                   <span className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 block">Em Atendimento</span>
                   <span className="text-xl font-bold font-mono text-amber-700 dark:text-amber-300 mt-0.5 block">
-                    {reports.filter((r) => r.status === 'em_atendimento_imediato').length}
+                    {(Array.isArray(reports) ? reports : []).filter((r) => r?.status === 'em_atendimento_imediato').length}
                   </span>
                   <span className="text-[10px] text-amber-600/80">Medidas em execução</span>
                 </div>
@@ -1727,7 +1729,7 @@ Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
                 <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 shadow-xs">
                   <span className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 block">Resolvidos / Encaminhados</span>
                   <span className="text-xl font-bold font-mono text-emerald-700 dark:text-emerald-300 mt-0.5 block">
-                    {reports.filter((r) => r.status === 'resolvido_mitigado' || r.status === 'encaminhado_autoridades').length}
+                    {(Array.isArray(reports) ? reports : []).filter((r) => r?.status === 'resolvido_mitigado' || r?.status === 'encaminhado_autoridades').length}
                   </span>
                   <span className="text-[10px] text-emerald-600/80">Riscos mitigados</span>
                 </div>

@@ -33,24 +33,47 @@ import { GeminiQuotaService } from '../services/geminiQuotaService';
 import { StorageService } from '../services/storageService';
 
 interface GeminiNotebookProps {
-  user: UserProfile | null;
-  articles: WikiArticle[];
-  onOpenArticle: (articleId: string) => void;
-  onOpenEditorWithContent: (title: string, content: string, category: string) => void;
-  onOpenLoginModal: () => void;
-  onOpenPremiumModal: (quotaType?: 'chats' | 'images' | 'notebook') => void;
+  user?: UserProfile | null;
+  currentUser?: UserProfile | null;
+  articles?: WikiArticle[];
+  existingArticles?: WikiArticle[];
+  pages?: any[];
+  onOpenArticle?: (articleId: string) => void;
+  onOpenEditorWithContent?: (title: string, content: string, category: string) => void;
+  onInsertArticle?: (articleData: {
+    titulo: string;
+    categoria: string;
+    pageUid: string;
+    descricao: string;
+    resumo: string;
+  }) => void;
+  onOpenLoginModal?: () => void;
+  onOpenPremiumModal?: (quotaType?: 'chats' | 'images' | 'notebook') => void;
   onClose?: () => void;
 }
 
-export const GeminiNotebook: React.FC<GeminiNotebookProps> = ({
-  user,
-  articles,
-  onOpenArticle,
-  onOpenEditorWithContent,
-  onOpenLoginModal,
-  onOpenPremiumModal,
-  onClose,
-}) => {
+export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
+  const user = props.user ?? props.currentUser ?? null;
+  const rawArticles = props.articles ?? props.existingArticles ?? [];
+  const articles: WikiArticle[] = Array.isArray(rawArticles) ? rawArticles : [];
+  const onClose = props.onClose;
+  const onOpenArticle = props.onOpenArticle || ((id: string) => {});
+  const onOpenEditorWithContent =
+    props.onOpenEditorWithContent ||
+    ((title: string, content: string, category: string) => {
+      if (props.onInsertArticle) {
+        props.onInsertArticle({
+          titulo: title,
+          categoria: category,
+          pageUid: props.pages?.[0]?.uid || 'wiki-geral',
+          descricao: content,
+          resumo: 'Criado com Gemini Notebook',
+        });
+        if (onClose) onClose();
+      }
+    });
+  const onOpenLoginModal = props.onOpenLoginModal || (() => {});
+  const onOpenPremiumModal = props.onOpenPremiumModal || (() => {});
   const [notebooks, setNotebooks] = useState<GeminiNotebookItem[]>([]);
   const [currentNotebook, setCurrentNotebook] = useState<GeminiNotebookItem | null>(null);
   const [sources, setSources] = useState<GeminiNotebookSource[]>([]);
@@ -188,9 +211,9 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = ({
 
   const handleDeleteSource = async (sourceId: string) => {
     if (!currentNotebook) return;
-    const updated = sources.filter((s) => s.id !== sourceId);
+    const updated = (sources || []).filter((s) => s.id !== sourceId);
     setSources(updated);
-    setSelectedSourceIds(selectedSourceIds.filter((id) => id !== sourceId));
+    setSelectedSourceIds((prev) => (prev || []).filter((id) => id !== sourceId));
 
     const updatedNb = {
       ...currentNotebook,
@@ -202,15 +225,15 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = ({
   };
 
   const toggleSourceSelection = (sourceId: string) => {
-    if (selectedSourceIds.includes(sourceId)) {
-      setSelectedSourceIds(selectedSourceIds.filter((id) => id !== sourceId));
+    if ((selectedSourceIds || []).includes(sourceId)) {
+      setSelectedSourceIds((prev) => (prev || []).filter((id) => id !== sourceId));
     } else {
-      setSelectedSourceIds([...selectedSourceIds, sourceId]);
+      setSelectedSourceIds([...(selectedSourceIds || []), sourceId]);
     }
   };
 
   const handleSynthesize = async () => {
-    const activeSources = sources.filter((s) => selectedSourceIds.includes(s.id));
+    const activeSources = (sources || []).filter((s) => (selectedSourceIds || []).includes(s.id));
     if (activeSources.length === 0) {
       alert('Selecione ao menos 1 fonte marcada para realizar a síntese.');
       return;
@@ -341,10 +364,12 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const filteredArticles = articles.filter(
+  const safeArticlesList = Array.isArray(articles) ? articles : [];
+  const filteredArticles = safeArticlesList.filter(
     (a) =>
-      a.titulo.toLowerCase().includes(sourceSearchTerm.toLowerCase()) ||
-      a.categoria?.toLowerCase().includes(sourceSearchTerm.toLowerCase())
+      a &&
+      (((a.titulo || '').toLowerCase().includes((sourceSearchTerm || '').toLowerCase())) ||
+        ((a.categoria || '').toLowerCase().includes((sourceSearchTerm || '').toLowerCase())))
   );
 
   return (

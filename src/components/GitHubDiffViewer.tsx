@@ -77,20 +77,22 @@ export const GitHubDiffViewer: React.FC<GitHubDiffViewerProps> = ({
 
   // Filtered files
   const filteredFiles = useMemo(() => {
-    return files.filter((f) => {
+    const safeFiles = Array.isArray(files) ? files : [];
+    return safeFiles.filter((f) => {
+      if (!f) return false;
       const matchStatus = selectedStatus === 'all' || f.status === selectedStatus;
       const q = filterQuery.toLowerCase().trim();
-      const matchQuery = !q || f.filename.toLowerCase().includes(q);
+      const matchQuery = !q || (f.filename || '').toLowerCase().includes(q);
       return matchStatus && matchQuery;
     });
   }, [files, filterQuery, selectedStatus]);
 
   const totalAdditions = useMemo(
-    () => files.reduce((acc, f) => acc + (f.additions || 0), 0),
+    () => (Array.isArray(files) ? files : []).reduce((acc, f) => acc + (f?.additions || 0), 0),
     [files]
   );
   const totalDeletions = useMemo(
-    () => files.reduce((acc, f) => acc + (f.deletions || 0), 0),
+    () => (Array.isArray(files) ? files : []).reduce((acc, f) => acc + (f?.deletions || 0), 0),
     [files]
   );
 

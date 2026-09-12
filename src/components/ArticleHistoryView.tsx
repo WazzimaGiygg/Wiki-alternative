@@ -65,14 +65,16 @@ export const ArticleHistoryView: React.FC<ArticleHistoryViewProps> = ({
   const [filterMinor, setFilterMinor] = useState<boolean | null>(null);
 
   // Filtered history list
-  const filteredHistory = historyList.filter((item) => {
+  const safeHistoryList = Array.isArray(historyList) ? historyList : [];
+  const filteredHistory = safeHistoryList.filter((item) => {
+    if (!item) return false;
     if (filterMinor === true && !item.isMinor) return false;
     if (filterMinor === false && item.isMinor) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return (
-        item.autor.toLowerCase().includes(q) ||
-        item.resumo.toLowerCase().includes(q) ||
+        (item.autor || '').toLowerCase().includes(q) ||
+        (item.resumo || '').toLowerCase().includes(q) ||
         (item.data && item.data.toLowerCase().includes(q))
       );
     }

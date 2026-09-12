@@ -30,21 +30,24 @@ export const WhatLinksHereView: React.FC<WhatLinksHereViewProps> = ({
   const [filterQuery, setFilterQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'articles' | 'pages'>('all');
 
-  const backlinks = StorageService.getBacklinks(currentArticle.titulo, allArticles);
+  const rawBacklinks = StorageService.getBacklinks(currentArticle.titulo, allArticles);
+  const backlinks = Array.isArray(rawBacklinks) ? rawBacklinks : [];
   
   // Also check if any page collection mentions the article title in tags or description
-  const collectionLinks = allPages.filter(
+  const safePages = Array.isArray(allPages) ? allPages : [];
+  const collectionLinks = safePages.filter(
     (p) =>
-      p.descricao.toLowerCase().includes(currentArticle.titulo.toLowerCase()) ||
-      p.tags?.some((t) => t.toLowerCase() === currentArticle.titulo.toLowerCase())
+      p &&
+      (((p.descricao || '').toLowerCase().includes(currentArticle.titulo.toLowerCase())) ||
+        p.tags?.some((t) => t && t.toLowerCase() === currentArticle.titulo.toLowerCase()))
   );
 
   const filteredBacklinks = backlinks.filter((b) =>
-    b.article.titulo.toLowerCase().includes(filterQuery.toLowerCase())
+    b?.article?.titulo?.toLowerCase().includes(filterQuery.toLowerCase())
   );
 
   const filteredCollections = collectionLinks.filter((c) =>
-    c.titulo.toLowerCase().includes(filterQuery.toLowerCase())
+    c?.titulo?.toLowerCase().includes(filterQuery.toLowerCase())
   );
 
   const totalLinks = backlinks.length + collectionLinks.length;

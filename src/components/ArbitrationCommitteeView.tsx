@@ -180,15 +180,17 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
 
   // Filtered Cases
   const filteredCases = useMemo(() => {
-    return cases.filter((c) => {
+    const safeCases = Array.isArray(cases) ? cases : [];
+    return safeCases.filter((c) => {
+      if (!c) return false;
       // Search
       const matchesSearch =
         searchQuery === '' ||
-        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.caseNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.targetUsername.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.requesterUsername.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.summary.toLowerCase().includes(searchQuery.toLowerCase());
+        (c.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.caseNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.targetUsername || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.requesterUsername || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.summary || '').toLowerCase().includes(searchQuery.toLowerCase());
 
       // Target Type Filter
       const matchesTarget = targetTypeFilter === 'all' || c.targetType === targetTypeFilter;
@@ -202,12 +204,13 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
 
   // Metrics
   const metrics = useMemo(() => {
-    const total = cases.length;
-    const concluded = cases.filter((c) => c.status === 'concluido').length;
-    const inDeliberation = cases.filter((c) => c.status === 'deliberacao' || c.status === 'em_instrucao').length;
-    const againstAdmins = cases.filter((c) => c.targetType === 'administrador').length;
-    const againstMods = cases.filter((c) => c.targetType === 'moderador').length;
-    const againstUsers = cases.filter((c) => c.targetType === 'usuario').length;
+    const safeCases = Array.isArray(cases) ? cases : [];
+    const total = safeCases.length;
+    const concluded = safeCases.filter((c) => c?.status === 'concluido').length;
+    const inDeliberation = safeCases.filter((c) => c?.status === 'deliberacao' || c?.status === 'em_instrucao').length;
+    const againstAdmins = safeCases.filter((c) => c?.targetType === 'administrador').length;
+    const againstMods = safeCases.filter((c) => c?.targetType === 'moderador').length;
+    const againstUsers = safeCases.filter((c) => c?.targetType === 'usuario').length;
 
     return { total, concluded, inDeliberation, againstAdmins, againstMods, againstUsers };
   }, [cases]);
@@ -383,10 +386,10 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
       return;
     }
 
-    const deliberations = selectedCase.deliberations || [];
-    const inFavor = deliberations.filter((d) => d.vote === 'sancionar' || d.vote === 'acolher').length;
-    const against = deliberations.filter((d) => d.vote === 'absolver' || d.vote === 'rejeitar').length;
-    const abstain = deliberations.filter((d) => d.vote === 'abster').length;
+    const deliberations = Array.isArray(selectedCase.deliberations) ? selectedCase.deliberations : [];
+    const inFavor = deliberations.filter((d) => d && (d.vote === 'sancionar' || d.vote === 'acolher')).length;
+    const against = deliberations.filter((d) => d && (d.vote === 'absolver' || d.vote === 'rejeitar')).length;
+    const abstain = deliberations.filter((d) => d && d.vote === 'abster').length;
 
     const findings = rulingFindings
       .split('\n')
