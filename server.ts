@@ -332,6 +332,11 @@ app.all('/api/auth/check-wikimedia-admin', (req: Request, res: Response) => {
 });
 
 // -------------------------------------------------------------
+// Health check endpoint
+app.get('/api/health', (req: Request, res: Response) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
 // API Routes: Gemini Chatbot (Google AI Studio)
 // -------------------------------------------------------------
 
@@ -797,11 +802,11 @@ Retorne APENAS o JSON puro, sem crases de markdown e sem texto antes ou depois.`
 // -------------------------------------------------------------
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
-    const isHmrDisabled = process.env.DISABLE_HMR === 'true';
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
-        hmr: isHmrDisabled ? false : undefined,
+        hmr: false,
+        ws: false,
       },
       appType: 'spa',
     });
