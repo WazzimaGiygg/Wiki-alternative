@@ -810,6 +810,90 @@ async function startServer() {
       },
       appType: 'spa',
     });
+
+    // Provide clean Vite client without websocket errors in container sandbox
+    app.get('/@vite/client', (req: Request, res: Response) => {
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.send(`
+import "/node_modules/vite/dist/client/env.mjs";
+
+const sheetsMap = new Map();
+let lastInsertedStyle;
+const cspNonce = typeof document !== 'undefined' ? document.querySelector('meta[property=csp-nonce]')?.nonce : undefined;
+
+export function updateStyle(id, content) {
+  if (typeof document === 'undefined') return;
+  let style = sheetsMap.get(id);
+  if (!style) {
+    style = document.createElement('style');
+    style.setAttribute('type', 'text/css');
+    style.setAttribute('data-vite-dev-id', id);
+    style.textContent = content;
+    if (cspNonce) {
+      style.setAttribute('nonce', cspNonce);
+    }
+    if (!lastInsertedStyle) {
+      document.head.appendChild(style);
+      setTimeout(() => {
+        lastInsertedStyle = void 0;
+      }, 0);
+    } else {
+      lastInsertedStyle.insertAdjacentElement('afterend', style);
+    }
+    lastInsertedStyle = style;
+  } else {
+    style.textContent = content;
+  }
+  sheetsMap.set(id, style);
+}
+
+export function removeStyle(id) {
+  if (typeof document === 'undefined') return;
+  const style = sheetsMap.get(id);
+  if (style) {
+    document.head.removeChild(style);
+    sheetsMap.delete(id);
+  }
+}
+
+class FakeHMRContext {
+  constructor(ownerPath) {
+    this.ownerPath = ownerPath;
+    this.data = {};
+  }
+  accept() {}
+  acceptDeps() {}
+  acceptExports() {}
+  dispose() {}
+  prune() {}
+  decline() {}
+  invalidate() {}
+  on() {}
+  off() {}
+  send() {}
+}
+
+export function createHotContext(ownerPath) {
+  return new FakeHMRContext(ownerPath);
+}
+
+export function injectQuery(url, queryToInject) {
+  if (url[0] !== '.' && url[0] !== '/') {
+    return url;
+  }
+  const pathname = url.replace(/[?#].*$/, '');
+  const { search, hash } = new URL(url, 'http://vite.dev');
+  return pathname + '?' + queryToInject + (search ? '&' + search.slice(1) : '') + (hash || '');
+}
+
+export class ErrorOverlay extends (typeof HTMLElement !== 'undefined' ? HTMLElement : Object) {}
+if (typeof customElements !== 'undefined' && !customElements.get('vite-error-overlay')) {
+  customElements.define('vite-error-overlay', ErrorOverlay);
+}
+      `);
+    });
+
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');

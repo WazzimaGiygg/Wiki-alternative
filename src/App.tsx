@@ -1240,6 +1240,8 @@ export default function App() {
             <WikiCompetitorComparisonView
               onNavigate={handleNavigate}
               onOpenEditor={() => handleOpenNewEditor()}
+              onOpenGeminiChatbot={() => setShowGeminiChatbot(true)}
+              onOpenGeminiNotebook={handleOpenNotebookModal}
             />
           )}
 
