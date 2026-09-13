@@ -71,6 +71,7 @@ import {
   DailyEditLimitStatus,
 } from '../types';
 import { sanitizeIpForDocId, hashIpAddress } from '../utils/ipUtils';
+import { verifyClientIpForLogin } from '../utils/wikimediaIpChecker';
 import { ACTIVE_FIREBASE_CONFIG } from '../config/firebaseCustomConfig';
 
 // Configuração ativa do Firebase derivada do arquivo de configuração do desenvolvedor (src/config/firebaseCustomConfig.ts)
@@ -1262,6 +1263,15 @@ export const StorageService = {
   },
 
   async loginWithGoogle(): Promise<UserProfile> {
+    // 1. Verificação de segurança: Bloqueio estrito para IPs de origem da Wikimedia Foundation (AS14907)
+    const ipCheck = await verifyClientIpForLogin();
+    if (ipCheck.isWikimedia) {
+      const detail = ipCheck.matchedRange ? ` (faixa detectada: ${ipCheck.matchedRange})` : '';
+      throw new Error(
+        `Acesso bloqueado: O login está permanentemente desabilitado para conexões originadas de faixas de IP pertencentes à Wikimedia Foundation (AS14907, IP: ${ipCheck.ip}${detail}). Conforme a política de isolamento editorial e segurança da WikiZero, autenticações a partir de redes Wikimedia são restritas.`
+      );
+    }
+
     await ensureFirebaseAuth();
     const currentAuth = auth || getAuthSafe();
     if (!currentAuth) {
@@ -1326,6 +1336,15 @@ export const StorageService = {
   },
 
   async loginAsCommunityUser(uid: string): Promise<UserProfile> {
+    // 1. Verificação de segurança: Bloqueio estrito para IPs de origem da Wikimedia Foundation (AS14907)
+    const ipCheck = await verifyClientIpForLogin();
+    if (ipCheck.isWikimedia) {
+      const detail = ipCheck.matchedRange ? ` (faixa detectada: ${ipCheck.matchedRange})` : '';
+      throw new Error(
+        `Acesso bloqueado: Login desabilitado para endereços IP originários da Wikimedia Foundation (AS14907, IP: ${ipCheck.ip}${detail}).`
+      );
+    }
+
     await ensureFirebaseAuth();
     const existing = await this.getUserProfile(uid);
     if (!existing) {

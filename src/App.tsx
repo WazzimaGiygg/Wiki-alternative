@@ -1452,13 +1452,19 @@ export default function App() {
         onOpenLoginModal={handleLoginClick}
         onOpenPremiumModal={handleOpenPremiumModal}
         onOpenNotebook={handleOpenNotebookModal}
-        onApplyCollection={(col) => {
+        onApplyToCollection={(col) => {
           setShowGeminiChatbot(false);
           setShowCreatePageModal(true);
         }}
-        onApplyArticle={(art) => {
+        onApplyToArticle={(wikitext, mode) => {
           setShowGeminiChatbot(false);
-          handleOpenNewEditor();
+          StorageService.saveDraft({
+            title: 'Novo Artigo Gemini',
+            content: wikitext,
+            pageUid: 'geral',
+          });
+          handleOpenNewEditor('geral');
+          handleNotify('Conteúdo do Gemini carregado no editor!', 'success');
         }}
       />
 

@@ -84,6 +84,179 @@ async function generateWithFallback(
 }
 
 // -------------------------------------------------------------
+// API Routes: Wikimedia Foundation IP Check & Security
+// -------------------------------------------------------------
+
+const WMF_IPV4_CIDRS = [
+  '185.15.56.0/22',
+  '91.198.174.0/24',
+  '195.200.68.0/24',
+  '193.46.90.0/24',
+  '198.35.26.0/23',
+  '208.80.152.0/22',
+  '103.102.166.0/24',
+  '185.71.138.0/24',
+];
+
+const WMF_IPV6_CIDRS = [
+  '2a02:ec80::/29',
+  '2620:0:860::/46',
+  '2001:df2:e500::/48',
+];
+
+function checkIpv4Cidr(ip: string, cidr: string): boolean {
+  const [rangeIp, prefixStr] = cidr.split('/');
+  const prefix = parseInt(prefixStr, 10);
+  if (isNaN(prefix) || prefix < 0 || prefix > 32) return false;
+
+  const toNum = (s: string) => {
+    const parts = s.trim().split('.');
+    if (parts.length !== 4) return null;
+    let n = 0;
+    for (let i = 0; i < 4; i++) {
+      const o = parseInt(parts[i], 10);
+      if (isNaN(o) || o < 0 || o > 255) return null;
+      n = (n << 8) + o;
+    }
+    return n >>> 0;
+  };
+
+  const ipNum = toNum(ip);
+  const rangeNum = toNum(rangeIp);
+  if (ipNum === null || rangeNum === null) return false;
+  if (prefix === 0) return true;
+  const mask = (~0 << (32 - prefix)) >>> 0;
+  return (ipNum & mask) === (rangeNum & mask);
+}
+
+function checkIpv6Cidr(ip: string, cidr: string): boolean {
+  try {
+    const [rangeIp, prefixStr] = cidr.split('/');
+    const prefix = parseInt(prefixStr, 10);
+    if (isNaN(prefix) || prefix < 0 || prefix > 128) return false;
+
+    const toBigInt = (raw: string): bigint | null => {
+      let clean = raw.trim().toLowerCase();
+      if (clean.includes('.')) {
+        const lastCol = clean.lastIndexOf(':');
+        if (lastCol !== -1) {
+          const v4Part = clean.slice(lastCol + 1).split('.');
+          if (v4Part.length === 4) {
+            const v4Num =
+              (parseInt(v4Part[0], 10) << 24) +
+              (parseInt(v4Part[1], 10) << 16) +
+              (parseInt(v4Part[2], 10) << 8) +
+              parseInt(v4Part[3], 10);
+            const hex = (v4Num >>> 0).toString(16).padStart(8, '0');
+            clean = `${clean.slice(0, lastCol)}:${hex.slice(0, 4)}:${hex.slice(4)}`;
+          }
+        }
+      }
+      const halves = clean.split('::');
+      let groups: string[] = [];
+      if (halves.length === 2) {
+        const l = halves[0] ? halves[0].split(':') : [];
+        const r = halves[1] ? halves[1].split(':') : [];
+        const m = 8 - (l.length + r.length);
+        if (m < 0) return null;
+        groups = [...l, ...new Array(m).fill('0'), ...r];
+      } else if (halves.length === 1) {
+        groups = clean.split(':');
+        if (groups.length !== 8) return null;
+      } else {
+        return null;
+      }
+      let res = 0n;
+      for (const g of groups) {
+        res = (res << 16n) + BigInt(parseInt(g || '0', 16));
+      }
+      return res;
+    };
+
+    const ipBig = toBigInt(ip);
+    const rangeBig = toBigInt(rangeIp);
+    if (ipBig === null || rangeBig === null) return false;
+    if (prefix === 0) return true;
+    const shift = 128n - BigInt(prefix);
+    return (ipBig >> shift) === (rangeBig >> shift);
+  } catch {
+    return false;
+  }
+}
+
+function evaluateWikimediaIp(rawIp: string): { isWikimedia: boolean; matchedRange?: string } {
+  let ip = (rawIp || '').trim();
+  if (ip.startsWith('::ffff:')) ip = ip.replace('::ffff:', '');
+  if (ip.startsWith('[') && ip.includes(']')) ip = ip.slice(1, ip.indexOf(']'));
+  if (ip.includes(':') && ip.indexOf(':') === ip.lastIndexOf(':') && ip.includes('.')) {
+    ip = ip.split(':')[0];
+  }
+
+  for (const cidr of WMF_IPV4_CIDRS) {
+    if (checkIpv4Cidr(ip, cidr)) {
+      return { isWikimedia: true, matchedRange: cidr };
+    }
+  }
+  for (const cidr of WMF_IPV6_CIDRS) {
+    if (checkIpv6Cidr(ip, cidr)) {
+      return { isWikimedia: true, matchedRange: cidr };
+    }
+  }
+  return { isWikimedia: false };
+}
+
+app.all('/api/auth/check-wikimedia-ip', async (req: Request, res: Response) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  const realIp = req.headers['x-real-ip'];
+  const reqIp = (typeof req.query.ip === 'string' && req.query.ip) || (req.body && req.body.ip);
+
+  let clientIp = (reqIp ||
+    (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : '') ||
+    (typeof realIp === 'string' ? realIp.trim() : '') ||
+    req.socket.remoteAddress ||
+    '127.0.0.1') as string;
+
+  if (clientIp.startsWith('::ffff:')) clientIp = clientIp.replace('::ffff:', '');
+
+  const check = evaluateWikimediaIp(clientIp);
+
+  // Verificação adicional opcional de hostname reverso
+  let reverseHost: string | null = null;
+  if (!check.isWikimedia && clientIp && !clientIp.startsWith('127.') && !clientIp.startsWith('192.168.') && !clientIp.startsWith('10.')) {
+    try {
+      const hostnames = await dns.promises.reverse(clientIp);
+      if (Array.isArray(hostnames) && hostnames.length > 0) {
+        reverseHost = hostnames[0];
+        if (
+          reverseHost.endsWith('.wikimedia.org') ||
+          reverseHost.endsWith('.wmnet') ||
+          reverseHost.endsWith('.wmflabs.org') ||
+          reverseHost.endsWith('.wikipedia.org')
+        ) {
+          check.isWikimedia = true;
+          check.matchedRange = 'rDNS: ' + reverseHost;
+        }
+      }
+    } catch {
+      // Ignora falha de DNS reverso
+    }
+  }
+
+  res.json({
+    isWikimedia: check.isWikimedia,
+    blocked: check.isWikimedia,
+    ip: clientIp,
+    matchedRange: check.matchedRange || null,
+    reverseHost,
+    asn: 'AS14907',
+    org: 'Wikimedia Foundation, Inc.',
+    reason: check.isWikimedia
+      ? 'O login foi bloqueado para este endereço de IP por pertencer à infraestrutura oficial da Wikimedia Foundation (AS14907).'
+      : null,
+  });
+});
+
+// -------------------------------------------------------------
 // API Routes: Gemini Chatbot (Google AI Studio)
 // -------------------------------------------------------------
 
@@ -549,8 +722,12 @@ Retorne APENAS o JSON puro, sem crases de markdown e sem texto antes ou depois.`
 // -------------------------------------------------------------
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
+    const isHmrDisabled = process.env.DISABLE_HMR === 'true';
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: isHmrDisabled ? false : undefined,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);

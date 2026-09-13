@@ -950,6 +950,7 @@ export interface GeminiChatMessage {
   offerPremium?: boolean;
   quotaExceeded?: boolean;
   quotaType?: 'chats' | 'images' | 'notebook';
+  feedback?: 'like' | 'dislike';
   metadata?: {
     actionType?: 'article' | 'collection' | 'wtext_snippet';
     suggestedData?: any;

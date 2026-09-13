@@ -23,6 +23,15 @@ import {
   Image as ImageIcon,
   BookOpen,
   Zap,
+  Volume2,
+  VolumeX,
+  Download,
+  RotateCcw,
+  ThumbsUp,
+  ThumbsDown,
+  StopCircle,
+  Replace,
+  Code,
 } from 'lucide-react';
 import {
   GeminiChatbotConfig,
@@ -50,6 +59,7 @@ interface GeminiChatbotDrawerProps {
   };
   currentCollection?: Partial<WikiPage>;
   onApplyToArticle?: (wikitext: string, mode: 'insert' | 'replace') => void;
+  onApplyArticle?: (wikitext: string) => void;
   onApplyToCollection?: (collectionData: {
     titulo: string;
     uid: string;
@@ -58,10 +68,186 @@ interface GeminiChatbotDrawerProps {
     icon: string;
     tags: string[];
   }) => void;
+  onApplyCollection?: (collectionData: any) => void;
   onOpenLoginModal?: () => void;
   onOpenPremiumModal?: (quotaType?: 'chats' | 'images' | 'notebook') => void;
   onOpenNotebook?: () => void;
 }
+
+interface FormattedMessageProps {
+  content: string;
+  isUser: boolean;
+  msgId: string;
+  copiedId: string | null;
+  onCopyText: (id: string, text: string) => void;
+}
+
+const FormattedMessage: React.FC<FormattedMessageProps> = ({
+  content,
+  isUser,
+  msgId,
+  copiedId,
+  onCopyText,
+}) => {
+  if (isUser) {
+    return <div className="whitespace-pre-wrap select-text break-words">{content}</div>;
+  }
+
+  // Parse code blocks with ```[lang]?\n...\n```
+  const parts: Array<{ type: 'code' | 'text'; lang?: string; text: string }> = [];
+  const codeBlockRegex = /```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({
+        type: 'text',
+        text: content.slice(lastIndex, match.index),
+      });
+    }
+    parts.push({
+      type: 'code',
+      lang: match[1] || 'wikitext',
+      text: match[2],
+    });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < content.length) {
+    parts.push({
+      type: 'text',
+      text: content.slice(lastIndex),
+    });
+  }
+
+  const renderRichText = (text: string) => {
+    const lines = text.split('\n');
+    return lines.map((line, lIdx) => {
+      // Heading recognition
+      const headingMatch = line.match(/^(=+)\s*(.*?)\s*\1$/) || line.match(/^(#{1,4})\s+(.*)$/);
+      if (headingMatch) {
+        const title = headingMatch[2];
+        return (
+          <div
+            key={lIdx}
+            className="font-bold text-xs text-blue-700 dark:text-blue-300 mt-2 mb-1 border-b border-blue-200/50 dark:border-blue-900/50 pb-0.5"
+          >
+            {title}
+          </div>
+        );
+      }
+
+      // Bullet list recognition
+      const isBullet = line.startsWith('* ') || line.startsWith('- ');
+      const contentLine = isBullet ? line.slice(2) : line;
+
+      // Inline formatting: **bold**, *italic*, `code`, [[wiki link]]
+      const formattedParts = contentLine
+        .split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\[\[.*?\]\])/g)
+        .map((seg, sIdx) => {
+          if (seg.startsWith('**') && seg.endsWith('**') && seg.length >= 4) {
+            return (
+              <strong key={sIdx} className="font-bold text-slate-900 dark:text-white">
+                {seg.slice(2, -2)}
+              </strong>
+            );
+          }
+          if (seg.startsWith('*') && seg.endsWith('*') && seg.length >= 2) {
+            return (
+              <em key={sIdx} className="italic text-slate-800 dark:text-slate-200">
+                {seg.slice(1, -1)}
+              </em>
+            );
+          }
+          if (seg.startsWith('`') && seg.endsWith('`') && seg.length >= 2) {
+            return (
+              <code
+                key={sIdx}
+                className="font-mono bg-slate-200 dark:bg-slate-700/80 text-blue-600 dark:text-blue-300 px-1 py-0.5 rounded text-[10px]"
+              >
+                {seg.slice(1, -1)}
+              </code>
+            );
+          }
+          if (seg.startsWith('[[') && seg.endsWith(']]') && seg.length >= 4) {
+            const inner = seg.slice(2, -2);
+            const linkParts = inner.split('|');
+            const visible = linkParts[1] || linkParts[0];
+            return (
+              <span
+                key={sIdx}
+                className="text-blue-600 dark:text-blue-400 font-semibold underline decoration-blue-400/40"
+              >
+                {visible}
+              </span>
+            );
+          }
+          return seg;
+        });
+
+      if (isBullet) {
+        return (
+          <div key={lIdx} className="flex items-start gap-1.5 ml-2 my-0.5">
+            <span className="text-blue-500 font-bold">•</span>
+            <span className="flex-1">{formattedParts}</span>
+          </div>
+        );
+      }
+
+      return (
+        <div key={lIdx} className={line.trim() === '' ? 'h-2' : 'my-0.5 leading-relaxed'}>
+          {formattedParts}
+        </div>
+      );
+    });
+  };
+
+  return (
+    <div className="select-text break-words space-y-1 text-xs">
+      {parts.map((p, idx) => {
+        if (p.type === 'code') {
+          const codeId = `${msgId}-code-${idx}`;
+          return (
+            <div
+              key={idx}
+              className="my-2 rounded-lg overflow-hidden border border-slate-700/80 bg-slate-900 text-slate-100 shadow-xs"
+            >
+              <div className="bg-slate-950 px-3 py-1.5 text-[10px] font-mono text-slate-400 flex items-center justify-between border-b border-slate-800">
+                <span className="uppercase font-semibold tracking-wider text-amber-400 flex items-center gap-1">
+                  <Code size={11} />
+                  {p.lang || 'código'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onCopyText(codeId, p.text.trim())}
+                  className="flex items-center gap-1 hover:text-white transition px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] cursor-pointer"
+                  title="Copiar código para área de transferência"
+                >
+                  {copiedId === codeId ? (
+                    <>
+                      <Check size={11} className="text-emerald-400" />
+                      <span className="text-emerald-400 font-medium">Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={11} />
+                      <span>Copiar Código</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <pre className="p-3 font-mono text-[11px] overflow-x-auto whitespace-pre leading-relaxed text-slate-200">
+                {p.text}
+              </pre>
+            </div>
+          );
+        }
+        return <div key={idx}>{renderRichText(p.text)}</div>;
+      })}
+    </div>
+  );
+};
 
 export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
   isOpen,
@@ -71,7 +257,9 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
   currentArticle,
   currentCollection,
   onApplyToArticle,
+  onApplyArticle,
   onApplyToCollection,
+  onApplyCollection,
   onOpenLoginModal,
   onOpenPremiumModal,
   onOpenNotebook,
@@ -83,6 +271,15 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const effectiveApplyToArticle =
+    onApplyToArticle || (onApplyArticle ? (txt: string, mode: 'insert' | 'replace') => onApplyArticle(txt) : undefined);
+  const effectiveApplyToCollection = onApplyToCollection || onApplyCollection;
+
+  const storageKey = `wikizero_chat_history_${contextMode || 'general'}`;
 
   // Upload de Imagem multimodal
   const [selectedImage, setSelectedImage] = useState<{
@@ -126,64 +323,185 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
     loadConfig();
   }, [isOpen]);
 
-  // Mensagem inicial contextualizada
-  useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      let initialGreeting = `Olá! Sou o **Chatbot Assistente Gemini** integrado via Google AI Studio (**ID: \`${config.chatbotId}\`**).`;
+  const getInitialGreeting = (mode = contextMode, id = config.chatbotId, articleTitle = currentArticle?.titulo) => {
+    let greeting = `Olá! Sou o **Chatbot Assistente Gemini** integrado via Google AI Studio (**ID: \`${id}\`**).`;
 
-      if (contextMode === 'collection') {
-        initialGreeting += `\n\nVejo que você está criando uma nova **Coleção Temática** na WikiZero. Posso ajudá-lo a planejar o escopo, sugerir título, identificador (slug), categoria e tags! Clique em uma das sugestões abaixo ou digite seu tema.`;
-      } else if (contextMode === 'article') {
-        initialGreeting += `\n\nEstou pronto para auxiliá-lo na redação enciclopédica do artigo **"${currentArticle?.titulo || 'Novo Artigo'}"**. Posso redigir seções completas em sintaxe Wikitext, criar infoboxes, sugerir tópicos e referências.`;
-      } else {
-        initialGreeting += `\n\nComo posso ajudá-lo hoje na enciclopédia? Posso sugerir novas coleções, redigir artigos completos ou tirar dúvidas sobre formatação wikitexto.`;
-      }
-
-      setMessages([
-        {
-          id: 'msg-welcome',
-          role: 'model',
-          content: initialGreeting,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+    if (mode === 'collection') {
+      greeting += `\n\nVejo que você está criando uma nova **Coleção Temática** na WikiZero. Posso ajudá-lo a planejar o escopo, sugerir título, identificador (slug), categoria e tags! Clique em uma das sugestões abaixo ou digite seu tema.`;
+    } else if (mode === 'article') {
+      greeting += `\n\nEstou pronto para auxiliá-lo na redação enciclopédica do artigo **"${articleTitle || 'Novo Artigo'}"**. Posso redigir seções completas em sintaxe Wikitext, criar infoboxes, sugerir tópicos e referências.`;
+    } else {
+      greeting += `\n\nComo posso ajudá-lo hoje na enciclopédia? Posso sugerir novos artigos, redigir textos completos em sintaxe Wikitext, planejar coleções ou tirar dúvidas de formatação enciclopédica.`;
     }
-  }, [isOpen, contextMode, config.chatbotId]);
+    return greeting;
+  };
+
+  // Carrega histórico salvo ou inicializa mensagem padrão
+  useEffect(() => {
+    if (!isOpen) return;
+
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar histórico do chat:', e);
+    }
+
+    setMessages([
+      {
+        id: `msg-welcome-${Date.now()}`,
+        role: 'model',
+        content: getInitialGreeting(contextMode, config.chatbotId, currentArticle?.titulo),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
+  }, [isOpen, contextMode, config.chatbotId, currentArticle?.titulo]);
+
+  // Salva no localStorage sempre que houver novas mensagens
+  useEffect(() => {
+    if (messages.length > 0) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(messages));
+      } catch (e) {
+        // Cota local ignorada
+      }
+    }
+  }, [messages, storageKey]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
+  // Interrompe síntese de voz ao desmontar
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
   if (!isOpen) return null;
 
-  const handleSendMessage = async (customText?: string) => {
-    const textToSend = customText || inputValue;
-    if ((!textToSend.trim() && !selectedImage) || isLoading) return;
+  const handlePlayAudio = (msgId: string, content: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      alert('Seu navegador não possui suporte para síntese de voz (TTS).');
+      return;
+    }
+    if (playingAudioId === msgId) {
+      window.speechSynthesis.cancel();
+      setPlayingAudioId(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
 
-    const messageText = textToSend.trim() || (selectedImage ? 'Analise a imagem enviada para criação de conteúdo na WikiZero.' : '');
+    // Remove blocos de código e formatação wikitexto para leitura fluida
+    const cleanText = content
+      .replace(/```[\s\S]*?```/g, 'Código omitido na leitura por áudio.')
+      .replace(/<[^>]*>/g, '')
+      .replace(/\[\[([^\]|]+\|)?([^\]]+)\]\]/g, '$2')
+      .replace(/[']{2,5}/g, '')
+      .replace(/[*#=_-]+/g, ' ')
+      .replace(/\{[^\}]*\}/g, '')
+      .replace(/`{1,3}[^`]*`{1,3}/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-    const userMessage: GeminiChatMessage = {
-      id: `usr-${Date.now()}`,
-      role: 'user',
-      content: messageText,
-      imageUrl: selectedImage?.preview,
-      imageMimeType: selectedImage?.mimeType,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+    if (!cleanText) return;
 
-    const newHistory = [...messages, userMessage];
-    setMessages(newHistory);
-    setInputValue('');
-    const imagePayload = selectedImage ? { data: selectedImage.data, mimeType: selectedImage.mimeType } : undefined;
-    setSelectedImage(null);
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.onend = () => setPlayingAudioId(null);
+    utterance.onerror = () => setPlayingAudioId(null);
+    setPlayingAudioId(msgId);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+  };
+
+  const handleClearChat = () => {
+    if (window.confirm('Deseja limpar todo o histórico desta conversa e iniciar um novo chat?')) {
+      if (playingAudioId && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        setPlayingAudioId(null);
+      }
+      try {
+        localStorage.removeItem(storageKey);
+      } catch (e) {}
+      setMessages([
+        {
+          id: `msg-welcome-${Date.now()}`,
+          role: 'model',
+          content: getInitialGreeting(contextMode, config.chatbotId, currentArticle?.titulo),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    }
+  };
+
+  const handleExportChat = () => {
+    if (messages.length === 0) return;
+    const exportBody = messages
+      .map((m) => {
+        const author = m.role === 'user' ? '👤 Usuário' : '✨ Chatbot Gemini AI Studio';
+        return `### ${author} [${m.timestamp}]\n\n${m.content}\n\n---\n`;
+      })
+      .join('\n');
+
+    const fileContent = `# Histórico de Conversa - Chatbot Gemini WikiZero\n- Data: ${new Date().toLocaleString()}\n- Modo: ${contextMode}\n- Chatbot ID: ${config.chatbotId}\n- Modelo: ${config.model}\n\n${exportBody}`;
+
+    const blob = new Blob([fileContent], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `chat-wikizero-gemini-${contextMode}-${new Date().toISOString().slice(0, 10)}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFeedback = (msgId: string, type: 'like' | 'dislike') => {
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id === msgId) {
+          return {
+            ...m,
+            feedback: m.feedback === type ? undefined : type,
+          };
+        }
+        return m;
+      })
+    );
+  };
+
+  const executeSendMessage = async (
+    messageText: string,
+    historyToSend: GeminiChatMessage[],
+    imagePayload?: { data: string; mimeType: string }
+  ) => {
     setIsLoading(true);
+    abortControllerRef.current = new AbortController();
 
     try {
       const response = await GeminiChatbotService.sendMessage({
         message: messageText,
-        history: newHistory,
+        history: historyToSend,
         user: currentUser,
         image: imagePayload,
+        signal: abortControllerRef.current.signal,
         context: {
           mode: (contextMode || 'general') as 'collection' | 'article' | 'general',
           currentArticle: {
@@ -212,23 +530,91 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
         quotaExceeded: response.quotaExceeded,
         quotaType: response.quotaType,
         metadata: {
-          actionType: contextMode === 'article' ? 'article' : contextMode === 'collection' ? 'collection' : 'wtext_snippet',
+          actionType:
+            contextMode === 'article'
+              ? 'article'
+              : contextMode === 'collection'
+              ? 'collection'
+              : 'wtext_snippet',
           suggestedData: response.suggestedData,
         },
       };
 
       setMessages((prev) => [...prev, botMessage]);
     } catch (err: any) {
-      const errorMessage: GeminiChatMessage = {
-        id: `err-${Date.now()}`,
-        role: 'model',
-        content: `⚠️ **Erro na comunicação com o Chatbot Gemini:**\n${err.message || 'Falha ao processar solicitação.'}\n\n*Dica: Verifique se a variável GEMINI_API_KEY está configurada no ambiente ou se o ID do Chatbot está correto.*`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      if (err.name === 'AbortError') {
+        const cancelMessage: GeminiChatMessage = {
+          id: `bot-cancel-${Date.now()}`,
+          role: 'model',
+          content: '⏹️ *Geração interrompida pelo usuário.*',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, cancelMessage]);
+      } else {
+        const errorMessage: GeminiChatMessage = {
+          id: `err-${Date.now()}`,
+          role: 'model',
+          content: `⚠️ **Erro na comunicação com o Chatbot Gemini:**\n${err.message || 'Falha ao processar solicitação.'}\n\n*Dica: Verifique se a variável GEMINI_API_KEY está configurada no ambiente ou se o ID do Chatbot está correto.*`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      }
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
+  };
+
+  const handleSendMessage = async (customText?: string) => {
+    const textToSend = customText || inputValue;
+    if ((!textToSend.trim() && !selectedImage) || isLoading) return;
+
+    const messageText = textToSend.trim() || (selectedImage ? 'Analise a imagem enviada para criação de conteúdo na WikiZero.' : '');
+
+    const userMessage: GeminiChatMessage = {
+      id: `usr-${Date.now()}`,
+      role: 'user',
+      content: messageText,
+      imageUrl: selectedImage?.preview,
+      imageMimeType: selectedImage?.mimeType,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    const newHistory = [...messages, userMessage];
+    setMessages(newHistory);
+    setInputValue('');
+    const imagePayload = selectedImage ? { data: selectedImage.data, mimeType: selectedImage.mimeType } : undefined;
+    setSelectedImage(null);
+
+    await executeSendMessage(messageText, newHistory, imagePayload);
+  };
+
+  const handleRegenerate = async (botMsgId: string) => {
+    if (isLoading) return;
+    const botIdx = messages.findIndex((m) => m.id === botMsgId);
+    if (botIdx === -1) return;
+
+    let userMsg: GeminiChatMessage | null = null;
+    let userIdx = -1;
+    for (let i = botIdx - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        userMsg = messages[i];
+        userIdx = i;
+        break;
+      }
+    }
+
+    if (!userMsg) return;
+
+    const truncatedHistory = messages.slice(0, userIdx + 1);
+    setMessages(truncatedHistory);
+
+    const imagePayload =
+      userMsg.imageUrl && userMsg.imageMimeType
+        ? { data: userMsg.imageUrl, mimeType: userMsg.imageMimeType }
+        : undefined;
+
+    await executeSendMessage(userMsg.content, truncatedHistory, imagePayload);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -370,26 +756,45 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
             </div>
 
             <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={handleExportChat}
+                title="Exportar conversa em Markdown"
+                className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer"
+              >
+                <Download size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={handleClearChat}
+                title="Limpar histórico de conversa"
+                className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer"
+              >
+                <RotateCcw size={16} />
+              </button>
               {isAdmin && (
                 <button
+                  type="button"
                   onClick={() => setShowConfigModal(true)}
                   title="Configurações do Chatbot (Administrador)"
-                  className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition"
+                  className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer"
                 >
                   <Settings size={16} />
                 </button>
               )}
               <button
+                type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 title={isExpanded ? 'Reduzir largura' : 'Expandir largura'}
-                className="hidden sm:inline-flex p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition"
+                className="hidden sm:inline-flex p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer"
               >
                 {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
               </button>
               <button
+                type="button"
                 onClick={onClose}
                 title="Fechar assistente"
-                className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition"
+                className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -496,8 +901,13 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
 
           {/* Área de Mensagens */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-sans">
-            {messages.map((msg) => {
+            {messages.map((msg, index) => {
               const isUser = msg.role === 'user';
+              const isLastBotMessage =
+                !isUser &&
+                (index === messages.length - 1 ||
+                  (index === messages.length - 2 && messages[messages.length - 1].role === 'user'));
+
               return (
                 <div
                   key={msg.id}
@@ -528,10 +938,14 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
                       </div>
                     )}
 
-                    {/* Conteúdo formatado da mensagem */}
-                    <div className="whitespace-pre-wrap select-text break-words">
-                      {msg.content}
-                    </div>
+                    {/* Conteúdo formatado com wikitexto e markdown rico */}
+                    <FormattedMessage
+                      content={msg.content}
+                      isUser={isUser}
+                      msgId={msg.id}
+                      copiedId={copiedId}
+                      onCopyText={handleCopyText}
+                    />
 
                     {/* Card de Oferta ou Upgrade para Gemini Premium */}
                     {!isUser && (msg.offerPremium || msg.quotaExceeded) && (
@@ -547,8 +961,9 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
                         </p>
                         {onOpenPremiumModal && (
                           <button
+                            type="button"
                             onClick={() => onOpenPremiumModal(msg.quotaType)}
-                            className="w-full py-1.5 px-3 bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-all"
+                            className="w-full py-1.5 px-3 bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                           >
                             <Crown size={12} />
                             <span>Ver Planos & Ativar Gemini Premium</span>
@@ -560,15 +975,67 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
                     {/* Barra de Ações Rápidas em respostas do bot */}
                     {!isUser && (
                       <div className="mt-2.5 pt-2 border-t border-slate-200 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-1.5 text-[10px]">
-                        <span className="text-slate-400 dark:text-slate-500 font-mono">
-                          {msg.timestamp}
-                        </span>
+                        <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 font-mono">
+                          <span>{msg.timestamp}</span>
+                          <div className="flex items-center gap-0.5 border-l border-slate-300 dark:border-slate-700 pl-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleFeedback(msg.id, 'like')}
+                              className={`p-1 rounded transition cursor-pointer ${
+                                msg.feedback === 'like'
+                                  ? 'text-emerald-500 bg-emerald-500/15 font-bold'
+                                  : 'text-slate-400 hover:text-emerald-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                              }`}
+                              title="Resposta útil (Curtir)"
+                            >
+                              <ThumbsUp size={11} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleFeedback(msg.id, 'dislike')}
+                              className={`p-1 rounded transition cursor-pointer ${
+                                msg.feedback === 'dislike'
+                                  ? 'text-rose-500 bg-rose-500/15 font-bold'
+                                  : 'text-slate-400 hover:text-rose-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                              }`}
+                              title="Resposta não útil (Descurtir)"
+                            >
+                              <ThumbsDown size={11} />
+                            </button>
+                          </div>
+                        </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
+                          {/* Ouvir por Áudio TTS */}
                           <button
+                            type="button"
+                            onClick={() => handlePlayAudio(msg.id, msg.content)}
+                            className={`px-2 py-1 rounded flex items-center gap-1 transition cursor-pointer ${
+                              playingAudioId === msg.id
+                                ? 'bg-amber-500 text-white animate-pulse shadow-xs font-semibold'
+                                : 'bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600'
+                            }`}
+                            title={playingAudioId === msg.id ? 'Parar leitura por voz' : 'Ouvir resposta (Síntese de Voz)'}
+                          >
+                            {playingAudioId === msg.id ? (
+                              <>
+                                <VolumeX size={11} />
+                                <span>Parar Áudio</span>
+                              </>
+                            ) : (
+                              <>
+                                <Volume2 size={11} />
+                                <span>Ouvir</span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Copiar texto */}
+                          <button
+                            type="button"
                             onClick={() => handleCopyText(msg.id, msg.content)}
-                            className="px-2 py-1 rounded bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 flex items-center gap-1 transition"
-                            title="Copiar texto"
+                            className="px-2 py-1 rounded bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 flex items-center gap-1 transition cursor-pointer"
+                            title="Copiar texto da resposta"
                           >
                             {copiedId === msg.id ? (
                               <>
@@ -584,28 +1051,84 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
                           </button>
 
                           {/* Se estamos no editor de artigos */}
-                          {contextMode === 'article' && onApplyToArticle && (
+                          {contextMode === 'article' && effectiveApplyToArticle && (
                             <>
                               <button
-                                onClick={() => onApplyToArticle(msg.content, 'insert')}
-                                className="px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center gap-1 transition"
-                                title="Inserir este conteúdo no artigo wikitexto"
+                                type="button"
+                                onClick={() => effectiveApplyToArticle(msg.content, 'insert')}
+                                className="px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center gap-1 transition shadow-xs cursor-pointer"
+                                title="Inserir este conteúdo no final do artigo wikitexto"
                               >
                                 <ArrowDownToLine size={11} />
                                 <span>Inserir no Artigo</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm('Deseja substituir TODO o conteúdo do artigo atual pelo texto gerado pelo Gemini?')) {
+                                    effectiveApplyToArticle(msg.content, 'replace');
+                                  }
+                                }}
+                                className="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium flex items-center gap-1 transition shadow-xs cursor-pointer"
+                                title="Substituir todo o artigo por este conteúdo"
+                              >
+                                <Replace size={11} />
+                                <span>Substituir</span>
                               </button>
                             </>
                           )}
 
                           {/* Se estamos na criação de coleção */}
-                          {contextMode === 'collection' && onApplyToCollection && (
+                          {contextMode === 'collection' && effectiveApplyToCollection && (
                             <button
+                              type="button"
                               onClick={() => handleApplyCollectionFromResponse(msg.content)}
-                              className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1 transition"
+                              className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1 transition shadow-xs cursor-pointer"
                               title="Preencher os campos da coleção com estes dados"
                             >
                               <Layers size={11} />
                               <span>Aplicar na Coleção</span>
+                            </button>
+                          )}
+
+                          {/* Se estamos no modo geral, oferecer criar artigo ou coleção */}
+                          {contextMode === 'general' && (
+                            <>
+                              {effectiveApplyToArticle && (
+                                <button
+                                  type="button"
+                                  onClick={() => effectiveApplyToArticle(msg.content, 'replace')}
+                                  className="px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center gap-1 transition shadow-xs cursor-pointer"
+                                  title="Abrir editor de artigo com este conteúdo"
+                                >
+                                  <FileText size={11} />
+                                  <span>Criar Artigo</span>
+                                </button>
+                              )}
+                              {effectiveApplyToCollection && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleApplyCollectionFromResponse(msg.content)}
+                                  className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1 transition shadow-xs cursor-pointer"
+                                  title="Criar nova coleção com estes dados"
+                                >
+                                  <Layers size={11} />
+                                  <span>Criar Coleção</span>
+                                </button>
+                              )}
+                            </>
+                          )}
+
+                          {/* Regenerar resposta se for a última */}
+                          {isLastBotMessage && !isLoading && (
+                            <button
+                              type="button"
+                              onClick={() => handleRegenerate(msg.id)}
+                              className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 flex items-center gap-1 transition cursor-pointer"
+                              title="Regenerar esta resposta do Gemini"
+                            >
+                              <RefreshCw size={11} />
+                              <span>Regenerar</span>
                             </button>
                           )}
                         </div>
@@ -791,14 +1314,25 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
                 className="flex-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:ring-1 focus:ring-blue-500 resize-none text-slate-900 dark:text-white placeholder:text-slate-400"
               />
 
-              <button
-                type="submit"
-                disabled={isLoading || (!inputValue.trim() && !selectedImage)}
-                className="p-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white transition flex items-center justify-center shrink-0 cursor-pointer shadow-xs"
-                title="Enviar mensagem"
-              >
-                <Send size={15} />
-              </button>
+              {isLoading ? (
+                <button
+                  type="button"
+                  onClick={handleStopGeneration}
+                  className="p-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition flex items-center justify-center shrink-0 cursor-pointer shadow-xs animate-pulse"
+                  title="Parar geração da resposta"
+                >
+                  <StopCircle size={15} />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!inputValue.trim() && !selectedImage}
+                  className="p-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white transition flex items-center justify-center shrink-0 cursor-pointer shadow-xs"
+                  title="Enviar mensagem"
+                >
+                  <Send size={15} />
+                </button>
+              )}
             </form>
           </div>
         </div>

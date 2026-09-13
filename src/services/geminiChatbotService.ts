@@ -154,6 +154,7 @@ export class GeminiChatbotService {
       };
     };
     configOverride?: Partial<GeminiChatbotConfig>;
+    signal?: AbortSignal;
   }): Promise<{ reply: string; suggestedData?: any; offerPremium?: boolean; quotaExceeded?: boolean; quotaType?: 'chats' | 'images' | 'notebook' }> {
     const config = await this.getConfig();
     const activeConfig = { ...config, ...params.configOverride };
@@ -197,6 +198,7 @@ export class GeminiChatbotService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      signal: params.signal,
     });
 
     if (!res.ok) {
