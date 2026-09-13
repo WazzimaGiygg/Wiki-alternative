@@ -12,6 +12,9 @@ import {
   Ban,
   Globe,
   RefreshCw,
+  UserX,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -22,6 +25,11 @@ import {
   isWikimediaSimulationActive,
   setWikimediaSimulation,
 } from '../utils/wikimediaIpChecker';
+import {
+  PRIORITY_WIKIMEDIA_ADMINS,
+  checkIfWikimediaAdmin,
+  BlockedWikimediaAdminResult,
+} from '../utils/wikimediaAdminChecker';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -40,6 +48,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   const [isCheckingIp, setIsCheckingIp] = useState(true);
   const [ipCheckResult, setIpCheckResult] = useState<WikimediaIpCheckResult | null>(null);
   const [isSimulatingWikimedia, setIsSimulatingWikimedia] = useState(false);
+
+  // Estados para Auditoria de Nicknames de Administradores WMF
+  const [testAdminInput, setTestAdminInput] = useState('');
+  const [testAdminResult, setTestAdminResult] = useState<BlockedWikimediaAdminResult | null>(null);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+
+  const handleTestAdmin = (name: string) => {
+    setTestAdminInput(name);
+    const res = checkIfWikimediaAdmin(name);
+    setTestAdminResult(res);
+    if (res.isBlocked) {
+      setLoginError(`[BLOQUEIO WMF ATIVO] ${res.reason}`);
+    } else {
+      setLoginError(null);
+    }
+  };
 
   const runIpVerification = async () => {
     setIsCheckingIp(true);
@@ -328,6 +352,116 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               />
             </div>
           )}
+
+          {/* PAINEL DE SEGURANÇA: BLOQUEIO DE NICKNAMES DE ADMINISTRADORES WMF */}
+          <div className="rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/60 dark:bg-rose-950/30 p-3 text-xs space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-1.5 font-bold text-rose-900 dark:text-rose-200">
+                <UserX size={14} className="text-rose-600 dark:text-rose-400" />
+                <span>Bloqueio de Nicknames WMF Ativo</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdminPanel(!showAdminPanel)}
+                className="text-[11px] text-rose-700 dark:text-rose-300 hover:underline flex items-center gap-0.5 cursor-pointer"
+              >
+                <span>{showAdminPanel ? 'Ocultar Detalhes' : 'Ver Regras & Testar'}</span>
+                {showAdminPanel ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
+            </div>
+
+            <p className="text-[11px] text-rose-800 dark:text-rose-300 leading-relaxed">
+              Tentativas de login com nicknames de administradores, burocratas e operadores da <strong>Wikimedia Foundation</strong> são bloqueadas por diretriz de independência e neutralidade institucional.
+            </p>
+
+            {/* Administradores Prioritários com Ação Rápida de Teste */}
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[10px] font-semibold text-rose-900 dark:text-rose-200 uppercase tracking-wider block">
+                Administradores Prioritários com Bloqueio Estrito:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {PRIORITY_WIKIMEDIA_ADMINS.map((admin) => (
+                  <button
+                    key={admin.name}
+                    type="button"
+                    onClick={() => handleTestAdmin(admin.name)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono font-medium border transition cursor-pointer flex items-center gap-1 shadow-2xs ${
+                      testAdminInput.toLowerCase() === admin.name.toLowerCase()
+                        ? 'bg-rose-600 text-white border-rose-700'
+                        : 'bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/50'
+                    }`}
+                    title={`Clique para simular e verificar o bloqueio do nickname '${admin.name}' (${admin.project})`}
+                  >
+                    <span>🚫</span>
+                    <span>{admin.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Painel expandido de teste customizado */}
+            {showAdminPanel && (
+              <div className="mt-2 pt-2 border-t border-rose-200 dark:border-rose-800 space-y-2 animate-in fade-in">
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    value={testAdminInput}
+                    onChange={(e) => setTestAdminInput(e.target.value)}
+                    placeholder="Digite qualquer nickname para auditar..."
+                    className="flex-1 px-2.5 py-1 text-xs rounded border border-rose-300 dark:border-rose-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-rose-500 font-mono"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleTestAdmin(testAdminInput);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleTestAdmin(testAdminInput)}
+                    className="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded transition cursor-pointer shadow-2xs"
+                  >
+                    Verificar
+                  </button>
+                </div>
+
+                {testAdminResult && (
+                  <div
+                    className={`p-2 rounded border text-[11px] leading-relaxed ${
+                      testAdminResult.isBlocked
+                        ? 'bg-rose-100 dark:bg-rose-950 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200'
+                        : 'bg-emerald-50 dark:bg-emerald-950 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                    }`}
+                  >
+                    {testAdminResult.isBlocked ? (
+                      <div>
+                        <div className="font-bold flex items-center gap-1 text-xs">
+                          <Ban size={12} className="text-rose-600" />
+                          <span>ACESSO BLOQUEADO: Administrador WMF Detectado</span>
+                          {testAdminResult.isPriority && (
+                            <span className="bg-rose-200 dark:bg-rose-800 text-[9px] px-1.5 py-0.2 rounded font-mono font-bold">
+                              PRIORITÁRIO
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1">{testAdminResult.reason}</p>
+                        {testAdminResult.project && (
+                          <div className="mt-1 text-[10px] text-rose-700 dark:text-rose-300 font-mono">
+                            Origem: {testAdminResult.project}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 font-medium">
+                        <CheckCircle2 size={13} className="text-emerald-600" />
+                        <span>O nickname '{testAdminInput}' não consta nos registros de administradores WMF e está liberado.</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Rodapé com Informação do IP de Origem e Ferramenta de Teste/Auditoria */}
           <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2 text-[11px] text-slate-500 dark:text-slate-400">

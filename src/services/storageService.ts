@@ -72,6 +72,7 @@ import {
 } from '../types';
 import { sanitizeIpForDocId, hashIpAddress } from '../utils/ipUtils';
 import { verifyClientIpForLogin } from '../utils/wikimediaIpChecker';
+import { validateUserIdentifiersAgainstWikimediaAdmins, checkIfWikimediaAdmin } from '../utils/wikimediaAdminChecker';
 import { ACTIVE_FIREBASE_CONFIG } from '../config/firebaseCustomConfig';
 
 // Configuração ativa do Firebase derivada do arquivo de configuração do desenvolvedor (src/config/firebaseCustomConfig.ts)
@@ -1290,6 +1291,25 @@ export const StorageService = {
     const result = await signInWithPopup(currentAuth, provider);
     const u = result.user;
 
+    // 2. Verificação de segurança: Bloqueio estrito para nicknames de administradores da Wikimedia Foundation
+    // Prioridade máxima: "Chronus", "LittleSunshine", "Johannnes89", "Teles", "Conde Edmond Dantés"
+    const adminCheck = validateUserIdentifiersAgainstWikimediaAdmins({
+      displayName: u.displayName,
+      email: u.email,
+      username: u.displayName || u.email?.split('@')[0],
+    });
+
+    if (adminCheck.isBlocked) {
+      try {
+        await signOut(currentAuth);
+      } catch {
+        // ignora erro silencioso no signOut
+      }
+      throw new Error(
+        `Acesso bloqueado: O login foi recusado pois o nome/nickname '${adminCheck.matchedAdmin}' corresponde a um administrador de projetos da Wikimedia Foundation${adminCheck.isPriority ? ' (bloqueio prioritário de governança)' : ''}. O uso deste nickname está permanentemente restrito na WikiZero.`
+      );
+    }
+
     // Verificar status de bloqueio
     const banStatus = await this.getUserBanStatus(u.uid, u.email || undefined, u.displayName || undefined);
     const isBanned = !!banStatus.isBanned;
@@ -1351,6 +1371,18 @@ export const StorageService = {
       throw new Error('Usuário comunitário não encontrado');
     }
 
+    // 2. Verificação de segurança: Bloqueio estrito para nicknames de administradores da Wikimedia Foundation
+    const adminCheck = validateUserIdentifiersAgainstWikimediaAdmins({
+      displayName: existing.displayName,
+      username: existing.username,
+      email: existing.email,
+    });
+    if (adminCheck.isBlocked) {
+      throw new Error(
+        `Acesso bloqueado: O usuário '${existing.username || existing.displayName}' possui nickname correspondente a um administrador da Wikimedia Foundation (${adminCheck.matchedAdmin}). Login estritamente proibido.`
+      );
+    }
+
     // Checar bloqueio
     const banStatus = await this.getUserBanStatus(uid, existing.email, existing.username || existing.displayName);
     const isBanned = banStatus.isBanned || !!existing.isBanned;
@@ -1380,6 +1412,18 @@ export const StorageService = {
     await ensureFirebaseAuth();
     const cleanUsername = username.trim();
     const uid = 'user-' + cleanUsername.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+
+    // Checagem de administrador da Wikimedia Foundation
+    const adminCheck = validateUserIdentifiersAgainstWikimediaAdmins({
+      username: cleanUsername,
+      displayName: displayName || cleanUsername,
+      email: `${cleanUsername.toLowerCase()}@wikizero.org`,
+    });
+    if (adminCheck.isBlocked) {
+      throw new Error(
+        `Acesso bloqueado: O nickname '${adminCheck.matchedAdmin}' está permanentemente bloqueado para login ou registro por corresponder a um administrador de projetos da Wikimedia Foundation.`
+      );
+    }
 
     // Checar bloqueio
     const banStatus = await this.getUserBanStatus(uid, `${cleanUsername.toLowerCase()}@wikizero.org`, cleanUsername);
@@ -1445,6 +1489,20 @@ export const StorageService = {
     username?: string
   ): Promise<{ isBanned: boolean; reason?: string; banType?: string; expiresAt?: string }> {
     if (!uid) return { isBanned: false };
+
+    // 0. Verificação institucional de administradores da Wikimedia Foundation
+    const adminCheck = validateUserIdentifiersAgainstWikimediaAdmins({
+      username: username || uid,
+      email: email,
+      displayName: username,
+    });
+    if (adminCheck.isBlocked) {
+      return {
+        isBanned: true,
+        reason: adminCheck.reason || `Nome de usuário/nickname '${adminCheck.matchedAdmin}' bloqueado permanentemente por constar na lista de administradores da Wikimedia Foundation.`,
+        banType: 'permanente',
+      };
+    }
 
     // 1. Simulação para conta de teste bloqueada
     if (uid === 'banned_test_user') {
@@ -2793,6 +2851,15 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       return {
         success: false,
         message: 'O nome contém caracteres inválidos para identificador de usuário.',
+      };
+    }
+
+    // Checagem de administrador da Wikimedia Foundation
+    const adminCheck = checkIfWikimediaAdmin(cleanNewName);
+    if (adminCheck.isBlocked) {
+      return {
+        success: false,
+        message: `Não é permitido renomear para '${adminCheck.matchedAdmin}' pois o nickname corresponde a um administrador de projetos da Wikimedia Foundation.`,
       };
     }
 

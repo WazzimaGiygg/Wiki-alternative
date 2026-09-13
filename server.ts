@@ -257,6 +257,81 @@ app.all('/api/auth/check-wikimedia-ip', async (req: Request, res: Response) => {
 });
 
 // -------------------------------------------------------------
+// API Routes: Wikimedia Foundation Admin Nicknames Security
+// -------------------------------------------------------------
+
+const PRIORITY_WMF_ADMINS = ['Chronus', 'LittleSunshine', 'Johannnes89', 'Teles', 'Conde Edmond Dantés'];
+
+const ALL_WMF_ADMINS = [
+  ...PRIORITY_WMF_ADMINS,
+  'Conde Edmond Dantes',
+  'Érico', 'Erico', 'Alberto leoncio', 'Albertoleoncio', 'Athena in Wonderland',
+  'Beria Lima', 'Beria', 'RadiX', 'Fabiano', 'Gogan', 'GoEThe', 'Leonprimer',
+  'Stuckkey', 'DarwIn', 'He7d3r', 'HV', 'Vitor Mazuco', 'Chicocvenancio',
+  'Mwalcoff', 'JMagalhães', 'JMagalhaes', 'João Xavier', 'Joao Xavier', 'HCa',
+  'GFontenelle', 'Escaravelho', 'Luizdl', 'EVitor', 'DARIO SEVERI', 'Alchimista',
+  'Rei-artur', 'TXiKi', 'Geno-V', 'Nemo bis', 'Taketa', 'Trijnstel', 'DerHexer',
+  'Vituzzu', 'Callanecc', 'Stryn', 'Billinghurst', 'Mardetanha', 'Hasley', 'MF-Warburg',
+  'Superzerocool', 'DanCharly', 'Jimbo Wales', 'Jimmy Wales', 'Drmies', 'Fram',
+  'Bishonen', 'Barkeep49', 'Moneytrees', 'Yamla', 'Kudpung', 'Primefac', 'Taivo',
+  'Cyberpower678', 'Materialscientist', 'Widr', 'Gilliam', 'Favonian', 'Ymblanter',
+  'Ladsgroup', 'Kaldari', 'DannyS712', 'WikiSysop', 'WMFOffice', 'Wikimedia Foundation'
+];
+
+function normStr(s: string): string {
+  return (s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
+app.all('/api/auth/check-wikimedia-admin', (req: Request, res: Response) => {
+  const username = (typeof req.query.username === 'string' && req.query.username) || (req.body && req.body.username) || '';
+  const email = (typeof req.query.email === 'string' && req.query.email) || (req.body && req.body.email) || '';
+
+  const testNorm = normStr(username);
+  const emailPrefixNorm = email.includes('@') ? normStr(email.split('@')[0]) : '';
+
+  let matched: string | null = null;
+  let isPriority = false;
+
+  for (const prio of PRIORITY_WMF_ADMINS) {
+    const pNorm = normStr(prio);
+    if (testNorm === pNorm || (emailPrefixNorm && emailPrefixNorm === pNorm)) {
+      matched = prio;
+      isPriority = true;
+      break;
+    }
+  }
+
+  if (!matched) {
+    for (const admin of ALL_WMF_ADMINS) {
+      const aNorm = normStr(admin);
+      if (aNorm.length <= 3) {
+        if (testNorm === aNorm || (emailPrefixNorm && emailPrefixNorm === aNorm)) {
+          matched = admin;
+          break;
+        }
+      } else if (testNorm === aNorm || (emailPrefixNorm && emailPrefixNorm === aNorm)) {
+        matched = admin;
+        break;
+      }
+    }
+  }
+
+  res.json({
+    isBlocked: !!matched,
+    matchedAdmin: matched,
+    isPriority,
+    reason: matched
+      ? `O nickname '${matched}' possui bloqueio institucional por constar na lista de administradores/operadores da Wikimedia Foundation.`
+      : null,
+  });
+});
+
+// -------------------------------------------------------------
 // API Routes: Gemini Chatbot (Google AI Studio)
 // -------------------------------------------------------------
 
