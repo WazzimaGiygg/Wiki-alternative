@@ -959,7 +959,7 @@ export interface GeminiChatMessage {
   };
 }
 
-export type GeminiNotebookSourceType = 'wiki_article' | 'text' | 'url' | 'image' | 'google_doc';
+export type GeminiNotebookSourceType = 'wiki_article' | 'text' | 'url' | 'image';
 
 export interface GeminiNotebookSource {
   id: string;

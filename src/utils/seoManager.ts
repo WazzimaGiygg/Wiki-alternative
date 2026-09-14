@@ -25,7 +25,7 @@ export interface SEOConfig {
 const BASE_URL = 'https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app';
 const DEFAULT_TITLE = 'WikiWorldWeb - Enciclopédia Livre';
 const DEFAULT_DESC =
-  'WikiWorldWeb - A Enciclopédia Livre, Rápida e Sem Anúncios. Uma alternativa moderna e aberta à Wikipédia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, importação do Google Docs, auditoria descentralizada, temas visuais e conformidade LGPD.';
+  'WikiWorldWeb - A Enciclopédia Livre, Rápida e Sem Anúncios. Uma alternativa moderna e aberta à Wikipédia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, auditoria descentralizada, temas visuais e conformidade LGPD.';
 const DEFAULT_KEYWORDS = [
   'WikiWorldWeb',
   'WazzimaGiygg',
@@ -45,7 +45,6 @@ const DEFAULT_KEYWORDS = [
   'enciclopédia aberta',
   'wiki colaborativa',
   'editor wikitexto',
-  'importar google docs wiki',
   'enciclopedia online',
   'software livre',
   'enciclopedia sem anuncios',

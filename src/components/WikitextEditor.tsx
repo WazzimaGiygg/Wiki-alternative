@@ -37,7 +37,6 @@ import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
 import { SaveReasonModal } from './SaveReasonModal';
 import { PdfExportModal } from './PdfExportModal';
-import { GoogleDocsImportModal } from './GoogleDocsImportModal';
 import { htmlToWikitext } from '../utils/wikitextConverters';
 import { GeminiChatbotDrawer } from './GeminiChatbotDrawer';
 
@@ -97,7 +96,6 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [draftSaved, setDraftSaved] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
-  const [showGoogleDocsModal, setShowGoogleDocsModal] = useState(false);
   const [showGeminiDrawer, setShowGeminiDrawer] = useState(false);
   const [dailyLimitStatus, setDailyLimitStatus] = useState<DailyEditLimitStatus | null>(null);
 
@@ -448,17 +446,6 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             >
               <BookOpen size={13} className="text-amber-300 shrink-0" />
               <span>Gemini Notebook</span>
-            </button>
-
-            {/* Botão de Importação do Google Docs */}
-            <button
-              type="button"
-              onClick={() => setShowGoogleDocsModal(true)}
-              className="px-2.5 py-1 rounded bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-700 hover:to-blue-700 text-white transition text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer border border-blue-400/30"
-              title="Importar do Google Docs - Converta documentos do Google Docs em wikitexto na WikiWorldWeb"
-            >
-              <FileText size={13} className="text-white shrink-0" />
-              <span>Importar Google Docs</span>
             </button>
 
             <button
@@ -931,23 +918,6 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           pageName={pages.find((p) => p.uid === pageUid)?.titulo || 'WikiWorldWeb'}
           isOpen={showPdfModal}
           onClose={() => setShowPdfModal(false)}
-        />
-      )}
-
-      {/* Modal de Importação do Google Docs */}
-      {showGoogleDocsModal && (
-        <GoogleDocsImportModal
-          isOpen={showGoogleDocsModal}
-          onClose={() => setShowGoogleDocsModal(false)}
-          onImport={(result, mode) => {
-            if (mode === 'replace' || mode === 'new_article') {
-              setDescricao(result.wikitext);
-              if (result.title) setTitulo(result.title);
-            } else if (mode === 'append') {
-              setDescricao((prev) => (prev ? `${prev}\n\n${result.wikitext}` : result.wikitext));
-            }
-          }}
-          context="editor"
         />
       )}
 

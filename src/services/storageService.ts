@@ -1,6 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getDb, getAuthSafe } from './firebase';
-import { GoogleDocsService } from './googleDocsService';
 import {
   getFirestore,
   collection,
@@ -1301,12 +1300,11 @@ export const StorageService = {
       throw new Error('Serviço de autenticação Firebase Auth não está disponível no momento.');
     }
 
-    // Provedor Google Sign-In com suporte total a OAuth 2.0, OpenID Connect (OIDC) e Google Docs
+    // Provedor Google Sign-In com suporte a OAuth 2.0 e OpenID Connect (OIDC)
     const provider = new GoogleAuthProvider();
     provider.addScope('openid');
     provider.addScope('email');
     provider.addScope('profile');
-    provider.addScope('https://www.googleapis.com/auth/documents.readonly');
     provider.setCustomParameters({
       prompt: 'select_account',
     });
@@ -1330,9 +1328,6 @@ export const StorageService = {
       throw popupErr;
     }
     const credential = GoogleAuthProvider.credentialFromResult(result);
-    if (credential?.accessToken) {
-      GoogleDocsService.setAccessToken(credential.accessToken);
-    }
     const u = result.user;
 
     // 2. Verificação de segurança: Bloqueio estrito para nicknames de administradores da Wikimedia Foundation
@@ -1524,7 +1519,6 @@ export const StorageService = {
         console.warn('Signout error', err);
       }
     }
-    GoogleDocsService.clearAccessToken();
     this.clearUser();
   },
 

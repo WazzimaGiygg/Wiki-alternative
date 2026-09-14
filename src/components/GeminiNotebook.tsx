@@ -31,8 +31,6 @@ import {
 import { GeminiNotebookService } from '../services/geminiNotebookService';
 import { GeminiQuotaService } from '../services/geminiQuotaService';
 import { StorageService } from '../services/storageService';
-import { GoogleDocsImportModal } from './GoogleDocsImportModal';
-import { ImportedGoogleDocResult } from '../services/googleDocsService';
 
 interface GeminiNotebookProps {
   user?: UserProfile | null;
@@ -92,8 +90,7 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
 
   // Modais de fonte
   const [isAddSourceModalOpen, setIsAddSourceModalOpen] = useState(false);
-  const [addSourceType, setAddSourceType] = useState<'wiki_article' | 'text' | 'image' | 'google_doc'>('wiki_article');
-  const [showGoogleDocsImportModal, setShowGoogleDocsImportModal] = useState(false);
+  const [addSourceType, setAddSourceType] = useState<'wiki_article' | 'text' | 'image'>('wiki_article');
   const [selectedWikiArticleId, setSelectedWikiArticleId] = useState<string>('');
   const [sourceSearchTerm, setSourceSearchTerm] = useState('');
   const [freeTextTitle, setFreeTextTitle] = useState('');
@@ -187,10 +184,6 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
         imageUrl: imageBase64,
         addedAt: new Date().toISOString(),
       };
-    } else if (addSourceType === 'google_doc') {
-      setIsAddSourceModalOpen(false);
-      setShowGoogleDocsImportModal(true);
-      return;
     }
 
     if (!newSource) return;
@@ -214,29 +207,6 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
     setImageTitle('');
     setImageBase64(null);
     setSelectedWikiArticleId('');
-  };
-
-  const handleGoogleDocsImported = async (result: ImportedGoogleDocResult) => {
-    if (!currentNotebook) return;
-    const newSource: GeminiNotebookSource = {
-      id: 'src_' + Date.now(),
-      title: result.title || 'Documento Google Docs',
-      type: 'google_doc',
-      content: `[DOCUMENTO IMPORTADO DO GOOGLE DOCS: ${result.title}]\n\n${result.wikitext}`,
-      addedAt: new Date().toISOString(),
-    };
-
-    const updatedSources = [...sources, newSource];
-    setSources(updatedSources);
-    setSelectedSourceIds((prev) => [...prev, newSource.id]);
-
-    const updatedNb: GeminiNotebookItem = {
-      ...currentNotebook,
-      sources: updatedSources,
-      updatedAt: new Date().toISOString(),
-    };
-    await GeminiNotebookService.saveNotebook(updatedNb, user);
-    setCurrentNotebook(updatedNb);
   };
 
   const handleDeleteSource = async (sourceId: string) => {
@@ -495,8 +465,8 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
               Selecione as fontes que o Gemini deve analisar e cruzar para gerar o conteúdo:
             </p>
 
-            {/* Botões Adicionar Fonte e Google Docs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* Botão Adicionar Fonte */}
+            <div>
               <button
                 onClick={() => setIsAddSourceModalOpen(true)}
                 className="w-full py-2 px-3 rounded-xl border-2 border-dashed border-indigo-200 dark:border-indigo-800/60 hover:border-indigo-400 dark:hover:border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
@@ -504,20 +474,13 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
                 <Plus className="w-3.5 h-3.5" />
                 <span>Adicionar Fonte</span>
               </button>
-              <button
-                onClick={() => setShowGoogleDocsImportModal(true)}
-                className="w-full py-2 px-3 rounded-xl border border-blue-200 dark:border-blue-800/80 hover:border-blue-400 dark:hover:border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
-              >
-                <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>Importar Google Docs</span>
-              </button>
             </div>
 
             {/* Lista de Fontes */}
             <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
               {sources.length === 0 ? (
                 <div className="text-center py-8 text-slate-400 text-xs">
-                  Nenhuma fonte adicionada ainda. Clique acima para importar um artigo da WikiWorldWeb, Google Docs ou colar notas.
+                  Nenhuma fonte adicionada ainda. Clique acima para adicionar um artigo da WikiWorldWeb ou colar notas.
                 </div>
               ) : (
                 sources.map((src) => {
@@ -545,7 +508,6 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
                                 {src.type === 'wiki_article' && 'Artigo Wiki'}
                                 {src.type === 'text' && 'Nota Livre'}
                                 {src.type === 'image' && 'Imagem/Doc'}
-                                {src.type === 'google_doc' && 'Google Docs'}
                               </span>
                               <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 line-clamp-1">
                                 {src.title}
@@ -900,17 +862,6 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAddSourceType('google_doc')}
-                  className={`py-2 px-2 text-xs font-semibold rounded-lg border text-center ${
-                    addSourceType === 'google_doc'
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
-                >
-                  Google Docs
-                </button>
-                <button
-                  type="button"
                   onClick={() => setAddSourceType('image')}
                   className={`py-2 px-2 text-xs font-semibold rounded-lg border text-center ${
                     addSourceType === 'image'
@@ -974,33 +925,6 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
                 </div>
               )}
 
-              {addSourceType === 'google_doc' && (
-                <div className="p-5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-center space-y-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                      Importar Documento do Google Docs
-                    </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-                      Conecte sua conta e importe artigos, anotações de pesquisa ou relatórios do Google Docs para serem analisados e sintetizados pelo Gemini com outras fontes da WikiWorldWeb.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAddSourceModalOpen(false);
-                      setShowGoogleDocsImportModal(true);
-                    }}
-                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-2 mx-auto cursor-pointer"
-                  >
-                    <Sparkles className="w-4 h-4 text-amber-300" />
-                    <span>Conectar e Importar do Google Docs</span>
-                  </button>
-                </div>
-              )}
-
               {addSourceType === 'image' && (
                 <div className="space-y-3">
                   <input
@@ -1051,16 +975,6 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Modal de Importação do Google Docs */}
-      {showGoogleDocsImportModal && (
-        <GoogleDocsImportModal
-          isOpen={showGoogleDocsImportModal}
-          onClose={() => setShowGoogleDocsImportModal(false)}
-          onImport={(result) => handleGoogleDocsImported(result)}
-          context="notebook"
-        />
       )}
     </div>
   );
