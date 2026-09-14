@@ -109,7 +109,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   // Barnstar Modal State
   const [showBarnstarModal, setShowBarnstarModal] = useState(false);
   const [barnstarTitle, setBarnstarTitle] = useState('⭐ Estrela do Editor Incansável');
-  const [barnstarDescription, setBarnstarDescription] = useState('Pelo trabalho diligente na melhoria e verificação dos verbetes da WikiZero.');
+  const [barnstarDescription, setBarnstarDescription] = useState('Pelo trabalho diligente na melhoria e verificação dos verbetes da WikiWorldWeb.');
   const [barnstarIcon, setBarnstarIcon] = useState('⭐');
   const [barnstarSuccess, setBarnstarSuccess] = useState(false);
 
@@ -179,7 +179,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
     const profile = await StorageService.getUserProfile(targetUserIdentifier);
     if (profile) {
       setUserProfile(profile);
-      setBioText(profile.bio || `= ${profile.displayName || profile.username} =\nEditor da enciclopédia WikiZero.`);
+      setBioText(profile.bio || `= ${profile.displayName || profile.username} =\nEditor da enciclopédia WikiWorldWeb.`);
       setSelectedRole(profile.role);
       if (profile.permissions) {
         setPerms(profile.permissions);
@@ -345,7 +345,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   const handleAwardBarnstar = async () => {
     if (!userProfile) return;
     if (!canGrantBarnstars) {
-      alert('Apenas administradores e moderadores possuem autorização para conceder medalhas na WikiZero.');
+      alert('Apenas administradores e moderadores possuem autorização para conceder medalhas na WikiWorldWeb.');
       return;
     }
     const updated = await StorageService.awardBarnstar(
@@ -354,7 +354,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
         title: barnstarTitle,
         description: barnstarDescription,
         icon: barnstarIcon,
-        awardedBy: currentUser?.displayName || 'Comunidade WikiZero',
+        awardedBy: currentUser?.displayName || 'Comunidade WikiWorldWeb',
       },
       currentUser
     );
@@ -515,7 +515,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
           Página de Usuário Não Encontrada
         </h2>
         <p className="text-xs text-slate-500 max-w-md mx-auto mb-6">
-          O usuário <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono text-blue-600 dark:text-blue-400">{targetUserIdentifier}</code> ainda não possui registro ativo ou página criada na WikiZero.
+          O usuário <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono text-blue-600 dark:text-blue-400">{targetUserIdentifier}</code> ainda não possui registro ativo ou página criada na WikiWorldWeb.
         </p>
         <button
           onClick={onBack || (() => window.history.back())}
@@ -576,7 +576,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
           onClick={onBack}
           className="hover:text-blue-600 dark:hover:text-blue-400 transition flex items-center gap-1"
         >
-          <span>WikiZero</span>
+          <span>WikiWorldWeb</span>
         </button>
         <ChevronRight size={10} className="text-slate-400" />
         <span className="text-slate-700 dark:text-slate-300">Espaço Nominal: Usuário</span>
@@ -1189,7 +1189,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                       WZ
                     </div>
                     <div className="px-2.5 py-1 text-[11px] text-slate-700 dark:text-slate-300">
-                      Este usuário contribui para o projeto <strong>WikiZero</strong>.
+                      Este usuário contribui para o projeto <strong>WikiWorldWeb</strong>.
                     </div>
                   </div>
                   <div className="flex items-center border border-emerald-200 dark:border-emerald-800 rounded bg-emerald-50/50 dark:bg-emerald-950/20 overflow-hidden text-xs">
@@ -2119,7 +2119,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                       { icon: '⭐', title: 'Estrela do Editor Incansável', desc: 'Por edições minuciosas e correção contínua de verbetes.' },
                       { icon: '🚇', title: 'Estrela de Ouro do Metropolitano', desc: 'Por contribuições notáveis sobre transporte e mobilidade.' },
                       { icon: '🛡️', title: 'Guardião da Verificabilidade', desc: 'Por defender a neutralidade e fontes confiáveis.' },
-                      { icon: '🌟', title: 'Medalha do Pioneiro WikiZero', desc: 'Por colaborar desde os primórdios do projeto.' },
+                      { icon: '🌟', title: 'Medalha do Pioneiro WikiWorldWeb', desc: 'Por colaborar desde os primórdios do projeto.' },
                     ].map((b, i) => (
                       <button
                         key={i}

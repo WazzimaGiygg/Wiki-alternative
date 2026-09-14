@@ -262,7 +262,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400 mb-1">
-              <span>WikiZero</span>
+              <span>WikiWorldWeb</span>
               <span>/</span>
               <span className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
                 <History size={13} />

@@ -172,7 +172,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
       {/* 1. Breadcrumbs */}
       <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 mb-4 font-mono">
         <button onClick={onBack} className="hover:text-blue-600 dark:hover:text-blue-400 transition">
-          WikiZero
+          WikiWorldWeb
         </button>
         <ChevronRight size={10} className="text-slate-400" />
         <span className="text-slate-700 dark:text-slate-300">Administração de Sistema</span>
@@ -467,7 +467,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
               <pre className="p-4 bg-slate-950 text-slate-200 rounded-lg text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800">
 {`// src/config/firebaseCustomConfig.ts
 export const ACTIVE_FIREBASE_CONFIG = {
-  environmentLabel: "WikiZero - Produção",
+  environmentLabel: "WikiWorldWeb - Produção",
   
   // Altere aqui qual banco de dados do Firestore você deseja usar:
   // Use "(default)" para o banco padrão ou o ID específico do seu banco
@@ -1165,7 +1165,7 @@ service cloud.firestore {
                   onChange={(e) =>
                     setGeminiConfig((prev) => ({ ...prev, systemInstruction: e.target.value }))
                   }
-                  placeholder="Instruções editoriais e diretrizes da WikiZero que o chatbot deve seguir..."
+                  placeholder="Instruções editoriais e diretrizes da WikiWorldWeb que o chatbot deve seguir..."
                   className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
                 />
               </div>

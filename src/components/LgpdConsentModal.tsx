@@ -57,7 +57,7 @@ export const LgpdConsentModal: React.FC<LgpdConsentModalProps> = ({
 
     if (!isAgeValid) {
       setErrorMessage(
-        `Acesso não permitido: Você informou ${calculatedAge ?? 0} anos. A idade deve ser estritamente maior que 14 anos para acessar a WikiZero.`
+        `Acesso não permitido: Você informou ${calculatedAge ?? 0} anos. A idade deve ser estritamente maior que 14 anos para acessar a WikiWorldWeb.`
       );
       return;
     }
@@ -132,7 +132,7 @@ export const LgpdConsentModal: React.FC<LgpdConsentModalProps> = ({
                 Acesso Restrito ao Conteúdo
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-                Para navegar, consultar artigos e participar da <strong>WikiZero</strong>, é obrigatório definir sua data de nascimento comprovando idade <strong>maior que 14 anos</strong> e concordar com as políticas de privacidade da LGPD.
+                Para navegar, consultar artigos e participar da <strong>WikiWorldWeb</strong>, é obrigatório definir sua data de nascimento comprovando idade <strong>maior que 14 anos</strong> e concordar com as políticas de privacidade da LGPD.
               </p>
             </div>
 
@@ -165,7 +165,7 @@ export const LgpdConsentModal: React.FC<LgpdConsentModalProps> = ({
                 Controle de Faixa Etária e Governança de Dados
               </h3>
               <p className="text-[11px] text-blue-800 dark:text-blue-300">
-                A WikiZero adota padrões rigorosos de conformidade digital. O acesso à plataforma é permitido <strong>exclusivamente para usuários com idade maior que 14 anos</strong>.
+                A WikiWorldWeb adota padrões rigorosos de conformidade digital. O acesso à plataforma é permitido <strong>exclusivamente para usuários com idade maior que 14 anos</strong>.
               </p>
             </div>
 
@@ -230,7 +230,7 @@ export const LgpdConsentModal: React.FC<LgpdConsentModalProps> = ({
                   <div className="mt-2 p-2.5 rounded bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-[11px] flex items-center gap-2">
                     <AlertTriangle size={15} className="flex-shrink-0" />
                     <span>
-                      Idade não permitida ({calculatedAge} anos). A WikiZero exige idade <strong>maior que 14 anos</strong> para ingressar no site.
+                      Idade não permitida ({calculatedAge} anos). A WikiWorldWeb exige idade <strong>maior que 14 anos</strong> para ingressar no site.
                     </span>
                   </div>
                 )}

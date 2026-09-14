@@ -35,7 +35,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
       view: 'wazzimagiygg',
       title: 'WazzimaGiygg - Portal Oficial, Projetos e A Verdade sobre o Caso Wikipédia',
       description:
-        'Conheça os projetos oficiais de WazzimaGiygg (WikiZero, Wiki-alternative, Dossiê A Verdade, Central de Suporte) e o esclarecimento factual sobre o Caso Wazzimagiygg na Wikipédia.',
+        'Conheça os projetos oficiais de WazzimaGiygg (WikiWorldWeb, Wiki-alternative, Dossiê A Verdade, Central de Suporte) e o esclarecimento factual sobre o Caso Wazzimagiygg na Wikipédia.',
       breadcrumbs: [
         { name: 'Início', url: '/?uid=hub' },
         { name: 'WazzimaGiygg (Projetos & Dossiê Oficial)', url: '/?uid=wazzimagiygg' },
@@ -54,7 +54,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
         <div className="relative z-10 space-y-4 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold">
             <Award size={14} className="text-amber-400" />
-            <span>Perfil Oficial do Desenvolvedor & Criador da WikiZero</span>
+            <span>Perfil Oficial do Desenvolvedor & Criador da WikiWorldWeb</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
@@ -62,7 +62,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
           </h1>
 
           <p className="text-base sm:text-lg text-blue-100/90 leading-relaxed">
-            Desenvolvedor independente de software livre, idealizador da <strong>WikiZero</strong> e autor do dossiê 
+            Desenvolvedor independente de software livre, idealizador da <strong>WikiWorldWeb</strong> e autor do dossiê 
             <strong> "A Verdade"</strong>. Defensor da descentralização do conhecimento, da transparência editorial contra
             burocracias corporativas e da privacidade digital conforme a LGPD.
           </p>
@@ -185,14 +185,14 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/70 space-y-2">
               <h3 className="font-bold text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                 <CheckCircle2 size={15} />
-                <span>A Resposta Construtiva e a Criação da WikiZero</span>
+                <span>A Resposta Construtiva e a Criação da WikiWorldWeb</span>
               </h3>
               <ul className="text-xs space-y-1.5 list-disc list-inside text-slate-600 dark:text-slate-300">
                 <li>
                   <strong>Dossiê Aberto e Documentado:</strong> Publicação cronológica de capturas de tela e evidências em <a href={formatExternalUrl('https://wazzimagiygg.com/averdade/')} target="_blank" rel="noopener noreferrer" className="underline font-bold text-blue-600 dark:text-blue-400">wazzimagiygg.com/averdade/</a>.
                 </li>
                 <li>
-                  <strong>Nascimento da WikiZero:</strong> Em vez de disputas infindáveis, criação de uma enciclopédia livre 100% aberta, sem anúncios invasivos e sem monopólio de panelas burocráticas.
+                  <strong>Nascimento da WikiWorldWeb:</strong> Em vez de disputas infindáveis, criação de uma enciclopédia livre 100% aberta, sem anúncios invasivos e sem monopólio de panelas burocráticas.
                 </li>
                 <li>
                   <strong>Conselho de Arbitragem (ArbCom) Transparente:</strong> Sistema com registros públicos e garantias constitucionais de defesa e LGPD.
@@ -219,7 +219,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          {/* Project 1: WikiZero */}
+          {/* Project 1: WikiWorldWeb */}
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -231,7 +231,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
                 </span>
               </div>
               <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                WikiZero - A Enciclopédia Livre
+                WikiWorldWeb - A Enciclopédia Livre
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 A plataforma enciclopédica colaborativa, ultrarrápida, sem anúncios invasivos, com 11 temas visuais,
@@ -243,7 +243,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
                 onClick={() => onNavigate('hub')}
                 className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
               >
-                <span>Explorar WikiZero</span>
+                <span>Explorar WikiWorldWeb</span>
                 <ArrowRight size={13} />
               </button>
             </div>
@@ -352,7 +352,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
         <div className="flex items-center gap-2">
           <HelpCircle size={20} className="text-blue-600 dark:text-blue-400" />
           <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-            Perguntas Frequentes sobre WazzimaGiygg e a WikiZero
+            Perguntas Frequentes sobre WazzimaGiygg e a WikiWorldWeb
           </h2>
         </div>
 
@@ -362,7 +362,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
               Quem é WazzimaGiygg?
             </h3>
             <p className="text-slate-600 dark:text-slate-300">
-              WazzimaGiygg é o desenvolvedor e idealizador da <strong>WikiZero</strong>, uma enciclopédia livre,
+              WazzimaGiygg é o desenvolvedor e idealizador da <strong>WikiWorldWeb</strong>, uma enciclopédia livre,
               gratuita e sem anúncios comerciais invasivos. É também o autor do dossiê <em>"A Verdade"</em> e gestor
               do portal <a href={formatExternalUrl('https://wazzimagiygg.com/')} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 font-bold underline">wazzimagiygg.com</a>.
             </p>
@@ -376,7 +376,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
               Trata-se de uma página interna gerada por burocratas da Wikipédia em língua portuguesa como represália
               a contestações editoriais legítimas. O caso é amplamente refutado por documentos, históricos e capturas
               de tela públicas no dossiê <a href={formatExternalUrl('https://wazzimagiygg.com/averdade/')} target="_blank" rel="noopener noreferrer" className="text-amber-600 dark:text-amber-400 font-bold underline">wazzimagiygg.com/averdade/</a>,
-              que motivou a fundação da WikiZero como alternativa imune à censura e a panelas burocráticas.
+              que motivou a fundação da WikiWorldWeb como alternativa imune à censura e a panelas burocráticas.
             </p>
           </div>
 
@@ -397,7 +397,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
           Conheça a Enciclopédia Livre Criada por WazzimaGiygg
         </h2>
         <p className="text-xs sm:text-sm text-blue-100 max-w-xl mx-auto">
-          Explore o conhecimento livre, crie novos artigos e colabore sem censura na WikiZero.
+          Explore o conhecimento livre, crie novos artigos e colabore sem censura na WikiWorldWeb.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <button
@@ -405,7 +405,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
             className="px-5 py-2.5 rounded-xl bg-white text-blue-800 font-bold text-xs sm:text-sm hover:bg-blue-50 transition shadow-xs flex items-center gap-2 cursor-pointer"
           >
             <BookOpen size={15} />
-            <span>Página Principal da WikiZero</span>
+            <span>Página Principal da WikiWorldWeb</span>
           </button>
           {onOpenEditor && (
             <button

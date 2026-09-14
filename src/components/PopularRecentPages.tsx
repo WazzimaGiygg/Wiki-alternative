@@ -1,6 +1,6 @@
 /**
  * @file PopularRecentPages.tsx
- * @description Componente de índice que lista as páginas mais recentemente editadas e criadas no WikiZero.
+ * @description Componente de índice que lista as páginas mais recentemente editadas e criadas no WikiWorldWeb.
  */
 
 import React, { useState, useEffect } from 'react';

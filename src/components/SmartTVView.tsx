@@ -333,7 +333,7 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-black tracking-tight text-white">WikiZero TV</span>
+                <span className="text-xl font-black tracking-tight text-white">WikiWorldWeb TV</span>
                 <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-400/30">
                   10-Foot UI
                 </span>
@@ -508,7 +508,7 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
                 <div className="flex items-center gap-3">
                   <Sparkles className="w-5 h-5 text-amber-400" />
                   <h2 className="text-xl lg:text-2xl font-bold text-white tracking-tight">
-                    Catálogo de Conhecimento WikiZero
+                    Catálogo de Conhecimento WikiWorldWeb
                   </h2>
                 </div>
                 <span className="text-xs text-slate-400">
@@ -855,7 +855,7 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
                 <span>Como Usar e Instalar na sua Smart TV</span>
               </h2>
               <p className="text-base text-slate-300 mt-2">
-                O WikiZero suporta os principais sistemas operacionais de televisores inteligentes do mercado.
+                O WikiWorldWeb suporta os principais sistemas operacionais de televisores inteligentes do mercado.
               </p>
             </div>
 
@@ -872,7 +872,7 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
                 <h4 className="text-lg font-bold text-white">Navegador Samsung Internet TV</h4>
                 <ol className="text-xs text-slate-300 space-y-2 list-decimal list-inside">
                   <li>Abra o aplicativo <strong>Internet</strong> na sua TV Samsung.</li>
-                  <li>Acesse o endereço da WikiZero e clique no botão <strong>"Modo Smart TV"</strong>.</li>
+                  <li>Acesse o endereço da WikiWorldWeb e clique no botão <strong>"Modo Smart TV"</strong>.</li>
                   <li>Toque no ícone de <strong>Estrela (Favoritos)</strong> e escolha <strong>"Fixar na Barra de Início"</strong>.</li>
                 </ol>
               </div>
@@ -904,7 +904,7 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
                 <h4 className="text-lg font-bold text-white">Instalação PWA Direta</h4>
                 <ol className="text-xs text-slate-300 space-y-2 list-decimal list-inside">
                   <li>Abra o navegador (ex: JioPages, Chrome ou TV Bro) na sua Android TV.</li>
-                  <li>Acesse a WikiZero e clique em <strong>"Instalar Aplicativo PWA"</strong>.</li>
+                  <li>Acesse a WikiWorldWeb e clique em <strong>"Instalar Aplicativo PWA"</strong>.</li>
                   <li>O app aparecerá como um ícone nativo na linha de aplicativos da sua TV.</li>
                 </ol>
               </div>
@@ -968,7 +968,7 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
 
         <div className="flex items-center gap-3">
           <span className="text-[11px] text-blue-400 font-medium">
-            WikiZero Smart TV Edition v3.3
+            WikiWorldWeb Smart TV Edition v3.3
           </span>
         </div>
       </footer>

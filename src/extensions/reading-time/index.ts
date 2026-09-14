@@ -2,7 +2,7 @@ import { HookRegistry, WikiExtension } from '../../core/Extension';
 
 /**
  * Extension: ReadingTimeEnhancer
- * Calcula estimativas de tempo de leitura e estatísticas para artigos da WikiZero.
+ * Calcula estimativas de tempo de leitura e estatísticas para artigos da WikiWorldWeb.
  */
 export default class ReadingTimeEnhancer implements WikiExtension {
   getName(): string {
@@ -18,7 +18,7 @@ export default class ReadingTimeEnhancer implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Equipe WikiZero';
+    return 'Equipe WikiWorldWeb';
   }
 
   onRegister(hooks: HookRegistry): void {

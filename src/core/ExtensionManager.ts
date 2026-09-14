@@ -1,7 +1,7 @@
 /**
  * @file ExtensionManager.ts
  * @description Gerenciador central (Singleton) responsável por carregar, inicializar e 
- * manter o ciclo de vida de todas as extensões do WikiZero usando Vite e TypeScript.
+ * manter o ciclo de vida de todas as extensões do WikiWorldWeb usando Vite e TypeScript.
  */
 
 import { HookRegistry, WikiExtension } from './Extension';

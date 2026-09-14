@@ -1,6 +1,6 @@
 {
-  "name": "WikiZero - Enciclopédia Livre",
-  "description": "WikiZero - A Enciclopédia Livre, Rápida e Sem Anúncios. Uma alternativa moderna e aberta à Wikipédia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, auditoria descentralizada, temas visuais (Minecraft, Roblox, R.E.P.O. Semiwork, Stardew Valley, Genshin Impact, Android 1.5, Win95, Google), suporte a Smart TV (PWA 10-Foot) e conformidade LGPD.",
+  "name": "WikiWorldWeb - Enciclopédia Livre",
+  "description": "WikiWorldWeb - A Enciclopédia Livre, Rápida e Sem Anúncios. Uma alternativa moderna e aberta à Wikipédia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, importação direta do Google Docs, Gemini Notebook para síntese multifontes, temas visuais e conformidade LGPD.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

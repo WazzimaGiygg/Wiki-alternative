@@ -59,7 +59,7 @@ export const TalkPageView: React.FC<TalkPageViewProps> = ({ article, user }) => 
     if (!newTitle.trim() || !newContent.trim()) return;
 
     if (!user || user.isGuest) {
-      alert('Somente usuários cadastrados e logados podem abrir tópicos de discussão na WikiZero.');
+      alert('Somente usuários cadastrados e logados podem abrir tópicos de discussão na WikiWorldWeb.');
       return;
     }
     if (user.isBanned) {

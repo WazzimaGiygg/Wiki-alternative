@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getDb, getAuthSafe } from './firebase';
+import { GoogleDocsService } from './googleDocsService';
 import {
   getFirestore,
   collection,
@@ -354,7 +355,7 @@ export const StorageService = {
             resumo: data.resumo || (data.descricao ? data.descricao.slice(0, 140) + '...' : ''),
             categoria: data.categoria || 'Geral',
             idioma: data.idioma || 'Português',
-            autor: data.autor || 'Colaborador WikiZero',
+            autor: data.autor || 'Colaborador WikiWorldWeb',
             autorEmail: data.autorEmail || undefined,
             autorUid: data.autorUid || undefined,
             dataCriacao: data.dataCriacao || new Date().toISOString(),
@@ -381,7 +382,7 @@ export const StorageService = {
                 resumo: (data.content || data.descricao || '').slice(0, 140) + '...',
                 categoria: (data.categories && data.categories[0]) || data.categoria || 'Geral',
                 idioma: data.idioma || 'Português',
-                autor: data.authorName || data.autor || 'Colaborador WikiZero',
+                autor: data.authorName || data.autor || 'Colaborador WikiWorldWeb',
                 autorEmail: data.authorEmail || data.autorEmail || undefined,
                 autorUid: data.authorUid || data.autorUid || undefined,
                 dataCriacao: data.createdAt || new Date().toISOString(),
@@ -467,7 +468,7 @@ export const StorageService = {
               resumo: data.resumo || (data.descricao ? data.descricao.slice(0, 140) + '...' : ''),
               categoria: data.categoria || 'Geral',
               idioma: data.idioma || 'Português',
-              autor: data.autor || 'Colaborador WikiZero',
+              autor: data.autor || 'Colaborador WikiWorldWeb',
               autorEmail: data.autorEmail || undefined,
               autorUid: data.autorUid || undefined,
               dataCriacao: data.dataCriacao || new Date().toISOString(),
@@ -732,7 +733,7 @@ export const StorageService = {
   ): Promise<WikiArticle> {
     const effectiveUser = user || this.getCurrentUser();
     if (!effectiveUser || effectiveUser.isGuest) {
-      throw new Error('Somente usuários logados podem contribuir com edições na WikiZero.');
+      throw new Error('Somente usuários logados podem contribuir com edições na WikiWorldWeb.');
     }
     if (effectiveUser.isBanned) {
       throw new Error('Sua conta está suspensa. Usuários bloqueados não podem editar verbetes, apenas enviar pedidos de desbloqueio.');
@@ -846,7 +847,7 @@ export const StorageService = {
         resumo: articleData.resumo || articleData.descricao.slice(0, 140) + '...',
         categoria: articleData.categoria || 'Geral',
         idioma: articleData.idioma || 'Português',
-        autor: effectiveUser.displayName || effectiveUser.username || 'Colaborador WikiZero',
+        autor: effectiveUser.displayName || effectiveUser.username || 'Colaborador WikiWorldWeb',
         autorEmail: effectiveUser.email,
         autorUid: effectiveUser.uid,
         dataCriacao: now,
@@ -875,7 +876,7 @@ export const StorageService = {
           resumo: article.resumo || '',
           categoria: article.categoria || 'Geral',
           idioma: article.idioma || 'Português',
-          autor: article.autor || 'Colaborador WikiZero',
+          autor: article.autor || 'Colaborador WikiWorldWeb',
           autorEmail: article.autorEmail || null,
           autorUid: article.autorUid || effectiveUser.uid || 'anon',
           dataCriacao: article.dataCriacao,
@@ -927,7 +928,7 @@ export const StorageService = {
           articleId: article.id,
           articleTitle: article.titulo,
           pageUid: article.pageUid,
-          autor: article.autor || 'Colaborador WikiZero',
+          autor: article.autor || 'Colaborador WikiWorldWeb',
           autorEmail: article.autorEmail,
           autorUid: article.autorUid || effectiveUser.uid,
           data: now,
@@ -1246,7 +1247,7 @@ export const StorageService = {
       }
       this.clearUser();
       throw new Error(
-        `Acesso Bloqueado: Usuários bloqueados não podem realizar login ou editar na WikiZero. Motivo: ${banStatus.reason || 'Bloqueio de acesso.'}`
+        `Acesso Bloqueado: Usuários bloqueados não podem realizar login ou editar na WikiWorldWeb. Motivo: ${banStatus.reason || 'Bloqueio de acesso.'}`
       );
     }
 
@@ -1269,7 +1270,7 @@ export const StorageService = {
     if (ipCheck.isWikimedia) {
       const detail = ipCheck.matchedRange ? ` (faixa detectada: ${ipCheck.matchedRange})` : '';
       throw new Error(
-        `Acesso bloqueado: O login está permanentemente desabilitado para conexões originadas de faixas de IP pertencentes à Wikimedia Foundation (AS14907, IP: ${ipCheck.ip}${detail}). Conforme a política de isolamento editorial e segurança da WikiZero, autenticações a partir de redes Wikimedia são restritas.`
+        `Acesso bloqueado: O login está permanentemente desabilitado para conexões originadas de faixas de IP pertencentes à Wikimedia Foundation (AS14907, IP: ${ipCheck.ip}${detail}). Conforme a política de isolamento editorial e segurança da WikiWorldWeb, autenticações a partir de redes Wikimedia são restritas.`
       );
     }
 
@@ -1279,16 +1280,21 @@ export const StorageService = {
       throw new Error('Serviço de autenticação Firebase Auth não está disponível no momento.');
     }
 
-    // Provedor Google Sign-In com suporte total a OAuth 2.0 e OpenID Connect (OIDC)
+    // Provedor Google Sign-In com suporte total a OAuth 2.0, OpenID Connect (OIDC) e Google Docs
     const provider = new GoogleAuthProvider();
     provider.addScope('openid');
     provider.addScope('email');
     provider.addScope('profile');
+    provider.addScope('https://www.googleapis.com/auth/documents.readonly');
     provider.setCustomParameters({
       prompt: 'select_account',
     });
 
     const result = await signInWithPopup(currentAuth, provider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    if (credential?.accessToken) {
+      GoogleDocsService.setAccessToken(credential.accessToken);
+    }
     const u = result.user;
 
     // 2. Verificação de segurança: Bloqueio estrito para nicknames de administradores da Wikimedia Foundation
@@ -1306,7 +1312,7 @@ export const StorageService = {
         // ignora erro silencioso no signOut
       }
       throw new Error(
-        `Acesso bloqueado: O login foi recusado pois o nome/nickname '${adminCheck.matchedAdmin}' corresponde a um administrador de projetos da Wikimedia Foundation${adminCheck.isPriority ? ' (bloqueio prioritário de governança)' : ''}. O uso deste nickname está permanentemente restrito na WikiZero.`
+        `Acesso bloqueado: O login foi recusado pois o nome/nickname '${adminCheck.matchedAdmin}' corresponde a um administrador de projetos da Wikimedia Foundation${adminCheck.isPriority ? ' (bloqueio prioritário de governança)' : ''}. O uso deste nickname está permanentemente restrito na WikiWorldWeb.`
       );
     }
 
@@ -1480,6 +1486,7 @@ export const StorageService = {
         console.warn('Signout error', err);
       }
     }
+    GoogleDocsService.clearAccessToken();
     this.clearUser();
   },
 
@@ -1733,7 +1740,7 @@ export const StorageService = {
       return {
         success: false,
         age,
-        message: 'Acesso restrito: A idade informada deve ser estritamente maior que 14 anos conforme os termos da WikiZero e LGPD.',
+        message: 'Acesso restrito: A idade informada deve ser estritamente maior que 14 anos conforme os termos da WikiWorldWeb e LGPD.',
       };
     }
     localStorage.setItem(STORAGE_KEYS.LGPD_TERMS, 'true');
@@ -2022,7 +2029,7 @@ export const StorageService = {
   ): Promise<TalkThread> {
     const effectiveUser = user || this.getCurrentUser();
     if (!effectiveUser || effectiveUser.isGuest) {
-      throw new Error('Somente usuários cadastrados e logados podem abrir tópicos de discussão na WikiZero.');
+      throw new Error('Somente usuários cadastrados e logados podem abrir tópicos de discussão na WikiWorldWeb.');
     }
     if (effectiveUser.isBanned) {
       throw new Error('Sua conta está suspensa. Usuários bloqueados não podem criar tópicos de discussão.');
@@ -2229,7 +2236,7 @@ export const StorageService = {
     const feedbacks = current.feedbacks || [];
     if (comentario.trim()) {
       feedbacks.unshift({
-        autor: user ? user.displayName || user.email.split('@')[0] : 'Leitor WikiZero',
+        autor: user ? user.displayName || user.email.split('@')[0] : 'Leitor WikiWorldWeb',
         nota,
         comentario: comentario.trim(),
         data: new Date().toISOString(),
@@ -2432,7 +2439,7 @@ export const StorageService = {
     if (!existing) {
       // É UM USUÁRIO NOVO:
       // Resolver conflito de nome caso já exista outro usuário cadastrado com o mesmo displayName ou username.
-      const rawAuthorName = (user.displayName || user.username || 'Editor WikiZero').trim();
+      const rawAuthorName = (user.displayName || user.username || 'Editor WikiWorldWeb').trim();
 
       const isNameConflict = (candidate: string): boolean => {
         const candNorm = candidate.toLowerCase().trim().replace(/[+_]/g, ' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -2465,7 +2472,7 @@ export const StorageService = {
         : resolvedDisplayName.replace(/\s+/g, '_');
 
       const defaultBio = `= ${resolvedDisplayName} =
-Editor(a) e colaborador(a) da enciclopédia livre '''WikiZero'''.
+Editor(a) e colaborador(a) da enciclopédia livre '''WikiWorldWeb'''.
 
 == Apresentação ==
 Esta é a página oficial do(a) usuário(a) '''${resolvedDisplayName}'''.
@@ -2479,7 +2486,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 * '''Link Alternativo por Nome:''' [[User:${resolvedDisplayName}]].
 
 == Caixas de Usuário ==
-{{Userbox|🌐|Colaborador(a) da WikiZero Enciclopédia Aberta}}
+{{Userbox|🌐|Colaborador(a) da WikiWorldWeb Enciclopédia Aberta}}
 {{Userbox|✏️|Editor(a) com rastreamento ativo de edições}}
 {{Userbox|🛡️|Comprometido(a) com a veracidade das informações}}`;
 
@@ -2509,7 +2516,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         userboxes: user.userboxes || [
           {
             id: `ub-${Date.now()}-1`,
-            title: '🌐 WikiZero',
+            title: '🌐 WikiWorldWeb',
             text: 'Membro registrado e verificado na comunidade',
             icon: '🌐',
             bgClass: 'bg-blue-50 dark:bg-blue-950/40',
@@ -2546,7 +2553,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         ...existing,
         ...user,
         uid: existing.uid,
-        displayName: existing.displayName || user.displayName || 'Editor WikiZero',
+        displayName: existing.displayName || user.displayName || 'Editor WikiWorldWeb',
         username: existing.username || user.username || existing.displayName || 'Editor',
         bio: existing.bio || user.bio,
         lastActive: now,
@@ -2585,7 +2592,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     const authorName =
       typeof userOrAuthor === 'string'
         ? userOrAuthor
-        : userOrAuthor.displayName || userOrAuthor.username || userOrAuthor.email || 'Colaborador WikiZero';
+        : userOrAuthor.displayName || userOrAuthor.username || userOrAuthor.email || 'Colaborador WikiWorldWeb';
 
     let profile =
       typeof userOrAuthor === 'object' && userOrAuthor.uid
@@ -2960,7 +2967,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       cleanNewName,
       {
         titulo: `⚖️ Retificação de Nome Cadastral (LGPD / Marco Civil)`,
-        conteudo: `Seu nome de exibição e identificador público foi atualizado de '''"${oldName}"''' para '''"${cleanNewName}"''' em conformidade com as diretrizes da LGPD (Art. 18, III - Retificação de Dados) e Marco Civil da Internet.\n\n'''Fundamento / Justificativa:''' ${justificationText}\n\n'''Executado por:''' ${adminUser?.displayName || 'Administração WikiZero'}.`,
+        conteudo: `Seu nome de exibição e identificador público foi atualizado de '''"${oldName}"''' para '''"${cleanNewName}"''' em conformidade com as diretrizes da LGPD (Art. 18, III - Retificação de Dados) e Marco Civil da Internet.\n\n'''Fundamento / Justificativa:''' ${justificationText}\n\n'''Executado por:''' ${adminUser?.displayName || 'Administração WikiWorldWeb'}.`,
         tipo: 'aviso_admin',
       },
       adminUser
@@ -3058,7 +3065,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
             : banType === 'temporario'
             ? `Suspensão temporária por ${durationDays} dias.`
             : 'Advertência sem bloqueio de acesso.'
-        }\n\nEmitido por: ${adminUser?.displayName || 'Corpo Administrativo da WikiZero'}.`,
+        }\n\nEmitido por: ${adminUser?.displayName || 'Corpo Administrativo da WikiWorldWeb'}.`,
         tipo: 'aviso_admin',
       },
       adminUser
@@ -3185,7 +3192,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       id: 'bs-' + Date.now(),
       ...barnstarData,
       awardedAt: new Date().toISOString(),
-      awardedBy: adminUser?.displayName || 'Comunidade WikiZero',
+      awardedBy: adminUser?.displayName || 'Comunidade WikiWorldWeb',
       awardedByUid: adminUser?.uid,
     };
 
@@ -4306,7 +4313,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       }
 
       const badge = item.badge || item.selo || item.tag || item.label || undefined;
-      const author = String(item.author || item.autor || item.responsavel || 'Administração da WikiZero').trim();
+      const author = String(item.author || item.autor || item.responsavel || 'Administração da WikiWorldWeb').trim();
       const authorRole = String(item.authorRole || item.cargo || item.papel || 'Administrador do Sistema').trim();
       const commitHash = item.commitHash || item.commit || item.hash || undefined;
 
@@ -4390,7 +4397,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         title: entry.title,
         date: entry.date || new Date().toISOString().split('T')[0],
         category: entry.category,
-        author: entry.author || options.authorFallback || 'Administração da WikiZero',
+        author: entry.author || options.authorFallback || 'Administração da WikiWorldWeb',
         authorRole: entry.authorRole || 'Administrador do Sistema',
         summary: entry.summary,
         highlights: entry.highlights && entry.highlights.length > 0 ? entry.highlights : [entry.summary],
@@ -4524,7 +4531,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   getSystemUpdateJsonTemplate(): string {
     const template = {
       $schema: "https://wikizero.org/schemas/release-notes-v1.json",
-      _comment: "Modelo oficial de notas de atualização da WikiZero / WazzimaGiygg. Este arquivo pode conter uma única nota ou um array sob 'updates'.",
+      _comment: "Modelo oficial de notas de atualização da WikiWorldWeb / WazzimaGiygg. Este arquivo pode conter uma única nota ou um array sob 'updates'.",
       updates: [
         {
           version: "v3.4.0",
@@ -4532,7 +4539,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
           category: "feature",
           date: new Date().toISOString().split('T')[0],
           badge: "Novo",
-          author: "Administração da WikiZero",
+          author: "Administração da WikiWorldWeb",
           authorRole: "Administrador do Sistema",
           summary: "Permite que administradores importem e gerenciem notas de versão estruturadas diretamente a partir de arquivos JSON padronizados.",
           highlights: [
@@ -6063,7 +6070,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         {
           id: `log-${Date.now()}`,
           adminUid: 'system',
-          adminName: 'Sistema de Alerta WikiZero',
+          adminName: 'Sistema de Alerta WikiWorldWeb',
           timestamp: now,
           action: 'Chamado de Emergência Registrado',
           note: `Protocolo ${protocolNumber} gerado e emitido para o plantão da administração via IP ${ip}.`,

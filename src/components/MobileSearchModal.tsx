@@ -101,7 +101,7 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Pesquisar na WikiZero (ex: IA, Brasil, Física)..."
+            placeholder="Pesquisar na WikiWorldWeb (ex: IA, Brasil, Física)..."
             className="w-full pl-9 pr-8 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder:text-slate-400"
           />
           <Search size={16} className="text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />

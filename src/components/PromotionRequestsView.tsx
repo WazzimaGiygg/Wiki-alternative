@@ -194,7 +194,7 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
     const totalVotes = votes.length;
     const maxVotes = selectedRequest.maxVotes || 10;
     
-    // Approval rate excludes neutral votes from the calculation base (standard Wikipedia / WikiZero RFA formula)
+    // Approval rate excludes neutral votes from the calculation base (standard Wikipedia / WikiWorldWeb RFA formula)
     const substantiveVotes = proVotes + contraVotes;
     const approvalRate = substantiveVotes > 0 ? Math.round((proVotes / substantiveVotes) * 100) : 0;
     const isQuorumReached = totalVotes >= maxVotes;
@@ -428,7 +428,7 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono mb-1">
             <span>Special:PromotionRequests</span>
             <span>/</span>
-            <span>WikiZero:Pedidos_de_Promoção (RFA)</span>
+            <span>WikiWorldWeb:Pedidos_de_Promoção (RFA)</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
             <Vote className="text-purple-600 dark:text-purple-400" size={28} />
@@ -753,7 +753,7 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
                 <div className="space-y-2">
                   <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                     <Award size={14} className="text-amber-600" />
-                    <span>Resumo de Atividades e Histórico na WikiZero:</span>
+                    <span>Resumo de Atividades e Histórico na WikiWorldWeb:</span>
                   </h3>
                   <div className="p-3.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/60 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
                     {selectedRequest.contributionsSummary}
@@ -1297,7 +1297,7 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
                   rows={4}
                   value={statement}
                   onChange={(e) => setStatement(e.target.value)}
-                  placeholder="Apresente os motivos da candidatura, planos para a atuação com as ferramentas do cargo e compromisso com as regras da WikiZero..."
+                  placeholder="Apresente os motivos da candidatura, planos para a atuação com as ferramentas do cargo e compromisso com as regras da WikiWorldWeb..."
                   className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                 />
               </div>

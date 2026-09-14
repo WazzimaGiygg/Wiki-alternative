@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * WIKIZERO DYNAMIC SEO & SEARCH ENGINE BOT MANAGER
+ * WIKIWORLDWEB DYNAMIC SEO & SEARCH ENGINE BOT MANAGER
  * ============================================================================
  * Dynamically updates document metadata, OpenGraph tags, canonical links,
  * and Schema.org JSON-LD Structured Data for search engine web crawlers
@@ -23,11 +23,11 @@ export interface SEOConfig {
 }
 
 const BASE_URL = 'https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app';
-const DEFAULT_TITLE = 'WikiZero - Enciclopédia Livre';
+const DEFAULT_TITLE = 'WikiWorldWeb - Enciclopédia Livre';
 const DEFAULT_DESC =
-  'WikiZero - A Enciclopédia Livre, Rápida e Sem Anúncios. Uma alternativa moderna e aberta à Wikipédia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, auditoria descentralizada, temas visuais e conformidade LGPD.';
+  'WikiWorldWeb - A Enciclopédia Livre, Rápida e Sem Anúncios. Uma alternativa moderna e aberta à Wikipédia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, importação do Google Docs, auditoria descentralizada, temas visuais e conformidade LGPD.';
 const DEFAULT_KEYWORDS = [
-  'WikiZero',
+  'WikiWorldWeb',
   'WazzimaGiygg',
   'Wazzimagiygg',
   'Caso Wazzimagiygg',
@@ -45,6 +45,7 @@ const DEFAULT_KEYWORDS = [
   'enciclopédia aberta',
   'wiki colaborativa',
   'editor wikitexto',
+  'importar google docs wiki',
   'enciclopedia online',
   'software livre',
   'enciclopedia sem anuncios',
@@ -129,12 +130,12 @@ export function updateSEO(config: SEOConfig) {
   // 1. If viewing an Article
   if (config.article) {
     const art = config.article;
-    finalTitle = `${art.titulo} - WikiZero`;
+    finalTitle = `${art.titulo} - WikiWorldWeb`;
     finalDesc =
       art.resumo ||
       (art.descricao
         ? art.descricao.replace(/^[=\s#*\[\]]+/, '').slice(0, 160)
-        : `Leia sobre ${art.titulo} na WikiZero, a enciclopédia livre colaborativa.`);
+        : `Leia sobre ${art.titulo} na WikiWorldWeb, a enciclopédia livre colaborativa.`);
     canonicalUrl = `${BASE_URL}/?uid=${encodeURIComponent(art.id)}`;
 
     // Generate Article Schema for search engines
@@ -150,11 +151,11 @@ export function updateSEO(config: SEOConfig) {
       },
       author: {
         '@type': 'Person',
-        name: art.autor || 'Comunidade WikiZero',
+        name: art.autor || 'Comunidade WikiWorldWeb',
       },
       publisher: {
         '@type': 'Organization',
-        name: 'WikiZero',
+        name: 'WikiWorldWeb',
         logo: {
           '@type': 'ImageObject',
           url: `${BASE_URL}/pwa-512x512.png`,
@@ -171,7 +172,7 @@ export function updateSEO(config: SEOConfig) {
     if (config.view === 'wazzimagiygg') {
       finalTitle = 'WazzimaGiygg - Portal Oficial, Projetos e A Verdade sobre o Caso Wikipédia';
       finalDesc =
-        'Portal oficial e ecossistema de projetos de WazzimaGiygg (WikiZero, Wiki-alternative, Dossiê A Verdade e Suporte). Conheça a verdade factual e documental sobre o Caso Wazzimagiygg na Wikipédia.';
+        'Portal oficial e ecossistema de projetos de WazzimaGiygg (WikiWorldWeb, Wiki-alternative, Dossiê A Verdade e Suporte). Conheça a verdade factual e documental sobre o Caso Wazzimagiygg na Wikipédia.';
       canonicalUrl = `${BASE_URL}/?uid=wazzimagiygg`;
       keywords.push(
         'WazzimaGiygg',
@@ -187,7 +188,7 @@ export function updateSEO(config: SEOConfig) {
         'wazzimagiygg.com',
         'wazzimagiygg.com/averdade',
         'support.wazzimagiygg.com',
-        'WazzimaGiygg WikiZero',
+        'WazzimaGiygg WikiWorldWeb',
         'WazzimaGiygg wiki alternative',
         'resposta caso wazzimagiygg'
       );
@@ -207,7 +208,7 @@ export function updateSEO(config: SEOConfig) {
               '@type': 'Person',
               '@id': 'https://wazzimagiygg.com/#person',
               'name': 'WazzimaGiygg',
-              'alternateName': ['Wazzimagiygg', 'Wazzima Giygg', 'Criador WikiZero'],
+              'alternateName': ['Wazzimagiygg', 'Wazzima Giygg', 'Criador WikiWorldWeb'],
               'url': 'https://wazzimagiygg.com/',
               'sameAs': [
                 'https://wazzimagiygg.com/',
@@ -216,7 +217,7 @@ export function updateSEO(config: SEOConfig) {
                 'https://github.com/WazzimaGiygg/Wiki-alternative',
                 `${BASE_URL}/?uid=wazzimagiygg`
               ],
-              'jobTitle': 'Desenvolvedor de Software e Criador da WikiZero',
+              'jobTitle': 'Desenvolvedor de Software e Criador da WikiWorldWeb',
               'knowsAbout': [
                 'Enciclopédias Colaborativas Livres',
                 'Wikitexto MediaWiki',
@@ -255,11 +256,11 @@ export function updateSEO(config: SEOConfig) {
             },
             'publisher': {
               '@type': 'Organization',
-              'name': 'WikiZero',
+              'name': 'WikiWorldWeb',
               'url': `${BASE_URL}/`,
               'logo': {
                 '@type': 'ImageObject',
-                'url': `${BASE_URL}/pwa-512x512.png`
+                url: `${BASE_URL}/pwa-512x512.png`
               }
             }
           }
@@ -270,35 +271,35 @@ export function updateSEO(config: SEOConfig) {
     }
 
     if (config.view === 'comparison') {
-      finalTitle = 'Comparativo: WikiZero vs Wikipédia, MediaWiki, Wikidot e Fandom';
+      finalTitle = 'Comparativo: WikiWorldWeb vs Wikipédia, MediaWiki, Wikidot e Fandom';
       finalDesc =
-        'Compare a WikiZero com a Wikipédia, MediaWiki, Wikidot e Fandom: sem anúncios invasivos, sem panelas burocráticas, com editor wikitexto rápido, múltiplos temas visuais e PWA.';
+        'Compare a WikiWorldWeb com a Wikipédia, MediaWiki, Wikidot e Fandom: sem anúncios invasivos, sem panelas burocráticas, com editor wikitexto rápido, múltiplos temas visuais e PWA.';
       canonicalUrl = `${BASE_URL}/?uid=comparison`;
       keywords.push(
-        'wikizero vs wikipedia',
+        'wikiworldweb vs wikipedia',
         'melhor que wikipedia',
-        'fandom vs wikizero',
-        'mediawiki vs wikizero',
-        'wikidot vs wikizero',
+        'fandom vs wikiworldweb',
+        'mediawiki vs wikiworldweb',
+        'wikidot vs wikiworldweb',
         'wiki sem anuncios'
       );
     } else if (config.view === 'search') {
-      finalTitle = 'Pesquisa Enciclopédica - WikiZero';
+      finalTitle = 'Pesquisa Enciclopédica - WikiWorldWeb';
       finalDesc =
-        'Pesquise milhões de tópicos, páginas e artigos livres na WikiZero com busca instantânea sem rastreamento.';
+        'Pesquise milhões de tópicos, páginas e artigos livres na WikiWorldWeb com busca instantânea sem rastreamento.';
       canonicalUrl = `${BASE_URL}/?uid=search`;
     } else if (config.view === 'editor') {
-      finalTitle = 'Editor Wikitexto Aberto - WikiZero';
+      finalTitle = 'Editor Wikitexto Aberto - WikiWorldWeb';
       finalDesc =
-        'Crie e edite artigos na WikiZero com suporte completo a wikitexto, visualização em tempo real e publicação instantânea.';
+        'Crie e edite artigos na WikiWorldWeb com suporte completo a wikitexto, visualização em tempo real e publicação instantânea.';
       canonicalUrl = `${BASE_URL}/?uid=editor`;
     } else if (config.view === 'recent-changes') {
-      finalTitle = 'Mudanças Recentes e Histórico - WikiZero';
+      finalTitle = 'Mudanças Recentes e Histórico - WikiWorldWeb';
       finalDesc =
-        'Acompanhe em tempo real todas as edições, novos artigos e atualizações na enciclopédia WikiZero.';
+        'Acompanhe em tempo real todas as edições, novos artigos e atualizações na enciclopédia WikiWorldWeb.';
       canonicalUrl = `${BASE_URL}/?uid=recent-changes`;
     } else if (config.title) {
-      finalTitle = `${config.title} - WikiZero`;
+      finalTitle = `${config.title} - WikiWorldWeb`;
       if (config.description) {
         finalDesc = config.description;
       }

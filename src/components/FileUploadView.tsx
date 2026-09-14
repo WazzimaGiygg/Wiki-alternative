@@ -54,7 +54,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
     return user ? (user.displayName || user.username || '') : '';
   });
   const [source, setSource] = useState<string>('Trabalho próprio');
-  const [categoriesText, setCategoriesText] = useState<string>('Ficheiros da WikiZero');
+  const [categoriesText, setCategoriesText] = useState<string>('Ficheiros da WikiWorldWeb');
   const [uploadComment, setUploadComment] = useState<string>('Envio inicial do ficheiro');
   const [agreedToIndependentPolicy, setAgreedToIndependentPolicy] = useState<boolean>(false);
 
@@ -158,7 +158,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
     }
 
     if (!user || user.role === 'convidado') {
-      setErrorMessage('É necessário estar registrado e logado para enviar ficheiros à WikiZero.');
+      setErrorMessage('É necessário estar registrado e logado para enviar ficheiros à WikiWorldWeb.');
       return;
     }
 
@@ -180,7 +180,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
     // Verificação de Regras de Não Uso da Wikimedia / Wikipédia
     if (detectedBannedSource) {
       setErrorMessage(
-        'Upload Recusado: Detectada menção ou origem vinculada à Wikimedia Commons / Wikipédia. A política da WikiZero proíbe expressamente a importação de imagens ou textos desses repositórios.'
+        'Upload Recusado: Detectada menção ou origem vinculada à Wikimedia Commons / Wikipédia. A política da WikiWorldWeb proíbe expressamente a importação de imagens ou textos desses repositórios.'
       );
       return;
     }
@@ -215,7 +215,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
       const input: UploadFileInput = {
         file: selectedFile,
         targetName: targetName.trim(),
-        description: description.trim() || `Imagem ${targetName} enviada para a enciclopédia WikiZero.`,
+        description: description.trim() || `Imagem ${targetName} enviada para a enciclopédia WikiWorldWeb.`,
         license,
         licenseDetails: licenseDetails.trim(),
         fairUseJustification: fairUseJustification.trim(),
@@ -264,7 +264,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
             <span>Carregamento de Ficheiros</span>
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            Envie imagens e documentos multimídia autônomos para os artigos da WikiZero.
+            Envie imagens e documentos multimídia autônomos para os artigos da WikiWorldWeb.
           </p>
         </div>
 
@@ -294,7 +294,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
             </div>
 
             <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              Para preservar a total soberania, originalidade e independência da WikiZero, estabelecem-se as seguintes regras vinculativas para todos os utilizadores:
+              Para preservar a total soberania, originalidade e independência da WikiWorldWeb, estabelecem-se as seguintes regras vinculativas para todos os utilizadores:
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1 text-xs">
@@ -391,7 +391,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
                 Ficheiro enviado com sucesso!
               </h2>
               <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-1">
-                O arquivo <strong className="font-mono">{successFile.name}</strong> foi registrado e as miniaturas em diferentes tamanhos (150px, 320px, 800px) foram geradas em conformidade com as políticas da WikiZero.
+                O arquivo <strong className="font-mono">{successFile.name}</strong> foi registrado e as miniaturas em diferentes tamanhos (150px, 320px, 800px) foram geradas em conformidade com as políticas da WikiWorldWeb.
               </p>
 
               {/* Wikitext Syntax Box */}
@@ -458,7 +458,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
               ⚠️ Violação de Política: Origem Proibida Detectada ({detectedBannedSource})
             </span>
             <p className="leading-relaxed font-sans">
-              Você inseriu termos ou links associados ao <strong>Wikimedia Commons</strong> ou à <strong>Wikipédia</strong>. As regras da WikiZero vetam expressamente mídias importadas dessas fontes. Por favor, utilize fotografias autorais, fontes abertas independentes ou arquivos do acervo público.
+              Você inseriu termos ou links associados ao <strong>Wikimedia Commons</strong> ou à <strong>Wikipédia</strong>. As regras da WikiWorldWeb vetam expressamente mídias importadas dessas fontes. Por favor, utilize fotografias autorais, fontes abertas independentes ou arquivos do acervo público.
             </p>
           </div>
         </div>
@@ -565,7 +565,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
               />
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              Este será o título identificador da página do ficheiro na WikiZero (ex: <code className="font-mono">[[Arquivo:{targetName || 'Exemplo.png'}]]</code>).
+              Este será o título identificador da página do ficheiro na WikiWorldWeb (ex: <code className="font-mono">[[Arquivo:{targetName || 'Exemplo.png'}]]</code>).
             </p>
           </div>
 
@@ -700,7 +700,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
               className="w-full p-2.5 text-xs rounded border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-850 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
             <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">
-              A WikiZero respeita rigorosamente a Lei de Direitos Autorais (Lei 9.610/98) e convenções internacionais de fair use.
+              A WikiWorldWeb respeita rigorosamente a Lei de Direitos Autorais (Lei 9.610/98) e convenções internacionais de fair use.
             </p>
           </div>
         )}
@@ -732,7 +732,7 @@ export const FileUploadView: React.FC<FileUploadViewProps> = ({
                 Declaração Mandatória de Autonomia e Não Importação:
               </span>
               <span>
-                Declaro formalmente sob responsabilidade legal que este ficheiro e suas informações <strong>NÃO foram importados do Wikimedia Commons</strong>, da <strong>Wikipédia</strong> ou de qualquer entidade da Wikimedia Foundation. Atesto que os créditos, fonte primária e licença são fidedignos e autônomos conforme as regras da WikiZero.
+                Declaro formalmente sob responsabilidade legal que este ficheiro e suas informações <strong>NÃO foram importados do Wikimedia Commons</strong>, da <strong>Wikipédia</strong> ou de qualquer entidade da Wikimedia Foundation. Atesto que os créditos, fonte primária e licença são fidedignos e autônomos conforme as regras da WikiWorldWeb.
               </span>
             </div>
           </label>

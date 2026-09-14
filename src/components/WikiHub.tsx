@@ -461,11 +461,11 @@ export const WikiHub: React.FC<WikiHubProps> = ({
                 Alternativa Aberta e Rápida
               </span>
               <h3 className="font-bold text-sm sm:text-base text-white">
-                WikiZero vs Wikipédia, MediaWiki, Fandom e Wikidot
+                WikiWorldWeb vs Wikipédia, MediaWiki, Fandom e Wikidot
               </h3>
             </div>
             <p className="text-xs text-blue-100/90 leading-relaxed">
-              Descubra por que a WikiZero é superior: <strong>100% livre de anúncios invasivos</strong> (ao contrário do Fandom),
+              Descubra por que a WikiWorldWeb é superior: <strong>100% livre de anúncios invasivos</strong> (ao contrário do Fandom),
               <strong>sem panelas burocráticas</strong> (ao contrário da Wikipédia), com <strong>arquitetura SPA ultrarrápida</strong> (superando o MediaWiki clássico)
               e <strong>11 temas visuais exclusivos</strong> (Minecraft, Roblox, REPO, Win95 e mais).
             </p>
@@ -495,7 +495,7 @@ export const WikiHub: React.FC<WikiHubProps> = ({
               </h3>
             </div>
             <p className="text-xs text-amber-200/90 leading-relaxed">
-              Conheça o ecossistema de software livre desenvolvido por <strong>WazzimaGiygg</strong> (WikiZero, GitHub Wiki-alternative, Central de Suporte) e acerte as contas com a verdade: documentação detalhada e refutação cabal contra as perseguições administrativas e abusos de CheckUser da Wikipédia em língua portuguesa.
+              Conheça o ecossistema de software livre desenvolvido por <strong>WazzimaGiygg</strong> (WikiWorldWeb, GitHub Wiki-alternative, Central de Suporte) e acerte as contas com a verdade: documentação detalhada e refutação cabal contra as perseguições administrativas e abusos de CheckUser da Wikipédia em língua portuguesa.
             </p>
           </div>
 

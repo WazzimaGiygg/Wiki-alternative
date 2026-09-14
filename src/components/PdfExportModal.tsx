@@ -29,7 +29,7 @@ interface PdfExportModalProps {
 
 export const PdfExportModal: React.FC<PdfExportModalProps> = ({
   article,
-  pageName = 'WikiZero Enciclopédia',
+  pageName = 'WikiWorldWeb Enciclopédia',
   articleContentRef,
   isOpen,
   onClose,
@@ -245,7 +245,7 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
                     onChange={(e) => setIncludeHeader(e.target.checked)}
                     className="rounded text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-slate-700 dark:text-slate-300">Cabeçalho Oficial WikiZero</span>
+                  <span className="text-slate-700 dark:text-slate-300">Cabeçalho Oficial WikiWorldWeb</span>
                 </label>
 
                 <label className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 cursor-pointer">

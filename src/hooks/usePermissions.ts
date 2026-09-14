@@ -1,6 +1,6 @@
 /**
  * @file usePermissions.ts
- * @description Hook React para integração do sistema RBAC com componentes de interface do WikiZero.
+ * @description Hook React para integração do sistema RBAC com componentes de interface do WikiWorldWeb.
  * Permite habilitar/desabilitar botões, proteger rotas e exibir elementos contextuais com base no grupo do usuário.
  */
 

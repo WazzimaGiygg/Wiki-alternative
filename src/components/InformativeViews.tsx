@@ -150,7 +150,7 @@ export const DonationView: React.FC<InformativeViewsProps> = () => {
           </div>
           <div>
             <h2 className="text-xl font-bold font-serif-heading text-slate-900 dark:text-white">
-              Apoie o Projeto WikiZero
+              Apoie o Projeto WikiWorldWeb
             </h2>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Mantido por voluntários e financiado pela comunidade sem anúncios comerciais invasivos.
@@ -160,7 +160,7 @@ export const DonationView: React.FC<InformativeViewsProps> = () => {
 
         <div className="space-y-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
           <p>
-            A <strong>WikiZero</strong> é uma iniciativa independente dedicada a fornecer infraestrutura gratuita para o conhecimento livre. Seus donativos ajudam a cobrir custos de servidores, domínio, tráfego de dados e desenvolvimento contínuo de novas funcionalidades.
+            A <strong>WikiWorldWeb</strong> é uma iniciativa independente dedicada a fornecer infraestrutura gratuita para o conhecimento livre. Seus donativos ajudam a cobrir custos de servidores, domínio, tráfego de dados e desenvolvimento contínuo de novas funcionalidades.
           </p>
 
           {/* PIX Box */}
@@ -253,7 +253,7 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = () => {
         <div className="space-y-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-wiki-body">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">1. Identificação do Controlador</h3>
           <p>
-            O projeto <strong>WikiZero</strong> opera sob a governança comunitária de <em>WazzimaGiygg</em>. O encarregado oficial pelo tratamento de dados pessoais (DPO) pode ser acionado diretamente no e-mail: <code>pedrohenriquecardonaperes@gmail.com</code>.
+            O projeto <strong>WikiWorldWeb</strong> opera sob a governança comunitária de <em>WazzimaGiygg</em>. O encarregado oficial pelo tratamento de dados pessoais (DPO) pode ser acionado diretamente no e-mail: <code>pedrohenriquecardonaperes@gmail.com</code>.
           </p>
 
           <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">2. Dados Pessoais Coletados e Finalidades</h3>
@@ -312,7 +312,7 @@ export const TermsOfUseView: React.FC<InformativeViewsProps> = () => {
 
         <div className="space-y-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-wiki-body">
           <p>
-            Ao utilizar, publicar ou editar artigos na <strong>WikiZero</strong>, você concorda em cumprir com as diretrizes de convivência e licenciamento livre.
+            Ao utilizar, publicar ou editar artigos na <strong>WikiWorldWeb</strong>, você concorda em cumprir com as diretrizes de convivência e licenciamento livre.
           </p>
 
           <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">1. Princípio da Verificabilidade</h3>
@@ -445,11 +445,11 @@ export const OfflineModeView: React.FC<InformativeViewsProps> = ({ articles, pag
               <div className="flex items-center gap-2">
                 <Smartphone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 <h4 className="font-bold text-sm text-slate-900 dark:text-white">
-                  Aplicativo WikiZero para Celular Android
+                  Aplicativo WikiWorldWeb para Celular Android
                 </h4>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-300">
-                Instale o WikiZero como aplicativo no seu smartphone Android. Ele funciona como um app nativo, ocupando menos de 3MB e oferecendo acesso total offline.
+                Instale o WikiWorldWeb como aplicativo no seu smartphone Android. Ele funciona como um app nativo, ocupando menos de 3MB e oferecendo acesso total offline.
               </p>
             </div>
             <div className="shrink-0 w-full sm:w-auto">
@@ -463,7 +463,7 @@ export const OfflineModeView: React.FC<InformativeViewsProps> = ({ articles, pag
               <div className="flex items-center gap-2">
                 <Tv className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 <h4 className="font-bold text-sm text-slate-900 dark:text-white">
-                  Aplicativo WikiZero para Smart TV (10-Foot UI)
+                  Aplicativo WikiWorldWeb para Smart TV (10-Foot UI)
                 </h4>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-300">

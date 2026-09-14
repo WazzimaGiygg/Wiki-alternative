@@ -1191,7 +1191,7 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
                   </label>
                   <textarea
                     rows={3}
-                    placeholder="Detalhe a análise das provas, violação dos pilares da WikiZero ou atenuantes..."
+                    placeholder="Detalhe a análise das provas, violação dos pilares da WikiWorldWeb ou atenuantes..."
                     value={delibStatement}
                     onChange={(e) => setDelibStatement(e.target.value)}
                     className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-purple-500"
@@ -1320,7 +1320,7 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
                 Autenticação Obrigatória
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                Para evitar representações anônimas ou frívolas, é necessário estar logado em sua conta da WikiZero para peticionar ao Conselho de Arbitragem.
+                Para evitar representações anônimas ou frívolas, é necessário estar logado em sua conta da WikiWorldWeb para peticionar ao Conselho de Arbitragem.
               </p>
               {onLoginClick && (
                 <button
@@ -1465,7 +1465,7 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
                 </label>
                 <textarea
                   rows={4}
-                  placeholder="Relate com clareza os acontecimentos, tentativas prévias de mediação na página de discussão e onde houve o desvio das regras da WikiZero..."
+                  placeholder="Relate com clareza os acontecimentos, tentativas prévias de mediação na página de discussão e onde houve o desvio das regras da WikiWorldWeb..."
                   value={formSummary}
                   onChange={(e) => setFormSummary(e.target.value)}
                   className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-purple-500 leading-relaxed"
@@ -1524,7 +1524,7 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
                     className="mt-0.5 w-4 h-4 rounded text-purple-600 border-slate-300 focus:ring-purple-500 cursor-pointer"
                   />
                   <span className="text-slate-700 dark:text-slate-300 leading-snug">
-                    Declaro sob a responsabilidade das regras da WikiZero que esta representação é formulada de <strong>boa-fé</strong>, contendo fatos estritamente verídicos e auditáveis, em plena conformidade com a <strong>Política de Autonomia e Não Importação da Wikipédia/Wikimedia</strong>.
+                    Declaro sob a responsabilidade das regras da WikiWorldWeb que esta representação é formulada de <strong>boa-fé</strong>, contendo fatos estritamente verídicos e auditáveis, em plena conformidade com a <strong>Política de Autonomia e Não Importação da Wikipédia/Wikimedia</strong>.
                   </span>
                 </label>
               </div>
@@ -1628,7 +1628,7 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
               <span>Regimento Interno e Estatuto Judicial do Conselho de Arbitragem</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Código normativo aprovado para assegurar a justiça, a ordem e o devido processo legal em todas as edições idiomáticas da WikiZero.
+              Código normativo aprovado para assegurar a justiça, a ordem e o devido processo legal em todas as edições idiomáticas da WikiWorldWeb.
             </p>
           </div>
 
@@ -1638,7 +1638,7 @@ export const ArbitrationCommitteeView: React.FC<ArbitrationCommitteeViewProps> =
               <Scale size={16} /> Capítulo I — Da Natureza e Jurisdição
             </h3>
             <p className="text-xs sm:text-xs leading-relaxed text-slate-700 dark:text-slate-300">
-              <strong>Art. 1º.</strong> O Conselho de Arbitragem (ArbCom) é o órgão supremo e colegiado de última instância jurisdicional da WikiZero, dotado de plena autonomia para julgar atos praticados por <strong>usuários</strong>, <strong>moderadores</strong> e <strong>administradores</strong> em cada idioma suportado pela plataforma.
+              <strong>Art. 1º.</strong> O Conselho de Arbitragem (ArbCom) é o órgão supremo e colegiado de última instância jurisdicional da WikiWorldWeb, dotado de plena autonomia para julgar atos praticados por <strong>usuários</strong>, <strong>moderadores</strong> e <strong>administradores</strong> em cada idioma suportado pela plataforma.
             </p>
             <p className="text-xs sm:text-xs leading-relaxed text-slate-700 dark:text-slate-300">
               <strong>Art. 2º.</strong> O Conselho não atua como redator de conteúdo enciclopédico ordinário, mas tão somente como garantidor do cumprimento das regras editoriais, do princípio do contraditório e do combate a abusos funcionais.

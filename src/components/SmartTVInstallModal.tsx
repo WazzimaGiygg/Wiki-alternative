@@ -45,7 +45,7 @@ export const SmartTVInstallModal: React.FC<SmartTVInstallModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-                WikiZero para Smart TV
+                WikiWorldWeb para Smart TV
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Experiência 10-Foot para Samsung Tizen, LG webOS, Android TV e Fire TV
@@ -166,7 +166,7 @@ export const SmartTVInstallModal: React.FC<SmartTVInstallModalProps> = ({
               <h5 className="font-bold text-sm text-slate-900 dark:text-white">Passo a passo para Smart TV Samsung:</h5>
               <ol className="space-y-2 list-decimal list-inside leading-relaxed">
                 <li>Abra o aplicativo <strong>Samsung Internet</strong> na barra de início da TV.</li>
-                <li>Digite o endereço da WikiZero e pressione <strong>Concluir</strong>.</li>
+                <li>Digite o endereço da WikiWorldWeb e pressione <strong>Concluir</strong>.</li>
                 <li>Clique no botão <strong>"Modo Smart TV"</strong> para tela cheia adaptada ao controle remoto.</li>
                 <li>Pressione o botão de <strong>Opções (três pontos) &gt; Adicionar aos Favoritos da Barra Inicial</strong>.</li>
               </ol>
@@ -179,7 +179,7 @@ export const SmartTVInstallModal: React.FC<SmartTVInstallModalProps> = ({
               <h5 className="font-bold text-sm text-slate-900 dark:text-white">Passo a passo para Smart TV LG (webOS):</h5>
               <ol className="space-y-2 list-decimal list-inside leading-relaxed">
                 <li>No controle Magic Remote, aperte o botão <strong>Home</strong> e selecione o <strong>Navegador Web</strong>.</li>
-                <li>Acesse o link da WikiZero e clique no botão <strong>"Modo Smart TV"</strong>.</li>
+                <li>Acesse o link da WikiWorldWeb e clique no botão <strong>"Modo Smart TV"</strong>.</li>
                 <li>No canto superior direito, clique na <strong>Estrela de Favoritos</strong> e fixe na barra rápida do webOS.</li>
               </ol>
             </div>
@@ -191,7 +191,7 @@ export const SmartTVInstallModal: React.FC<SmartTVInstallModalProps> = ({
               <h5 className="font-bold text-sm text-slate-900 dark:text-white">Passo a passo para Android TV / Google TV:</h5>
               <ol className="space-y-2 list-decimal list-inside leading-relaxed">
                 <li>Abra o navegador (ex: JioPages, Chrome, TV Bro ou Puffin TV).</li>
-                <li>Ao carregar a página da WikiZero, selecione <strong>"Instalar App PWA"</strong> ou abra o menu do navegador.</li>
+                <li>Ao carregar a página da WikiWorldWeb, selecione <strong>"Instalar App PWA"</strong> ou abra o menu do navegador.</li>
                 <li>O aplicativo será adicionado diretamente à tela principal de apps da TV (Leanback Launcher).</li>
               </ol>
             </div>

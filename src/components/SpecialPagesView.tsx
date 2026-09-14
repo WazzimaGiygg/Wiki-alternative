@@ -176,7 +176,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
 
   const handleExportFullDump = () => {
     const dump = {
-      project: 'WikiZero Enciclopédia Aberta',
+      project: 'WikiWorldWeb Enciclopédia Aberta',
       version: '3.0',
       timestamp: new Date().toISOString(),
       articles,
@@ -187,7 +187,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `WikiZero_Full_Database_Dump_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `WikiWorldWeb_Full_Database_Dump_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -422,7 +422,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
           <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">Deep Linking Ativo</span>
         </div>
         <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-          Você pode navegar para qualquer lugar da WikiZero adicionando o parâmetro <code>?uid=</code> diretamente na URL do navegador ou pesquisando no campo de busca. Clique em um atalho para copiar seu link permanente:
+          Você pode navegar para qualquer lugar da WikiWorldWeb adicionando o parâmetro <code>?uid=</code> diretamente na URL do navegador ou pesquisando no campo de busca. Clique em um atalho para copiar seu link permanente:
         </p>
         <div className="flex items-center gap-2 flex-wrap text-[11px]">
           {[
@@ -677,7 +677,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               Páginas Órfãs (Sem Afluentes)
             </h4>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-              Páginas órfãs são artigos enciclopédicos que não possuem links internos vindos de outros artigos. Ajudar a conectar esses artigos com referências cruzadas melhora a navegabilidade de toda a comunidade WikiZero.
+              Páginas órfãs são artigos enciclopédicos que não possuem links internos vindos de outros artigos. Ajudar a conectar esses artigos com referências cruzadas melhora a navegabilidade de toda a comunidade WikiWorldWeb.
             </p>
           </div>
 
@@ -873,7 +873,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
       {selectedArticleForPdf && (
         <PdfExportModal
           article={selectedArticleForPdf}
-          pageName={pages.find((p) => p.uid === selectedArticleForPdf.pageUid)?.titulo || 'WikiZero'}
+          pageName={pages.find((p) => p.uid === selectedArticleForPdf.pageUid)?.titulo || 'WikiWorldWeb'}
           isOpen={!!selectedArticleForPdf}
           onClose={() => setSelectedArticleForPdf(null)}
         />

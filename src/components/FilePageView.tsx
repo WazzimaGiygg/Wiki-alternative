@@ -164,7 +164,7 @@ export const FilePageView: React.FC<FilePageViewProps> = ({
           Ficheiro não encontrado
         </h1>
         <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto mb-6">
-          O ficheiro <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{fileName}</code> ainda não foi carregado na enciclopédia WikiZero.
+          O ficheiro <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{fileName}</code> ainda não foi carregado na enciclopédia WikiWorldWeb.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <button
@@ -368,7 +368,7 @@ export const FilePageView: React.FC<FilePageViewProps> = ({
 
         <div className="px-4 py-2 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
           <span>Resolução exibida: {selectedThumbSize.toUpperCase()}</span>
-          <span>Armazenamento: {file.storageProvider === 'firebase_storage' ? 'Firebase Cloud Storage' : 'WikiZero Local Storage'}</span>
+          <span>Armazenamento: {file.storageProvider === 'firebase_storage' ? 'Firebase Cloud Storage' : 'WikiWorldWeb Local Storage'}</span>
         </div>
       </div>
 
@@ -524,11 +524,11 @@ export const FilePageView: React.FC<FilePageViewProps> = ({
           </div>
         </div>
 
-        {/* WikiZero Independence Badge */}
+        {/* WikiWorldWeb Independence Badge */}
         <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-850/80 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-400">
           <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
           <span>
-            <strong>Conformidade Editorial WikiZero:</strong> Este ficheiro possui origem independente auditada, sem vínculos com o Wikimedia Commons ou espelhamento da Wikipédia.
+            <strong>Conformidade Editorial WikiWorldWeb:</strong> Este ficheiro possui origem independente auditada, sem vínculos com o Wikimedia Commons ou espelhamento da Wikipédia.
           </span>
         </div>
       </div>

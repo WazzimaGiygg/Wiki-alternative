@@ -538,7 +538,7 @@ Status Atual: ${r.status}
 Administrador Responsável: ${r.assignedAdminName || 'Equipe Geral'}
 Resolução / Ações: ${r.resolutionSummary || 'Em apuração técnica'}
 
-WikiZero Enciclopédia Aberta © 2026
+WikiWorldWeb Enciclopédia Aberta © 2026
 Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
 =====================================================`;
 
@@ -968,7 +968,7 @@ Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
                 <div className="text-xs text-slate-500">
                   {onLoginClick ? (
                     <span>
-                      Possui uma conta WikiZero?{' '}
+                      Possui uma conta WikiWorldWeb?{' '}
                       <button onClick={onLoginClick} className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
                         Fazer login
                       </button>{' '}
@@ -1258,7 +1258,7 @@ Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
                   className="mt-0.5 rounded text-red-600 focus:ring-red-500"
                 />
                 <span>
-                  Declaro expressamente, sob as penas da lei e das políticas da WikiZero, que este chamado relata uma <strong>emergência real, verídica e crítica</strong>. Estou ciente de que o uso indevido deste canal para trotes ou disputas editoriais ordinárias acarreta bloqueio sumário por IP/conta e eventual comunicação às autoridades competentes.
+                  Declaro expressamente, sob as penas da lei e das políticas da WikiWorldWeb, que este chamado relata uma <strong>emergência real, verídica e crítica</strong>. Estou ciente de que o uso indevido deste canal para trotes ou disputas editoriais ordinárias acarreta bloqueio sumário por IP/conta e eventual comunicação às autoridades competentes.
                 </span>
               </label>
             </div>
@@ -1566,7 +1566,7 @@ Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
                         <span>Autenticação de Administrador de Plantão:</span>
                       </h4>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        Se você é um administrador da WikiZero, autentique-se para liberar o acesso imediato à lista de ocorrências.
+                        Se você é um administrador da WikiWorldWeb, autentique-se para liberar o acesso imediato à lista de ocorrências.
                       </p>
                     </div>
                   </div>

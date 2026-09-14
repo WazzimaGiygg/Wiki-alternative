@@ -95,7 +95,7 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
   }[] = [
     {
       id: 'light',
-      name: 'WikiZero Clássico Claro',
+      name: 'WikiWorldWeb Clássico Claro',
       subtitle: 'Padrão Wikipédia & Wikimedia',
       description: 'Design enciclopédico atemporal com fundo branco/cinza claro, contraste balanceado para longas leituras e tipografia limpa.',
       tag: 'Padrão Enciclopédico',
@@ -106,7 +106,7 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
     },
     {
       id: 'dark',
-      name: 'WikiZero Modo Escuro',
+      name: 'WikiWorldWeb Modo Escuro',
       subtitle: 'Alto Contraste Noturno',
       description: 'Tons grafite e ardósia profunda que reduzem a fadiga ocular em ambientes de pouca luz, com links azuis fluorescentes de alta legibilidade.',
       tag: 'Modo Noturno',
@@ -280,7 +280,7 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                 <span>Aparência e Temas Visuais</span>
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                Personalize de forma centralizada o tema visual, tipografia e modo de exibição da WikiZero.
+                Personalize de forma centralizada o tema visual, tipografia e modo de exibição da WikiWorldWeb.
               </p>
             </div>
           </div>
@@ -636,7 +636,7 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                 Enciclopédia Digital Livre
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Origem: WikiZero, a enciclopédia aberta e descentralizada.
+                Origem: WikiWorldWeb, a enciclopédia aberta e descentralizada.
               </p>
             </div>
             <div className="flex items-center gap-1.5 text-xs font-medium">
@@ -651,7 +651,7 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
             <div className="md:col-span-2 space-y-3 text-xs leading-relaxed text-slate-700 dark:text-slate-300">
               <p>
                 Uma <strong>enciclopédia</strong> é uma coletânea de conhecimento humano estruturado de forma
-                acessível. A WikiZero utiliza arquitetura em nuvem com sincronização direta via{' '}
+                acessível. A WikiWorldWeb utiliza arquitetura em nuvem com sincronização direta via{' '}
                 <span className="text-blue-600 dark:text-blue-400 underline cursor-pointer">
                   Cloud Firestore
                 </span>
@@ -699,7 +699,7 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
             {/* Mock Infobox */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3 space-y-2 text-xs">
               <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-center font-bold text-slate-800 dark:text-slate-200">
-                Ficha Técnica: WikiZero
+                Ficha Técnica: WikiWorldWeb
               </div>
               <div className="space-y-1.5 text-[11px]">
                 <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/80 pb-1">

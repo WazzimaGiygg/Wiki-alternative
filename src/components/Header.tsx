@@ -158,7 +158,7 @@ export const Header: React.FC<HeaderProps> = ({
               W
             </div>
             <span className="font-bold text-white text-[11px] truncate tracking-wide">
-              WikiZero 95 - Enciclopédia Multimídia de 32 bits [v3.0.1995]
+              WikiWorldWeb 95 - Enciclopédia Multimídia de 32 bits [v3.0.1995]
             </span>
           </div>
           <div className="flex items-center gap-1 shrink-0 ml-2">
@@ -493,7 +493,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => onNavigate('hub')}
               className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
-              title="WikiZero - Tema Windows 95"
+              title="WikiWorldWeb - Tema Windows 95"
             >
               <div className="w-8 h-8 bg-[#c0c0c0] border-t-2 border-l-2 border-white border-r-2 border-b-2 border-black flex items-center justify-center shadow-xs">
                 <Monitor size={18} className="text-[#000080]" />
@@ -501,7 +501,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-bold text-base sm:text-lg text-black tracking-tight font-sans">
-                    WikiZero <span className="text-[#000080] font-black">95</span>
+                    WikiWorldWeb <span className="text-[#000080] font-black">95</span>
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-[#000080] text-white px-1.5 py-0.2 border border-white">
                     WIN95
@@ -516,7 +516,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => onNavigate('hub')}
               className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
-              title="WikiZero - Tema Genshin Impact (Teyvat)"
+              title="WikiWorldWeb - Tema Genshin Impact (Teyvat)"
             >
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#2a3454] to-[#121524] border border-[#d3bc8e] flex items-center justify-center shadow-sm shadow-amber-500/20 group-hover:border-amber-300 transition">
                 <Sparkles size={17} className="text-[#d3bc8e] drop-shadow-[0_0_6px_rgba(211,188,142,0.8)] animate-pulse" />
@@ -524,7 +524,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-serif font-bold text-base sm:text-lg text-[#f2dfb7] tracking-wider">
-                    WikiZero <span className="text-[#72e2db] font-normal text-xs">✦ Teyvat</span>
+                    WikiWorldWeb <span className="text-[#72e2db] font-normal text-xs">✦ Teyvat</span>
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500/20 to-teal-500/20 text-[#e4ca95] border border-[#d3bc8e]/50 px-1.5 py-0.2 rounded-xs">
                     GENSHIN
@@ -539,7 +539,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => onNavigate('hub')}
               className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
-              title="WikiZero - Tema Android 1.5 Cupcake (2009)"
+              title="WikiWorldWeb - Tema Android 1.5 Cupcake (2009)"
             >
               <div className="w-8 h-8 rounded-lg bg-[#25272a] border-2 border-[#A4C639] flex items-center justify-center shadow-xs group-hover:scale-105 transition">
                 <svg className="w-4 h-4 fill-current text-[#A4C639]" viewBox="0 0 24 24">
@@ -549,7 +549,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-bold text-base sm:text-lg text-white tracking-tight font-sans">
-                    WikiZero <span className="text-[#A4C639] font-mono text-xs">1.5</span>
+                    WikiWorldWeb <span className="text-[#A4C639] font-mono text-xs">1.5</span>
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-[#A4C639]/20 text-[#A4C639] border border-[#A4C639]/50 px-1.5 py-0.2 rounded-xs">
                     Cupcake
@@ -564,7 +564,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => onNavigate('hub')}
               className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
-              title="WikiZero - Tema Minecraft (Mojang Studios)"
+              title="WikiWorldWeb - Tema Minecraft (Mojang Studios)"
             >
               <div className="w-8 h-8 rounded-xs bg-[#1f1a16] border-2 border-[#55ff55] flex items-center justify-center shadow-[0_0_10px_rgba(85,255,85,0.3)] group-hover:scale-105 transition">
                 <Pickaxe size={16} className="text-[#55ff55]" />
@@ -572,7 +572,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-bold text-base sm:text-lg text-[#f3f4f6] tracking-tight font-mono drop-shadow-[1px_1px_0px_#000]">
-                    WikiZero <span className="text-[#55ff55] text-xs">Craft</span>
+                    WikiWorldWeb <span className="text-[#55ff55] text-xs">Craft</span>
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-[#55ff55]/20 text-[#55ff55] border border-[#55ff55]/70 px-1.5 py-0.2 rounded-xs font-mono">
                     MOJANG
@@ -587,7 +587,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => onNavigate('hub')}
               className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
-              title="WikiZero - Tema Roblox (Roblox Corporation)"
+              title="WikiWorldWeb - Tema Roblox (Roblox Corporation)"
             >
               <div className="w-8 h-8 rounded-lg bg-[#191b1f] border-2 border-[#00b06f] flex items-center justify-center shadow-[0_0_10px_rgba(0,176,111,0.3)] group-hover:scale-105 transition">
                 <div className="w-4 h-4 bg-white rounded-xs rotate-12 flex items-center justify-center">
@@ -597,7 +597,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-extrabold text-base sm:text-lg text-[#ffffff] tracking-tight font-sans">
-                    WikiZero <span className="text-[#00b06f] text-xs">Blox</span>
+                    WikiWorldWeb <span className="text-[#00b06f] text-xs">Blox</span>
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-[#00b06f]/20 text-[#00b06f] border border-[#00b06f]/70 px-1.5 py-0.2 rounded-md font-sans">
                     ROBLOX
@@ -612,7 +612,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => onNavigate('hub')}
               className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
-              title="WikiZero - Tema Nokia 3310 (Display Monocromático LCD)"
+              title="WikiWorldWeb - Tema Nokia 3310 (Display Monocromático LCD)"
             >
               <div className="w-8 h-8 rounded-none bg-[#b4c995] border-2 border-[#1f281b] flex items-center justify-center shadow-[2px_2px_0px_#1f281b] group-hover:scale-105 transition">
                 <Smartphone size={16} className="text-[#1f281b]" />
@@ -620,7 +620,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-bold text-base sm:text-lg text-[#1f281b] tracking-tight font-mono">
-                    WikiZero <span className="text-xs font-black bg-[#1f281b] text-[#c2d6a4] px-1 py-0.2">3310</span>
+                    WikiWorldWeb <span className="text-xs font-black bg-[#1f281b] text-[#c2d6a4] px-1 py-0.2">3310</span>
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-[#1f281b] text-[#c2d6a4] border border-[#1f281b] px-1.5 py-0.2 font-mono">
                     NOKIA
@@ -635,7 +635,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => onNavigate('hub')}
               className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
-              title="WikiZero - Tema R.E.P.O. (Semiwork Studios)"
+              title="WikiWorldWeb - Tema R.E.P.O. (Semiwork Studios)"
             >
               <div className="w-8 h-8 rounded bg-[#0b0e14] border-2 border-[#f59e0b] flex items-center justify-center shadow-[0_0_10px_rgba(245,158,11,0.35)] group-hover:scale-105 transition">
                 <span className="text-[11px] font-black text-[#f59e0b] font-mono tracking-tighter">
@@ -645,7 +645,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-bold text-base sm:text-lg text-[#f3f4f6] tracking-tight font-mono">
-                    WikiZero <span className="text-[#f59e0b] text-xs">R.E.P.O.</span>
+                    WikiWorldWeb <span className="text-[#f59e0b] text-xs">R.E.P.O.</span>
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/70 px-1.5 py-0.2 rounded-xs font-mono">
                     SEMIWORK
@@ -660,7 +660,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => onNavigate('hub')}
               className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
-              title="WikiZero - Tema Stardew Valley (Vale da Estrela)"
+              title="WikiWorldWeb - Tema Stardew Valley (Vale da Estrela)"
             >
               <div className="w-8 h-8 rounded-lg bg-[#533113] border-2 border-[#d49e3d] flex items-center justify-center shadow-md group-hover:scale-105 transition">
                 <span className="text-base select-none leading-none" role="img" aria-label="Junimo">
@@ -670,7 +670,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-bold text-base sm:text-lg text-[#ffefc4] tracking-tight font-sans drop-shadow-sm">
-                    WikiZero <span className="text-[#ffd54f] text-xs">Valley</span>
+                    WikiWorldWeb <span className="text-[#ffd54f] text-xs">Valley</span>
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-[#d49e3d]/20 text-[#ffe082] border border-[#d49e3d]/60 px-1.5 py-0.2 rounded-xs">
                     Stardew
@@ -685,7 +685,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => onNavigate('hub')}
               className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
-              title="WikiZero - Tema Google Material"
+              title="WikiWorldWeb - Tema Google Material"
             >
               <div className="w-8 h-8 rounded-full bg-white dark:bg-[#303134] border border-slate-200 dark:border-[#5f6368] flex items-center justify-center shadow-xs">
                 <span className="font-bold text-base font-sans tracking-tight">
@@ -842,7 +842,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onFocus={handleSearchInputClick}
                 onChange={(e) => onSearchChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="Busca Avançada WikiZero Android..."
+                placeholder="Busca Avançada WikiWorldWeb Android..."
                 className="w-full text-xs bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-500 font-sans cursor-text"
               />
               <div className="flex items-center gap-1.5 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -1267,7 +1267,7 @@ export const Header: React.FC<HeaderProps> = ({
               id="btn-header-online-users"
               onClick={() => setShowOnlineMenu(!showOnlineMenu)}
               className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-200"
-              title="Ver quem está logado na WikiZero"
+              title="Ver quem está logado na WikiWorldWeb"
             >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>

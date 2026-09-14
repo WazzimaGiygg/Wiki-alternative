@@ -22,7 +22,7 @@ interface BannedOverlayProps {
 }
 
 export const BannedOverlay: React.FC<BannedOverlayProps> = ({
-  reason = 'Violação das diretrizes editoriais ou vandalismo na WikiZero.',
+  reason = 'Violação das diretrizes editoriais ou vandalismo na WikiWorldWeb.',
   currentUser,
   onLogout,
 }) => {
@@ -55,12 +55,12 @@ export const BannedOverlay: React.FC<BannedOverlayProps> = ({
         email: currentUser?.email,
         userRoleAtBan: currentUser?.role || 'leitor',
         blockReason: reason,
-        blockedBy: 'Moderação WikiZero',
+        blockedBy: 'Moderação WikiWorldWeb',
         blockedAt: new Date().toISOString(),
         category,
         appealJustification: appealJustification.trim(),
         commitmentToGuidelines:
-          commitmentToGuidelines.trim() || 'Comprometo-me a seguir rigorosamente as diretrizes da WikiZero.',
+          commitmentToGuidelines.trim() || 'Comprometo-me a seguir rigorosamente as diretrizes da WikiWorldWeb.',
         urgency: category === 'revisao_lgpd_marco_civil' ? 'alta' : 'media',
         ipAddress: '177.136.24.12',
       });
@@ -88,7 +88,7 @@ export const BannedOverlay: React.FC<BannedOverlayProps> = ({
           Conta Suspensa
         </h2>
         <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-          O acesso de edição da sua conta foi preventivamente suspenso na WikiZero.
+          O acesso de edição da sua conta foi preventivamente suspenso na WikiWorldWeb.
         </p>
 
         <div className="mt-3 p-3 bg-red-950/40 border border-red-800/60 rounded text-[11px] text-red-200 text-left font-mono">
@@ -222,7 +222,7 @@ export const BannedOverlay: React.FC<BannedOverlayProps> = ({
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                  Compromisso com as Políticas da WikiZero*:
+                  Compromisso com as Políticas da WikiWorldWeb*:
                 </label>
                 <textarea
                   rows={2}

@@ -226,8 +226,8 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'sidebar.stats_articles': 'Artigos:',
     'sidebar.stats_views': 'Leituras:',
 
-    'hub.welcome_badge': 'WikiZero Portal',
-    'hub.welcome_title': 'Boas-vindas à WikiZero, a enciclopédia aberta.',
+    'hub.welcome_badge': 'WikiWorldWeb Portal',
+    'hub.welcome_title': 'Boas-vindas à WikiWorldWeb, a enciclopédia aberta.',
     'hub.welcome_desc': 'Consulte artigos enciclopédicos livres, edite e crie conteúdo em sintaxe Wikitext / MediaWiki e colabore com a comunidade sob a licença GNU GPL v3.0 e total conformidade com a LGPD.',
     'hub.btn_create_collection': 'Criar Nova Coleção',
     'hub.btn_editor': 'Editor Wikitexto',
@@ -321,7 +321,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.select_language': 'Aplicar Idioma',
 
     'recent_changes.title': 'Mudanças Recentes',
-    'recent_changes.subtitle': 'Acompanhe em tempo real todas as edições, novos artigos e coleções criadas pela comunidade na WikiZero.',
+    'recent_changes.subtitle': 'Acompanhe em tempo real todas as edições, novos artigos e coleções criadas pela comunidade na WikiWorldWeb.',
     'recent_changes.stat_total_edits': 'ALTERAÇÕES TOTAIS',
     'recent_changes.stat_new_articles': 'NOVOS ARTIGOS',
     'recent_changes.stat_active_editors': 'EDITORES ATIVOS',
@@ -355,7 +355,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'recent_changes.group_earlier': 'Anteriores',
     'recent_changes.showing_entries': 'Exibindo alterações recentes',
 
-    'footer.about': 'Sobre a WikiZero',
+    'footer.about': 'Sobre a WikiWorldWeb',
     'footer.about_desc': 'Uma enciclopédia aberta de conhecimento livre baseada no protocolo MediaWiki, com privacidade e LGPD garantidas.',
     'footer.quick_links': 'Navegação Rápida',
     'footer.legal': 'Conformidade & Legal',
@@ -406,8 +406,8 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'sidebar.stats_articles': 'Articles:',
     'sidebar.stats_views': 'Views:',
 
-    'hub.welcome_badge': 'WikiZero Portal',
-    'hub.welcome_title': 'Welcome to WikiZero, the open encyclopedia.',
+    'hub.welcome_badge': 'WikiWorldWeb Portal',
+    'hub.welcome_title': 'Welcome to WikiWorldWeb, the open encyclopedia.',
     'hub.welcome_desc': 'Explore free encyclopedic articles, write and edit content using Wikitext / MediaWiki syntax, and collaborate with the community under GNU GPL v3.0 and complete privacy compliance.',
     'hub.btn_create_collection': 'Create New Collection',
     'hub.btn_editor': 'Wikitext Editor',
@@ -501,7 +501,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.select_language': 'Apply Language',
 
     'recent_changes.title': 'Recent Changes',
-    'recent_changes.subtitle': 'Track the most recent edits, new articles, and topic collections contributed by the community in WikiZero.',
+    'recent_changes.subtitle': 'Track the most recent edits, new articles, and topic collections contributed by the community in WikiWorldWeb.',
     'recent_changes.stat_total_edits': 'TOTAL EDITS',
     'recent_changes.stat_new_articles': 'NEW ARTICLES',
     'recent_changes.stat_active_editors': 'ACTIVE EDITORS',
@@ -535,7 +535,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'recent_changes.group_earlier': 'Earlier',
     'recent_changes.showing_entries': 'Showing recent changes',
 
-    'footer.about': 'About WikiZero',
+    'footer.about': 'About WikiWorldWeb',
     'footer.about_desc': 'An open encyclopedia for free human knowledge based on the MediaWiki protocol with privacy and user rights guaranteed.',
     'footer.quick_links': 'Quick Links',
     'footer.legal': 'Compliance & Legal',
@@ -586,8 +586,8 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'sidebar.stats_articles': 'Artículos:',
     'sidebar.stats_views': 'Lecturas:',
 
-    'hub.welcome_badge': 'WikiZero Portal',
-    'hub.welcome_title': 'Bienvenido a WikiZero, la enciclopedia abierta.',
+    'hub.welcome_badge': 'WikiWorldWeb Portal',
+    'hub.welcome_title': 'Bienvenido a WikiWorldWeb, la enciclopedia abierta.',
     'hub.welcome_desc': 'Explore artículos enciclopédicos libres, edite y cree contenido en sintaxis Wikitext / MediaWiki y colabore bajo licencia GNU GPL v3.0.',
     'hub.btn_create_collection': 'Crear Nueva Colección',
     'hub.btn_editor': 'Editor Wikitexto',
@@ -680,7 +680,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.languages_regions': 'Regiones',
     'modal.select_language': 'Aplicar Idioma',
 
-    'footer.about': 'Acerca de WikiZero',
+    'footer.about': 'Acerca de WikiWorldWeb',
     'footer.about_desc': 'Una enciclopedia abierta para el conocimiento libre con privacidad garantizada.',
     'footer.quick_links': 'Enlaces Rápidos',
     'footer.legal': 'Conformidad Legal',
@@ -730,8 +730,8 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'sidebar.stats_articles': 'Articles :',
     'sidebar.stats_views': 'Lectures :',
 
-    'hub.welcome_badge': 'Portail WikiZero',
-    'hub.welcome_title': 'Bienvenue sur WikiZero, l’encyclopédie ouverte.',
+    'hub.welcome_badge': 'Portail WikiWorldWeb',
+    'hub.welcome_title': 'Bienvenue sur WikiWorldWeb, l’encyclopédie ouverte.',
     'hub.welcome_desc': 'Consultez des articles libres, écrivez en syntaxe Wikitext / MediaWiki et collaborez sous licence GNU GPL v3.0.',
     'hub.btn_create_collection': 'Nouvelle Collection',
     'hub.btn_editor': 'Éditeur Wikitexte',
@@ -824,7 +824,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.languages_regions': 'Régions',
     'modal.select_language': 'Appliquer la Langue',
 
-    'footer.about': 'À Propos de WikiZero',
+    'footer.about': 'À Propos de WikiWorldWeb',
     'footer.about_desc': 'Encyclopédie libre et ouverte pour le partage du savoir avec respect absolu de la vie privée.',
     'footer.quick_links': 'Liens Rapides',
     'footer.legal': 'Conformité Légale',
@@ -874,8 +874,8 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'sidebar.stats_articles': 'Artikel:',
     'sidebar.stats_views': 'Aufrufe:',
 
-    'hub.welcome_badge': 'WikiZero Portal',
-    'hub.welcome_title': 'Willkommen bei WikiZero, der offenen Enzyklopädie.',
+    'hub.welcome_badge': 'WikiWorldWeb Portal',
+    'hub.welcome_title': 'Willkommen bei WikiWorldWeb, der offenen Enzyklopädie.',
     'hub.welcome_desc': 'Entdecken Sie freie enzyklopädische Artikel, erstellen Sie Inhalte mit Wikitext / MediaWiki-Syntax und arbeiten Sie unter der GNU GPL v3.0 zusammen.',
     'hub.btn_create_collection': 'Neue Sammlung anlegen',
     'hub.btn_editor': 'Wikitext-Editor',
@@ -968,7 +968,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.languages_regions': 'Regionen',
     'modal.select_language': 'Sprache anwenden',
 
-    'footer.about': 'Über WikiZero',
+    'footer.about': 'Über WikiWorldWeb',
     'footer.about_desc': 'Eine freie Enzyklopädie für offenes Wissen mit striktem Datenschutz.',
     'footer.quick_links': 'Direktlinks',
     'footer.legal': 'Rechtliches',
@@ -1018,8 +1018,8 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'sidebar.stats_articles': '記事数:',
     'sidebar.stats_views': '閲覧数:',
 
-    'hub.welcome_badge': 'WikiZero ポータル',
-    'hub.welcome_title': 'オープン百科事典 WikiZero へようこそ',
+    'hub.welcome_badge': 'WikiWorldWeb ポータル',
+    'hub.welcome_title': 'オープン百科事典 WikiWorldWeb へようこそ',
     'hub.welcome_desc': '自由な百科事典記事を閲覧し、MediaWiki / ウィキテキスト構文で編集・執筆を行い、GNU GPL v3.0ライセンスのもとで知識を共有しましょう。',
     'hub.btn_create_collection': '新規コレクション作成',
     'hub.btn_editor': 'ウィキエディタ',
@@ -1112,7 +1112,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.languages_regions': '地域別',
     'modal.select_language': '言語を適用',
 
-    'footer.about': 'WikiZeroについて',
+    'footer.about': 'WikiWorldWebについて',
     'footer.about_desc': 'オープンな人類の知の共有と強固なプライバシー保護を両立する自由な百科事典。',
     'footer.quick_links': 'クイックリンク',
     'footer.legal': '法的事項',
@@ -1162,8 +1162,8 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'sidebar.stats_articles': '条目数：',
     'sidebar.stats_views': '阅读量：',
 
-    'hub.welcome_badge': 'WikiZero 门户',
-    'hub.welcome_title': '欢迎来到 WikiZero 开放百科。',
+    'hub.welcome_badge': 'WikiWorldWeb 门户',
+    'hub.welcome_title': '欢迎来到 WikiWorldWeb 开放百科。',
     'hub.welcome_desc': '查阅自由的百科条目，使用标准维基语法（MediaWiki）编写与编辑内容，在 GNU GPL v3.0 协议下共同创造人类知识。',
     'hub.btn_create_collection': '创建新合集',
     'hub.btn_editor': '维基文本编辑器',
@@ -1256,7 +1256,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.languages_regions': '按地区分类',
     'modal.select_language': '应用语言',
 
-    'footer.about': '关于 WikiZero',
+    'footer.about': '关于 WikiWorldWeb',
     'footer.about_desc': '致力于自由人类知识传播与严格数据隐私保护的现代开放百科全书。',
     'footer.quick_links': '快速链接',
     'footer.legal': '法律与合规',
@@ -1306,8 +1306,8 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'sidebar.stats_articles': 'Статей:',
     'sidebar.stats_views': 'Просмотров:',
 
-    'hub.welcome_badge': 'Портал WikiZero',
-    'hub.welcome_title': 'Добро пожаловать в WikiZero, открытую энциклопедию.',
+    'hub.welcome_badge': 'Портал WikiWorldWeb',
+    'hub.welcome_title': 'Добро пожаловать в WikiWorldWeb, открытую энциклопедию.',
     'hub.welcome_desc': 'Читайте свободные статьи, редактируйте текст с использованием синтаксиса MediaWiki и создавайте знания под лицензией GNU GPL v3.0.',
     'hub.btn_create_collection': 'Создать коллекцию',
     'hub.btn_editor': 'Вики-редактор',
@@ -1400,7 +1400,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.languages_regions': 'Регионы',
     'modal.select_language': 'Применить язык',
 
-    'footer.about': 'О проекте WikiZero',
+    'footer.about': 'О проекте WikiWorldWeb',
     'footer.about_desc': 'Свободная открытая энциклопедия для обмена знаниями с защитой конфиденциальности.',
     'footer.quick_links': 'Быстрые ссылки',
     'footer.legal': 'Правовая информация',
@@ -1450,8 +1450,8 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'sidebar.stats_articles': 'المقالات:',
     'sidebar.stats_views': 'المشاهدات:',
 
-    'hub.welcome_badge': 'بوابة WikiZero',
-    'hub.welcome_title': 'مرحبًا بك في WikiZero، الموسوعة المفتوحة.',
+    'hub.welcome_badge': 'بوابة WikiWorldWeb',
+    'hub.welcome_title': 'مرحبًا بك في WikiWorldWeb، الموسوعة المفتوحة.',
     'hub.welcome_desc': 'استكشف المقالات الحرة واكتب المحتوى بصيغة MediaWiki وشارك المعرفة تحت رخصة GNU GPL v3.0 مع ضمان الخصوصية الكاملة.',
     'hub.btn_create_collection': 'إنشاء مجموعة جديدة',
     'hub.btn_editor': 'محرر نصوص الويكي',
@@ -1544,7 +1544,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.languages_regions': 'المناطق',
     'modal.select_language': 'تطبيق اللغة',
 
-    'footer.about': 'عن WikiZero',
+    'footer.about': 'عن WikiWorldWeb',
     'footer.about_desc': 'موسوعة حرة ومفتوحة لنشر المعرفة الإنسانية مع الحفاظ التام على الخصوصية.',
     'footer.quick_links': 'روابط سريعة',
     'footer.legal': 'القانونية والامتثال',
@@ -1594,8 +1594,8 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'sidebar.stats_articles': 'Articoli:',
     'sidebar.stats_views': 'Letture:',
 
-    'hub.welcome_badge': 'Portale WikiZero',
-    'hub.welcome_title': 'Benvenuto su WikiZero, l’enciclopedia aperta.',
+    'hub.welcome_badge': 'Portale WikiWorldWeb',
+    'hub.welcome_title': 'Benvenuto su WikiWorldWeb, l’enciclopedia aperta.',
     'hub.welcome_desc': 'Consulta articoli enciclopedici liberi, crea e modifica contenuti con sintassi MediaWiki / Wikitesto sotto licenza GNU GPL v3.0.',
     'hub.btn_create_collection': 'Nuova Collezione',
     'hub.btn_editor': 'Editor Wikitesto',
@@ -1688,7 +1688,7 @@ export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>
     'modal.languages_regions': 'Regioni',
     'modal.select_language': 'Applica Lingua',
 
-    'footer.about': 'Informazioni su WikiZero',
+    'footer.about': 'Informazioni su WikiWorldWeb',
     'footer.about_desc': 'Un’enciclopedia aperta per la conoscenza libera con tutela garantita della privacy.',
     'footer.quick_links': 'Link Rapidi',
     'footer.legal': 'Conformità Legale',

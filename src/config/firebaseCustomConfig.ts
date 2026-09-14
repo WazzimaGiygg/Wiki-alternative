@@ -17,7 +17,7 @@ import baseAppletConfig from '../../firebase-applet-config.json';
 export interface FirebaseCustomSettings {
   /**
    * Nome ou rótulo amigável para identificar este ambiente/banco de dados
-   * Ex: "WikiZero Produção", "WikiZero Staging", "Banco de Testes Local"
+   * Ex: "WikiWorldWeb Produção", "WikiWorldWeb Staging", "Banco de Testes Local"
    */
   environmentLabel: string;
 
@@ -58,10 +58,10 @@ export interface FirebaseCustomSettings {
  * Altere os valores abaixo sempre que desejar trocar de projeto ou banco de dados Firestore.
  */
 export const ACTIVE_FIREBASE_CONFIG: FirebaseCustomSettings = {
-  environmentLabel: "WikiZero - wzzm-ce3fc (Produção Principal)",
+  environmentLabel: "WikiWorldWeb - wzzm-ce3fc (Produção Principal)",
   
   // ID do banco de dados Firestore específico (ou '(default)')
-  firestoreDatabaseId: baseAppletConfig.firestoreDatabaseId || "(default)",
+  firestoreDatabaseId: (baseAppletConfig as Record<string, any>).firestoreDatabaseId || "(default)",
 
   firebaseConfig: {
     apiKey: baseAppletConfig.apiKey,

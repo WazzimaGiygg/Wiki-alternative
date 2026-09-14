@@ -187,7 +187,7 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" title="Servidor Firestore e Cache Operacional" />
             <span className="font-bold text-slate-800 dark:text-slate-200">
-              WazzimaGiygg / WikiZero v3.3
+              WazzimaGiygg / WikiWorldWeb v3.3
             </span>
             <span className="text-slate-300 dark:text-slate-700">|</span>
             <button
@@ -222,11 +222,11 @@ export const Footer: React.FC<FooterProps> = ({
             <button
               id="btn-footer-comparison"
               onClick={() => onNavigate('comparison')}
-              title="Comparativo: WikiZero vs Wikipédia, MediaWiki, Fandom e Wikidot"
+              title="Comparativo: WikiWorldWeb vs Wikipédia, MediaWiki, Fandom e Wikidot"
               className="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 transition shadow-xs"
             >
               <Award size={11} className="text-emerald-600 dark:text-emerald-400" />
-              <span>Comparativo: WikiZero vs Wikipédia / Fandom</span>
+              <span>Comparativo: WikiWorldWeb vs Wikipédia / Fandom</span>
             </button>
             <button
               id="btn-footer-wazzimagiygg"
@@ -245,7 +245,7 @@ export const Footer: React.FC<FooterProps> = ({
             </button>
             <button
               onClick={() => onNavigate('arbitration')}
-              title="Conselho de Arbitragem da WikiZero — Julgamento de ações de Usuários, Moderadores e Administradores"
+              title="Conselho de Arbitragem da WikiWorldWeb — Julgamento de ações de Usuários, Moderadores e Administradores"
               className="hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-1 font-semibold text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800/60 transition"
             >
               <Gavel size={11} className="text-purple-600 dark:text-purple-400" />
@@ -332,7 +332,7 @@ export const Footer: React.FC<FooterProps> = ({
               .
             </p>
             <p className="text-slate-500 dark:text-slate-500">
-              WikiZero Enciclopédia Aberta © 2026. Infraestrutura e Banco de Dados alimentados por{' '}
+              WikiWorldWeb Enciclopédia Aberta © 2026. Infraestrutura e Banco de Dados alimentados por{' '}
               <a
                 href={formatExternalUrl("https://firebase.google.com/products/firestore")}
                 target="_blank"

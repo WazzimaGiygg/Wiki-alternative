@@ -520,7 +520,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
       <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400 mb-4 font-mono">
         <div className="flex items-center gap-1.5 flex-wrap">
           <button onClick={onBack} className="hover:text-blue-600 dark:hover:text-blue-400 transition">
-            WikiZero
+            WikiWorldWeb
           </button>
           <ChevronRight size={10} className="text-slate-400" />
           <span className="text-slate-700 dark:text-slate-300">Páginas Especiais</span>
@@ -1295,7 +1295,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
             <div>
               <p className="font-bold">Diretrizes da Comunidade & Transparência:</p>
               <p className="mt-0.5 text-[11px] leading-relaxed">
-                A WikiZero promove transparência editorial com respeito integral à LGPD. Os dados exibidos referem-se à atividade pública editorial, concessão de condecorações comunitárias e controle de auditoria de cargos.
+                A WikiWorldWeb promove transparência editorial com respeito integral à LGPD. Os dados exibidos referem-se à atividade pública editorial, concessão de condecorações comunitárias e controle de auditoria de cargos.
               </p>
             </div>
           </div>

@@ -1099,7 +1099,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       {showPdfModal && (
         <PdfExportModal
           article={localArticle}
-          pageName={page?.titulo || 'WikiZero'}
+          pageName={page?.titulo || 'WikiWorldWeb'}
           articleContentRef={contentRef}
           isOpen={showPdfModal}
           onClose={() => setShowPdfModal(false)}

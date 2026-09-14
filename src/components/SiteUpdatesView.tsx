@@ -337,7 +337,7 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
       setNewHighlightsText('');
       setNewComponentsText('');
       setNewBadge('');
-      showToast(`Atualização ${created.version} registrada com sucesso na WikiZero!`);
+      showToast(`Atualização ${created.version} registrada com sucesso na WikiWorldWeb!`);
     } catch (err) {
       console.error('Erro ao adicionar atualização:', err);
       alert('Não foi possível salvar a atualização. Tente novamente.');
@@ -463,7 +463,7 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
       const res = await StorageService.addSystemUpdatesBatch(parsedJsonResult.entries, {
         replaceAll: replaceAllExisting,
         notifyUsers: notifyUsersOnImport,
-        authorFallback: currentUser?.displayName || currentUser?.username || 'Administração da WikiZero',
+        authorFallback: currentUser?.displayName || currentUser?.username || 'Administração da WikiWorldWeb',
       });
 
       const updatedList = await StorageService.getSystemUpdates();
@@ -1482,7 +1482,7 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
           <span>Diretrizes de Ciclo de Desenvolvimento & Transparência</span>
         </div>
         <p className="leading-relaxed">
-          O sistema <strong>WikiZero / WazzimaGiygg</strong> adota práticas de entrega contínua com
+          O sistema <strong>WikiWorldWeb / WazzimaGiygg</strong> adota práticas de entrega contínua com
           documentação detalhada de cada módulo. Todas as alterações na arquitetura, segurança,
           leis de privacidade (LGPD/Marco Civil da Internet) e usabilidade são registradas
           nesta página para consulta pública da comunidade.
@@ -1513,7 +1513,7 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
                     </span>
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Publique melhorias no changelog público da WikiZero interpretando arquivos JSON ou preenchendo manualmente
+                    Publique melhorias no changelog público da WikiWorldWeb interpretando arquivos JSON ou preenchendo manualmente
                   </p>
                 </div>
               </div>
@@ -1778,7 +1778,7 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
                       className="rounded text-blue-600 focus:ring-blue-500"
                     />
                     <span className="font-medium">
-                      🔔 Disparar notificação comunitária para todos os usuários da WikiZero
+                      🔔 Disparar notificação comunitária para todos os usuários da WikiWorldWeb
                     </span>
                   </label>
 

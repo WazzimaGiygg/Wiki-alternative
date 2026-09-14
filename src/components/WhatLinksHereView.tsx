@@ -61,7 +61,7 @@ export const WhatLinksHereView: React.FC<WhatLinksHereViewProps> = ({
           <span>Páginas Afluentes (What Links Here): {currentArticle.titulo}</span>
         </div>
         <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-          Esta ferramenta analisa a ontologia interna da WikiZero e lista todas as páginas, artigos e coleções que contêm referências diretas (links <code>[[{currentArticle.titulo}]]</code>) apontando para esta página.
+          Esta ferramenta analisa a ontologia interna da WikiWorldWeb e lista todas as páginas, artigos e coleções que contêm referências diretas (links <code>[[{currentArticle.titulo}]]</code>) apontando para esta página.
         </p>
       </div>
 

@@ -92,7 +92,7 @@ export const FilesGalleryView: React.FC<FilesGalleryViewProps> = ({
             <span>Galeria de Ficheiros ({files.length})</span>
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            Repositório de imagens, diagramas e mídias licenciadas da enciclopédia WikiZero.
+            Repositório de imagens, diagramas e mídias licenciadas da enciclopédia WikiWorldWeb.
           </p>
         </div>
 

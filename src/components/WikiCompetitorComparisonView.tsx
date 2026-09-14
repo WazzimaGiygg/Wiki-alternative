@@ -168,9 +168,9 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
   useEffect(() => {
     updateSEO({
       view: 'comparison',
-      title: 'Comparativo: WikiZero vs Wikipédia, MediaWiki, Wikidot e Fandom',
+      title: 'Comparativo: WikiWorldWeb vs Wikipédia, MediaWiki, Wikidot e Fandom',
       description:
-        'Compare a WikiZero diretamente com a Wikipédia, MediaWiki, Wikidot e Fandom. Descubra as vantagens do Gemini Notebook para síntese de artigos, Assistente Gemini com IA, zero anúncios e editor moderno.',
+        'Compare a WikiWorldWeb diretamente com a Wikipédia, MediaWiki, Wikidot e Fandom. Descubra as vantagens do Gemini Notebook para síntese de artigos, Assistente Gemini com IA, zero anúncios e editor moderno.',
       breadcrumbs: [
         { name: 'Início', url: '/?uid=hub' },
         { name: 'Comparativo de Plataformas Wiki', url: '/?uid=comparison' },
@@ -209,10 +209,10 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           <span>Análise Competitiva de Plataformas de Conhecimento</span>
         </div>
         <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          WikiZero vs Wikipédia, MediaWiki, Wikidot e Fandom
+          WikiWorldWeb vs Wikipédia, MediaWiki, Wikidot e Fandom
         </h1>
         <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-          Descubra por que a <strong>WikiZero</strong> representa a evolução natural das enciclopédias colaborativas:
+          Descubra por que a <strong>WikiWorldWeb</strong> representa a evolução natural das enciclopédias colaborativas:
           uma plataforma moderna, sem poluição de anúncios invasivos, com liberdade editorial transparente e tecnologia de ponta.
         </p>
       </header>
@@ -257,7 +257,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           </div>
           <h2 className="text-sm font-bold text-slate-900 dark:text-white">Zero Anúncios Poluentes</h2>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Diferente do Fandom e Wikidot, na WikiZero você não é bombardeado por anúncios em vídeo ou banners que consomem seus dados.
+            Diferente do Fandom e Wikidot, na WikiWorldWeb você não é bombardeado por anúncios em vídeo ou banners que consomem seus dados.
           </p>
         </div>
 
@@ -312,7 +312,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
                   Recurso / Critério
                 </th>
                 <th className="py-3 px-3 font-bold text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 text-center">
-                  WikiZero (Você Está Aqui)
+                  WikiWorldWeb (Você Está Aqui)
                 </th>
                 <th className="py-3 px-3 font-bold text-slate-600 dark:text-slate-400 text-center">
                   Wikipédia
@@ -356,20 +356,20 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
 
       {/* Deep-Dive Competitor Analysis Sections */}
       <section className="space-y-8">
-        {/* 1. WikiZero vs Wikipédia */}
+        {/* 1. WikiWorldWeb vs Wikipédia */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
               01
             </span>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              WikiZero vs Wikipédia: Fim da Censura e da Burocracia de Grupos
+              WikiWorldWeb vs Wikipédia: Fim da Censura e da Burocracia de Grupos
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
             A Wikipédia tradicional consolidou-se como referência histórica, porém sofre há mais de uma década com
             problemas crônicos de <strong>panelinhas de administradores</strong>, eliminação rápida abusiva de artigos legítimos
-            e perseguição sistemática de novos contribuidores. A <strong>WikiZero</strong> foi estruturada para resolver essa falha:
+            e perseguição sistemática de novos contribuidores. A <strong>WikiWorldWeb</strong> foi estruturada para resolver essa falha:
             adotamos um <strong>Conselho de Arbitragem (ArbCom)</strong> com audiências públicas, auditoria imparcial de bloqueios
             (CheckUser transparente) e canais formais de recurso, garantindo que o conhecimento legítimo nunca seja apagado por caprichos pessoais.
           </p>
@@ -386,20 +386,20 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           </div>
         </div>
 
-        {/* 2. WikiZero vs Fandom (Wikia) */}
+        {/* 2. WikiWorldWeb vs Fandom (Wikia) */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
               02
             </span>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              WikiZero vs Fandom: Leitura Limpa sem Poluição de Anúncios e Rastreamento
+              WikiWorldWeb vs Fandom: Leitura Limpa sem Poluição de Anúncios e Rastreamento
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
             O Fandom (anteriormente Wikia) tornou-se praticamente ilegível para milhões de usuários devido a
             vídeos com reprodução automática, banners expansivos que cobrem o texto, popups persistentes e dezenas de rastreadores
-            comerciais que deixam a navegação lenta e drenam a bateria de smartphones. Na <strong>WikiZero</strong>,
+            comerciais que deixam a navegação lenta e drenam a bateria de smartphones. Na <strong>WikiWorldWeb</strong>,
             a experiência de leitura é <strong>100% livre de anúncios comerciais invasivos</strong>, carregando de forma instantânea
             e respeitando a privacidade e os dados do leitor.
           </p>
@@ -416,19 +416,19 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           </div>
         </div>
 
-        {/* 3. WikiZero vs MediaWiki */}
+        {/* 3. WikiWorldWeb vs MediaWiki */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
               03
             </span>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              WikiZero vs MediaWiki: Engenharia Moderna em SPA vs Monolito PHP Legado
+              WikiWorldWeb vs MediaWiki: Engenharia Moderna em SPA vs Monolito PHP Legado
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
             O motor de software MediaWiki foi concebido no início dos anos 2000 em PHP e requer pilhas de servidores pesadas (Apache/Nginx, MySQL, PHP-FPM)
-            e recarregamentos inteiros de página a cada clique. A <strong>WikiZero</strong> foi projetada com arquitetura
+            e recarregamentos inteiros de página a cada clique. A <strong>WikiWorldWeb</strong> foi projetada com arquitetura
             contemporânea de ponta em <strong>React + TypeScript + Tailwind CSS</strong> com banco de dados em nuvem em tempo real (Firestore).
             Oferece navegação reativa sem recarregamento de página, pré-visualização instantânea de wikitexto e suporte a PWA (Progressive Web App).
           </p>
@@ -445,19 +445,19 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           </div>
         </div>
 
-        {/* 4. WikiZero vs Wikidot */}
+        {/* 4. WikiWorldWeb vs Wikidot */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-xs">
               04
             </span>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              WikiZero vs Wikidot: Design Responsivo e Plataforma Ativa
+              WikiWorldWeb vs Wikidot: Design Responsivo e Plataforma Ativa
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
             O Wikidot possui uma interface congelada no tempo, sintaxe proprietária que não é compatível com o padrão internacional
-            MediaWiki wikitexto e suporte técnico estagnado. A <strong>WikiZero</strong> oferece design 100% responsivo para
+            MediaWiki wikitexto e suporte técnico estagnado. A <strong>WikiWorldWeb</strong> oferece design 100% responsivo para
             qualquer tamanho de tela, compatibilidade total com sintaxe wikitexto padrão, internacionalização em múltiplos idiomas
             e desenvolvimento ativo contínuo.
           </p>
@@ -474,7 +474,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           </div>
         </div>
 
-        {/* 5. WikiZero vs Outros: Vantagem do Gemini Notebook na Criação de Artigos */}
+        {/* 5. WikiWorldWeb vs Outros: Vantagem do Gemini Notebook na Criação de Artigos */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-blue-300 dark:border-blue-800/80 shadow-sm space-y-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-500/15 via-blue-400/5 to-transparent rounded-bl-full pointer-events-none" />
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -514,7 +514,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
                 <span>1. Cruzamento de Múltiplas Fontes</span>
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-300">
-                Adicione no mesmo caderno artigos existentes da WikiZero, anotações de pesquisa, links da internet e citações bibliográficas.
+                Adicione no mesmo caderno artigos existentes da WikiWorldWeb, anotações de pesquisa, links da internet e citações bibliográficas.
               </p>
             </div>
 
@@ -555,7 +555,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           </div>
         </div>
 
-        {/* 6. WikiZero vs Outros: Assistente Gemini Integrado (Google AI Studio) */}
+        {/* 6. WikiWorldWeb vs Outros: Assistente Gemini Integrado (Google AI Studio) */}
         <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-indigo-300 dark:border-indigo-800/80 shadow-sm space-y-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-500/15 via-purple-400/5 to-transparent rounded-bl-full pointer-events-none" />
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -585,7 +585,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           </div>
 
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            Na Wikipédia e no ecossistema MediaWiki tradicional, o uso de inteligência artificial é frequentemente alvo de <strong>hostilidade burocrática</strong>, reversões automáticas em massa e ameaças de bloqueio por administradores, sem que os editores recebam ferramentas amigáveis de suporte. Na <strong>WikiZero</strong>, abraçamos o futuro da tecnologia: o <strong>Assistente Gemini</strong> funciona como um co-piloto transparente e solícito, projetado para elevar a qualidade do conhecimento livre.
+            Na Wikipédia e no ecossistema MediaWiki tradicional, o uso de inteligência artificial é frequentemente alvo de <strong>hostilidade burocrática</strong>, reversões automáticas em massa e ameaças de bloqueio por administradores, sem que os editores recebam ferramentas amigáveis de suporte. Na <strong>WikiWorldWeb</strong>, abraçamos o futuro da tecnologia: o <strong>Assistente Gemini</strong> funciona como um co-piloto transparente e solícito, projetado para elevar a qualidade do conhecimento livre.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
@@ -640,17 +640,17 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
         <div className="flex items-center gap-2">
           <HelpCircle size={20} className="text-blue-600 dark:text-blue-400" />
           <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-            Perguntas Frequentes sobre a WikiZero e Alternativas
+            Perguntas Frequentes sobre a WikiWorldWeb e Alternativas
           </h2>
         </div>
 
         <div className="space-y-3 text-xs sm:text-sm">
           <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
             <h3 className="font-bold text-slate-900 dark:text-white mb-1">
-              Como o Gemini Notebook auxilia na criação de artigos na WikiZero?
+              Como o Gemini Notebook auxilia na criação de artigos na WikiWorldWeb?
             </h3>
             <p className="text-slate-600 dark:text-slate-300">
-              O Gemini Notebook permite agrupar múltiplos artigos existentes da WikiZero, anotações de estudo e fontes externas em um ambiente de pesquisa integrado. Em seguida, a inteligência artificial do Google sintetiza um rascunho enciclopédico estruturado em wikitexto com seções, infobox e sumário, pronto para ser refinado no editor com 1 clique.
+              O Gemini Notebook permite agrupar múltiplos artigos existentes da WikiWorldWeb, anotações de estudo e fontes externas em um ambiente de pesquisa integrado. Em seguida, a inteligência artificial do Google sintetiza um rascunho enciclopédico estruturado em wikitexto com seções, infobox e sumário, pronto para ser refinado no editor com 1 clique.
             </p>
           </div>
 
@@ -659,34 +659,34 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
               Qual a vantagem do Assistente Gemini em relação a editar na Wikipédia ou MediaWiki?
             </h3>
             <p className="text-slate-600 dark:text-slate-300">
-              Na Wikipédia e no MediaWiki, novos usuários enfrentam bloqueios rígidos e uma curva de aprendizado íngreme para sintaxe de tabelas e infoboxes. Na WikiZero, o Assistente Gemini auxilia a redigir parâmetros, sugerir ligações internas, auditar o tom neutro e tirar dúvidas dos leitores, democratizando a produção do saber livre.
+              Na Wikipédia e no MediaWiki, novos usuários enfrentam bloqueios rígidos e uma curva de aprendizado íngreme para sintaxe de tabelas e infoboxes. Na WikiWorldWeb, o Assistente Gemini auxilia a redigir parâmetros, sugerir ligações internas, auditar o tom neutro e tirar dúvidas dos leitores, democratizando a produção do saber livre.
             </p>
           </div>
 
           <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
             <h3 className="font-bold text-slate-900 dark:text-white mb-1">
-              A WikiZero é gratuita para ler e editar?
+              A WikiWorldWeb é gratuita para ler e editar?
             </h3>
             <p className="text-slate-600 dark:text-slate-300">
-              Sim! A WikiZero é 100% gratuita para leitura, pesquisa, criação de novos verbetes e edição colaborativa, sob licença livre Creative Commons e GNU GPL.
+              Sim! A WikiWorldWeb é 100% gratuita para leitura, pesquisa, criação de novos verbetes e edição colaborativa, sob licença livre Creative Commons e GNU GPL.
             </p>
           </div>
 
           <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
             <h3 className="font-bold text-slate-900 dark:text-white mb-1">
-              Por que a WikiZero não possui anúncios como o Fandom?
+              Por que a WikiWorldWeb não possui anúncios como o Fandom?
             </h3>
             <p className="text-slate-600 dark:text-slate-300">
-              Acreditamos que o conhecimento enciclopédico deve ser limpo, rápido e acessível sem mercantilização intrusiva. A WikiZero foi desenvolvida com foco no leitor e na velocidade de consulta.
+              Acreditamos que o conhecimento enciclopédico deve ser limpo, rápido e acessível sem mercantilização intrusiva. A WikiWorldWeb foi desenvolvida com foco no leitor e na velocidade de consulta.
             </p>
           </div>
 
           <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
             <h3 className="font-bold text-slate-900 dark:text-white mb-1">
-              Como funciona o Conselho de Arbitragem (ArbCom) da WikiZero?
+              Como funciona o Conselho de Arbitragem (ArbCom) da WikiWorldWeb?
             </h3>
             <p className="text-slate-600 dark:text-slate-300">
-              Diferente da Wikipédia, os casos de arbitragem na WikiZero contam com registros públicos transparentes, permitindo que usuários apresentem evidências e garantam julgamentos imparciais contra abusos de poder ou disputas de edição.
+              Diferente da Wikipédia, os casos de arbitragem na WikiWorldWeb contam com registros públicos transparentes, permitindo que usuários apresentem evidências e garantam julgamentos imparciais contra abusos de poder ou disputas de edição.
             </p>
           </div>
         </div>

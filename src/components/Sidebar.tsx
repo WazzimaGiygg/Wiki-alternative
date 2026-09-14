@@ -273,7 +273,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               id="btn-sidebar-comparison"
               onClick={() => onNavigate('comparison')}
-              title="Comparativo: WikiZero vs Wikipédia, MediaWiki e Fandom"
+              title="Comparativo: WikiWorldWeb vs Wikipédia, MediaWiki e Fandom"
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'comparison'
                   ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
@@ -558,7 +558,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </nav>
         </div>
 
-        {/* Section: WikiZero Institutional & LGPD */}
+        {/* Section: WikiWorldWeb Institutional & LGPD */}
         <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
           {!isCollapsed && (
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center gap-1 font-mono">

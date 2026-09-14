@@ -79,7 +79,7 @@ export const CreatePageModal: React.FC<CreatePageModalProps> = ({
         titulo: titulo.trim(),
         descricao: descricao.trim(),
         categoria: categoria.trim(),
-        autor: user?.displayName || 'Colaborador WikiZero',
+        autor: user?.displayName || 'Colaborador WikiWorldWeb',
         icon,
         tags,
         status: 'ativo',

@@ -1,7 +1,7 @@
 /**
  * @file VersionDiff.tsx
  * @description Componente de visualização de diferenças (Diffs) entre duas revisões/versões
- * de conteúdo do WikiZero. Suporta visualização Lado a Lado (Side-by-Side) e Unificada (Inline),
+ * de conteúdo do WikiWorldWeb. Suporta visualização Lado a Lado (Side-by-Side) e Unificada (Inline),
  * com destaque por linha e por palavra, métricas de adição/remoção e suporte a temas claro/escuro.
  */
 
@@ -480,7 +480,7 @@ export const VersionDiff: React.FC<VersionDiffProps> = ({
           </span>
         </div>
         <span className="text-[11px]">
-          WikiZero Versioning Engine v1.0
+          WikiWorldWeb Versioning Engine v1.0
         </span>
       </div>
     </div>

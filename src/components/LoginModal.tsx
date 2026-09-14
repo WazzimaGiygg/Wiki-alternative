@@ -227,7 +227,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   )}) pertence aos blocos de rede oficiais mantidos pela <strong>Wikimedia Foundation, Inc.</strong>
                 </p>
                 <p className="text-[11px] leading-relaxed text-rose-700 dark:text-rose-300 font-medium">
-                  <strong>Política de Segurança WikiZero:</strong> Por diretriz editorial de isolamento independente, neutralidade e proteção contra interferências institucionais, o login e a criação de sessões com credenciais a partir de endereços IP da Wikimedia Foundation estão <u>estritamente vetados</u>.
+                  <strong>Política de Segurança WikiWorldWeb:</strong> Por diretriz editorial de isolamento independente, neutralidade e proteção contra interferências institucionais, o login e a criação de sessões com credenciais a partir de endereços IP da Wikimedia Foundation estão <u>estritamente vetados</u>.
                 </p>
               </div>
             </div>

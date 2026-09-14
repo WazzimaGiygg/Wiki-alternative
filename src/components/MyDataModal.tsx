@@ -44,7 +44,7 @@ export const MyDataModal: React.FC<MyDataModalProps> = ({
       'Art. 18, IX - Revogação do consentimento',
     ],
     dpoResponsavel: {
-      nome: 'Encarregado WikiZero',
+      nome: 'Encarregado WikiWorldWeb',
       email: 'pedrohenriquecardonaperes@gmail.com',
       marcoLegal: 'Marco Civil (Lei 12.965/2014) & LGPD (Lei 13.709/2018)',
     },

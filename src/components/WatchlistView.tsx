@@ -95,7 +95,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
             Lista de Vigilância Pessoal
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-            Você precisa estar registrado e logado no WikiZero para vigiar artigos e receber atualizações em tempo real das revisões e discussões.
+            Você precisa estar registrado e logado no WikiWorldWeb para vigiar artigos e receber atualizações em tempo real das revisões e discussões.
           </p>
         </div>
       </div>

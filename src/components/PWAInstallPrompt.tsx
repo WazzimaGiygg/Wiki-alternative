@@ -57,7 +57,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ buttonStyle 
           <button
             id="pwa-header-install-btn"
             onClick={handleInstallClick}
-            aria-label="Instalar aplicativo WikiZero no Android"
+            aria-label="Instalar aplicativo WikiWorldWeb no Android"
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 transition-all active:scale-95 cursor-pointer"
           >
             <Smartphone className="w-4 h-4" />
@@ -124,7 +124,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ buttonStyle 
                 <div className="w-16 h-16 rounded-2xl bg-white p-2 shadow-lg flex items-center justify-center shrink-0">
                   <img 
                     src="/pwa-192x192.png" 
-                    alt="WikiZero Logo" 
+                    alt="WikiWorldWeb Logo" 
                     className="w-full h-full object-contain"
                     onError={(e) => {
                       (e.target as HTMLElement).style.display = 'none';
@@ -134,7 +134,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ buttonStyle 
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold tracking-tight">WikiZero para Android</h3>
+                    <h3 className="text-xl font-bold tracking-tight">WikiWorldWeb para Android</h3>
                     <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/40 text-blue-100 border border-blue-400/30">
                       PWA Nativo
                     </span>
@@ -238,7 +238,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ buttonStyle 
                     <div className="text-sm">
                       <div className="font-semibold text-slate-900">Confirme a instalação</div>
                       <p className="text-xs text-slate-600 mt-0.5">
-                        Toque em <strong>"Instalar"</strong>. O Android criará o aplicativo WebAPK automaticamente na sua gaveta de apps com o ícone do WikiZero.
+                        Toque em <strong>"Instalar"</strong>. O Android criará o aplicativo WebAPK automaticamente na sua gaveta de apps com o ícone do WikiWorldWeb.
                       </p>
                     </div>
                   </div>
@@ -259,13 +259,13 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ buttonStyle 
               {activeTab === 'qr' && (
                 <div className="flex flex-col items-center text-center space-y-3 py-2">
                   <p className="text-xs text-slate-600 max-w-sm">
-                    Aponte a câmera do seu smartphone Android para o QR Code abaixo para abrir o WikiZero no celular e instalar:
+                    Aponte a câmera do seu smartphone Android para o QR Code abaixo para abrir o WikiWorldWeb no celular e instalar:
                   </p>
 
                   <div className="p-3 bg-white rounded-2xl border-2 border-slate-200 shadow-md">
                     <img 
                       src={qrCodeUrl} 
-                      alt="QR Code WikiZero" 
+                      alt="QR Code WikiWorldWeb" 
                       className="w-48 h-48 rounded-lg"
                       loading="lazy"
                     />

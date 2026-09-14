@@ -353,7 +353,7 @@ export const CheckUserView: React.FC<CheckUserViewProps> = ({
               </h1>
               <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                 A ferramenta <strong>CheckUser</strong> é de uso estritamente restrito aos membros eleitos do corpo de
-                <strong> Moderadores</strong> e <strong>Administradores</strong> da WikiZero.
+                <strong> Moderadores</strong> e <strong>Administradores</strong> da WikiWorldWeb.
               </p>
               
               <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 rounded-lg p-4 text-xs text-amber-900 dark:text-amber-200 space-y-2">
@@ -1157,7 +1157,7 @@ export const CheckUserView: React.FC<CheckUserViewProps> = ({
           <div className="space-y-4 leading-relaxed">
             <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">1. Princípio da Justa Causa & Proporcionalidade</h3>
             <p>
-              O Verificador de Contas (CheckUser) <strong>não deve ser utilizado como instrumento de vigilância rotineira ou perseguição ideológica</strong>. Cada consulta exige justa causa demonstrável de infração às políticas da WikiZero, tais como:
+              O Verificador de Contas (CheckUser) <strong>não deve ser utilizado como instrumento de vigilância rotineira ou perseguição ideológica</strong>. Cada consulta exige justa causa demonstrável de infração às políticas da WikiWorldWeb, tais como:
             </p>
             <ul className="list-disc pl-5 space-y-1">
               <li><strong>Evasão de Bloqueio Editorial:</strong> Quando um usuário sancionado cria novas contas para burlar a decisão da comunidade.</li>
@@ -1167,7 +1167,7 @@ export const CheckUserView: React.FC<CheckUserViewProps> = ({
 
             <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">2. Conformidade com o Marco Civil da Internet (Lei nº 12.965/2014)</h3>
             <p>
-              Em observância ao <strong>Art. 15 da Lei Federal nº 12.965/2014</strong>, a WikiZero mantém a guarda de registros de acesso a aplicações de internet sob estrito sigilo e ambiente controlado, com fins exclusivos de apuração de condutas ilícitas ou requisição judicial.
+              Em observância ao <strong>Art. 15 da Lei Federal nº 12.965/2014</strong>, a WikiWorldWeb mantém a guarda de registros de acesso a aplicações de internet sob estrito sigilo e ambiente controlado, com fins exclusivos de apuração de condutas ilícitas ou requisição judicial.
             </p>
 
             <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">3. Conformidade com a LGPD (Lei nº 13.709/2018)</h3>

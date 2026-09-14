@@ -345,7 +345,7 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
     const senderProfile: UserProfile = currentUser || {
       uid: `guest-reply-${Date.now().toString(36)}`,
       username: 'Visitante',
-      displayName: 'Visitante da WikiZero',
+      displayName: 'Visitante da WikiWorldWeb',
       email: 'visitante@wikizero.org',
       role: 'convidado',
       isGuest: true,
@@ -434,7 +434,7 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
               <ArrowLeft size={18} />
             </button>
           )}
-          <span className="font-semibold text-slate-800 dark:text-slate-200">WikiZero</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-200">WikiWorldWeb</span>
           <ChevronRight size={14} />
           <span className="text-slate-600 dark:text-slate-400">Administração</span>
           <ChevronRight size={14} />
@@ -741,7 +741,7 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
                 rows={5}
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
-                placeholder="Descreva detalhadamente o ocorrido, citando edições, usuários envolvidos, justificativas ou a política da WikiZero aplicável..."
+                placeholder="Descreva detalhadamente o ocorrido, citando edições, usuários envolvidos, justificativas ou a política da WikiWorldWeb aplicável..."
                 required
                 className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden resize-y"
               />

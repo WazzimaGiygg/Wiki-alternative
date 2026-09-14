@@ -65,14 +65,14 @@ export const GeminiPremiumModal: React.FC<GeminiPremiumModalProps> = ({
             </div>
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider bg-amber-400/30 text-amber-200 px-2.5 py-0.5 rounded-full">
-                Google AI Studio & WikiZero
+                Google AI Studio & WikiWorldWeb
               </span>
               <h2 className="text-2xl font-bold tracking-tight">Plano Gemini Premium</h2>
             </div>
           </div>
           <p className="text-sm text-purple-100 max-w-lg mt-1">
             Desbloqueie o poder máximo da inteligência artificial para pesquisa, redação e expansão de verbetes na
-            WikiZero.
+            WikiWorldWeb.
           </p>
 
           {/* Banner de Cota Esgotada se disparado por limite */}
@@ -185,7 +185,7 @@ export const GeminiPremiumModal: React.FC<GeminiPremiumModalProps> = ({
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Distintivo 💎 <strong>Gemini Pro</strong> no perfil da WikiZero</span>
+                  <span>Distintivo 💎 <strong>Gemini Pro</strong> no perfil da WikiWorldWeb</span>
                 </li>
               </ul>
             </div>

@@ -89,7 +89,7 @@ const STANDARD_RATIONALES = [
   {
     title: 'Compromisso Aceito (1ª Sanção)',
     decision: 'unblock_full' as const,
-    text: 'Recurso deferido. O usuário demonstrou compreensão das regras comunitárias da WikiZero, reconheceu o equívoco e assumiu compromisso formal de conduta. Acesso plenamente restabelecido.',
+    text: 'Recurso deferido. O usuário demonstrou compreensão das regras comunitárias da WikiWorldWeb, reconheceu o equívoco e assumiu compromisso formal de conduta. Acesso plenamente restabelecido.',
   },
   {
     title: 'Falso Positivo de Filtro (LGPD Art. 20)',
@@ -382,7 +382,7 @@ export const UnblockRequestsView: React.FC<UnblockRequestsViewProps> = ({
               </span>{' '}
               Esta central permite ao corpo de moderadores e administradores examinar recursos contra suspensões,
               bloqueios de faixas de IP institucionais e sanções automatizadas. A decisão proferida gera registro
-              imutável no log de auditoria da WikiZero e notificação oficial na página de discussão do usuário.
+              imutável no log de auditoria da WikiWorldWeb e notificação oficial na página de discussão do usuário.
             </div>
           </div>
 

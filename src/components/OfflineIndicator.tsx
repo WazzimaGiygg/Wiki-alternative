@@ -18,7 +18,7 @@ export const OfflineIndicator: React.FC = () => {
         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
       </span>
       <WifiOff className="w-4 h-4" />
-      <span>Modo Offline — Você está usando o cache do aplicativo WikiZero.</span>
+      <span>Modo Offline — Você está usando o cache do aplicativo WikiWorldWeb.</span>
     </div>
   );
 };

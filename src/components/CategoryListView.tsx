@@ -1,6 +1,6 @@
 /**
  * @file CategoryListView.tsx
- * @description Exibe a listagem de páginas e artigos categorizados sob uma categoria específica do WikiZero.
+ * @description Exibe a listagem de páginas e artigos categorizados sob uma categoria específica do WikiWorldWeb.
  */
 
 import React, { useState, useEffect } from 'react';

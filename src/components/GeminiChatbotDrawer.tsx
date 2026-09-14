@@ -327,7 +327,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
     let greeting = `Olá! Sou o **Chatbot Assistente Gemini** integrado via Google AI Studio (**ID: \`${id}\`**).`;
 
     if (mode === 'collection') {
-      greeting += `\n\nVejo que você está criando uma nova **Coleção Temática** na WikiZero. Posso ajudá-lo a planejar o escopo, sugerir título, identificador (slug), categoria e tags! Clique em uma das sugestões abaixo ou digite seu tema.`;
+      greeting += `\n\nVejo que você está criando uma nova **Coleção Temática** na WikiWorldWeb. Posso ajudá-lo a planejar o escopo, sugerir título, identificador (slug), categoria e tags! Clique em uma das sugestões abaixo ou digite seu tema.`;
     } else if (mode === 'article') {
       greeting += `\n\nEstou pronto para auxiliá-lo na redação enciclopédica do artigo **"${articleTitle || 'Novo Artigo'}"**. Posso redigir seções completas em sintaxe Wikitext, criar infoboxes, sugerir tópicos e referências.`;
     } else {
@@ -462,7 +462,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
       })
       .join('\n');
 
-    const fileContent = `# Histórico de Conversa - Chatbot Gemini WikiZero\n- Data: ${new Date().toLocaleString()}\n- Modo: ${contextMode}\n- Chatbot ID: ${config.chatbotId}\n- Modelo: ${config.model}\n\n${exportBody}`;
+    const fileContent = `# Histórico de Conversa - Chatbot Gemini WikiWorldWeb\n- Data: ${new Date().toLocaleString()}\n- Modo: ${contextMode}\n- Chatbot ID: ${config.chatbotId}\n- Modelo: ${config.model}\n\n${exportBody}`;
 
     const blob = new Blob([fileContent], { type: 'text/markdown;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -569,7 +569,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
     const textToSend = customText || inputValue;
     if ((!textToSend.trim() && !selectedImage) || isLoading) return;
 
-    const messageText = textToSend.trim() || (selectedImage ? 'Analise a imagem enviada para criação de conteúdo na WikiZero.' : '');
+    const messageText = textToSend.trim() || (selectedImage ? 'Analise a imagem enviada para criação de conteúdo na WikiWorldWeb.' : '');
 
     const userMessage: GeminiChatMessage = {
       id: `usr-${Date.now()}`,
@@ -952,7 +952,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
                       <div className="mt-3 p-3 bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-indigo-500/10 border border-amber-300 dark:border-amber-600/50 rounded-xl space-y-2">
                         <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-bold text-xs">
                           <Crown size={14} className="text-amber-500" />
-                          <span>Gemini Premium WikiZero</span>
+                          <span>Gemini Premium WikiWorldWeb</span>
                         </div>
                         <p className="text-[11px] text-slate-600 dark:text-slate-300">
                           {msg.quotaExceeded
@@ -1221,7 +1221,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
               <>
                 <button
                   onClick={() =>
-                    handleSendMessage('Gere ideias de novos artigos e coleções que enriqueceriam a WikiZero hoje.')
+                    handleSendMessage('Gere ideias de novos artigos e coleções que enriqueceriam a WikiWorldWeb hoje.')
                   }
                   className="px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 whitespace-nowrap transition"
                 >
@@ -1229,7 +1229,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
                 </button>
                 <button
                   onClick={() =>
-                    handleSendMessage('Como estruturar tabelas e predefinições com formatação MediaWiki na WikiZero?')
+                    handleSendMessage('Como estruturar tabelas e predefinições com formatação MediaWiki na WikiWorldWeb?')
                   }
                   className="px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 whitespace-nowrap transition"
                 >
@@ -1361,7 +1361,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
               <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg text-xs leading-relaxed text-blue-900 dark:text-blue-200">
                 <p>
                   Como <strong>administrador</strong>, você pode definir o <strong>ID do Chatbot do Google AI Studio</strong>{' '}
-                  que alimentará o assistente de redação e geração de coleções em toda a WikiZero.
+                  que alimentará o assistente de redação e geração de coleções em toda a WikiWorldWeb.
                 </p>
               </div>
 

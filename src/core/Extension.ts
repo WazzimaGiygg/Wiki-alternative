@@ -1,7 +1,7 @@
 /**
  * @file Extension.ts
  * @description Sistema central de tipos e barramento de ganchos (Hooks & Filters)
- * para o ecossistema de extensões/plugins do WikiZero.
+ * para o ecossistema de extensões/plugins do WikiWorldWeb.
  */
 
 /**
@@ -29,7 +29,7 @@ export interface RegisteredHook<T = Function> {
  * HookRegistry
  * 
  * Gerenciador central de pontos de extensão (Hooks).
- * Permite que o núcleo do WikiZero e plugins adicionem Ações e Filtros,
+ * Permite que o núcleo do WikiWorldWeb e plugins adicionem Ações e Filtros,
  * seguindo a arquitetura clássica de extensibilidade inspirada no MediaWiki/WordPress.
  */
 export class HookRegistry {
@@ -105,7 +105,7 @@ export class HookRegistry {
           currentValue = result;
         }
       } catch (error) {
-        console.error(`[WikiZero Hooks] Erro ao executar filtro '${name}' (Extensão: ${hook.extensionName || 'anônima'}):`, error);
+        console.error(`[WikiWorldWeb Hooks] Erro ao executar filtro '${name}' (Extensão: ${hook.extensionName || 'anônima'}):`, error);
       }
     }
 
@@ -131,7 +131,7 @@ export class HookRegistry {
       try {
         currentValue = await hook.callback(currentValue, ...args);
       } catch (error) {
-        console.error(`[WikiZero Hooks] Erro ao executar filtro assíncrono '${name}' (Extensão: ${hook.extensionName || 'anônima'}):`, error);
+        console.error(`[WikiWorldWeb Hooks] Erro ao executar filtro assíncrono '${name}' (Extensão: ${hook.extensionName || 'anônima'}):`, error);
       }
     }
 
@@ -154,7 +154,7 @@ export class HookRegistry {
       try {
         hook.callback(...args);
       } catch (error) {
-        console.error(`[WikiZero Hooks] Erro ao executar ação '${name}' (Extensão: ${hook.extensionName || 'anônima'}):`, error);
+        console.error(`[WikiWorldWeb Hooks] Erro ao executar ação '${name}' (Extensão: ${hook.extensionName || 'anônima'}):`, error);
       }
     }
   }
@@ -175,7 +175,7 @@ export class HookRegistry {
       try {
         await hook.callback(...args);
       } catch (error) {
-        console.error(`[WikiZero Hooks] Erro ao executar ação assíncrona '${name}' (Extensão: ${hook.extensionName || 'anônima'}):`, error);
+        console.error(`[WikiWorldWeb Hooks] Erro ao executar ação assíncrona '${name}' (Extensão: ${hook.extensionName || 'anônima'}):`, error);
       }
     }
   }
@@ -242,7 +242,7 @@ export class HookRegistry {
 }
 
 /**
- * Interface principal que toda extensão/plugin do WikiZero deve implementar.
+ * Interface principal que toda extensão/plugin do WikiWorldWeb deve implementar.
  */
 export interface WikiExtension {
   /**
@@ -261,7 +261,7 @@ export interface WikiExtension {
    * Método de ciclo de vida chamado no momento em que a extensão é carregada pelo ExtensionManager.
    * Permite à extensão registrar suas ações, filtros e manipuladores no HookRegistry.
    *
-   * @param hooks Instância central do registro de hooks do WikiZero
+   * @param hooks Instância central do registro de hooks do WikiWorldWeb
    */
   onRegister(hooks: HookRegistry): void;
 
