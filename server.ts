@@ -205,7 +205,15 @@ function evaluateWikimediaIp(rawIp: string): { isWikimedia: boolean; matchedRang
   return { isWikimedia: false };
 }
 
-app.all('/api/auth/check-wikimedia-ip', async (req: Request, res: Response) => {
+app.all(['/api/auth/check-wikimedia-ip', '/api/auth/check-wikimedia-ip/'], async (req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
   const forwarded = req.headers['x-forwarded-for'];
   const realIp = req.headers['x-real-ip'];
   const reqIp = (typeof req.query.ip === 'string' && req.query.ip) || (req.body && req.body.ip);
@@ -904,7 +912,7 @@ if (typeof customElements !== 'undefined' && !customElements.get('vite-error-ove
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[WikiZero] Servidor rodando em http://0.0.0.0:${PORT} com suporte a Gemini API e AI Studio`);
+    console.log(`[WikiWorldWeb] Servidor rodando em http://0.0.0.0:${PORT} com suporte a Gemini API e AI Studio`);
   });
 }
 

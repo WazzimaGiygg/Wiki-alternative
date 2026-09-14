@@ -53,6 +53,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   const [testAdminInput, setTestAdminInput] = useState('');
   const [testAdminResult, setTestAdminResult] = useState<BlockedWikimediaAdminResult | null>(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [unauthorizedDomain, setUnauthorizedDomain] = useState<string | null>(null);
 
   const handleTestAdmin = (name: string) => {
     setTestAdminInput(name);
@@ -62,6 +63,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
       setLoginError(`[BLOQUEIO WMF ATIVO] ${res.reason}`);
     } else {
       setLoginError(null);
+    }
+  };
+
+  const handleGuestLoginFallback = async () => {
+    setIsLoading(true);
+    try {
+      const guest = await StorageService.createGuestUser();
+      onLoginSuccess(guest);
+      onClose();
+    } catch (err: any) {
+      setLoginError(err?.message || 'Falha ao iniciar como convidado.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -116,6 +130,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
     setIsLoading(true);
     setLoginError(null);
+    setUnauthorizedDomain(null);
     try {
       const user = await StorageService.loginWithGoogle();
       onLoginSuccess(user);
@@ -123,7 +138,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
     } catch (err: any) {
       const msg = err?.message || '';
       console.error('Falha no login Google:', err);
-      if (msg.includes('Bloqueado') || msg.includes('bloqueada') || msg.includes('banida') || msg.includes('Wikimedia')) {
+      if (err?.code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
+        const domain = err?.domain || (typeof window !== 'undefined' ? window.location.hostname : 'wikizero.wazzimagiygg.com');
+        setUnauthorizedDomain(domain);
+        setLoginError(
+          `O domínio atual (${domain}) ainda não está cadastrado na lista de "Domínios autorizados" do seu projeto no Firebase Console.`
+        );
+      } else if (msg.includes('Bloqueado') || msg.includes('bloqueada') || msg.includes('banida') || msg.includes('Wikimedia')) {
         setLoginError(msg);
       } else if (err?.code === 'auth/popup-closed-by-user' || msg.includes('popup-closed')) {
         setLoginError('A janela de login com a Conta Google foi fechada antes da confirmação. Tente novamente.');
@@ -234,8 +255,35 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
           </div>
         )}
 
+        {/* Unauthorized Domain Guide Notice */}
+        {unauthorizedDomain && (
+          <div className="mb-3 p-3 rounded-xl bg-amber-50/95 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-xs text-amber-900 dark:text-amber-200 flex-shrink-0 space-y-2 shadow-xs animate-in fade-in">
+            <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200">
+              <AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <span>Autorização Necessária no Firebase Console</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+              Para liberar o login com Conta Google no domínio <code className="font-mono font-bold bg-amber-200/60 dark:bg-amber-900/80 px-1.5 py-0.5 rounded text-slate-900 dark:text-white">{unauthorizedDomain}</code>:
+            </p>
+            <ol className="text-[11px] list-decimal list-inside space-y-1 text-slate-700 dark:text-slate-300">
+              <li>Acesse o <strong>Console do Firebase</strong> (<a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">console.firebase.google.com</a>)</li>
+              <li>Vá em <strong>Authentication &gt; Configurações (Settings) &gt; Domínios autorizados</strong></li>
+              <li>Clique em <strong>Adicionar domínio</strong> e cole: <strong className="font-mono bg-white dark:bg-slate-800 px-1 py-0.5 rounded border border-amber-300 dark:border-amber-700">{unauthorizedDomain}</strong></li>
+            </ol>
+            <div className="pt-1.5 border-t border-amber-200 dark:border-amber-800/80">
+              <button
+                type="button"
+                onClick={handleGuestLoginFallback}
+                className="w-full py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-semibold text-xs transition cursor-pointer shadow-sm flex items-center justify-center gap-2"
+              >
+                <span>👤 Entrar como Convidado / Sessão Local (Usar Wiki Agora)</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Login Error Notice */}
-        {loginError && (
+        {loginError && !unauthorizedDomain && (
           <div className="mb-3 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 flex items-center gap-2 flex-shrink-0">
             <AlertTriangle size={14} className="flex-shrink-0 text-red-500" />
             <span>{loginError}</span>

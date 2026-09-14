@@ -94,6 +94,9 @@ try {
   console.warn('Firebase initialized in offline/local storage fallback mode', e);
 }
 
+// Flag para detectar se o Firebase Auth do projeto permite autenticação anônima
+let isAnonymousAuthSupported = true;
+
 /**
  * Garante que exista uma sessão de autenticação ativa no Firebase Auth para permitir
  * operações de escrita no Firestore autorizadas pelas regras de segurança.
@@ -101,10 +104,20 @@ try {
 export async function ensureFirebaseAuth(): Promise<string | null> {
   if (!auth) return null;
   if (auth.currentUser) return auth.currentUser.uid;
+  if (!isAnonymousAuthSupported) return null;
   try {
     const cred = await signInAnonymously(auth);
     return cred.user.uid;
-  } catch (err) {
+  } catch (err: any) {
+    // Se a autenticação anônima estiver restrita no console do Firebase, silencia e opera localmente
+    if (
+      err?.code === 'auth/admin-restricted-operation' ||
+      err?.code === 'auth/operation-not-allowed' ||
+      err?.message?.includes('admin-restricted-operation')
+    ) {
+      isAnonymousAuthSupported = false;
+      return null;
+    }
     console.warn('[StorageService] Falha ao autenticar anonimamente no Firebase Auth:', err);
     return null;
   }
@@ -1223,15 +1236,23 @@ export const StorageService = {
   async createGuestUser(): Promise<UserProfile> {
     let guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
 
-    // Tentar autenticar anonimamente no Firebase Auth para vincular ao Firestore
-    if (auth) {
+    // Tentar autenticar anonimamente no Firebase Auth para vincular ao Firestore (se permitido no projeto)
+    if (auth && isAnonymousAuthSupported) {
       try {
         const anonCred = await signInAnonymously(auth);
         if (anonCred?.user?.uid) {
           guestId = anonCred.user.uid;
         }
-      } catch (anonErr) {
-        console.warn('[StorageService] signInAnonymously indisponível ou desativado, operando com ID local:', anonErr);
+      } catch (anonErr: any) {
+        if (
+          anonErr?.code === 'auth/admin-restricted-operation' ||
+          anonErr?.code === 'auth/operation-not-allowed' ||
+          anonErr?.message?.includes('admin-restricted-operation')
+        ) {
+          isAnonymousAuthSupported = false;
+        } else {
+          console.warn('[StorageService] signInAnonymously indisponível ou desativado, operando com ID local:', anonErr);
+        }
       }
     }
 
@@ -1290,7 +1311,24 @@ export const StorageService = {
       prompt: 'select_account',
     });
 
-    const result = await signInWithPopup(currentAuth, provider);
+    let result: any;
+    try {
+      result = await signInWithPopup(currentAuth, provider);
+    } catch (popupErr: any) {
+      if (
+        popupErr?.code === 'auth/unauthorized-domain' ||
+        popupErr?.message?.includes('unauthorized-domain')
+      ) {
+        const domain = typeof window !== 'undefined' ? window.location.hostname : 'wikizero.wazzimagiygg.com';
+        const customErr: any = new Error(
+          `Domínio não autorizado no Firebase Auth: O domínio atual (${domain}) precisa ser cadastrado na aba "Domínios autorizados" no Console do Firebase (Authentication > Configurações > Domínios autorizados).`
+        );
+        customErr.code = 'auth/unauthorized-domain';
+        customErr.domain = domain;
+        throw customErr;
+      }
+      throw popupErr;
+    }
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (credential?.accessToken) {
       GoogleDocsService.setAccessToken(credential.accessToken);

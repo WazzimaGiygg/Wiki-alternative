@@ -13,6 +13,8 @@ import {
   Zap,
   Lock,
   Unlock,
+  AlertTriangle,
+  X,
 } from 'lucide-react';
 
 export interface MazeRecaptchaProps {
@@ -101,6 +103,9 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
   actionButtonText = 'Entrar com a Conta Google',
   isGoogleAction = true,
 }) => {
+  // Configuração de tempo mínimo de segurança anti-robô
+  const MIN_REQUIRED_SECONDS = 15;
+
   // Grid settings: 11 rows x 17 columns (odd numbers required for DFS)
   const rows = compact ? 9 : 11;
   const cols = compact ? 15 : 17;
@@ -118,6 +123,7 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [movesCount, setMovesCount] = useState(0);
   const [autoEnterCountdown, setAutoEnterCountdown] = useState<number | null>(null);
+  const [blockedNotice, setBlockedNotice] = useState<string | null>(null);
 
   // References
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -316,6 +322,19 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
 
         // Check victory!
         if (newX === endPos.x && newY === endPos.y) {
+          // Bloqueio de segurança estrito: se concluído em menos de 15 segundos, bloqueia por comportamento automatizado/bot
+          if (elapsedSeconds < MIN_REQUIRED_SECONDS) {
+            playSound('bump');
+            const secondsSpent = elapsedSeconds;
+            setBlockedNotice(
+              `⚠️ Bloqueio de Segurança Anti-Robô: O labirinto foi completado em apenas ${secondsSpent}s! Para assegurar a resolução por um operador humano autêntico e repelir scripts automatizados, o teste exige no mínimo ${MIN_REQUIRED_SECONDS} segundos. O labirinto foi reiniciado.`
+            );
+            // Reinicia o labirinto e o cronômetro para exigir um teste humano completo
+            initGame();
+            return;
+          }
+
+          setBlockedNotice(null);
           if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
           setGameActive(false);
           setHasWon(true);
@@ -464,16 +483,33 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 font-mono text-[11px] text-amber-300 bg-black/40 px-2 py-0.5 rounded border border-amber-400/20">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div
+            className={`flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded border transition-colors ${
+              elapsedSeconds < MIN_REQUIRED_SECONDS
+                ? 'text-amber-300 bg-amber-950/40 border-amber-400/30'
+                : 'text-emerald-300 bg-emerald-950/40 border-emerald-400/30 font-bold'
+            }`}
+            title={
+              elapsedSeconds < MIN_REQUIRED_SECONDS
+                ? `Regra Anti-Robô: faltam ${MIN_REQUIRED_SECONDS - elapsedSeconds}s para autorizar a validação humana`
+                : 'Tempo mínimo de 15s alcançado! Você já pode alcançar o ponto final (F).'
+            }
+          >
             <Clock size={12} />
             <span>{formatTime(elapsedSeconds)}</span>
+            <span className="text-[10px] opacity-70">/ {MIN_REQUIRED_SECONDS}s</span>
+            {elapsedSeconds < MIN_REQUIRED_SECONDS ? (
+              <Lock size={11} className="text-amber-400" />
+            ) : (
+              <Unlock size={11} className="text-emerald-400" />
+            )}
           </div>
 
           <button
             type="button"
             onClick={cycleTheme}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
             title={`Tema atual: ${currentTheme.name}. Clique para alternar.`}
           >
             <Palette size={14} />
@@ -481,14 +517,40 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
 
           <button
             type="button"
-            onClick={initGame}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            onClick={() => {
+              setBlockedNotice(null);
+              initGame();
+            }}
+            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
             title="Reiniciar labirinto"
           >
             <RotateCcw size={14} />
           </button>
         </div>
       </div>
+
+      {/* Aviso de Bloqueio se concluído em menos de 15 segundos */}
+      {blockedNotice && (
+        <div className="w-full max-w-md my-1 p-2.5 rounded-md bg-rose-950/95 border border-rose-500/70 text-rose-100 text-xs flex items-start gap-2 shadow-lg animate-in fade-in slide-in-from-top-1">
+          <AlertTriangle size={16} className="text-rose-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-[11px] leading-tight text-rose-200">
+              {blockedNotice}
+            </p>
+            <p className="text-[10px] text-rose-300/80 mt-1">
+              💡 <strong>Dica de Segurança:</strong> Percorra o caminho com calma para que o cronômetro ultrapasse <strong>15 segundos</strong> antes de atingir o ponto final <strong>F</strong>.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBlockedNotice(null)}
+            className="text-rose-400 hover:text-white p-1 rounded hover:bg-rose-900/60 cursor-pointer"
+            aria-label="Fechar aviso"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
 
       {/* Main Maze Canvas / Grid Board */}
       <div
@@ -607,6 +669,27 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
           </div>
         </div>
 
+        {/* Anti-Bot Security Status Bar */}
+        <div className="w-full mt-2 px-2.5 py-1.5 rounded-lg bg-black/60 border border-slate-700/80 flex items-center justify-between text-[10px] shadow-xs">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck size={13} className={elapsedSeconds >= MIN_REQUIRED_SECONDS ? 'text-emerald-400' : 'text-amber-400'} />
+            <span className="text-slate-300 font-medium">Anti-Robô:</span>
+            <span className="font-mono text-slate-100 font-semibold">Mínimo 15 segundos</span>
+          </div>
+
+          {elapsedSeconds < MIN_REQUIRED_SECONDS ? (
+            <span className="text-amber-300 font-mono font-medium flex items-center gap-1">
+              <Lock size={10} />
+              Aguarde {MIN_REQUIRED_SECONDS - elapsedSeconds}s para validar
+            </span>
+          ) : (
+            <span className="text-emerald-400 font-mono font-bold flex items-center gap-1">
+              <Unlock size={10} />
+              Tempo validado ({elapsedSeconds}s) ✓
+            </span>
+          )}
+        </div>
+
         {/* Victory Overlay Modal */}
         {hasWon && (
           <div className="absolute inset-0 bg-black/85 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center text-white z-30 animate-in fade-in zoom-in-95 duration-200">
@@ -621,7 +704,7 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
 
             <p className="text-xs text-slate-300 max-w-xs mb-3">
               Você provou ser humano em <strong>{formatTime(elapsedSeconds)}</strong> com{' '}
-              <strong>{movesCount}</strong> movimentos. O acesso com a Conta Google foi desbloqueado!
+              <strong>{movesCount}</strong> movimentos (tempo de segurança anti-robô de no mínimo 15 segundos cumprido com sucesso!). O acesso com a Conta Google foi desbloqueado!
             </p>
 
             {onInstantLogin ? (
