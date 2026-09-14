@@ -93,7 +93,7 @@ export default function App() {
   const [editingArticle, setEditingArticle] = useState<WikiArticle | null>(null);
   const [targetUserIdentifier, setTargetUserIdentifier] = useState<string>('WazzimaGiygg');
   const [userPageInitialTab, setUserPageInitialTab] = useState<'profile' | 'talk' | 'contributions' | 'admin'>('profile');
-  const [selectedFileName, setSelectedFileName] = useState<string>('Logo_WikiWorldWeb.svg');
+  const [selectedFileName, setSelectedFileName] = useState<string>('Logo_WikiZero.svg');
   const [uploadInitialTargetName, setUploadInitialTargetName] = useState<string>('');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -608,7 +608,7 @@ export default function App() {
       await StorageService.logout();
       setUser(null);
       alert(
-        `Acesso Recusado: Usuários bloqueados não podem realizar login na WikiWorldWeb.\n\nMotivo: ${
+        `Acesso Recusado: Usuários bloqueados não podem realizar login na WikiZero.\n\nMotivo: ${
           banCheck.reason || loggedUser.banReason || 'Decisão administrativa.'
         }`
       );
@@ -1010,7 +1010,7 @@ export default function App() {
 
           {currentView === 'file-page' && (
             <FilePageView
-              fileName={selectedFileName || 'Logo_WikiWorldWeb.svg'}
+              fileName={selectedFileName || 'Logo_WikiZero.svg'}
               articles={articles}
               user={user}
               onNavigateToArticle={handleSelectArticle}
