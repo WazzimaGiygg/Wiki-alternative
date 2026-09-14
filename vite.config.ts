@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
           id: '/',
-          name: 'WikiWorldWeb - Enciclopédia Livre',
-          short_name: 'WikiWorldWeb',
-          description: 'WikiWorldWeb - Enciclopédia colaborativa e livre com leitura e edição para Smart TV, Android e Web.',
+          name: 'WikiZero - Enciclopédia Livre',
+          short_name: 'WikiZero',
+          description: 'WikiZero - Enciclopédia colaborativa e livre com leitura e edição para Smart TV, Android e Web.',
           theme_color: '#2563eb',
           background_color: '#ffffff',
           display: 'standalone',
