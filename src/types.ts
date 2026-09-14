@@ -466,7 +466,7 @@ export interface PromotionRequest {
   nominatedByUid?: string;
   isSelfNomination: boolean;
   statement: string; // Motivação e justificativa do candidato
-  contributionsSummary: string; // Resumo de contribuições e atividades na WikiWorldWeb
+  contributionsSummary: string; // Resumo de contribuições e atividades na WikiZero
   requestedAt: string;
   closedAt?: string;
   closedBy?: string;
@@ -992,6 +992,3 @@ export interface GeminiNotebookItem {
   createdAt: string;
   updatedAt: string;
 }
-
-
-
