@@ -73,7 +73,7 @@ import {
 import { sanitizeIpForDocId, hashIpAddress } from '../utils/ipUtils';
 import { verifyClientIpForLogin } from '../utils/wikimediaIpChecker';
 import { validateUserIdentifiersAgainstWikimediaAdmins, checkIfWikimediaAdmin } from '../utils/wikimediaAdminChecker';
-import { ACTIVE_FIREBASE_CONFIG } from '../config/firebaseCustomConfig';
+import { ACTIVE_FIREBASE_CONFIG, getActiveFirebaseConfig } from '../config/firebaseCustomConfig';
 
 // Configuração ativa do Firebase derivada do arquivo de configuração do desenvolvedor (src/config/firebaseCustomConfig.ts)
 export const firebaseConfig = {
@@ -1318,11 +1318,14 @@ export const StorageService = {
         popupErr?.message?.includes('unauthorized-domain')
       ) {
         const domain = typeof window !== 'undefined' ? window.location.hostname : 'wikizero.wazzimagiygg.com';
+        const activeCfg = getActiveFirebaseConfig();
+        const activeProjectId = activeCfg.projectId;
         const customErr: any = new Error(
-          `Domínio não autorizado no Firebase Auth: O domínio atual (${domain}) precisa ser cadastrado na aba "Domínios autorizados" no Console do Firebase (Authentication > Configurações > Domínios autorizados).`
+          `Domínio não autorizado no Firebase Auth: O domínio atual (${domain}) precisa ser cadastrado na aba "Domínios autorizados" do projeto Firebase ativo "${activeProjectId}".`
         );
         customErr.code = 'auth/unauthorized-domain';
         customErr.domain = domain;
+        customErr.activeProjectId = activeProjectId;
         throw customErr;
       }
       throw popupErr;

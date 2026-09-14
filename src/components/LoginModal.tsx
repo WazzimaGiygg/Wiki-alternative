@@ -15,6 +15,9 @@ import {
   UserX,
   ChevronDown,
   ChevronUp,
+  Settings,
+  Database,
+  ExternalLink,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -30,6 +33,12 @@ import {
   checkIfWikimediaAdmin,
   BlockedWikimediaAdminResult,
 } from '../utils/wikimediaAdminChecker';
+import {
+  getActiveFirebaseConfig,
+  saveCustomStoredConfig,
+  clearCustomStoredConfig,
+  isUsingCustomStoredConfig,
+} from '../config/firebaseCustomConfig';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -54,6 +63,88 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   const [testAdminResult, setTestAdminResult] = useState<BlockedWikimediaAdminResult | null>(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [unauthorizedDomain, setUnauthorizedDomain] = useState<string | null>(null);
+  const [activeProjectId, setActiveProjectId] = useState<string>(() => getActiveFirebaseConfig().projectId);
+  const [showFirebaseConfigPanel, setShowFirebaseConfigPanel] = useState(false);
+  const [firebaseSnippetInput, setFirebaseSnippetInput] = useState('');
+  const [configFeedback, setConfigFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const handleApplyFirebaseConfig = () => {
+    setConfigFeedback(null);
+    if (!firebaseSnippetInput.trim()) {
+      setConfigFeedback({ type: 'error', message: 'Cole o snippet ou objeto de configuração do Firebase Console.' });
+      return;
+    }
+
+    try {
+      let cfg: any = null;
+      const text = firebaseSnippetInput.trim();
+
+      // Tentativa 1: JSON direto
+      if (text.startsWith('{') && text.endsWith('}')) {
+        try {
+          cfg = JSON.parse(text);
+        } catch {
+          // segue para regex
+        }
+      }
+
+      // Tentativa 2: Extração via Regex para snippet JS do console
+      if (!cfg || !cfg.apiKey) {
+        const apiKeyMatch = text.match(/apiKey\s*[:=]\s*["']([^"']+)["']/i);
+        const projectIdMatch = text.match(/projectId\s*[:=]\s*["']([^"']+)["']/i);
+        const authDomainMatch = text.match(/authDomain\s*[:=]\s*["']([^"']+)["']/i);
+        const storageBucketMatch = text.match(/storageBucket\s*[:=]\s*["']([^"']+)["']/i);
+        const messagingSenderIdMatch = text.match(/messagingSenderId\s*[:=]\s*["']([^"']+)["']/i);
+        const appIdMatch = text.match(/appId\s*[:=]\s*["']([^"']+)["']/i);
+
+        if (apiKeyMatch && projectIdMatch) {
+          cfg = {
+            apiKey: apiKeyMatch[1],
+            projectId: projectIdMatch[1],
+            authDomain: authDomainMatch ? authDomainMatch[1] : `${projectIdMatch[1]}.firebaseapp.com`,
+            storageBucket: storageBucketMatch ? storageBucketMatch[1] : `${projectIdMatch[1]}.firebasestorage.app`,
+            messagingSenderId: messagingSenderIdMatch ? messagingSenderIdMatch[1] : '',
+            appId: appIdMatch ? appIdMatch[1] : '',
+          };
+        }
+      }
+
+      if (!cfg || !cfg.apiKey || !cfg.projectId) {
+        throw new Error('Não foi possível identificar apiKey e projectId no texto colado. Verifique se copiou o bloco firebaseConfig do Firebase Console.');
+      }
+
+      saveCustomStoredConfig(cfg);
+      setActiveProjectId(cfg.projectId);
+      setConfigFeedback({
+        type: 'success',
+        message: `Projeto "${cfg.projectId}" salvo com sucesso! Recarregando conexão com o Firebase...`,
+      });
+
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
+      }, 1200);
+    } catch (err: any) {
+      setConfigFeedback({
+        type: 'error',
+        message: err?.message || 'Erro ao processar a configuração do Firebase.',
+      });
+    }
+  };
+
+  const handleResetToDefaultConfig = () => {
+    clearCustomStoredConfig();
+    setConfigFeedback({
+      type: 'success',
+      message: 'Configuração restaurada para o projeto padrão. Recarregando...',
+    });
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    }, 1000);
+  };
 
   const handleTestAdmin = (name: string) => {
     setTestAdminInput(name);
@@ -140,9 +231,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
       console.error('Falha no login Google:', err);
       if (err?.code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
         const domain = err?.domain || (typeof window !== 'undefined' ? window.location.hostname : 'wikizero.wazzimagiygg.com');
+        const projId = err?.activeProjectId || getActiveFirebaseConfig().projectId;
         setUnauthorizedDomain(domain);
+        setActiveProjectId(projId);
         setLoginError(
-          `O domínio atual (${domain}) ainda não está cadastrado na lista de "Domínios autorizados" do seu projeto no Firebase Console.`
+          `O domínio atual (${domain}) não está autorizado no projeto Firebase ativo "${projId}".`
         );
       } else if (msg.includes('Bloqueado') || msg.includes('bloqueada') || msg.includes('banida') || msg.includes('Wikimedia')) {
         setLoginError(msg);
@@ -257,19 +350,32 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
         {/* Unauthorized Domain Guide Notice */}
         {unauthorizedDomain && (
-          <div className="mb-3 p-3 rounded-xl bg-amber-50/95 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-xs text-amber-900 dark:text-amber-200 flex-shrink-0 space-y-2 shadow-xs animate-in fade-in">
-            <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200">
-              <AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              <span>Autorização Necessária no Firebase Console</span>
+          <div className="mb-3 p-3 rounded-xl bg-amber-50/95 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700 text-xs text-amber-900 dark:text-amber-200 flex-shrink-0 space-y-2.5 shadow-xs animate-in fade-in">
+            <div className="flex items-center justify-between gap-1.5 font-bold text-amber-900 dark:text-amber-200">
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                <span>Discrepância de Projeto / Domínio no Firebase</span>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900/80 text-amber-950 dark:text-amber-100 font-semibold border border-amber-300 dark:border-amber-700">
+                Auth Error
+              </span>
             </div>
-            <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
-              Para liberar o login com Conta Google no domínio <code className="font-mono font-bold bg-amber-200/60 dark:bg-amber-900/80 px-1.5 py-0.5 rounded text-slate-900 dark:text-white">{unauthorizedDomain}</code>:
+
+            <div className="bg-white/80 dark:bg-slate-900/80 rounded-lg p-2 border border-amber-200 dark:border-amber-800 space-y-1">
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-600 dark:text-slate-400">Domínio da Aplicação:</span>
+                <code className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-1 rounded">{unauthorizedDomain}</code>
+              </div>
+              <div className="flex justify-between items-center text-[11px]">
+                <span className="text-slate-600 dark:text-slate-400">Projeto Firebase Ativo no App:</span>
+                <code className="font-mono font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 px-1 rounded">{activeProjectId}</code>
+              </div>
+            </div>
+
+            <p className="text-[11px] leading-relaxed text-amber-900 dark:text-amber-200">
+              <strong>Motivo do erro:</strong> Você cadastrou o domínio no console do projeto <strong>wzzm-ce3fc</strong>, mas a aplicação está apontando para o projeto <strong>{activeProjectId}</strong>.
             </p>
-            <ol className="text-[11px] list-decimal list-inside space-y-1 text-slate-700 dark:text-slate-300">
-              <li>Acesse o <strong>Console do Firebase</strong> (<a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">console.firebase.google.com</a>)</li>
-              <li>Vá em <strong>Authentication &gt; Configurações (Settings) &gt; Domínios autorizados</strong></li>
-              <li>Clique em <strong>Adicionar domínio</strong> e cole: <strong className="font-mono bg-white dark:bg-slate-800 px-1 py-0.5 rounded border border-amber-300 dark:border-amber-700">{unauthorizedDomain}</strong></li>
-            </ol>
+
             <div className="pt-1.5 border-t border-amber-200 dark:border-amber-800/80">
               <button
                 type="button"
@@ -278,6 +384,65 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               >
                 <span>👤 Entrar como Convidado / Sessão Local (Usar Wiki Agora)</span>
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Firebase Config Panel (Standalone or Toggle) */}
+        {showFirebaseConfigPanel && (
+          <div className="mb-3 p-3 bg-white dark:bg-slate-900 rounded-xl border border-blue-300 dark:border-blue-700 space-y-2 animate-in fade-in shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-xs text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                <Database size={14} className="text-blue-600" />
+                Configuração do Projeto Firebase ({activeProjectId})
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowFirebaseConfigPanel(false)}
+                className="text-slate-400 hover:text-slate-600 p-0.5"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              No Firebase Console do projeto <strong>wzzm-ce3fc</strong>: vá em <strong>⚙️ Configurações do Projeto &gt; Geral &gt; Seus aplicativos &gt; Configuração do SDK</strong>, copie e cole o snippet abaixo:
+            </p>
+            <textarea
+              rows={4}
+              value={firebaseSnippetInput}
+              onChange={(e) => setFirebaseSnippetInput(e.target.value)}
+              placeholder={'const firebaseConfig = {\n  apiKey: "AIzaSy...",\n  projectId: "wzzm-ce3fc",\n  authDomain: "wzzm-ce3fc.firebaseapp.com",\n  appId: "1:..."\n};'}
+              className="w-full text-[11px] font-mono p-2 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            {configFeedback && (
+              <div
+                className={`p-2 rounded text-[11px] ${
+                  configFeedback.type === 'success'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800'
+                    : 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800'
+                }`}
+              >
+                {configFeedback.message}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleApplyFirebaseConfig}
+                className="flex-1 py-1.5 px-2.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 size={13} />
+                <span>Salvar e Conectar ao wzzm-ce3fc</span>
+              </button>
+              {isUsingCustomStoredConfig() && (
+                <button
+                  type="button"
+                  onClick={handleResetToDefaultConfig}
+                  className="py-1.5 px-2.5 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-300 text-[11px] transition cursor-pointer"
+                >
+                  Restaurar Padrão
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -534,19 +699,31 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={toggleSimulation}
-              className={`text-[10px] px-2 py-1 rounded border transition cursor-pointer font-medium flex items-center gap-1 shadow-2xs ${
-                isSimulatingWikimedia
-                  ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800 hover:bg-rose-200'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-              title="Alterna simulação de IP pertencente à Wikimedia Foundation (208.80.154.224) para testar o bloqueio em ambiente local"
-            >
-              <RefreshCw size={10} className={isCheckingIp ? 'animate-spin' : ''} />
-              <span>{isSimulatingWikimedia ? 'Desativar Teste Wikimedia' : '🧪 Testar Bloqueio IP Wikimedia'}</span>
-            </button>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setShowFirebaseConfigPanel(!showFirebaseConfigPanel)}
+                className="text-[10px] px-2 py-1 rounded border transition cursor-pointer font-medium flex items-center gap-1 shadow-2xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                title="Configurar credenciais do Firebase (ex: wzzm-ce3fc)"
+              >
+                <Settings size={10} />
+                <span>Configurar Firebase ({activeProjectId})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleSimulation}
+                className={`text-[10px] px-2 py-1 rounded border transition cursor-pointer font-medium flex items-center gap-1 shadow-2xs ${
+                  isSimulatingWikimedia
+                    ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800 hover:bg-rose-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+                title="Alterna simulação de IP pertencente à Wikimedia Foundation (208.80.154.224) para testar o bloqueio em ambiente local"
+              >
+                <RefreshCw size={10} className={isCheckingIp ? 'animate-spin' : ''} />
+                <span>{isSimulatingWikimedia ? 'Desativar Teste Wikimedia' : '🧪 Testar Bloqueio IP Wikimedia'}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

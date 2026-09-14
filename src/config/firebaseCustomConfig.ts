@@ -53,6 +53,37 @@ export interface FirebaseCustomSettings {
   };
 }
 
+export const STORAGE_KEY_CUSTOM_FIREBASE_CONFIG = 'wikiworldweb_custom_firebase_credentials';
+
+export function getCustomStoredConfig(): Partial<FirebaseCustomSettings['firebaseConfig']> | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_CUSTOM_FIREBASE_CONFIG);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && parsed.apiKey && parsed.projectId) {
+      return parsed;
+    }
+  } catch {
+    // ignora erros de parse
+  }
+  return null;
+}
+
+export function saveCustomStoredConfig(cfg: Partial<FirebaseCustomSettings['firebaseConfig']>): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEY_CUSTOM_FIREBASE_CONFIG, JSON.stringify(cfg));
+}
+
+export function clearCustomStoredConfig(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(STORAGE_KEY_CUSTOM_FIREBASE_CONFIG);
+}
+
+export function isUsingCustomStoredConfig(): boolean {
+  return !!getCustomStoredConfig();
+}
+
 /**
  * CONFIGURAÇÃO ATIVA DO BANCO DE DADOS E FIREBASE
  * Altere os valores abaixo sempre que desejar trocar de projeto ou banco de dados Firestore.
@@ -85,9 +116,25 @@ export const ACTIVE_FIREBASE_CONFIG: FirebaseCustomSettings = {
  * Retorna a configuração consolidada do Firebase para inicialização
  */
 export function getActiveFirebaseConfig() {
+  const custom = getCustomStoredConfig();
+  if (custom && custom.apiKey && custom.projectId) {
+    return {
+      apiKey: custom.apiKey,
+      authDomain: custom.authDomain || `${custom.projectId}.firebaseapp.com`,
+      projectId: custom.projectId,
+      storageBucket: custom.storageBucket || `${custom.projectId}.firebasestorage.app`,
+      messagingSenderId: custom.messagingSenderId || '',
+      appId: custom.appId || '',
+      measurementId: custom.measurementId || undefined,
+      firestoreDatabaseId: ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId,
+      isCustom: true,
+    };
+  }
+
   return {
     ...ACTIVE_FIREBASE_CONFIG.firebaseConfig,
     firestoreDatabaseId: ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId,
+    isCustom: false,
   };
 }
 

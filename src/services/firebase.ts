@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { ACTIVE_FIREBASE_CONFIG } from '../config/firebaseCustomConfig';
+import { ACTIVE_FIREBASE_CONFIG, getActiveFirebaseConfig } from '../config/firebaseCustomConfig';
 
 export enum OperationType {
   CREATE = 'create',
@@ -60,7 +60,8 @@ let authInstance: ReturnType<typeof getAuth> | null = null;
 
 export function getFirebaseApp() {
   if (!appInstance) {
-    appInstance = getApps().length > 0 ? getApp() : initializeApp(ACTIVE_FIREBASE_CONFIG.firebaseConfig);
+    const activeCfg = getActiveFirebaseConfig();
+    appInstance = getApps().length > 0 ? getApp() : initializeApp(activeCfg);
   }
   return appInstance;
 }
@@ -68,7 +69,8 @@ export function getFirebaseApp() {
 export function getDb(): Firestore {
   if (!dbInstance) {
     const app = getFirebaseApp();
-    const dbId = ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId;
+    const activeCfg = getActiveFirebaseConfig();
+    const dbId = activeCfg.firestoreDatabaseId || ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId;
     const settings = {
       experimentalForceLongPolling: true,
     };

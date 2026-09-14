@@ -250,30 +250,38 @@ export async function verifyClientIpForLogin(): Promise<WikimediaIpCheckResult> 
     };
   }
 
-  // 2. Consulta API backend se disponível
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
-    const resp = await fetch('/api/auth/check-wikimedia-ip', {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+  // 2. Consulta API backend se disponível (em localhost ou ambientes com servidor Express como Cloud Run)
+  const isLikelyBackendHost =
+    typeof window === 'undefined' ||
+    window.location.hostname.includes('localhost') ||
+    window.location.hostname.includes('127.0.0.1') ||
+    window.location.hostname.includes('.run.app');
 
-    if (resp.ok) {
-      const data = await resp.json();
-      if (data && typeof data.isWikimedia === 'boolean') {
-        return {
-          isWikimedia: data.isWikimedia,
-          ip: data.ip || '0.0.0.0',
-          matchedRange: data.matchedRange,
-          asn: data.asn,
-          org: data.org,
-          reason: data.reason,
-        };
+  if (isLikelyBackendHost) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const resp = await fetch('/api/auth/check-wikimedia-ip', {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && typeof data.isWikimedia === 'boolean') {
+          return {
+            isWikimedia: data.isWikimedia,
+            ip: data.ip || '0.0.0.0',
+            matchedRange: data.matchedRange,
+            asn: data.asn,
+            org: data.org,
+            reason: data.reason,
+          };
+        }
       }
+    } catch {
+      // API backend opcional, fallback para verificação client-side imediata
     }
-  } catch {
-    // API backend opcional, fallback para verificação client-side imediata
   }
 
   // 3. Fallback: obtém IP público do cliente e valida contra as faixas
