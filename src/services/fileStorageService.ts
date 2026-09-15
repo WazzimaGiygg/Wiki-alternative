@@ -300,12 +300,16 @@ const SEED_FILES: WikiFile[] = [
 
 // Helper: inicializa localStorage
 function initializeFilesStorage() {
-  if (!localStorage.getItem(STORAGE_KEY_FILES)) {
-    localStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(SEED_FILES));
+  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    if (!localStorage.getItem(STORAGE_KEY_FILES)) {
+      localStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(SEED_FILES));
+    }
   }
 }
 
-initializeFilesStorage();
+if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+  initializeFilesStorage();
+}
 
 export const FileStorageService = {
   // === GERENCIAMENTO DE PLANO FIREBASE (SPARK VS BLAZE) ===

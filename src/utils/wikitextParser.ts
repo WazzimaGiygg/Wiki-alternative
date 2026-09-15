@@ -90,8 +90,8 @@ export function parseWikitext(
     return addBlockPlaceholder(html);
   });
 
-  // 3. Extract MediaWiki Tables: {| ... |}
-  text = text.replace(/\{\|([\s\S]*?)\|\}/g, (_m, tableContent) => {
+  // 3. Extract MediaWiki Tables: {| ... |} (supports whitespace/newlines like {\n|)
+  text = text.replace(/\{\s*\|([\s\S]*?)\|\}/g, (_m, tableContent) => {
     const tableHtml = renderMediaWikiTable(tableContent, inlinePlaceholders, addInlinePlaceholder);
     return addBlockPlaceholder(tableHtml);
   });
@@ -175,7 +175,7 @@ export function parseWikitext(
 
   // 8. Balanced Templates Parser (handles nested templates {{...}} safely)
   text = parseTemplatesWithBalancedBraces(text, {
-    onInfobox: (content) => addBlockPlaceholder(renderInfobox(content, inlinePlaceholders)),
+    onInfobox: (content, tName) => addBlockPlaceholder(renderInfobox(content, inlinePlaceholders, tName)),
     onAviso: (content) => addBlockPlaceholder(renderWarningNotice(content, inlinePlaceholders)),
     onNota: (content) => addBlockPlaceholder(renderInfoNotice(content, inlinePlaceholders)),
     onDestaque: (content) => addBlockPlaceholder(renderHighlightNotice(content, inlinePlaceholders)),
@@ -272,26 +272,14 @@ export function parseWikitext(
     }
 
     // Headers (= H1 =, == H2 ==, === H3 ===, ==== H4 ====, etc. and Markdown #, ##, ###)
-    const h6Match = line.match(/^======\s*(.*?)\s*======$/);
-    const h5Match = line.match(/^=====\s*(.*?)\s*=====$/);
-    const h4Match = line.match(/^====\s*(.*?)\s*====$/) || line.match(/^####\s*(.*)$/);
-    const h3Match = line.match(/^===\s*(.*?)\s*===$/) || line.match(/^###\s*(.*)$/);
-    const h2Match = line.match(/^==\s*(.*?)\s*==$/) || line.match(/^##\s*(.*)$/);
-    const h1Match = line.match(/^=\s*(.*?)\s*=$/) || line.match(/^#\s*(.*)$/);
-
-    const headerMatch = h1Match || h2Match || h3Match || h4Match || h5Match || h6Match;
+    const wikiHeaderMatch = line.match(/^(={1,6})\s*(.*?)\s*\1$/);
+    const mdHeaderMatch = !wikiHeaderMatch ? line.match(/^(#{2,6})\s+(.*)$/) : null;
+    const headerMatch = wikiHeaderMatch || mdHeaderMatch;
 
     if (headerMatch) {
       flushLists();
-      let level = 1;
-      if (h6Match) level = 6;
-      else if (h5Match) level = 5;
-      else if (h4Match) level = 4;
-      else if (h3Match) level = 3;
-      else if (h2Match) level = 2;
-      else if (h1Match) level = 1;
-
-      const headerText = headerMatch[1].trim();
+      const level = wikiHeaderMatch ? wikiHeaderMatch[1].length : mdHeaderMatch![1].length;
+      const headerText = (wikiHeaderMatch ? wikiHeaderMatch[2] : mdHeaderMatch![2]).trim();
 
       // Compute hierarchical numbering
       sectionCounters[level - 1]++;
@@ -317,13 +305,13 @@ export function parseWikitext(
 
       if (level === 1) {
         processedLines.push(`
-          <h1 id="${id}" class="text-2xl sm:text-3xl font-serif-heading font-bold text-slate-900 dark:text-white mt-6 mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+          <h1 id="${id}" data-header-title="${escapeHtml(headerText)}" class="text-2xl sm:text-3xl font-serif-heading font-bold text-slate-900 dark:text-white mt-6 mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
             ${formattedTitle}
           </h1>
         `);
       } else if (level === 2) {
         processedLines.push(`
-          <h2 id="${id}" class="text-xl sm:text-2xl font-serif-heading font-semibold text-slate-900 dark:text-white mt-7 mb-3 pb-1.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between group">
+          <h2 id="${id}" data-header-title="${escapeHtml(headerText)}" class="text-xl sm:text-2xl font-serif-heading font-semibold text-slate-900 dark:text-white mt-7 mb-3 pb-1.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between group">
             <span class="flex items-center gap-2">
               <span class="text-slate-400 dark:text-slate-500 font-mono text-sm font-normal">${numberStr}</span>
               <span>${formattedTitle}</span>
@@ -333,14 +321,14 @@ export function parseWikitext(
         `);
       } else if (level === 3) {
         processedLines.push(`
-          <h3 id="${id}" class="text-base sm:text-lg font-serif-heading font-bold text-slate-800 dark:text-slate-200 mt-5 mb-2 flex items-center gap-2">
+          <h3 id="${id}" data-header-title="${escapeHtml(headerText)}" class="text-base sm:text-lg font-serif-heading font-bold text-slate-800 dark:text-slate-200 mt-5 mb-2 flex items-center gap-2">
             <span class="text-slate-400 dark:text-slate-500 font-mono text-xs font-normal">${numberStr}</span>
             <span>${formattedTitle}</span>
           </h3>
         `);
       } else {
         processedLines.push(`
-          <h4 id="${id}" class="text-sm font-bold text-slate-700 dark:text-slate-300 mt-4 mb-1.5 flex items-center gap-1.5">
+          <h4 id="${id}" data-header-title="${escapeHtml(headerText)}" class="text-sm font-bold text-slate-700 dark:text-slate-300 mt-4 mb-1.5 flex items-center gap-1.5">
             <span class="text-slate-400 dark:text-slate-500 font-mono text-[11px] font-normal">${numberStr}</span>
             <span>${formattedTitle}</span>
           </h4>
@@ -350,7 +338,7 @@ export function parseWikitext(
     }
 
     // Unordered Lists (* item, ** sub-item)
-    const ulMatch = line.match(/^(\*{1,3})\s+(.*)$/);
+    const ulMatch = line.match(/^(\*{1,3})\s*(.*)$/);
     if (ulMatch) {
       if (inOl) {
         processedLines.push('</ol>');
@@ -368,7 +356,7 @@ export function parseWikitext(
     }
 
     // Ordered Lists (# item, ## sub-item)
-    const olMatch = line.match(/^(#{1,3}|\d+\.)\s+(.*)$/);
+    const olMatch = line.match(/^(#{1,3}|\d+\.)\s*(.*)$/);
     if (olMatch) {
       if (inUl) {
         processedLines.push('</ul>');
@@ -378,8 +366,10 @@ export function parseWikitext(
         processedLines.push('<ol class="wiki-list list-decimal list-outside ml-5 space-y-1 my-2.5 text-slate-700 dark:text-slate-300 text-xs sm:text-sm">');
         inOl = true;
       }
+      const listLevel = olMatch[1].startsWith('#') ? olMatch[1].length : 1;
       const itemContent = olMatch[2];
-      processedLines.push(`<li>${formatInline(itemContent, inlinePlaceholders)}</li>`);
+      const indentClass = listLevel > 1 ? `ml-${(listLevel - 1) * 4}` : '';
+      processedLines.push(`<li class="${indentClass}">${formatInline(itemContent, inlinePlaceholders)}</li>`);
       continue;
     }
 
@@ -472,7 +462,7 @@ export function parseWikitext(
 function parseTemplatesWithBalancedBraces(
   text: string,
   handlers: {
-    onInfobox: (content: string) => string;
+    onInfobox: (content: string, templateName?: string) => string;
     onAviso: (content: string) => string;
     onNota: (content: string) => string;
     onDestaque: (content: string) => string;
@@ -512,16 +502,18 @@ function parseTemplatesWithBalancedBraces(
       if (depth === 0) {
         // We extracted a full template from i to j
         const fullTemplate = text.substring(i + 2, j - 2).trim();
-        const firstPipe = fullTemplate.indexOf('|');
-        const templateName = (firstPipe === -1 ? fullTemplate : fullTemplate.substring(0, firstPipe)).trim();
-        const templateBody = firstPipe === -1 ? '' : fullTemplate.substring(firstPipe + 1);
+        // Normalize any <br> or &nbsp; inside template declaration
+        const normalizedTemplate = fullTemplate.replace(/<br\s*\/?>/gi, '\n').replace(/&nbsp;/gi, ' ');
+        const firstPipe = normalizedTemplate.indexOf('|');
+        const templateName = (firstPipe === -1 ? normalizedTemplate : normalizedTemplate.substring(0, firstPipe)).trim();
+        const templateBody = firstPipe === -1 ? '' : normalizedTemplate.substring(firstPipe + 1);
 
-        const lowerName = templateName.toLowerCase();
+        const lowerName = templateName.toLowerCase().replace(/<[^>]*>/g, '').trim();
 
         let replacement = '';
 
         if (lowerName === 'infobox' || lowerName.startsWith('info/') || lowerName.startsWith('ficha')) {
-          replacement = handlers.onInfobox(templateBody || fullTemplate);
+          replacement = handlers.onInfobox(templateBody || normalizedTemplate, templateName);
         } else if (lowerName === 'aviso' || lowerName === 'alerta' || lowerName === 'warning') {
           replacement = handlers.onAviso(templateBody);
         } else if (lowerName === 'nota' || lowerName === 'info') {
@@ -585,17 +577,28 @@ function parseTemplatesWithBalancedBraces(
 export function formatInline(text: string, inlineMap?: Map<string, string>): string {
   if (!text) return '';
 
-  let res = escapeHtml(text);
+  // 1. Temporarily extract safe HTML tags commonly found in wikitext (like <br>, <small>, <sub>, <sup>, <span>, etc.)
+  const safeTags: string[] = [];
+  const safeTagRegex = /<\/?(br|hr|small|big|sub|sup|b|strong|i|em|u|s|del|ins|mark|code|kbd|abbr|span|div|center|blockquote|q|font)(?:\s+[^>]*)?\/?>/gi;
+
+  const protectedText = text.replace(safeTagRegex, (match) => {
+    // Prevent malicious script injection while keeping presentation tags
+    if (/on\w+\s*=|javascript:/i.test(match)) return '';
+    safeTags.push(match);
+    return `___SAFE_HTML_TAG_${safeTags.length - 1}___`;
+  });
+
+  let res = escapeHtml(protectedText);
 
   // Bold & Italic: '''''text'''''
-  res = res.replace(/'''''(.*?)'''''/g, '<strong><em>$1</em></strong>');
+  res = res.replace(/'''''([\s\S]*?)'''''/g, '<strong><em>$1</em></strong>');
 
   // Bold: '''text''' or **text**
-  res = res.replace(/'''(.*?)'''/g, '<strong>$1</strong>');
-  res = res.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  res = res.replace(/'''([\s\S]*?)'''/g, '<strong>$1</strong>');
+  res = res.replace(/\*\*([\s\S]*?)\*\*/g, '<strong>$1</strong>');
 
   // Italic: ''text'' or *text* or _text_
-  res = res.replace(/''(.*?)''/g, '<em>$1</em>');
+  res = res.replace(/''([\s\S]*?)''/g, '<em>$1</em>');
   res = res.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
 
   // Strikethrough: ~~text~~ or <s>text</s>
@@ -633,6 +636,13 @@ export function formatInline(text: string, inlineMap?: Map<string, string>): str
     }
   );
 
+  // Restore safe HTML tags
+  if (safeTags.length > 0) {
+    safeTags.forEach((tag, idx) => {
+      res = res.split(`___SAFE_HTML_TAG_${idx}___`).join(tag);
+    });
+  }
+
   // Restore inline placeholders if map provided
   if (inlineMap) {
     inlineMap.forEach((val, key) => {
@@ -645,37 +655,46 @@ export function formatInline(text: string, inlineMap?: Map<string, string>): str
 
 // === RENDERERS FOR WIKIPEDIA TEMPLATES & BLOCKS ===
 
-function renderInfobox(content: string, inlineMap?: Map<string, string>): string {
-  const lines = content.split('\n');
+function renderInfobox(content: string, inlineMap?: Map<string, string>, templateName: string = 'Infobox'): string {
+  const normalizedContent = content.replace(/<br\s*\/?>/gi, '\n').replace(/&nbsp;/gi, ' ');
+  const lines = normalizedContent.split('\n');
   let infoboxTitle = 'Informações';
   let infoboxSubtitle = '';
   let infoboxImage = '';
   let infoboxImageCaption = '';
   const rows: { label: string; value: string; isHeader?: boolean }[] = [];
 
+  const paramPairs: string[] = [];
   lines.forEach((line) => {
     const trimmed = line.trim();
-    if (trimmed.startsWith('|')) {
-      const parts = trimmed.substring(1).split('=');
-      if (parts.length >= 2) {
-        const key = parts[0].trim().toLowerCase();
-        const rawVal = parts.slice(1).join('=').trim();
-        const formattedVal = formatInline(rawVal, inlineMap);
+    if (!trimmed) return;
+    const clean = trimmed.startsWith('|') ? trimmed.substring(1).trim() : trimmed;
+    if (clean.includes('=')) {
+      paramPairs.push(clean);
+    }
+  });
 
-        if (key === 'nome' || key === 'titulo' || key === 'title' || key === 'name') {
-          infoboxTitle = rawVal;
-        } else if (key === 'subtitulo' || key === 'subtitle' || key === 'tipo') {
-          infoboxSubtitle = rawVal;
-        } else if (key === 'imagem' || key === 'image' || key === 'foto') {
-          infoboxImage = rawVal;
-        } else if (key === 'legenda' || key === 'caption') {
-          infoboxImageCaption = rawVal;
-        } else if (key.startsWith('secao') || key.startsWith('header') || key.startsWith('subsecao')) {
-          rows.push({ label: rawVal, value: '', isHeader: true });
-        } else {
-          const cleanLabel = parts[0].trim().replace(/_/g, ' ');
-          rows.push({ label: cleanLabel, value: formattedVal });
-        }
+  paramPairs.forEach((pair) => {
+    const eqIdx = pair.indexOf('=');
+    if (eqIdx !== -1) {
+      const rawKey = pair.substring(0, eqIdx).trim();
+      const key = rawKey.toLowerCase();
+      const rawVal = pair.substring(eqIdx + 1).trim();
+      const formattedVal = formatInline(rawVal, inlineMap);
+
+      if (key === 'nome' || key === 'titulo' || key === 'title' || key === 'name') {
+        infoboxTitle = rawVal;
+      } else if (key === 'subtitulo' || key === 'subtitle' || key === 'tipo') {
+        infoboxSubtitle = rawVal;
+      } else if (key === 'imagem' || key === 'image' || key === 'foto') {
+        infoboxImage = rawVal;
+      } else if (key === 'legenda' || key === 'caption') {
+        infoboxImageCaption = rawVal;
+      } else if (key.startsWith('secao') || key.startsWith('header') || key.startsWith('subsecao')) {
+        rows.push({ label: rawVal, value: '', isHeader: true });
+      } else {
+        const cleanLabel = rawKey.replace(/_/g, ' ');
+        rows.push({ label: cleanLabel, value: formattedVal });
       }
     }
   });
@@ -712,7 +731,7 @@ function renderInfobox(content: string, inlineMap?: Map<string, string>): string
     .join('');
 
   return `
-    <div class="wiki-infobox not-prose mb-4 float-none sm:float-right sm:ml-6 sm:w-80 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xs overflow-hidden">
+    <div class="wiki-infobox not-prose mb-4 float-none sm:float-right sm:ml-6 sm:w-80 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xs overflow-hidden" data-wikitext="{{${escapeHtml(templateName)}\n${escapeHtml(normalizedContent.trim())}\n}}">
       <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white font-bold text-center py-2.5 px-3 text-xs sm:text-sm tracking-wide shadow-xs">
         <span class="block font-serif-heading">${escapeHtml(infoboxTitle)}</span>
         ${infoboxSubtitle ? `<span class="block text-[10px] font-mono opacity-80 uppercase tracking-widest mt-0.5">${escapeHtml(infoboxSubtitle)}</span>` : ''}
@@ -875,7 +894,8 @@ function renderMediaWikiTable(
   _inlineMap?: Map<string, string>,
   _addInline?: (html: string) => string
 ): string {
-  const lines = content.split('\n');
+  const normalizedContent = content.replace(/<br\s*\/?>/gi, '\n').replace(/&nbsp;/gi, ' ');
+  const lines = normalizedContent.split('\n');
   const rows: string[][] = [];
   let currentRow: string[] = [];
   let tableCaption = '';
@@ -898,25 +918,37 @@ function renderMediaWikiTable(
 
     if (trimmed.startsWith('!')) {
       const headers = trimmed.substring(1).split('!!').map((h) => h.trim());
-      headers.forEach((h) =>
+      headers.forEach((h) => {
+        // MediaWiki: cell attributes can precede pipe, e.g. style="..." | Title
+        let headerText = h;
+        if (h.includes('|')) {
+          const pipeIdx = h.indexOf('|');
+          headerText = h.substring(pipeIdx + 1).trim();
+        }
         currentRow.push(
           `<th class="bg-slate-100 dark:bg-slate-800 py-2 px-3 font-semibold text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-xs font-serif-heading">${formatInline(
-            h
+            headerText
           )}</th>`
-        )
-      );
+        );
+      });
       continue;
     }
 
     if (trimmed.startsWith('|')) {
       const cells = trimmed.substring(1).split('||').map((c) => c.trim());
-      cells.forEach((c) =>
+      cells.forEach((c) => {
+        // MediaWiki: cell attributes can precede pipe, e.g. style="..." | Text
+        let cellText = c;
+        if (c.includes('|')) {
+          const pipeIdx = c.indexOf('|');
+          cellText = c.substring(pipeIdx + 1).trim();
+        }
         currentRow.push(
           `<td class="py-2 px-3 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs leading-relaxed">${formatInline(
-            c
+            cellText
           )}</td>`
-        )
-      );
+        );
+      });
       continue;
     }
   }
@@ -928,7 +960,7 @@ function renderMediaWikiTable(
   const tableBody = rows.map((r) => `<tr>${r.join('')}</tr>`).join('');
 
   return `
-    <div class="wiki-table-container overflow-x-auto my-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs not-prose bg-white dark:bg-slate-900">
+    <div class="wiki-table-container overflow-x-auto my-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs not-prose bg-white dark:bg-slate-900" data-wikitext="{|\n${escapeHtml(normalizedContent.trim())}\n|}">
       ${tableCaption ? `<div class="p-2 font-bold text-xs text-center border-b border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/40">${escapeHtml(tableCaption)}</div>` : ''}
       <table class="wikitable w-full text-xs border-collapse">
         <tbody>${tableBody}</tbody>
@@ -1156,8 +1188,7 @@ export function escapeHtml(text: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/"/g, '&quot;');
 }
 
 export function slugify(text: string): string {
