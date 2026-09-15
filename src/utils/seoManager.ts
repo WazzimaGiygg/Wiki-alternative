@@ -297,6 +297,19 @@ export function updateSEO(config: SEOConfig) {
       finalDesc =
         'Acompanhe em tempo real todas as edições, novos artigos e atualizações na enciclopédia WikiWorldWeb.';
       canonicalUrl = `${BASE_URL}/?uid=recent-changes`;
+    } else if (config.view === 'ucoc') {
+      finalTitle = 'Código de Conduta Universal (UCoC) e Denúncias Formais - WikiWorldWeb';
+      finalDesc =
+        'Universal Code of Conduct (UCoC) da WikiWorldWeb: princípios de civilidade, prevenção ao assédio e canal oficial para denúncias formais e acompanhamento confidencial com ampla defesa.';
+      canonicalUrl = `${BASE_URL}/?uid=ucoc`;
+      keywords.push(
+        'Universal Code of Conduct',
+        'UCoC',
+        'código de conduta',
+        'denúncia formal wiki',
+        'diretrizes de aplicação ucoc',
+        'combate ao assédio wiki'
+      );
     } else if (config.title) {
       finalTitle = `${config.title} - WikiWorldWeb`;
       if (config.description) {

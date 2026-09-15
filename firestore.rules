@@ -184,6 +184,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ✅ Denúncias Formais do Universal Code of Conduct (UCoC)
+    match /ucoc_reports/{reportId} {
+      allow get: if true;
+      allow list: if isAdmin() || (isAuthenticated() && resource.data.reporterUid == request.auth.uid);
+      allow create: if (request.auth == null || isNotBanned());
+      allow update, delete: if isAdmin();
+    }
+
     // ✅ Chamados e notificações de contato de emergência em casos extremos (ÁREA RESTRITA DA ADMINISTRAÇÃO)
     match /emergency_reports/{reportId} {
       allow get: if true;

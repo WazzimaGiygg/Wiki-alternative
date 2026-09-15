@@ -14,6 +14,7 @@ import {
   Monitor,
   Gavel,
   AlertOctagon,
+  ShieldAlert,
   Tv,
   Palette,
   Sparkles,
@@ -258,6 +259,15 @@ export const Footer: React.FC<FooterProps> = ({
             >
               <AlertOctagon size={11} className="text-red-600 dark:text-red-400" />
               <span>Contato de Emergência</span>
+            </button>
+            <button
+              id="btn-footer-ucoc"
+              onClick={() => onNavigate('ucoc')}
+              title="Universal Code of Conduct (UCoC) — Normas de convivência, diretrizes de aplicação e canal de denúncias formais"
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 font-semibold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800/60 transition"
+            >
+              <ShieldAlert size={11} className="text-indigo-600 dark:text-indigo-400" />
+              <span>Código de Conduta (UCoC)</span>
             </button>
             <button
               onClick={() => onNavigate('privacy')}

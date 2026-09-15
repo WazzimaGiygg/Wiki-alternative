@@ -561,7 +561,8 @@ export type ViewMode =
   | 'appearance'
   | 'comparison'
   | 'wazzimagiygg'
-  | 'gemini-notebook';
+  | 'gemini-notebook'
+  | 'ucoc';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)
@@ -992,3 +993,82 @@ export interface GeminiNotebookItem {
   createdAt: string;
   updatedAt: string;
 }
+
+// ==========================================
+// UNIVERSAL CODE OF CONDUCT (UCOC)
+// ==========================================
+
+export type UcocViolationCategory =
+  | 'assedio_sistematico'         // Wikihounding, intimidação, perseguição continuada
+  | 'abuso_poder_autoridade'      // Administrador/moderador abusando de ferramentas disciplinares ou censura
+  | 'discurso_odio_discriminacao' // Discriminação por gênero, raça, religião, orientação, nacionalidade
+  | 'difamacao_ataque_pessoal'    // Calúnia, desqualificação pessoal, ataques à honra fora do debate editorial
+  | 'retaliacao_denuncia'         // Vingança ou perseguição contra quem reportou infrações de boa-fé
+  | 'conflito_interesse_encoberto' // Edição paga sem transparência, manipulação ostensiva de consenso
+  | 'coacao_ameaca_legal'         // Ameaça de processo judicial ou coação fora da plataforma
+  | 'outro_ucoc';                 // Outras violações formais aos pilares do UCoC
+
+export type UcocSeverity = 'baixa' | 'moderada' | 'grave' | 'critica';
+
+export type UcocReportStatus =
+  | 'admissibilidade'   // Protocolada, sob triagem de admissibilidade pelo Comitê UCoC
+  | 'em_instrucao'      // Notificação da parte denunciada e coleta de manifestações/provas
+  | 'em_deliberacao'    // Caso instruído, em votação pelos membros do Comitê UCoC / ArbCom
+  | 'medida_cautelar'   // Medida cautelar aplicada (restrição provisória de edição)
+  | 'concluida_sancao'  // Procedente com sanção deliberada e registrada
+  | 'concluida_arquivada'; // Improcedente, infundada ou resolvida por mediação
+
+export interface UcocActionLog {
+  id: string;
+  adminUid: string;
+  adminName: string;
+  adminRole?: string;
+  action: string;
+  note: string;
+  timestamp: string;
+}
+
+export interface UcocReportComment {
+  id: string;
+  authorUid?: string;
+  authorName: string;
+  authorRole?: string;
+  text: string;
+  timestamp: string;
+  isOfficialStatement?: boolean;
+  isInternalNote?: boolean;
+}
+
+export interface UcocReport {
+  id: string;
+  protocolNumber: string; // Ex: UCOC-2026-XXXX
+  category: UcocViolationCategory;
+  severity: UcocSeverity;
+  title: string;
+  description: string;
+  targetUsername: string;
+  targetUserUid?: string;
+  targetUserRole?: string;
+  involvedUrlsOrArticles?: string[];
+  evidenceText: string;
+  evidenceLinks?: string[];
+  reporterName: string;
+  reporterEmail?: string;
+  reporterUid?: string;
+  reporterRole?: string;
+  isAnonymousOrConfidential: boolean;
+  requiresProtectiveMeasures: boolean;
+  status: UcocReportStatus;
+  defenseStatement?: string;
+  defenseSubmittedAt?: string;
+  committeeResolution?: string;
+  appliedSanctions?: string;
+  assignedInvestigatorUid?: string;
+  assignedInvestigatorName?: string;
+  createdAt: string;
+  updatedAt: string;
+  closedAt?: string;
+  actionLogs: UcocActionLog[];
+  comments: UcocReportComment[];
+}
+

@@ -65,6 +65,12 @@ import {
   EmergencyUrgencyLevel,
   EmergencyReportStatus,
   EmergencyReportActionLog,
+  UcocReport,
+  UcocViolationCategory,
+  UcocSeverity,
+  UcocReportStatus,
+  UcocActionLog,
+  UcocReportComment,
   CookieConsent,
   WatchlistItem,
   ArticleRatingData,
@@ -151,6 +157,7 @@ const STORAGE_KEYS = {
   ARBITRATION_MEMBERS: 'wikizero_arbitration_members_v3',
   EMERGENCY_REPORTS: 'wikizero_emergency_reports_v1',
   EMERGENCY_IP_REPORTS: 'wikizero_emergency_ip_reports_v1',
+  UCOC_REPORTS: 'wikizero_ucoc_reports_v1',
   DAILY_EDITS_PREFIX: 'wikizero_daily_edits_',
 };
 
@@ -6303,6 +6310,394 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         }
       } catch (err) {
         console.warn('Firestore deleteEmergencyReport error:', err);
+      }
+    }
+  },
+
+  // ==========================================
+  // UNIVERSAL CODE OF CONDUCT (UCOC)
+  // ==========================================
+
+  /**
+   * Obtém as denúncias formais do Universal Code of Conduct (UCoC).
+   * Administradores e Moderadores podem visualizar todas as denúncias para apuração.
+   * Usuários comuns têm acesso apenas às denúncias protocoladas por eles ou nas quais figuram como parte.
+   */
+  async getUcocReports(user?: UserProfile | null): Promise<UcocReport[]> {
+    initializeLocalStorage();
+    const isStaff = user?.role === 'admin' || user?.role === 'moderador' || user?.email === 'pedrohenriquecardonaperes@gmail.com';
+    let allReports: UcocReport[] = [];
+
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'ucoc_reports'));
+        const reports: UcocReport[] = [];
+        snap.forEach((d) => reports.push(d.data() as UcocReport));
+        if (reports.length > 0) {
+          localStorage.setItem(STORAGE_KEYS.UCOC_REPORTS, JSON.stringify(reports));
+          allReports = reports;
+        }
+      } catch (err) {
+        console.warn('Firestore getUcocReports error:', err);
+      }
+    }
+
+    if (allReports.length === 0) {
+      allReports = JSON.parse(localStorage.getItem(STORAGE_KEYS.UCOC_REPORTS) || '[]') as UcocReport[];
+    }
+
+    if (isStaff) {
+      return allReports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    if (user) {
+      return allReports
+        .filter(
+          (r) =>
+            r.reporterUid === user.uid ||
+            (user.email && r.reporterEmail === user.email) ||
+            r.targetUsername.toLowerCase() === user.username?.toLowerCase() ||
+            (r.targetUserUid && r.targetUserUid === user.uid)
+        )
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    return [];
+  },
+
+  /**
+   * Subscrição em tempo real às denúncias do UCoC
+   */
+  subscribeToUcocReports(
+    callback: (reports: UcocReport[]) => void,
+    user?: UserProfile | null
+  ): () => void {
+    initializeLocalStorage();
+    const isStaff = user?.role === 'admin' || user?.role === 'moderador' || user?.email === 'pedrohenriquecardonaperes@gmail.com';
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEYS.UCOC_REPORTS) || '[]') as UcocReport[];
+
+    const filterReports = (raw: UcocReport[]) => {
+      if (isStaff) {
+        return raw.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
+      if (user) {
+        return raw
+          .filter(
+            (r) =>
+              r.reporterUid === user.uid ||
+              (user.email && r.reporterEmail === user.email) ||
+              r.targetUsername.toLowerCase() === user.username?.toLowerCase() ||
+              (r.targetUserUid && r.targetUserUid === user.uid)
+          )
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
+      return [];
+    };
+
+    callback(filterReports(local));
+
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    try {
+      return onSnapshot(
+        collection(db, 'ucoc_reports'),
+        (snap) => {
+          const list: UcocReport[] = [];
+          snap.forEach((d) => list.push(d.data() as UcocReport));
+          localStorage.setItem(STORAGE_KEYS.UCOC_REPORTS, JSON.stringify(list));
+          callback(filterReports(list));
+        },
+        (err) => {
+          console.warn('[StorageService] Erro no listener do UCoC:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('[StorageService] Falha ao criar listener do UCoC:', err);
+      return () => {};
+    }
+  },
+
+  /**
+   * Obtém uma denúncia específica pelo número de protocolo formal (ex: UCOC-2026-4821)
+   */
+  async getUcocReportByProtocol(protocolNumber: string): Promise<UcocReport | null> {
+    const clean = protocolNumber.trim().toUpperCase();
+    if (!clean) return null;
+
+    initializeLocalStorage();
+    const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.UCOC_REPORTS) || '[]') as UcocReport[];
+    const local = all.find((r) => r.protocolNumber.toUpperCase() === clean || r.id === clean);
+
+    if (firebaseActive && db) {
+      try {
+        const q = query(collection(db, 'ucoc_reports'), where('protocolNumber', '==', clean), limit(1));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          const rep = snap.docs[0].data() as UcocReport;
+          const idx = all.findIndex((r) => r.id === rep.id);
+          if (idx >= 0) all[idx] = rep;
+          else all.unshift(rep);
+          localStorage.setItem(STORAGE_KEYS.UCOC_REPORTS, JSON.stringify(all));
+          return rep;
+        }
+      } catch (err) {
+        console.warn('Firestore getUcocReportByProtocol error:', err);
+      }
+    }
+
+    return local || null;
+  },
+
+  /**
+   * Registra uma nova denúncia formal sob o Universal Code of Conduct (UCoC)
+   */
+  async createUcocReport(data: {
+    category: UcocViolationCategory;
+    severity: UcocSeverity;
+    title: string;
+    description: string;
+    targetUsername: string;
+    targetUserUid?: string;
+    targetUserRole?: string;
+    involvedUrlsOrArticles?: string[];
+    evidenceText: string;
+    evidenceLinks?: string[];
+    reporterName?: string;
+    reporterEmail?: string;
+    reporterUid?: string;
+    reporterRole?: string;
+    isAnonymousOrConfidential?: boolean;
+    requiresProtectiveMeasures?: boolean;
+  }): Promise<UcocReport> {
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.UCOC_REPORTS) || '[]') as UcocReport[];
+    const id = `ucoc-${Date.now()}`;
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    const protocolNumber = `UCOC-2026-${randSuffix}`;
+    const now = new Date().toISOString();
+
+    const newReport: UcocReport = {
+      id,
+      protocolNumber,
+      category: data.category,
+      severity: data.severity,
+      title: data.title.trim(),
+      description: data.description.trim(),
+      targetUsername: data.targetUsername.trim().replace(/^@/, ''),
+      targetUserUid: data.targetUserUid,
+      targetUserRole: data.targetUserRole,
+      involvedUrlsOrArticles: data.involvedUrlsOrArticles?.filter(Boolean) || [],
+      evidenceText: data.evidenceText.trim(),
+      evidenceLinks: data.evidenceLinks?.filter(Boolean) || [],
+      reporterName: data.isAnonymousOrConfidential ? 'Denunciante sob Sigilo (UCoC)' : (data.reporterName?.trim() || 'Usuário Registrado'),
+      reporterEmail: data.reporterEmail?.trim(),
+      reporterUid: data.reporterUid,
+      reporterRole: data.reporterRole,
+      isAnonymousOrConfidential: !!data.isAnonymousOrConfidential,
+      requiresProtectiveMeasures: !!data.requiresProtectiveMeasures,
+      status: 'admissibilidade',
+      createdAt: now,
+      updatedAt: now,
+      actionLogs: [
+        {
+          id: `log-${Date.now()}`,
+          adminUid: data.reporterUid || 'system',
+          adminName: data.isAnonymousOrConfidential ? 'Denunciante sob Sigilo' : (data.reporterName || 'Usuário'),
+          adminRole: data.reporterRole,
+          timestamp: now,
+          action: 'Denúncia Formal UCoC Protocolada',
+          note: `Processo ${protocolNumber} registrado com categoria "${data.category}" e severidade "${data.severity}".`,
+        },
+      ],
+      comments: [],
+    };
+
+    list.unshift(newReport);
+    localStorage.setItem(STORAGE_KEYS.UCOC_REPORTS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'ucoc_reports', id), newReport);
+      } catch (err) {
+        console.warn('Firestore createUcocReport error:', err);
+      }
+    }
+
+    return newReport;
+  },
+
+  /**
+   * Atualiza status, deliberações ou medidas do processo UCoC
+   */
+  async updateUcocReport(
+    reportId: string,
+    updates: Partial<UcocReport>,
+    adminUser?: UserProfile | null,
+    logNote?: string
+  ): Promise<UcocReport | null> {
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.UCOC_REPORTS) || '[]') as UcocReport[];
+    const idx = list.findIndex((r) => r.id === reportId);
+    if (idx === -1) return null;
+
+    const current = list[idx];
+    const now = new Date().toISOString();
+
+    const updatedLogs = [...current.actionLogs];
+    if (logNote && adminUser) {
+      updatedLogs.push({
+        id: `log-${Date.now()}`,
+        adminUid: adminUser.uid,
+        adminName: adminUser.displayName || adminUser.username || 'Administrador',
+        adminRole: adminUser.role,
+        action: updates.status ? `Status alterado para: ${updates.status}` : 'Atualização de Processo UCoC',
+        note: logNote,
+        timestamp: now,
+      });
+    }
+
+    const updated: UcocReport = {
+      ...current,
+      ...updates,
+      updatedAt: now,
+      closedAt: (updates.status === 'concluida_sancao' || updates.status === 'concluida_arquivada') ? now : current.closedAt,
+      actionLogs: updatedLogs,
+    };
+
+    list[idx] = updated;
+    localStorage.setItem(STORAGE_KEYS.UCOC_REPORTS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'ucoc_reports', reportId), updated);
+      } catch (err) {
+        console.warn('Firestore updateUcocReport error:', err);
+      }
+    }
+
+    return updated;
+  },
+
+  /**
+   * Adiciona comentário ou manifestação instrutória ao processo UCoC
+   */
+  async addUcocReportComment(
+    reportId: string,
+    comment: {
+      text: string;
+      authorName: string;
+      authorRole?: string;
+      authorUid?: string;
+      isOfficialStatement?: boolean;
+      isInternalNote?: boolean;
+    },
+    currentUser?: UserProfile | null
+  ): Promise<UcocReport | null> {
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.UCOC_REPORTS) || '[]') as UcocReport[];
+    const idx = list.findIndex((r) => r.id === reportId);
+    if (idx === -1) return null;
+
+    const current = list[idx];
+    const now = new Date().toISOString();
+
+    const newComment: UcocReportComment = {
+      id: `comm-${Date.now()}`,
+      text: comment.text.trim(),
+      authorName: comment.authorName,
+      authorRole: comment.authorRole || currentUser?.role,
+      authorUid: comment.authorUid || currentUser?.uid,
+      timestamp: now,
+      isOfficialStatement: !!comment.isOfficialStatement,
+      isInternalNote: !!comment.isInternalNote,
+    };
+
+    const updatedComments = [...(current.comments || []), newComment];
+    const updated: UcocReport = {
+      ...current,
+      comments: updatedComments,
+      updatedAt: now,
+    };
+
+    list[idx] = updated;
+    localStorage.setItem(STORAGE_KEYS.UCOC_REPORTS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'ucoc_reports', reportId), updated);
+      } catch (err) {
+        console.warn('Firestore addUcocReportComment error:', err);
+      }
+    }
+
+    return updated;
+  },
+
+  /**
+   * Submete a manifestação de defesa formal da parte denunciada no processo UCoC
+   */
+  async submitUcocDefense(
+    reportId: string,
+    defenseText: string,
+    user: UserProfile
+  ): Promise<UcocReport | null> {
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.UCOC_REPORTS) || '[]') as UcocReport[];
+    const idx = list.findIndex((r) => r.id === reportId);
+    if (idx === -1) return null;
+
+    const current = list[idx];
+    const now = new Date().toISOString();
+
+    const actionLog: UcocActionLog = {
+      id: `log-${Date.now()}`,
+      adminUid: user.uid,
+      adminName: user.displayName || user.username || 'Parte Denunciada',
+      adminRole: user.role,
+      action: 'Manifestação de Defesa Anexada aos Autos',
+      note: 'A parte denunciada exerceu o contraditório formal e anexou suas alegações e contraprovas.',
+      timestamp: now,
+    };
+
+    const updated: UcocReport = {
+      ...current,
+      defenseStatement: defenseText.trim(),
+      defenseSubmittedAt: now,
+      status: current.status === 'admissibilidade' ? 'em_instrucao' : current.status,
+      actionLogs: [...current.actionLogs, actionLog],
+      updatedAt: now,
+    };
+
+    list[idx] = updated;
+    localStorage.setItem(STORAGE_KEYS.UCOC_REPORTS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await setDoc(doc(db, 'ucoc_reports', reportId), updated);
+      } catch (err) {
+        console.warn('Firestore submitUcocDefense error:', err);
+      }
+    }
+
+    return updated;
+  },
+
+  /**
+   * Exclui um processo UCoC (somente superadmin)
+   */
+  async deleteUcocReport(reportId: string): Promise<void> {
+    let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.UCOC_REPORTS) || '[]') as UcocReport[];
+    list = list.filter((r) => r.id !== reportId);
+    localStorage.setItem(STORAGE_KEYS.UCOC_REPORTS, JSON.stringify(list));
+
+    if (firebaseActive && db) {
+      try {
+        await ensureFirebaseAuth();
+        await deleteDoc(doc(db, 'ucoc_reports', reportId));
+      } catch (err) {
+        console.warn('Firestore deleteUcocReport error:', err);
       }
     }
   },

@@ -31,6 +31,7 @@ import {
   Check,
   FileDown,
   AlertOctagon,
+  ShieldAlert,
   Palette,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
@@ -54,6 +55,7 @@ interface SpecialPagesViewProps {
   onNavigateToUpload?: () => void;
   onNavigateToFilesList?: () => void;
   onNavigateToArbitration?: () => void;
+  onNavigateToUcoc?: () => void;
   onNavigateToAppearance?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
@@ -67,6 +69,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToUser,
   onNavigateToContactAdmin,
   onNavigateToEmergencyContact,
+  onNavigateToUcoc,
   onNavigateToPromotionRequests,
   onNavigateToUnblockRequests,
   onNavigateToCheckUser,
@@ -330,6 +333,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-red-700 dark:text-red-300 truncate">
                 Contato de Emergência (Casos Extremos)
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToUcoc && (
+          <button
+            id="btn-specialpages-ucoc"
+            onClick={onNavigateToUcoc}
+            className="p-3 rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-indigo-600 text-white shrink-0">
+              <ShieldAlert size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 truncate group-hover:underline">
+                  Special:UCoC
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-600 text-white">
+                  CÓDIGO
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Código de Conduta Universal (Denúncias Formais)
               </div>
             </div>
           </button>

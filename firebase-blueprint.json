@@ -197,9 +197,34 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["id", "title", "createdAt"]
+    },
+    "UcocReport": {
+      "title": "UcocReport",
+      "description": "Denúncias formais e procedimentos de apuração do Universal Code of Conduct (UCoC)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "protocolNumber": { "type": "string" },
+        "category": { "type": "string" },
+        "severity": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "targetUsername": { "type": "string" },
+        "reporterName": { "type": "string" },
+        "reporterUid": { "type": "string" },
+        "isAnonymousOrConfidential": { "type": "boolean" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "protocolNumber", "category", "title", "targetUsername", "status", "createdAt"]
     }
   },
   "firestore": {
+    "/ucoc_reports/{reportId}": {
+      "schema": "UcocReport",
+      "description": "Denúncias formais e procedimentos do Código Universal de Conduta"
+    },
     "/gemini_notebooks/{notebookId}": {
       "schema": "GeminiNotebook",
       "description": "Cadernos de pesquisa e notas do Gemini Notebook para inserção em artigos"

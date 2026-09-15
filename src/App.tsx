@@ -37,6 +37,7 @@ import { FileUploadView } from './components/FileUploadView';
 import { FilePageView } from './components/FilePageView';
 import { FilesGalleryView } from './components/FilesGalleryView';
 import { ArbitrationCommitteeView } from './components/ArbitrationCommitteeView';
+import { UcocView } from './components/UcocView';
 import { LoginModal } from './components/LoginModal';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
@@ -95,6 +96,8 @@ export default function App() {
   const [userPageInitialTab, setUserPageInitialTab] = useState<'profile' | 'talk' | 'contributions' | 'admin'>('profile');
   const [selectedFileName, setSelectedFileName] = useState<string>('Logo_WikiZero.svg');
   const [uploadInitialTargetName, setUploadInitialTargetName] = useState<string>('');
+  const [ucocInitialTab, setUcocInitialTab] = useState<'principles' | 'new-report' | 'track' | 'cases'>('principles');
+  const [ucocInitialProtocol, setUcocInitialProtocol] = useState<string>('');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
@@ -183,6 +186,14 @@ export default function App() {
         break;
 
       case 'view':
+        if (target.view === 'ucoc') {
+          if (target.initialProtocol) {
+            setUcocInitialProtocol(target.initialProtocol);
+            setUcocInitialTab('track');
+          } else if (target.initialTab) {
+            setUcocInitialTab(target.initialTab as any);
+          }
+        }
         handleNavigate(target.view);
         break;
 
@@ -311,6 +322,14 @@ export default function App() {
             }
             break;
           case 'view':
+            if (target.view === 'ucoc') {
+              if (target.initialProtocol) {
+                setUcocInitialProtocol(target.initialProtocol);
+                setUcocInitialTab('track');
+              } else if (target.initialTab) {
+                setUcocInitialTab(target.initialTab as any);
+              }
+            }
             setCurrentView(target.view);
             break;
           case 'user':
@@ -964,6 +983,7 @@ export default function App() {
               onNavigateToUser={handleNavigateToUser}
               onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
               onNavigateToEmergencyContact={() => handleNavigate('emergency-contact')}
+              onNavigateToUcoc={() => handleNavigate('ucoc')}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
@@ -986,6 +1006,7 @@ export default function App() {
               onNavigateToUser={handleNavigateToUser}
               onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
               onNavigateToEmergencyContact={() => handleNavigate('emergency-contact')}
+              onNavigateToUcoc={() => handleNavigate('ucoc')}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
@@ -1103,6 +1124,22 @@ export default function App() {
               onLoginClick={handleLoginClick}
               onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
               onNavigateToArbCom={() => handleNavigate('arbitration')}
+              onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'ucoc' && (
+            <UcocView
+              currentUser={user}
+              articles={articles}
+              initialTab={ucocInitialTab}
+              initialProtocol={ucocInitialProtocol}
+              onNavigateToArticle={handleSelectArticle}
+              onNavigateToUser={handleNavigateToUser}
+              onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
+              onNavigateToEmergencyContact={() => handleNavigate('emergency-contact')}
+              onNavigateToArbitration={() => handleNavigate('arbitration')}
+              onLoginClick={handleLoginClick}
               onBack={() => handleNavigate('hub')}
             />
           )}

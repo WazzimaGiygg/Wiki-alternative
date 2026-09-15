@@ -30,6 +30,7 @@ import {
   Image as ImageIcon,
   Gavel,
   AlertOctagon,
+  ShieldAlert,
   Tv,
   Palette,
   Award,
@@ -478,6 +479,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="truncate">Falar com Administração</span>
                   <span className="text-[8px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono font-bold px-1 rounded-xs">
                     OFICIAL
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
+              id="btn-sidebar-ucoc"
+              onClick={() => onNavigate('ucoc')}
+              title="Universal Code of Conduct - UCoC (Special:UCoC - Denúncias Formais e Conformidade)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'ucoc'
+                  ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <ShieldAlert size={15} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate font-semibold">Código de Conduta (UCoC)</span>
+                  <span className="text-[8px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-mono font-bold px-1 rounded-xs">
+                    FORMAL
                   </span>
                 </div>
               )}

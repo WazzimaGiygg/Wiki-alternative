@@ -4,7 +4,7 @@ export type ResolvedNavigationTarget =
   | { type: 'article'; articleId: string; article?: WikiArticle }
   | { type: 'article-title'; title: string }
   | { type: 'page'; pageUid: string }
-  | { type: 'view'; view: ViewMode; initialTab?: string }
+  | { type: 'view'; view: ViewMode; initialTab?: string; initialProtocol?: string }
   | { type: 'user'; username: string; initialTab?: 'profile' | 'talk' | 'contributions' | 'admin' }
   | { type: 'file'; fileName: string }
   | { type: 'arbitration-case'; caseId: string }
@@ -191,6 +191,9 @@ export function getCanonicalUid(
     case 'emergency-contact':
       return 'Special:EmergencyContact';
 
+    case 'ucoc':
+      return 'Special:UCoC';
+
     case 'admin-firebase':
       return 'Special:AdminFirebase';
 
@@ -354,6 +357,15 @@ export function resolveNavigationUid(
     'emergencia': { view: 'emergency-contact' },
     'contato-emergencia': { view: 'emergency-contact' },
 
+    'special:ucoc': { view: 'ucoc' },
+    'special:universalcodeofconduct': { view: 'ucoc' },
+    'special:codigodeconduta': { view: 'ucoc' },
+    'ucoc': { view: 'ucoc' },
+    'universal-code-of-conduct': { view: 'ucoc' },
+    'codigo-de-conduta': { view: 'ucoc' },
+    'denuncias-formais': { view: 'ucoc' },
+    'denuncia-formal': { view: 'ucoc' },
+
     'special:adminfirebase': { view: 'admin-firebase' },
     'admin-firebase': { view: 'admin-firebase' },
     'firebase': { view: 'admin-firebase' },
@@ -480,6 +492,15 @@ export function resolveNavigationUid(
   }
   if (/^ARB-[A-Z]{2}-\d{4}-\d{3}$/i.test(uid)) {
     return { type: 'arbitration-case', caseId: uid.toUpperCase() };
+  }
+
+  // 7b. UCoC Protocol: UCOC-..., UCoC:...
+  const ucocMatch = uid.match(/^(?:UCoC|Ucoc):?(.*)$/i);
+  if (ucocMatch && ucocMatch[1]) {
+    return { type: 'view', view: 'ucoc', initialProtocol: ucocMatch[1].trim() };
+  }
+  if (/^UCOC-\d{4}-\d{4}$/i.test(uid)) {
+    return { type: 'view', view: 'ucoc', initialProtocol: uid.toUpperCase() };
   }
 
   // 8. Page Collection prefix: Page:uid, Pagina:uid
