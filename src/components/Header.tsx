@@ -26,6 +26,7 @@ import {
   Pickaxe,
   Gamepad2,
   Smartphone,
+  ShieldAlert,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -1541,6 +1542,15 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 font-medium"
                     >
                       <Database size={13} className="text-amber-500" /> Admin Firebase DB
+                    </button>
+                    <button
+                      onClick={() => {
+                        onNavigate('vpn-checker');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 font-medium"
+                    >
+                      <ShieldAlert size={13} className="text-blue-500" /> Verificador de VPN
                     </button>
                     <button
                       onClick={() => {

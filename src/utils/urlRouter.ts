@@ -197,6 +197,9 @@ export function getCanonicalUid(
     case 'admin-firebase':
       return 'Special:AdminFirebase';
 
+    case 'vpn-checker':
+      return 'Special:VpnChecker';
+
     case 'privacy':
       return 'Special:Privacy';
 
@@ -378,6 +381,16 @@ export function resolveNavigationUid(
     'firebase-console': { view: 'admin-firebase' },
     'backup-firebase': { view: 'admin-firebase' },
     'backup-blaze': { view: 'admin-firebase' },
+
+    'special:vpnchecker': { view: 'vpn-checker' },
+    'special:vpn': { view: 'vpn-checker' },
+    'special:vpncheck': { view: 'vpn-checker' },
+    'special:proxycheck': { view: 'vpn-checker' },
+    'special:proxy': { view: 'vpn-checker' },
+    'vpn-checker': { view: 'vpn-checker' },
+    'vpn': { view: 'vpn-checker' },
+    'verificador-vpn': { view: 'vpn-checker' },
+    'bloqueio-vpn': { view: 'vpn-checker' },
 
     'special:privacy': { view: 'privacy' },
     'privacy': { view: 'privacy' },

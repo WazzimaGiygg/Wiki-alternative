@@ -257,6 +257,240 @@ app.all('/api/auth/check-wikimedia-ip', async (req: Request, res: Response) => {
 });
 
 // -------------------------------------------------------------
+// API Routes: VPN, Proxy & Tor Connection Check & Blocking
+// -------------------------------------------------------------
+
+const SERVER_VPN_ASNS = [
+  'AS9009',   // M247 Ltd
+  'AS60068',  // Datacamp Limited
+  'AS202425', // IP Volume inc / NordVPN
+  'AS136787', // TEFINCOM S.A. / NordVPN
+  'AS42303',  // Mullvad VPN
+  'AS39351',  // Mullvad
+  'AS62371',  // Proton AG
+  'AS209854', // Proton AG
+  'AS35908',  // Private Internet Access
+  'AS61317',  // PIA
+  'AS205461', // CyberGhost / Kape
+  'AS200052', // ExpressVPN
+  'AS394711', // ExpressVPN
+  'AS208323', // ExpressVPN
+  'AS206092', // Windscribe
+  'AS11878',  // Tzulo Inc
+  'AS20473',  // Choopa / Vultr
+  'AS14061',  // DigitalOcean
+  'AS63949',  // Linode / Akamai
+  'AS16276',  // OVH SAS
+  'AS35540',  // OVH
+  'AS24940',  // Hetzner Online
+  'AS16265',  // Leaseweb
+  'AS28753',  // Leaseweb
+  'AS59711',  // Leaseweb
+  'AS46562',  // Performive
+  'AS208294', // Tor Project
+  'AS13335',  // Cloudflare
+  'AS15169',  // Google Cloud
+  'AS16509',  // Amazon AWS
+  'AS8075',   // Microsoft Azure
+  'AS31898',  // Oracle Cloud
+];
+
+const SERVER_VPN_CIDRS = [
+  '185.156.172.0/22',
+  '185.220.100.0/22', // Tor Exit nodes
+  '185.220.101.0/24', // Tor Exit nodes
+  '185.220.102.0/24', // Tor Exit nodes
+  '176.10.99.0/24',   // Tor Exit nodes
+  '193.138.218.0/24', // Mullvad
+  '194.242.110.0/24', // Mullvad
+  '185.213.154.0/24', // Mullvad
+  '185.159.157.0/24', // Proton
+  '185.159.158.0/24', // Proton
+  '149.102.242.0/24', // Proton
+  '185.107.56.0/24',  // Proton
+  '195.181.160.0/22', // Datacamp
+  '185.156.174.0/23', // M247
+];
+
+const vpnIpCache = new Map<string, { data: any; timestamp: number }>();
+const VPN_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutos de cache
+
+app.all('/api/security/check-vpn', async (req: Request, res: Response) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  const realIp = req.headers['x-real-ip'];
+  const reqIp = (typeof req.query.ip === 'string' && req.query.ip) || (req.body && req.body.ip);
+
+  let clientIp = (reqIp ||
+    (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : '') ||
+    (typeof realIp === 'string' ? realIp.trim() : '') ||
+    req.socket.remoteAddress ||
+    '127.0.0.1') as string;
+
+  if (clientIp.startsWith('::ffff:')) clientIp = clientIp.replace('::ffff:', '');
+  if (clientIp.startsWith('[') && clientIp.includes(']')) clientIp = clientIp.slice(1, clientIp.indexOf(']'));
+  if (clientIp.includes(':') && clientIp.indexOf(':') === clientIp.lastIndexOf(':') && clientIp.includes('.')) {
+    clientIp = clientIp.split(':')[0];
+  }
+
+  // Verificar cache em memória
+  const cached = vpnIpCache.get(clientIp);
+  if (cached && Date.now() - cached.timestamp < VPN_CACHE_TTL_MS) {
+    return res.json(cached.data);
+  }
+
+  // 1. Checagem em CIDRs conhecidos de VPN/Tor
+  for (const cidr of SERVER_VPN_CIDRS) {
+    if (checkIpv4Cidr(clientIp, cidr)) {
+      const isTor = cidr.startsWith('185.220.');
+      const result = {
+        ip: clientIp,
+        isVpn: !isTor,
+        isProxy: true,
+        isTor: isTor,
+        isHosting: true,
+        blocked: true,
+        confidence: 'high',
+        riskScore: isTor ? 99 : 94,
+        provider: isTor ? 'Tor Project Exit Node' : 'Servidor VPN Comercial',
+        matchedCidr: cidr,
+        reason: isTor
+          ? `Endereço IP identificado como Nó de Saída Tor (${cidr}). Autenticações anônimas não são permitidas na Wiki.`
+          : `Endereço IP pertencente à faixa registrada de servidor VPN (${cidr}). O login com VPN está desabilitado por política comunitária.`,
+        checkedAt: new Date().toISOString(),
+      };
+      vpnIpCache.set(clientIp, { data: result, timestamp: Date.now() });
+      return res.json(result);
+    }
+  }
+
+  // 2. Lookup de DNS Reverso
+  let reverseDns: string | null = null;
+  let isVpnByDns = false;
+  let isTorByDns = false;
+  let isHostingByDns = false;
+  let detectedProvider: string | null = null;
+
+  if (clientIp && !clientIp.startsWith('127.') && !clientIp.startsWith('192.168.') && !clientIp.startsWith('10.')) {
+    try {
+      const hostnames = await dns.promises.reverse(clientIp);
+      if (Array.isArray(hostnames) && hostnames.length > 0) {
+        reverseDns = hostnames[0].toLowerCase();
+        if (reverseDns.includes('tor') || reverseDns.includes('exit')) {
+          isTorByDns = true;
+          isVpnByDns = true;
+          detectedProvider = 'Tor Exit Node';
+        } else if (
+          reverseDns.includes('vpn') ||
+          reverseDns.includes('m247') ||
+          reverseDns.includes('datacamp') ||
+          reverseDns.includes('mullvad') ||
+          reverseDns.includes('nordvpn') ||
+          reverseDns.includes('proton') ||
+          reverseDns.includes('expressvpn') ||
+          reverseDns.includes('proxy') ||
+          reverseDns.includes('tunnel')
+        ) {
+          isVpnByDns = true;
+          detectedProvider = 'Rede VPN Comercial (' + hostnames[0] + ')';
+        } else if (
+          reverseDns.includes('hosting') ||
+          reverseDns.includes('vps') ||
+          reverseDns.includes('linode') ||
+          reverseDns.includes('digitalocean') ||
+          reverseDns.includes('hetzner') ||
+          reverseDns.includes('ovh') ||
+          reverseDns.includes('leaseweb') ||
+          reverseDns.includes('amazon') ||
+          reverseDns.includes('googleusercontent') ||
+          reverseDns.includes('azure')
+        ) {
+          isHostingByDns = true;
+          detectedProvider = 'Datacenter / Servidor em Nuvem';
+        }
+      }
+    } catch {
+      // Ignora falha de DNS reverso
+    }
+  }
+
+  // 3. Consulta à API de inteligência de IP com timeout rígido de 2.5s
+  let apiData: any = null;
+  if (!clientIp.startsWith('127.') && !clientIp.startsWith('192.168.') && !clientIp.startsWith('10.')) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const apiResp = await fetch(
+        `http://ip-api.com/json/${clientIp}?fields=status,message,country,city,isp,org,as,asname,reverse,mobile,proxy,hosting,query`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeoutId);
+      if (apiResp.ok) {
+        apiData = await apiResp.json();
+      }
+    } catch {
+      // Falha ou timeout na API externa
+    }
+  }
+
+  const isProxyFromApi = apiData?.proxy === true;
+  const isHostingFromApi = apiData?.hosting === true;
+  const orgAsUpper = `${apiData?.as || ''} ${apiData?.org || ''} ${apiData?.isp || ''}`.toUpperCase();
+
+  let isKnownAsn = false;
+  for (const asn of SERVER_VPN_ASNS) {
+    if (orgAsUpper.includes(asn)) {
+      isKnownAsn = true;
+      break;
+    }
+  }
+
+  const isVpn = isVpnByDns || isProxyFromApi || isKnownAsn;
+  const isTor = isTorByDns || orgAsUpper.includes('TOR') || (reverseDns && reverseDns.includes('tor'));
+  const isHosting = isHostingByDns || isHostingFromApi || isKnownAsn;
+  const isBlocked = isVpn || isTor || isProxyFromApi || (isHosting && !apiData?.mobile);
+
+  const riskScore = isTor ? 99 : isProxyFromApi ? 95 : isKnownAsn ? 90 : isVpn ? 88 : isHosting ? 80 : 10;
+  const confidence = (isProxyFromApi || isKnownAsn || isVpnByDns) ? 'high' : isHosting ? 'medium' : 'low';
+
+  const provider = detectedProvider || apiData?.org || apiData?.isp || (isBlocked ? 'Provedor de VPN / Datacenter' : 'Conexão Residencial Comum');
+
+  let reason = 'Conexão residencial verificada. Autenticação permitida na WikiWorldWeb.';
+  if (isBlocked) {
+    if (isTor) {
+      reason = 'Conexão através da rede Tor detectada. Por razões de transparência editorial e prevenção de vandalismo anônimo, o login está bloqueado.';
+    } else if (isVpn || isProxyFromApi) {
+      reason = `Conexão através de VPN ou Proxy anônimo detectada (${provider}). O login na WikiWorldWeb está desabilitado para conexões VPN para prevenir contas fantoches (sockpuppets) e evasão de bloqueios.`;
+    } else if (isHosting) {
+      reason = `Conexão originada de servidor em Datacenter/Hosting (${provider}). O acesso de usuário requer endereço IP de conexão residencial ou móvel legítima.`;
+    }
+  }
+
+  const finalResult = {
+    ip: clientIp,
+    isVpn: !!isVpn,
+    isProxy: !!(isProxyFromApi || isVpnByDns),
+    isTor: !!isTor,
+    isHosting: !!isHosting,
+    blocked: !!isBlocked,
+    confidence,
+    riskScore,
+    provider,
+    asn: apiData?.as || undefined,
+    org: apiData?.org || undefined,
+    country: apiData?.country || undefined,
+    city: apiData?.city || undefined,
+    reverseDns: reverseDns || apiData?.reverse || undefined,
+    reason,
+    checkedAt: new Date().toISOString(),
+  };
+
+  // Salvar no cache em memória
+  vpnIpCache.set(clientIp, { data: finalResult, timestamp: Date.now() });
+
+  res.json(finalResult);
+});
+
+// -------------------------------------------------------------
 // API Routes: Wikimedia Foundation Admin Nicknames Security
 // -------------------------------------------------------------
 

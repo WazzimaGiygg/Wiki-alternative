@@ -78,6 +78,7 @@ import {
 } from '../types';
 import { sanitizeIpForDocId, hashIpAddress } from '../utils/ipUtils';
 import { verifyClientIpForLogin } from '../utils/wikimediaIpChecker';
+import { checkClientVpnConnection, logVpnBlockAttempt } from '../utils/vpnChecker';
 import { validateUserIdentifiersAgainstWikimediaAdmins, checkIfWikimediaAdmin } from '../utils/wikimediaAdminChecker';
 import { ACTIVE_FIREBASE_CONFIG, getActiveFirebaseConfig } from '../config/firebaseCustomConfig';
 
@@ -1278,6 +1279,29 @@ export const StorageService = {
       );
     }
 
+    // Verificação de segurança: Bloqueio para conexões mascaradas por VPN/Proxy
+    const vpnCheck = await checkClientVpnConnection();
+    if (vpnCheck.blocked) {
+      logVpnBlockAttempt({
+        ip: vpnCheck.ip,
+        provider: vpnCheck.provider,
+        reason: vpnCheck.reason,
+        attemptType: 'guest_login',
+        riskScore: vpnCheck.riskScore,
+        country: vpnCheck.country,
+      });
+      this.logUserAuditAction(
+        guestId,
+        'Convidado (Tentativa)',
+        'vpn_login_blocked',
+        `Tentativa de criação de sessão de convidado bloqueada: VPN/Proxy detectado (${vpnCheck.provider || vpnCheck.ip}, Risco: ${vpnCheck.riskScore}%)`,
+        null
+      );
+      throw new Error(
+        `Acesso bloqueado: Criação de sessão de convidado desabilitada para conexões via VPN/Proxy anônimo (${vpnCheck.provider || vpnCheck.ip}). Desative sua VPN para acessar a WikiWorldWeb.`
+      );
+    }
+
     const guest: UserProfile = {
       uid: guestId,
       email: `${guestId}@convidado.wikizero.com`,
@@ -1298,6 +1322,29 @@ export const StorageService = {
       const detail = ipCheck.matchedRange ? ` (faixa detectada: ${ipCheck.matchedRange})` : '';
       throw new Error(
         `Acesso bloqueado: O login está permanentemente desabilitado para conexões originadas de faixas de IP pertencentes à Wikimedia Foundation (AS14907, IP: ${ipCheck.ip}${detail}). Conforme a política de isolamento editorial e segurança da WikiWorldWeb, autenticações a partir de redes Wikimedia são restritas.`
+      );
+    }
+
+    // 1.1 Verificação de segurança: Bloqueio estrito para conexões mascaradas por VPN, Proxy ou Tor
+    const vpnCheck = await checkClientVpnConnection();
+    if (vpnCheck.blocked) {
+      logVpnBlockAttempt({
+        ip: vpnCheck.ip,
+        provider: vpnCheck.provider,
+        reason: vpnCheck.reason,
+        attemptType: 'google_login',
+        riskScore: vpnCheck.riskScore,
+        country: vpnCheck.country,
+      });
+      this.logUserAuditAction(
+        'auth-attempt',
+        'Google Auth (Tentativa)',
+        'vpn_login_blocked',
+        `Tentativa de login com Google bloqueada: Conexão via VPN/Proxy anônimo detectada (${vpnCheck.provider || vpnCheck.ip}, ASN: ${vpnCheck.asn || 'N/A'}, Risco: ${vpnCheck.riskScore}%)`,
+        null
+      );
+      throw new Error(
+        `Acesso bloqueado: O login está desabilitado para conexões que utilizam VPN ou Proxy anônimo (${vpnCheck.provider || vpnCheck.ip}). Para garantir a transparência da comunidade editorial e prevenir contas fantoches (sockpuppets), desative sua VPN e tente novamente.`
       );
     }
 

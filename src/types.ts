@@ -202,7 +202,8 @@ export interface UserAuditLog {
     | 'unblock_request_submitted'
     | 'promotion_created'
     | 'promotion_voted'
-    | 'promotion_concluded';
+    | 'promotion_concluded'
+    | 'vpn_login_blocked';
   performedBy: string;
   performedByRole: string;
   details: string;
@@ -562,7 +563,8 @@ export type ViewMode =
   | 'comparison'
   | 'wazzimagiygg'
   | 'gemini-notebook'
-  | 'ucoc';
+  | 'ucoc'
+  | 'vpn-checker';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)

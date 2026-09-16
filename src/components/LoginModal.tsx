@@ -29,6 +29,12 @@ import {
   setWikimediaSimulation,
 } from '../utils/wikimediaIpChecker';
 import {
+  checkClientVpnConnection,
+  VpnCheckResult,
+  isVpnSimulationActive,
+  setVpnSimulation,
+} from '../utils/vpnChecker';
+import {
   PRIORITY_WIKIMEDIA_ADMINS,
   checkIfWikimediaAdmin,
   BlockedWikimediaAdminResult,
@@ -44,9 +50,15 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (user: UserProfile) => void;
+  onOpenVpnChecker?: () => void;
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
+export const LoginModal: React.FC<LoginModalProps> = ({
+  isOpen,
+  onClose,
+  onLoginSuccess,
+  onOpenVpnChecker,
+}) => {
   const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [recaptchaError, setRecaptchaError] = useState<string | null>(null);
@@ -57,6 +69,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   const [isCheckingIp, setIsCheckingIp] = useState(true);
   const [ipCheckResult, setIpCheckResult] = useState<WikimediaIpCheckResult | null>(null);
   const [isSimulatingWikimedia, setIsSimulatingWikimedia] = useState(false);
+
+  // Estados da Verificação de Conexão VPN / Proxy Anônimo
+  const [isCheckingVpn, setIsCheckingVpn] = useState(true);
+  const [vpnCheckResult, setVpnCheckResult] = useState<VpnCheckResult | null>(null);
+  const [isSimulatingVpn, setIsSimulatingVpn] = useState(false);
 
   // Estados para Auditoria de Nicknames de Administradores WMF
   const [testAdminInput, setTestAdminInput] = useState('');
@@ -158,6 +175,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   };
 
   const handleGuestLoginFallback = async () => {
+    if (vpnCheckResult?.blocked) {
+      setLoginError(
+        `Acesso bloqueado: Criação de sessão de convidado desabilitada para conexões via VPN ou Proxy anônimo (${vpnCheckResult.provider || vpnCheckResult.ip}). Desative sua VPN para prosseguir.`
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
       const guest = await StorageService.createGuestUser();
@@ -183,9 +207,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
     }
   };
 
+  const runVpnVerification = async (forceRefresh = false) => {
+    setIsCheckingVpn(true);
+    try {
+      const res = await checkClientVpnConnection(forceRefresh);
+      setVpnCheckResult(res);
+      setIsSimulatingVpn(!!res.isSimulated);
+    } catch (err) {
+      console.warn('Falha na checagem de VPN:', err);
+    } finally {
+      setIsCheckingVpn(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       runIpVerification();
+      runVpnVerification();
     }
   }, [isOpen]);
 
@@ -194,6 +232,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
     setWikimediaSimulation(nextState);
     setIsSimulatingWikimedia(nextState);
     runIpVerification();
+  };
+
+  const toggleVpnSimulation = () => {
+    const nextState = !isSimulatingVpn;
+    setVpnSimulation(nextState, 'nordvpn');
+    setIsSimulatingVpn(nextState);
+    runVpnVerification(true);
   };
 
   if (!isOpen) return null;
@@ -213,6 +258,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
     if (ipCheckResult?.isWikimedia) {
       setLoginError(
         `Acesso bloqueado: O login está permanentemente desabilitado para conexões originadas da Wikimedia Foundation (AS14907, IP: ${ipCheckResult.ip}${ipCheckResult.matchedRange ? `, faixa: ${ipCheckResult.matchedRange}` : ''}).`
+      );
+      return;
+    }
+
+    // 1.1 Verificação prévia de VPN / Proxy
+    if (vpnCheckResult?.blocked) {
+      setLoginError(
+        `Acesso bloqueado: O login está desabilitado para conexões que utilizam VPN ou Proxy anônimo (${vpnCheckResult.provider || vpnCheckResult.ip}). Por favor, desative sua VPN para acessar a WikiWorldWeb.`
       );
       return;
     }
@@ -252,6 +305,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   };
 
   const isBlockedByWikimedia = !!ipCheckResult?.isWikimedia;
+  const isBlockedByVpn = !!vpnCheckResult?.blocked;
+  const isAnyIpBlocked = isBlockedByWikimedia || isBlockedByVpn;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in overflow-y-auto">
@@ -270,12 +325,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3 mb-3 flex-shrink-0">
           <div
             className={`w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-md flex-shrink-0 ${
-              isBlockedByWikimedia
+              isAnyIpBlocked
                 ? 'bg-gradient-to-br from-rose-600 to-red-700 ring-2 ring-rose-500/30'
                 : 'bg-gradient-to-br from-blue-600 to-indigo-700'
             }`}
           >
-            {isBlockedByWikimedia ? (
+            {isAnyIpBlocked ? (
               <Ban size={18} />
             ) : isRecaptchaVerified ? (
               <Unlock size={18} />
@@ -293,6 +348,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   <Ban size={11} />
                   IP Wikimedia Bloqueado
                 </span>
+              ) : isBlockedByVpn ? (
+                <span className="bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-300 dark:border-rose-800 flex items-center gap-1">
+                  <ShieldAlert size={11} />
+                  VPN / Proxy Bloqueado
+                </span>
               ) : isRecaptchaVerified ? (
                 <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 flex items-center gap-1">
                   <CheckCircle2 size={11} />
@@ -308,6 +368,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               {isBlockedByWikimedia
                 ? 'Tentativas de login originadas da Wikimedia Foundation são bloqueadas por segurança.'
+                : isBlockedByVpn
+                ? 'Tentativas de login originadas de conexões VPN ou Proxy anônimo estão bloqueadas.'
                 : 'O reCAPTCHA do Labirinto deve ser concluído para liberar o login com a Conta Google.'}
             </p>
           </div>
@@ -343,6 +405,67 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                 <p className="text-[11px] leading-relaxed text-rose-700 dark:text-rose-300 font-medium">
                   <strong>Política de Segurança WikiWorldWeb:</strong> Por diretriz editorial de isolamento independente, neutralidade e proteção contra interferências institucionais, o login e a criação de sessões com credenciais a partir de endereços IP da Wikimedia Foundation estão <u>estritamente vetados</u>.
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ALERTA DE BLOQUEIO DE VPN / PROXY ANÔNIMO */}
+        {isBlockedByVpn && vpnCheckResult && !isBlockedByWikimedia && (
+          <div className="mb-3 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border-2 border-rose-300 dark:border-rose-800 text-xs text-rose-900 dark:text-rose-200 shadow-sm space-y-2 flex-shrink-0 animate-in fade-in">
+            <div className="flex items-start gap-2.5">
+              <div className="p-1.5 rounded-lg bg-rose-200 dark:bg-rose-900/80 text-rose-700 dark:text-rose-200 shrink-0">
+                <ShieldAlert size={18} />
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-rose-800 dark:text-rose-100 text-sm">
+                      Bloqueio Ativo: Conexão via VPN / Proxy Detectada
+                    </span>
+                    {vpnCheckResult.isSimulated && (
+                      <span className="px-1.5 py-0.5 rounded bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 font-mono text-[10px] font-bold">
+                        SIMULAÇÃO ({vpnCheckResult.simulatedPreset || 'TESTE'})
+                      </span>
+                    )}
+                  </div>
+                  <span className="px-1.5 py-0.5 rounded bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200 font-mono text-[10px] font-bold">
+                    RISCO: {vpnCheckResult.riskScore}%
+                  </span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-rose-800 dark:text-rose-200">
+                  Esta conexão está utilizando o túnel <strong>{vpnCheckResult.provider || 'VPN / Proxy'}</strong> (IP: <code className="font-bold font-mono bg-rose-200/80 dark:bg-rose-900/80 px-1 py-0.5 rounded">{vpnCheckResult.ip}</code>
+                  {vpnCheckResult.country ? ` em ${vpnCheckResult.country}` : ''}).
+                </p>
+                <p className="text-[11px] leading-relaxed text-rose-700 dark:text-rose-300 font-medium">
+                  <strong>Política Anti-Sockpuppets e Integridade Editorial:</strong> O login e o registro de contas estão bloqueados para conexões originadas de VPNs, Tor e Proxies de datacenter para combater vandalismo coordenado e criação de identidades falsas.
+                </p>
+
+                <div className="pt-1 flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => runVpnVerification(true)}
+                    disabled={isCheckingVpn}
+                    className="py-1 px-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-[11px] transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <RefreshCw size={11} className={isCheckingVpn ? 'animate-spin' : ''} />
+                    <span>Desativei a VPN (Reverificar)</span>
+                  </button>
+
+                  {onOpenVpnChecker && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onOpenVpnChecker();
+                      }}
+                      className="py-1 px-2.5 rounded-lg border border-rose-300 dark:border-rose-700 hover:bg-rose-100 dark:hover:bg-rose-900 text-rose-800 dark:text-rose-200 font-semibold text-[11px] transition flex items-center gap-1 cursor-pointer"
+                    >
+                      <ExternalLink size={11} />
+                      <span>Diagnóstico Completo no Verificador de VPN</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -495,6 +618,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                   Login Desabilitado para IPs da Wikimedia Foundation
                 </span>
               </div>
+            ) : isBlockedByVpn ? (
+              <div className="w-full py-3.5 px-4 rounded-xl font-medium text-xs flex items-center justify-center gap-3 shadow-xs bg-rose-100/80 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border-2 border-dashed border-rose-400 dark:border-rose-700 cursor-not-allowed select-none">
+                <Ban size={18} className="text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                <span className="font-bold text-sm">
+                  Login Desabilitado para Conexões com VPN / Proxy
+                </span>
+              </div>
             ) : (
               <button
                 type="button"
@@ -536,8 +666,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             </div>
           </div>
 
-          {/* Bot Challenge (apenas se não estiver bloqueado por IP Wikimedia) */}
-          {!isBlockedByWikimedia && (
+          {/* Bot Challenge (apenas se não estiver bloqueado por IP Wikimedia ou VPN) */}
+          {!isBlockedByWikimedia && !isBlockedByVpn && (
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
@@ -678,28 +808,79 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
           {/* Rodapé com Informação do IP de Origem e Ferramenta de Teste/Auditoria */}
           <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-            <div className="flex items-center gap-1.5">
-              <Globe size={13} className={isBlockedByWikimedia ? 'text-rose-500' : 'text-slate-400'} />
-              <span>
-                {isCheckingIp ? (
-                  'Verificando IP...'
-                ) : (
-                  <>
-                    IP de Origem:{' '}
-                    <span className="font-mono text-[10px] font-semibold text-slate-700 dark:text-slate-300">
-                      {ipCheckResult?.ip || 'Detectado'}
-                    </span>
-                    {ipCheckResult?.isWikimedia && (
-                      <span className="ml-1 text-[10px] text-rose-600 dark:text-rose-400 font-bold">
-                        (WMF)
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <Globe size={13} className={isBlockedByWikimedia ? 'text-rose-500' : 'text-slate-400'} />
+                <span>
+                  {isCheckingIp ? (
+                    'Verificando IP...'
+                  ) : (
+                    <>
+                      IP:{' '}
+                      <span className="font-mono text-[10px] font-semibold text-slate-700 dark:text-slate-300">
+                        {ipCheckResult?.ip || 'Detectado'}
                       </span>
-                    )}
+                      {ipCheckResult?.isWikimedia && (
+                        <span className="ml-1 text-[10px] text-rose-600 dark:text-rose-400 font-bold">
+                          (WMF)
+                        </span>
+                      )}
+                    </>
+                  )}
+                </span>
+              </div>
+
+              {/* Status de VPN */}
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-mono border flex items-center gap-1 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-750">
+                {isCheckingVpn ? (
+                  <>
+                    <RefreshCw size={9} className="animate-spin text-blue-500" />
+                    <span>Checando VPN...</span>
                   </>
+                ) : isBlockedByVpn ? (
+                  <span className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1">
+                    <ShieldAlert size={10} />
+                    VPN Ativa ({vpnCheckResult?.riskScore}%)
+                  </span>
+                ) : (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                    <ShieldCheck size={10} />
+                    VPN: Não detectada
+                  </span>
                 )}
               </span>
             </div>
 
             <div className="flex items-center gap-1.5 flex-wrap">
+              {onOpenVpnChecker && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenVpnChecker();
+                  }}
+                  className="text-[10px] px-2 py-1 rounded border transition cursor-pointer font-medium flex items-center gap-1 shadow-2xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  title="Abrir página especial de diagnóstico e verificador de conexões VPN"
+                >
+                  <ShieldAlert size={10} className="text-blue-500" />
+                  <span>Verificador de VPN</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={toggleVpnSimulation}
+                className={`text-[10px] px-2 py-1 rounded border transition cursor-pointer font-medium flex items-center gap-1 shadow-2xs ${
+                  isSimulatingVpn
+                    ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800 hover:bg-rose-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+                title="Alterna simulação de VPN comercial (NordVPN) para testar o bloqueio em tempo real"
+              >
+                <RefreshCw size={10} className={isCheckingVpn ? 'animate-spin' : ''} />
+                <span>{isSimulatingVpn ? 'Desativar Teste VPN' : '🧪 Testar Bloqueio VPN'}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setShowFirebaseConfigPanel(!showFirebaseConfigPanel)}
@@ -707,7 +888,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                 title="Configurar credenciais do Firebase (ex: wzzm-ce3fc)"
               >
                 <Settings size={10} />
-                <span>Configurar Firebase ({activeProjectId})</span>
+                <span>Firebase</span>
               </button>
 
               <button
@@ -718,10 +899,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                     ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800 hover:bg-rose-200'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
-                title="Alterna simulação de IP pertencente à Wikimedia Foundation (208.80.154.224) para testar o bloqueio em ambiente local"
+                title="Alterna simulação de IP pertencente à Wikimedia Foundation (208.80.154.224)"
               >
                 <RefreshCw size={10} className={isCheckingIp ? 'animate-spin' : ''} />
-                <span>{isSimulatingWikimedia ? 'Desativar Teste Wikimedia' : '🧪 Testar Bloqueio IP Wikimedia'}</span>
+                <span>{isSimulatingWikimedia ? 'Desativar WMF' : '🧪 Testar WMF'}</span>
               </button>
             </div>
           </div>

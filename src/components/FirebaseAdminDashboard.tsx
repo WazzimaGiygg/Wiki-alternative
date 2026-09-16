@@ -26,16 +26,19 @@ import {
   Save,
   Flame,
   Settings,
+  ShieldAlert,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle, GeminiChatbotConfig } from '../types';
 import { StorageService } from '../services/storageService';
 import { GeminiChatbotService, DEFAULT_GEMINI_CHATBOT_CONFIG } from '../services/geminiChatbotService';
 import { FirebaseConsoleManager } from './FirebaseConsoleManager';
+import { VpnSecurityChecker } from './VpnSecurityChecker';
 
 interface FirebaseAdminDashboardProps {
   currentUser: UserProfile | null;
   pages: WikiPage[];
   articles: WikiArticle[];
+  initialTab?: string;
   onNavigateToPage?: (pageUid: string) => void;
   onNavigateToArticle?: (articleId: string) => void;
   onNavigateToUpdates?: () => void;
@@ -46,6 +49,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
   currentUser,
   pages,
   articles,
+  initialTab,
   onNavigateToPage,
   onNavigateToArticle,
   onNavigateToUpdates,
@@ -55,13 +59,14 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
     | 'overview'
     | 'firebase-backup'
     | 'firebase-console'
+    | 'vpn-security'
     | 'gemini'
     | 'devconfig'
     | 'collections'
     | 'sync'
     | 'security'
     | 'raw'
-  >('overview');
+  >((initialTab as any) || 'overview');
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; latencyMs?: number } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -289,6 +294,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
           { id: 'overview', label: 'Visão Geral & Parâmetros', icon: Server },
           { id: 'firebase-backup', label: 'Backups Automáticos & PITR (Blaze)', icon: Flame },
           { id: 'firebase-console', label: 'Console Firebase (Configurações)', icon: Settings },
+          { id: 'vpn-security', label: 'Segurança de Rede & VPN', icon: ShieldAlert },
           { id: 'gemini', label: 'Chatbot Gemini (AI Studio)', icon: Sparkles },
           { id: 'devconfig', label: 'Configuração do Desenvolvedor (Arquivo)', icon: HardDrive },
           { id: 'collections', label: 'Explorador de Coleções', icon: Layers },
@@ -459,6 +465,16 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
           articles={articles}
           initialSubTab="firestore"
         />
+      )}
+
+      {/* TAB: SEGURANÇA DE REDE & VERIFICADOR DE VPN */}
+      {activeTab === 'vpn-security' && (
+        <div className="space-y-4">
+          <VpnSecurityChecker
+            currentUser={currentUser}
+            onBack={() => setActiveTab('overview')}
+          />
+        </div>
       )}
 
       {/* TAB: DEVELOPER CONFIG FILE GUIDE */}

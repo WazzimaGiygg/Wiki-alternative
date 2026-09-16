@@ -73,6 +73,18 @@ export function sanitizeIpForDocId(ip: string): string {
 }
 
 /**
+ * Normaliza e limpa um endereço IP (remove espaços, prefixo ::ffff: etc)
+ */
+export function cleanIpAddress(rawIp: string): string {
+  if (!rawIp) return '';
+  let ip = rawIp.trim();
+  if (ip.startsWith('::ffff:')) {
+    ip = ip.substring(7);
+  }
+  return ip;
+}
+
+/**
  * Gera um hash abreviado para privacidade em logs de auditoria
  */
 export function hashIpAddress(ip: string): string {

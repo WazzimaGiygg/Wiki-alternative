@@ -544,6 +544,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               )}
             </button>
+
+            <button
+              onClick={() => onNavigate('vpn-checker')}
+              title="Verificador de VPN e Bloqueio de IP: Auditoria em tempo real e diagnóstico de rede"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'vpn-checker'
+                  ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 font-bold border border-blue-200 dark:border-blue-800 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <ShieldAlert size={15} className="text-blue-500 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Verificador de VPN</span>
+                  <span className="text-[8px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono font-bold px-1 rounded-xs">
+                    IP SEC
+                  </span>
+                </div>
+              )}
+            </button>
           </nav>
         </div>
 

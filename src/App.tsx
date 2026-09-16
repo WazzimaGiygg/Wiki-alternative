@@ -15,6 +15,7 @@ import { PromotionRequestsView } from './components/PromotionRequestsView';
 import { ContactAdminView } from './components/ContactAdminView';
 import { EmergencyContactView } from './components/EmergencyContactView';
 import { FirebaseAdminDashboard } from './components/FirebaseAdminDashboard';
+import { VpnSecurityChecker } from './components/VpnSecurityChecker';
 import { CreatePageModal } from './components/CreatePageModal';
 import { GeminiChatbotDrawer } from './components/GeminiChatbotDrawer';
 import { GeminiPremiumModal } from './components/GeminiPremiumModal';
@@ -1167,6 +1168,14 @@ export default function App() {
             />
           )}
 
+          {currentView === 'vpn-checker' && (
+            <VpnSecurityChecker
+              currentUser={user}
+              onBack={() => handleNavigate('hub')}
+              onOpenLoginModal={() => setShowLoginModal(true)}
+            />
+          )}
+
           {currentView === 'editor' && (
             <WikitextEditor
               initialArticle={editingArticle}
@@ -1416,6 +1425,10 @@ export default function App() {
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onLoginSuccess={handleLoginSuccess}
+        onOpenVpnChecker={() => {
+          setShowLoginModal(false);
+          handleNavigate('vpn-checker');
+        }}
       />
 
       {/* My Data Portability Modal */}
