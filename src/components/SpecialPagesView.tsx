@@ -57,6 +57,7 @@ interface SpecialPagesViewProps {
   onNavigateToArbitration?: () => void;
   onNavigateToUcoc?: () => void;
   onNavigateToAppearance?: () => void;
+  onNavigateToAdminFirebase?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -78,6 +79,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToFilesList,
   onNavigateToArbitration,
   onNavigateToAppearance,
+  onNavigateToAdminFirebase,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -434,6 +436,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Verificador de Contas
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToAdminFirebase && (
+          <button
+            id="btn-specialpages-adminfirebase"
+            onClick={onNavigateToAdminFirebase}
+            className="p-3 rounded-lg border border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/70 dark:hover:bg-amber-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-amber-600 text-white shrink-0">
+              <Database size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-amber-900 dark:text-amber-200 truncate group-hover:underline">
+                  Special:AdminFirebase
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-amber-600 text-white">
+                  BLAZE
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Backups Automáticos & Console Firebase
               </div>
             </div>
           </button>

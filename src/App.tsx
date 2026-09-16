@@ -992,6 +992,7 @@ export default function App() {
               onNavigateToFilesList={() => handleNavigate('files-list')}
               onNavigateToArbitration={() => handleNavigate('arbitration')}
               onNavigateToAppearance={() => handleNavigate('appearance')}
+              onNavigateToAdminFirebase={() => handleNavigate('admin-firebase')}
               initialTab="all"
             />
           )}
@@ -1015,6 +1016,7 @@ export default function App() {
               onNavigateToFilesList={() => handleNavigate('files-list')}
               onNavigateToArbitration={() => handleNavigate('arbitration')}
               onNavigateToAppearance={() => handleNavigate('appearance')}
+              onNavigateToAdminFirebase={() => handleNavigate('admin-firebase')}
               initialTab="watchlist"
             />
           )}

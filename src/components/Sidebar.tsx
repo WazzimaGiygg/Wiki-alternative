@@ -527,15 +527,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <button
               onClick={() => onNavigate('admin-firebase')}
-              title="Administração do Banco Firebase (Firestore DB)"
+              title="Administração do Firebase: Backups Automáticos (Blaze), Banco Firestore e Console de Configurações"
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
                 currentView === 'admin-firebase'
-                  ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-400 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-800 shadow-xs'
                   : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
               }`}
             >
               <Database size={15} className="text-amber-500 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Admin Firebase DB</span>}
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Firebase & Backups</span>
+                  <span className="text-[8px] bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-mono font-bold px-1 rounded-xs">
+                    BLAZE
+                  </span>
+                </div>
+              )}
             </button>
           </nav>
         </div>

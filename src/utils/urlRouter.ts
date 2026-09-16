@@ -367,8 +367,17 @@ export function resolveNavigationUid(
     'denuncia-formal': { view: 'ucoc' },
 
     'special:adminfirebase': { view: 'admin-firebase' },
+    'special:firebase': { view: 'admin-firebase' },
+    'special:firebaseconsole': { view: 'admin-firebase' },
+    'special:firebasebackup': { view: 'admin-firebase' },
+    'special:backup': { view: 'admin-firebase' },
+    'special:backups': { view: 'admin-firebase' },
     'admin-firebase': { view: 'admin-firebase' },
     'firebase': { view: 'admin-firebase' },
+    'firebase-backup': { view: 'admin-firebase' },
+    'firebase-console': { view: 'admin-firebase' },
+    'backup-firebase': { view: 'admin-firebase' },
+    'backup-blaze': { view: 'admin-firebase' },
 
     'special:privacy': { view: 'privacy' },
     'privacy': { view: 'privacy' },

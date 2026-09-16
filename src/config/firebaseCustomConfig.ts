@@ -50,6 +50,16 @@ export interface FirebaseCustomSettings {
     enableOfflinePersistence: boolean;
     pingHealthCheckIntervalMs: number;
     developerNotes?: string;
+    /** Plano do Firebase no Google Cloud: 'spark' (gratuito) ou 'blaze' (faturamento ativo) */
+    planTier?: 'spark' | 'blaze';
+    /** Se backups automáticos agendados no GCS estão habilitados (requer Blaze) */
+    autoBackupEnabled?: boolean;
+    /** Frequência / Cron para backups automáticos */
+    backupScheduleCron?: string;
+    /** URI do bucket GCS para onde os backups e snapshots são enviados */
+    backupBucketUri?: string;
+    /** Habilitar Point-in-Time Recovery contínuo de 7 dias */
+    enablePitr?: boolean;
   };
 }
 
@@ -108,7 +118,12 @@ export const ACTIVE_FIREBASE_CONFIG: FirebaseCustomSettings = {
     enableAutoSync: true,
     enableOfflinePersistence: true,
     pingHealthCheckIntervalMs: 60000,
-    developerNotes: "Configuração do Firebase ativa configurada para o projeto wzzm-ce3fc com armazenamento wzzm-ce3fc.appspot.com",
+    developerNotes: "Configuração do Firebase ativa com suporte a backups automáticos e faturamento Blaze",
+    planTier: 'blaze',
+    autoBackupEnabled: true,
+    backupScheduleCron: '0 3 * * *',
+    backupBucketUri: `gs://${baseAppletConfig.projectId}-firestore-backups`,
+    enablePitr: true,
   },
 };
 

@@ -1072,3 +1072,97 @@ export interface UcocReport {
   comments: UcocReportComment[];
 }
 
+// ============================================================================
+// SISTEMA DE ADMINISTRAÇÃO E CONFIGURAÇÃO DO FIREBASE CONSOLE & BACKUP (BLAZE)
+// ============================================================================
+
+export type FirebasePlanTier = 'spark' | 'blaze';
+
+export type FirebaseBackupFrequency = 'every_6h' | 'every_12h' | 'daily' | 'weekly' | 'monthly';
+
+export interface FirebaseBackupScheduleConfig {
+  enabled: boolean;
+  frequency: FirebaseBackupFrequency;
+  timeOfDay: string; // ex: "03:00" (Horário de Brasília / UTC-3)
+  gcsBucketUri: string; // ex: "gs://ai-studio-wikizeroenciclop-0a14dc90-3ab3-47bc-8306-ca5bc2953699-backups"
+  retentionDays: number; // 7, 14, 30, 90, 365
+  enablePitr: boolean; // Point-in-time recovery contínuo de até 7 dias
+  pitrRetentionHours: number; // Padrão GCP: 168h (7 dias)
+  collectionsToBackup: string[];
+  enableCompression: boolean; // GZIP (.json.gz)
+  enableKmsEncryption: boolean; // Criptografia GCP KMS / AES-256
+  notificationEmail: string;
+  notificationOnSuccess: boolean;
+  notificationOnFailure: boolean;
+  lastRunTimestamp?: string;
+  nextRunTimestamp?: string;
+  lastRunStatus?: 'success' | 'failed' | 'in_progress';
+}
+
+export interface FirebaseBackupRecord {
+  id: string;
+  timestamp: string;
+  type: 'automatic_scheduled' | 'manual_snapshot' | 'pitr_export';
+  plan: FirebasePlanTier;
+  status: 'completed' | 'in_progress' | 'failed';
+  sizeBytes: number;
+  collectionCounts: Record<string, number>;
+  gcsPath?: string;
+  checksumSha256: string;
+  triggeredBy: string;
+  downloadUrl?: string;
+  notes?: string;
+}
+
+export interface FirebaseConsoleConfig {
+  plan: FirebasePlanTier;
+  monthlyBudgetLimitUsd: number;
+  billingAlertsEnabled: boolean;
+  billingAlertEmails: string[];
+  backupSchedule: FirebaseBackupScheduleConfig;
+  firestoreSettings: {
+    databaseId: string;
+    region: string;
+    mode: 'production' | 'audit';
+    enableOfflineCache: boolean;
+    cacheSizeBytes: number;
+    defaultTtlDays?: number;
+  };
+  authSettings: {
+    allowEmailPassword: boolean;
+    allowGoogleAuth: boolean;
+    allowAnonymous: boolean;
+    authorizedDomains: string[];
+    minPasswordLength: number;
+    requireEmailVerification: boolean;
+    emailEnumerationProtection: boolean;
+    preventMultipleAccountsSameEmail: boolean;
+    sessionDurationHours: number;
+    maxFailedLoginAttempts: number;
+  };
+  storageSettings: {
+    bucketUri: string;
+    maxUploadSizeBytes: number;
+    allowedMimeTypes: string[];
+    corsAllowedOrigins: string[];
+    cacheControlMaxAgeSeconds: number;
+  };
+  appCheckSettings: {
+    enabled: boolean;
+    provider: 'recaptcha_v3' | 'recaptcha_enterprise' | 'debug';
+    enforcementMode: 'monitoring' | 'enforced';
+    tokenTtlMinutes: number;
+  };
+  functionsSettings: {
+    region: string;
+    nodeVersion: string;
+    defaultTimeoutSeconds: number;
+    defaultMemoryMb: number;
+  };
+  loggingSettings: {
+    logLevel: 'debug' | 'info' | 'warn' | 'error';
+    retentionDays: number;
+  };
+}
+
+

@@ -24,10 +24,13 @@ import {
   Sparkles,
   Bot,
   Save,
+  Flame,
+  Settings,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle, GeminiChatbotConfig } from '../types';
 import { StorageService } from '../services/storageService';
 import { GeminiChatbotService, DEFAULT_GEMINI_CHATBOT_CONFIG } from '../services/geminiChatbotService';
+import { FirebaseConsoleManager } from './FirebaseConsoleManager';
 
 interface FirebaseAdminDashboardProps {
   currentUser: UserProfile | null;
@@ -48,7 +51,17 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
   onNavigateToUpdates,
   onBack,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'gemini' | 'devconfig' | 'collections' | 'sync' | 'security' | 'raw'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    | 'overview'
+    | 'firebase-backup'
+    | 'firebase-console'
+    | 'gemini'
+    | 'devconfig'
+    | 'collections'
+    | 'sync'
+    | 'security'
+    | 'raw'
+  >('overview');
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; latencyMs?: number } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -274,10 +287,12 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
       <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 mb-6 overflow-x-auto pb-0.5">
         {[
           { id: 'overview', label: 'Visão Geral & Parâmetros', icon: Server },
+          { id: 'firebase-backup', label: 'Backups Automáticos & PITR (Blaze)', icon: Flame },
+          { id: 'firebase-console', label: 'Console Firebase (Configurações)', icon: Settings },
           { id: 'gemini', label: 'Chatbot Gemini (AI Studio)', icon: Sparkles },
           { id: 'devconfig', label: 'Configuração do Desenvolvedor (Arquivo)', icon: HardDrive },
           { id: 'collections', label: 'Explorador de Coleções', icon: Layers },
-          { id: 'sync', label: 'Sincronização & Backup', icon: UploadCloud },
+          { id: 'sync', label: 'Sincronização & Export', icon: UploadCloud },
           { id: 'security', label: 'Regras de Segurança (Rules)', icon: Shield },
           { id: 'raw', label: 'Blueprint & Schema JSON', icon: Code },
         ].map((tab) => {
@@ -306,7 +321,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
       {activeTab === 'overview' && (
         <div className="space-y-6">
           {/* Quick Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500 font-medium">Status do Banco</span>
@@ -315,6 +330,17 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
               <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">Conectado</p>
               <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-mono truncate">
                 {firebaseStatus.environmentLabel || 'Produção Ativa'}
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-xs cursor-pointer hover:border-amber-400 transition" onClick={() => setActiveTab('firebase-backup')}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-medium">Backups & PITR</span>
+                <Flame size={14} className="text-amber-500" />
+              </div>
+              <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">Plano Blaze</p>
+              <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                Agendado Diário (03:00) →
               </p>
             </div>
 
@@ -413,6 +439,26 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* TAB: FIREBASE AUTOMATED BACKUP & PITR (PLANO BLAZE) */}
+      {activeTab === 'firebase-backup' && (
+        <FirebaseConsoleManager
+          currentUser={currentUser}
+          pages={pages}
+          articles={articles}
+          initialSubTab="backup"
+        />
+      )}
+
+      {/* TAB: FIREBASE CONSOLE COMPREHENSIVE SETTINGS */}
+      {activeTab === 'firebase-console' && (
+        <FirebaseConsoleManager
+          currentUser={currentUser}
+          pages={pages}
+          articles={articles}
+          initialSubTab="firestore"
+        />
       )}
 
       {/* TAB: DEVELOPER CONFIG FILE GUIDE */}
@@ -744,6 +790,28 @@ export const ACTIVE_FIREBASE_CONFIG = {
             <p className="text-xs text-slate-500 mt-1">
               Gerencie a persistência de documentos entre o armazenamento do navegador e a nuvem Firebase.
             </p>
+          </div>
+
+          {/* Banner de atalho para Backups Automáticos Blaze */}
+          <div className="p-4 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Flame size={20} className="text-amber-500 shrink-0" />
+              <div>
+                <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                  Rotinas de Backup Automático & PITR (Plano Blaze)
+                </h4>
+                <p className="text-[11px] text-amber-800 dark:text-amber-300">
+                  Para agendar exportações periódicas no Cloud Storage ou restaurar snapshots criptografados, use o novo painel de Backups do Blaze.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab('firebase-backup')}
+              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1 shrink-0"
+            >
+              <span>Abrir Painel de Backups</span>
+              <span>→</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
