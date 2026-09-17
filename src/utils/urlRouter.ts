@@ -205,6 +205,9 @@ export function getCanonicalUid(
     case 'vpn-checker':
       return 'Special:VpnChecker';
 
+    case 'tools':
+      return 'Special:Tools';
+
     case 'privacy':
       return 'Special:Privacy';
 
@@ -474,6 +477,42 @@ export function resolveNavigationUid(
     '404': { view: 'not-found' },
     'erro-404': { view: 'not-found' },
     'pagina-nao-encontrada': { view: 'not-found' },
+
+    'special:tools': { view: 'tools' },
+    'special:ferramentas': { view: 'tools' },
+    'special:calculadora': { view: 'tools', initialTab: 'calculator' },
+    'special:horariocerto': { view: 'tools', initialTab: 'world-clock' },
+    'special:fusoshorarios': { view: 'tools', initialTab: 'world-clock' },
+    'special:teclado': { view: 'tools', initialTab: 'keyboard-checker' },
+    'special:tempo': { view: 'tools', initialTab: 'weather' },
+    'special:clima': { view: 'tools', initialTab: 'weather' },
+    'special:previsaodotempo': { view: 'tools', initialTab: 'weather' },
+    'special:previsao': { view: 'tools', initialTab: 'weather' },
+    'special:weather': { view: 'tools', initialTab: 'weather' },
+    'special:scholar': { view: 'tools', initialTab: 'scholar' },
+    'special:google-scholar': { view: 'tools', initialTab: 'scholar' },
+    'special:academico': { view: 'tools', initialTab: 'scholar' },
+    'special:googleacademico': { view: 'tools', initialTab: 'scholar' },
+    'tools': { view: 'tools' },
+    'ferramentas': { view: 'tools' },
+    'calculadora': { view: 'tools', initialTab: 'calculator' },
+    'calculator': { view: 'tools', initialTab: 'calculator' },
+    'fuso-horario': { view: 'tools', initialTab: 'world-clock' },
+    'fusos-horarios': { view: 'tools', initialTab: 'world-clock' },
+    'horario-certo': { view: 'tools', initialTab: 'world-clock' },
+    'relogio-mundial': { view: 'tools', initialTab: 'world-clock' },
+    'teclado': { view: 'tools', initialTab: 'keyboard-checker' },
+    'verificador-teclado': { view: 'tools', initialTab: 'keyboard-checker' },
+    'tempo': { view: 'tools', initialTab: 'weather' },
+    'clima': { view: 'tools', initialTab: 'weather' },
+    'previsao-do-tempo': { view: 'tools', initialTab: 'weather' },
+    'previsaodotempo': { view: 'tools', initialTab: 'weather' },
+    'previsao': { view: 'tools', initialTab: 'weather' },
+    'weather': { view: 'tools', initialTab: 'weather' },
+    'scholar': { view: 'tools', initialTab: 'scholar' },
+    'google-scholar': { view: 'tools', initialTab: 'scholar' },
+    'academico': { view: 'tools', initialTab: 'scholar' },
+    'google-academico': { view: 'tools', initialTab: 'scholar' },
   };
 
   // 2b. Special:NotFound/<query> or Special:404/<query>

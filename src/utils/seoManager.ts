@@ -315,6 +315,20 @@ export function updateSEO(config: SEOConfig) {
       finalDesc =
         'A página ou artigo solicitado não foi encontrado na WikiWorldWeb Enciclopédia Livre. Pesquise outros verbetes ou crie o artigo.';
       canonicalUrl = `${BASE_URL}/?uid=Special:NotFound`;
+    } else if (config.view === 'tools') {
+      finalTitle = 'Ferramentas de Uso Comum (Calculadora, Fusos Horários e Teclado) - WikiWorldWeb';
+      finalDesc =
+        'Painel de ferramentas essenciais da WikiWorldWeb: calculadora com histórico, relógio mundial com horário certo em todos os fusos horários e verificador interativo de tipo de teclado (ABNT2, ANSI, ISO).';
+      canonicalUrl = `${BASE_URL}/?uid=Special:Tools`;
+      keywords.push(
+        'ferramentas úteis',
+        'calculadora online',
+        'horário certo fusos horários',
+        'relógio mundial',
+        'verificador de tipo de teclado',
+        'teste de teclado abnt2',
+        'key tester'
+      );
     } else if (config.title) {
       finalTitle = `${config.title} - WikiWorldWeb`;
       if (config.description) {

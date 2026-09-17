@@ -565,7 +565,8 @@ export type ViewMode =
   | 'gemini-notebook'
   | 'ucoc'
   | 'vpn-checker'
-  | 'not-found';
+  | 'not-found'
+  | 'tools';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)

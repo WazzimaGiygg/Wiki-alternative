@@ -27,6 +27,7 @@ import {
   Gamepad2,
   Smartphone,
   ShieldAlert,
+  Calculator,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -1199,6 +1200,19 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Palette size={13} className="text-amber-500" />
               <span>Aparência</span>
+            </button>
+            <button
+              id="btn-header-tools"
+              onClick={() => onNavigate('tools')}
+              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 transition font-semibold ${
+                currentView === 'tools'
+                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+              title="Ferramentas Comuns: Calculadora, Fusos Horários e Verificador de Teclado (Special:Tools)"
+            >
+              <Calculator size={13} className="text-indigo-500" />
+              <span>Ferramentas</span>
             </button>
           </nav>
 

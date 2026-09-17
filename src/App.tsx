@@ -52,6 +52,7 @@ import { AdvancedSearchView } from './components/AdvancedSearchView';
 import { WikiCompetitorComparisonView } from './components/WikiCompetitorComparisonView';
 import { WazzimaGiyggProfileView } from './components/WazzimaGiyggProfileView';
 import { NotFoundView } from './components/NotFoundView';
+import { ToolsView } from './components/ToolsView';
 import { updateSEO } from './utils/seoManager';
 import { StorageService } from './services/storageService';
 import {
@@ -100,6 +101,7 @@ export default function App() {
   const [uploadInitialTargetName, setUploadInitialTargetName] = useState<string>('');
   const [ucocInitialTab, setUcocInitialTab] = useState<'principles' | 'new-report' | 'track' | 'cases'>('principles');
   const [ucocInitialProtocol, setUcocInitialProtocol] = useState<string>('');
+  const [toolsInitialTab, setToolsInitialTab] = useState<'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker'>('weather');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [notFoundQuery, setNotFoundQuery] = useState<string>('');
@@ -210,6 +212,9 @@ export default function App() {
           } else if (target.initialTab) {
             setUcocInitialTab(target.initialTab as any);
           }
+        }
+        if (target.view === 'tools' && target.initialTab) {
+          setToolsInitialTab(target.initialTab as any);
         }
         handleNavigate(target.view);
         break;
@@ -340,6 +345,9 @@ export default function App() {
               } else if (target.initialTab) {
                 setUcocInitialTab(target.initialTab as any);
               }
+            }
+            if (target.view === 'tools' && target.initialTab) {
+              setToolsInitialTab(target.initialTab as any);
             }
             setCurrentView(target.view);
             break;
@@ -1070,6 +1078,7 @@ export default function App() {
               onNavigateToAppearance={() => handleNavigate('appearance')}
               onNavigateToAdminFirebase={() => handleNavigate('admin-firebase')}
               onNavigateToNotFound={() => handleShowNotFound('Special:NotFound', 'generic')}
+              onNavigateToTools={() => handleNavigate('tools')}
               initialTab="all"
             />
           )}
@@ -1095,6 +1104,7 @@ export default function App() {
               onNavigateToAppearance={() => handleNavigate('appearance')}
               onNavigateToAdminFirebase={() => handleNavigate('admin-firebase')}
               onNavigateToNotFound={() => handleShowNotFound('Special:NotFound', 'generic')}
+              onNavigateToTools={() => handleNavigate('tools')}
               initialTab="watchlist"
             />
           )}
@@ -1418,6 +1428,30 @@ export default function App() {
             <WazzimaGiyggProfileView
               onNavigate={handleNavigate}
               onOpenEditor={() => handleOpenNewEditor()}
+            />
+          )}
+
+          {currentView === 'tools' && (
+            <ToolsView
+              theme={theme}
+              initialTab={toolsInitialTab}
+              onNavigateHome={() => handleNavigate('hub')}
+              onOpenEditor={(title) => {
+                if (title) {
+                  setEditingArticle({
+                    id: '',
+                    pageUid: pages[0]?.uid || 'wikizero_info',
+                    titulo: title,
+                    descricao: `= ${title} =\nArtigo criado através do painel de ferramentas da WikiWorldWeb.`,
+                    categoria: 'Geral',
+                    idioma: 'Português',
+                    dataCriacao: new Date().toISOString(),
+                  });
+                  setCurrentView('editor');
+                } else {
+                  handleOpenNewEditor();
+                }
+              }}
             />
           )}
 

@@ -39,6 +39,7 @@ import {
   Monitor,
   BookOpen,
   Crown,
+  Calculator,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -269,6 +270,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Layers size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
               {!isCollapsed && <span className="truncate">Páginas Especiais</span>}
+            </button>
+
+            <button
+              id="btn-sidebar-tools"
+              onClick={() => onNavigate('tools')}
+              title="Ferramentas Comuns: Calculadora, Horário Certo e Verificador de Teclado (Special:Tools)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'tools'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Calculator size={15} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Ferramentas</span>
+                  <span className="text-[8px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-mono font-bold px-1 rounded-xs">
+                    ÚTIL
+                  </span>
+                </div>
+              )}
             </button>
 
             <button

@@ -34,6 +34,7 @@ import {
   ShieldAlert,
   Palette,
   FileQuestion,
+  Calculator,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -60,6 +61,7 @@ interface SpecialPagesViewProps {
   onNavigateToAppearance?: () => void;
   onNavigateToAdminFirebase?: () => void;
   onNavigateToNotFound?: () => void;
+  onNavigateToTools?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -83,6 +85,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToAppearance,
   onNavigateToAdminFirebase,
   onNavigateToNotFound,
+  onNavigateToTools,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -493,6 +496,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
             </div>
           </button>
         )}
+
+        {onNavigateToTools && (
+          <button
+            id="btn-specialpages-tools"
+            onClick={onNavigateToTools}
+            className="p-3 rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-indigo-600 text-white shrink-0">
+              <Calculator size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 truncate group-hover:underline">
+                  Special:Tools
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-600 text-white">
+                  Útil
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Previsão do Tempo, Google Acadêmico, Calculadora e Teclado
+              </div>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* UID Quick Navigation Cheatsheet & Guide */}
@@ -510,13 +538,14 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
         <div className="flex items-center gap-2 flex-wrap text-[11px]">
           {[
             { label: 'Páginas Especiais', uid: 'Special:SpecialPages' },
+            { label: 'Previsão do Tempo', uid: 'Special:Weather' },
+            { label: 'Google Acadêmico', uid: 'Special:Scholar' },
+            { label: 'Ferramentas de Uso', uid: 'Special:Tools' },
             { label: 'Mudanças Recentes', uid: 'Special:RecentChanges' },
             { label: 'Conselho ArbCom', uid: 'Special:Arbitration' },
             { label: 'Carregar Arquivo', uid: 'Special:Upload' },
             { label: 'Galeria de Ficheiros', uid: 'Special:Files' },
             { label: 'Verificador CheckUser', uid: 'Special:CheckUser' },
-            { label: 'Coleção Ferrovias', uid: 'ferrovias' },
-            { label: 'Artigo Linha 7', uid: 'art-1' },
           ].map((item) => (
             <button
               key={item.uid}
