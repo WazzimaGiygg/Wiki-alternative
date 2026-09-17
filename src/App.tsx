@@ -51,6 +51,7 @@ import { AppearanceSettingsView } from './components/AppearanceSettingsView';
 import { AdvancedSearchView } from './components/AdvancedSearchView';
 import { WikiCompetitorComparisonView } from './components/WikiCompetitorComparisonView';
 import { WazzimaGiyggProfileView } from './components/WazzimaGiyggProfileView';
+import { NotFoundView } from './components/NotFoundView';
 import { updateSEO } from './utils/seoManager';
 import { StorageService } from './services/storageService';
 import {
@@ -101,6 +102,8 @@ export default function App() {
   const [ucocInitialProtocol, setUcocInitialProtocol] = useState<string>('');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [notFoundQuery, setNotFoundQuery] = useState<string>('');
+  const [notFoundType, setNotFoundType] = useState<'article' | 'page' | 'file' | 'user' | 'special' | 'generic'>('generic');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState<boolean>(false);
@@ -162,6 +165,16 @@ export default function App() {
     localStorage.setItem('wikizero_theme_v3', theme);
   }, [theme]);
 
+  const handleShowNotFound = (
+    query: string,
+    type: 'article' | 'page' | 'file' | 'user' | 'special' | 'generic' = 'generic'
+  ) => {
+    setNotFoundQuery(query);
+    setNotFoundType(type);
+    setCurrentView('not-found');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Navigate to any page/article/view/user/file by UID
   const handleNavigateByUid = (rawUid: string, mode: 'push' | 'replace' = 'push') => {
     if (!rawUid || !rawUid.trim()) {
@@ -172,6 +185,9 @@ export default function App() {
     const target = resolveNavigationUid(rawUid, articles, pages);
 
     switch (target.type) {
+      case 'not-found':
+        handleShowNotFound(target.query, 'generic');
+        break;
       case 'article':
         setSelectedArticleId(target.articleId);
         StorageService.incrementArticleViews(target.articleId);
@@ -288,6 +304,9 @@ export default function App() {
       if (initialUid) {
         const target = resolveNavigationUid(initialUid, a, p);
         switch (target.type) {
+          case 'not-found':
+            handleShowNotFound(target.query, 'generic');
+            break;
           case 'article':
             setSelectedArticleId(target.articleId);
             StorageService.incrementArticleViews(target.articleId);
@@ -300,16 +319,7 @@ export default function App() {
               StorageService.incrementArticleViews(matchArt.id);
               setCurrentView('article');
             } else {
-              setEditingArticle({
-                id: '',
-                pageUid: p[0]?.uid || 'wikizero_info',
-                titulo: target.title,
-                descricao: `= ${target.title} =\nEste artigo ainda não foi escrito. Seja o primeiro a contribuir com seu conhecimento!`,
-                categoria: 'Geral',
-                idioma: 'Português',
-                dataCriacao: new Date().toISOString(),
-              });
-              setCurrentView('editor');
+              handleShowNotFound(target.title, 'article');
             }
             break;
           case 'page':
@@ -416,6 +426,7 @@ export default function App() {
       targetUserIdentifier,
       selectedFileName,
       uploadInitialTargetName,
+      notFoundQuery,
     });
 
     setBrowserUid(canonicalUid, 'replace');
@@ -426,6 +437,7 @@ export default function App() {
     targetUserIdentifier,
     selectedFileName,
     uploadInitialTargetName,
+    notFoundQuery,
     articles,
     pages,
   ]);
@@ -522,23 +534,41 @@ export default function App() {
   };
 
   const handleSelectPage = (pageUid: string) => {
-    setSelectedPageUid(pageUid);
-    const pageArticles = (articles || []).filter((a) => a && a.pageUid === pageUid);
+    const existingPage = pages.find((p) => p.uid.toLowerCase() === pageUid.toLowerCase());
+    if (!existingPage) {
+      handleShowNotFound(pageUid, 'page');
+      return;
+    }
+    setSelectedPageUid(existingPage.uid);
+    const pageArticles = (articles || []).filter((a) => a && a.pageUid === existingPage.uid);
     if (pageArticles.length > 0) {
       setSelectedArticleId(pageArticles[0].id);
       StorageService.incrementArticleViews(pageArticles[0].id);
       setCurrentView('article');
     } else {
       // Prompt to create an article in this collection
-      setEditingArticle(null);
+      setEditingArticle({
+        id: '',
+        pageUid: existingPage.uid,
+        titulo: `Novo artigo em ${existingPage.titulo}`,
+        descricao: `= Artigo em ${existingPage.titulo} =\nInicie a escrita deste verbete para a coleção.`,
+        categoria: 'Geral',
+        idioma: 'Português',
+        dataCriacao: new Date().toISOString(),
+      });
       setCurrentView('editor');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSelectArticle = (articleId: string) => {
-    setSelectedArticleId(articleId);
-    StorageService.incrementArticleViews(articleId);
+    const art = articles.find((a) => a.id.toLowerCase() === articleId.toLowerCase());
+    if (!art) {
+      handleShowNotFound(articleId, 'article');
+      return;
+    }
+    setSelectedArticleId(art.id);
+    StorageService.incrementArticleViews(art.id);
     setCurrentView('article');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -550,17 +580,8 @@ export default function App() {
       StorageService.incrementArticleViews(art.id);
       setCurrentView('article');
     } else {
-      // If article doesn't exist, open editor with title prefilled!
-      setEditingArticle({
-        id: '',
-        pageUid: pages[0]?.uid || 'wikizero_info',
-        titulo: title,
-        descricao: `= ${title} =\nEste artigo ainda não foi escrito. Seja o primeiro a contribuir com seu conhecimento!`,
-        categoria: 'Geral',
-        idioma: 'Português',
-        dataCriacao: new Date().toISOString(),
-      });
-      setCurrentView('editor');
+      // Se o artigo não existe, direciona para a página 404 personalizada!
+      handleShowNotFound(title, 'article');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -605,6 +626,43 @@ export default function App() {
     );
     if (matchPage) {
       handleSelectPage(matchPage.uid);
+      return;
+    }
+
+    // Direct match on exact article title (case-insensitive)
+    const matchExactTitle = articles.find(
+      (a) => a.titulo.toLowerCase() === query.toLowerCase()
+    );
+    if (matchExactTitle) {
+      handleSelectArticle(matchExactTitle.id);
+      return;
+    }
+
+    // Check if query has special lookup prefixes: "artigo:", "pagina:", "page:"
+    const prefixLookupMatch = query.match(/^(?:artigo|pagina|page|p):(.*)$/i);
+    if (prefixLookupMatch) {
+      const targetTitle = prefixLookupMatch[1].trim();
+      handleNavigateToArticleByTitle(targetTitle);
+      return;
+    }
+
+    // Check if any articles or pages match the query in title or description
+    const cleanQ = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const hasArticleMatches = articles.some((a) => {
+      const t = (a.titulo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const d = (a.descricao || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const c = (a.categoria || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return t.includes(cleanQ) || d.includes(cleanQ) || c.includes(cleanQ);
+    });
+    const hasPageMatches = pages.some((p) => {
+      const pt = (p.titulo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const pd = (p.descricao || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return pt.includes(cleanQ) || pd.includes(cleanQ);
+    });
+
+    if (!hasArticleMatches && !hasPageMatches) {
+      // Quando o usuário tenta buscar uma página/artigo que não existe, direciona para a página 404!
+      handleShowNotFound(query, 'generic');
       return;
     }
 
@@ -948,29 +1006,46 @@ export default function App() {
                 }
               />
             ) : (
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center max-w-xl mx-auto my-12 space-y-4">
-                <div className="text-4xl">📄</div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white font-serif-heading">
-                  Nenhum Artigo Encontrado
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Não há artigos carregados no banco de dados para visualização neste momento. Você pode iniciar uma nova publicação agora mesmo!
-                </p>
-                <div className="flex items-center justify-center gap-3 pt-2">
-                  <button
-                    onClick={() => handleNavigate('hub')}
-                    className="px-4 py-2 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 text-xs font-semibold"
-                  >
-                    Ir para a Página Inicial
-                  </button>
-                  <button
-                    onClick={() => handleOpenNewEditor()}
-                    className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold"
-                  >
-                    Escrever Artigo
-                  </button>
-                </div>
-              </div>
+              <NotFoundView
+                query={selectedArticleId || 'Artigo'}
+                notFoundType="article"
+                articles={articles}
+                pages={pages}
+                theme={theme}
+                onSearch={(newQuery) => {
+                  setSearchQuery(newQuery);
+                  const norm = newQuery.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+                  const found = articles.some((a) => {
+                    const t = (a.titulo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const d = (a.descricao || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    return t.includes(norm) || d.includes(norm);
+                  });
+                  if (found) {
+                    setCurrentView('search');
+                  } else {
+                    handleShowNotFound(newQuery, 'generic');
+                  }
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onOpenEditor={(title) => {
+                  setEditingArticle({
+                    id: '',
+                    pageUid: pages[0]?.uid || 'wikizero_info',
+                    titulo: title || 'Novo Artigo',
+                    descricao: `= ${title || 'Novo Artigo'} =\nEste artigo ainda não foi escrito na enciclopédia livre WikiWorldWeb. Seja o primeiro a contribuir com seu conhecimento!`,
+                    categoria: 'Geral',
+                    idioma: 'Português',
+                    dataCriacao: new Date().toISOString(),
+                  });
+                  setCurrentView('editor');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onNavigateHome={() => handleNavigate('hub')}
+                onRandomPage={handleRandomPage}
+                onSelectArticle={handleSelectArticle}
+                onSelectPage={handleSelectPage}
+                onNavigateSpecialPages={() => handleNavigate('special-pages')}
+              />
             )
           )}
 
@@ -994,6 +1069,7 @@ export default function App() {
               onNavigateToArbitration={() => handleNavigate('arbitration')}
               onNavigateToAppearance={() => handleNavigate('appearance')}
               onNavigateToAdminFirebase={() => handleNavigate('admin-firebase')}
+              onNavigateToNotFound={() => handleShowNotFound('Special:NotFound', 'generic')}
               initialTab="all"
             />
           )}
@@ -1018,6 +1094,7 @@ export default function App() {
               onNavigateToArbitration={() => handleNavigate('arbitration')}
               onNavigateToAppearance={() => handleNavigate('appearance')}
               onNavigateToAdminFirebase={() => handleNavigate('admin-firebase')}
+              onNavigateToNotFound={() => handleShowNotFound('Special:NotFound', 'generic')}
               initialTab="watchlist"
             />
           )}
@@ -1281,6 +1358,50 @@ export default function App() {
               onSelectPage={handleSelectPage}
               onOpenNewEditor={() => handleOpenNewEditor()}
               onNavigateHome={() => handleNavigate('hub')}
+              onNavigateTo404={(q) => handleShowNotFound(q, 'generic')}
+            />
+          )}
+
+          {currentView === 'not-found' && (
+            <NotFoundView
+              query={notFoundQuery}
+              notFoundType={notFoundType}
+              articles={articles}
+              pages={pages}
+              theme={theme}
+              onSearch={(newQuery) => {
+                setSearchQuery(newQuery);
+                const norm = newQuery.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+                const found = articles.some((a) => {
+                  const t = (a.titulo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                  const d = (a.descricao || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                  return t.includes(norm) || d.includes(norm);
+                });
+                if (found) {
+                  setCurrentView('search');
+                } else {
+                  handleShowNotFound(newQuery, 'generic');
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onOpenEditor={(title) => {
+                setEditingArticle({
+                  id: '',
+                  pageUid: pages[0]?.uid || 'wikizero_info',
+                  titulo: title || 'Novo Artigo',
+                  descricao: `= ${title || 'Novo Artigo'} =\nEste artigo ainda não foi escrito na enciclopédia livre WikiWorldWeb. Seja o primeiro a contribuir com seu conhecimento!`,
+                  categoria: 'Geral',
+                  idioma: 'Português',
+                  dataCriacao: new Date().toISOString(),
+                });
+                setCurrentView('editor');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onNavigateHome={() => handleNavigate('hub')}
+              onRandomPage={handleRandomPage}
+              onSelectArticle={handleSelectArticle}
+              onSelectPage={handleSelectPage}
+              onNavigateSpecialPages={() => handleNavigate('special-pages')}
             />
           )}
 

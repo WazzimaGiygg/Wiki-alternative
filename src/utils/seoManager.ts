@@ -310,6 +310,11 @@ export function updateSEO(config: SEOConfig) {
         'diretrizes de aplicação ucoc',
         'combate ao assédio wiki'
       );
+    } else if (config.view === 'not-found') {
+      finalTitle = 'Página não encontrada (Erro 404) - WikiWorldWeb';
+      finalDesc =
+        'A página ou artigo solicitado não foi encontrado na WikiWorldWeb Enciclopédia Livre. Pesquise outros verbetes ou crie o artigo.';
+      canonicalUrl = `${BASE_URL}/?uid=Special:NotFound`;
     } else if (config.title) {
       finalTitle = `${config.title} - WikiWorldWeb`;
       if (config.description) {

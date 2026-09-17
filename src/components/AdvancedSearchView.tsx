@@ -19,6 +19,7 @@ import {
   RotateCcw,
   List,
   LayoutGrid,
+  FileQuestion,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, UserProfile, AppTheme } from '../types';
 import { getCleanExcerpt } from '../utils/wikitextParser';
@@ -34,6 +35,7 @@ interface AdvancedSearchViewProps {
   onSelectPage: (pageUid: string) => void;
   onOpenNewEditor: (title?: string) => void;
   onNavigateHome: () => void;
+  onNavigateTo404?: (query: string) => void;
 }
 
 type SearchScope = 'all' | 'title' | 'content' | 'tags';
@@ -50,6 +52,7 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
   onSelectPage,
   onOpenNewEditor,
   onNavigateHome,
+  onNavigateTo404,
 }) => {
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   const [showFilters, setShowFilters] = useState(true);
@@ -894,6 +897,16 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
               >
                 <PlusCircle size={15} />
                 <span>Criar o artigo "{searchTerm}"</span>
+              </button>
+            )}
+
+            {searchTerm && onNavigateTo404 && (
+              <button
+                onClick={() => onNavigateTo404(searchTerm)}
+                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/80 transition cursor-pointer"
+              >
+                <FileQuestion size={14} />
+                <span>Ver página 404 deste artigo</span>
               </button>
             )}
 

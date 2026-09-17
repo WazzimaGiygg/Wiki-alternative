@@ -136,9 +136,14 @@ export function getCanonicalUid(
     targetUserIdentifier?: string;
     selectedFileName?: string;
     uploadInitialTargetName?: string;
+    notFoundQuery?: string;
   }
 ): string {
   switch (view) {
+    case 'not-found':
+      return options.notFoundQuery
+        ? `Special:NotFound/${encodeURIComponent(options.notFoundQuery)}`
+        : 'Special:NotFound';
     case 'article':
       if (options.selectedArticle) {
         // Return article.id (e.g. art-1) or clean title slug
@@ -459,7 +464,24 @@ export function resolveNavigationUid(
 
     'special:editor': { view: 'editor' },
     'editor': { view: 'editor' },
+
+    'special:notfound': { view: 'not-found' },
+    'special:not-found': { view: 'not-found' },
+    'special:404': { view: 'not-found' },
+    'special:erro404': { view: 'not-found' },
+    'notfound': { view: 'not-found' },
+    'not-found': { view: 'not-found' },
+    '404': { view: 'not-found' },
+    'erro-404': { view: 'not-found' },
+    'pagina-nao-encontrada': { view: 'not-found' },
   };
+
+  // 2b. Special:NotFound/<query> or Special:404/<query>
+  const notFoundParamMatch = uid.match(/^(?:Special:)?(?:NotFound|404|Erro404|NaoEncontrada)(?:\/(.*))?$/i);
+  if (notFoundParamMatch) {
+    const queryParam = notFoundParamMatch[1] ? decodeURIComponent(notFoundParamMatch[1].trim()) : '';
+    return { type: 'not-found', query: queryParam };
+  }
 
   if (specialViewsMap[normalized]) {
     const item = specialViewsMap[normalized];
@@ -531,6 +553,12 @@ export function resolveNavigationUid(
     const pageUid = pageMatch[1].trim();
     const p = pages.find((page) => page.uid.toLowerCase() === pageUid.toLowerCase());
     if (p) return { type: 'page', pageUid: p.uid };
+    return { type: 'not-found', query: `Page:${pageUid}` };
+  }
+
+  // 8b. Unrecognized Special namespace
+  if (/^(?:Special|Especial):/i.test(uid)) {
+    return { type: 'not-found', query: uid };
   }
 
   // 9. Exact Match on Article ID (e.g. art-1, art-wiki-001, etc.)

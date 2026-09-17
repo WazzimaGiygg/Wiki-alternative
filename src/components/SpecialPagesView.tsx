@@ -33,6 +33,7 @@ import {
   AlertOctagon,
   ShieldAlert,
   Palette,
+  FileQuestion,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -58,6 +59,7 @@ interface SpecialPagesViewProps {
   onNavigateToUcoc?: () => void;
   onNavigateToAppearance?: () => void;
   onNavigateToAdminFirebase?: () => void;
+  onNavigateToNotFound?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -80,6 +82,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToArbitration,
   onNavigateToAppearance,
   onNavigateToAdminFirebase,
+  onNavigateToNotFound,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -461,6 +464,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Backups Automáticos & Console Firebase
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToNotFound && (
+          <button
+            id="btn-specialpages-notfound"
+            onClick={onNavigateToNotFound}
+            className="p-3 rounded-lg border border-rose-200 dark:border-rose-800/60 bg-rose-50/50 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-rose-600 text-white shrink-0">
+              <FileQuestion size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-rose-900 dark:text-rose-200 truncate group-hover:underline">
+                  Special:NotFound
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-rose-600 text-white">
+                  404
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Página 404 & Recuperação de Verbetes
               </div>
             </div>
           </button>

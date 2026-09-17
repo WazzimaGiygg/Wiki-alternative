@@ -564,7 +564,8 @@ export type ViewMode =
   | 'wazzimagiygg'
   | 'gemini-notebook'
   | 'ucoc'
-  | 'vpn-checker';
+  | 'vpn-checker'
+  | 'not-found';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)
