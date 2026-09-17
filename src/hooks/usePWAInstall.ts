@@ -10,6 +10,12 @@ export function usePWAInstall() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(true);
+  const [isChrome, setIsChrome] = useState(false);
+  const [isWindows, setIsWindows] = useState(false);
+  const [isMac, setIsMac] = useState(false);
+  const [isLinux, setIsLinux] = useState(false);
+  const [isChromeOS, setIsChromeOS] = useState(false);
 
   useEffect(() => {
     // Detect standalone mode (already running as installed PWA / APK / WebAPK)
@@ -20,12 +26,21 @@ export function usePWAInstall() {
       document.referrer.includes('android-app://');
     setIsInstalled(isStandalone);
 
-    // Detect device operating system
+    // Detect device operating system & browser
     const userAgent = (window.navigator.userAgent || '').toLowerCase();
     const isAndroidDevice = /android/.test(userAgent);
     const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+    const desktop = !isAndroidDevice && !isIOSDevice;
+
     setIsAndroid(isAndroidDevice);
     setIsIOS(isIOSDevice);
+    setIsDesktop(desktop);
+
+    setIsChrome(/chrome|crios/.test(userAgent) && !/edg\//.test(userAgent));
+    setIsWindows(/windows|win32|win64/.test(userAgent));
+    setIsMac(/macintosh|mac os x/.test(userAgent));
+    setIsLinux(/linux/.test(userAgent) && !isAndroidDevice);
+    setIsChromeOS(/cros/.test(userAgent));
 
     const handleBeforeInstallPrompt = (e: Event) => {
       // Prevent the mini-infobar from appearing on mobile
@@ -71,6 +86,12 @@ export function usePWAInstall() {
     isInstalled,
     isAndroid,
     isIOS,
+    isDesktop,
+    isChrome,
+    isWindows,
+    isMac,
+    isLinux,
+    isChromeOS,
     install,
     deferredPrompt,
   };

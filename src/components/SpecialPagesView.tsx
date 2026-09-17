@@ -35,6 +35,7 @@ import {
   Palette,
   FileQuestion,
   Calculator,
+  Laptop,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -521,6 +522,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
             </div>
           </button>
         )}
+
+        {onNavigateToTools && (
+          <button
+            id="btn-specialpages-chromeapp"
+            onClick={onNavigateToTools}
+            className="p-3 rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-blue-600 text-white shrink-0 shadow-2xs">
+              <Laptop size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-blue-900 dark:text-blue-200 truncate group-hover:underline">
+                  Special:ChromeApp
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-blue-600 text-white">
+                  Chrome
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Instalar App Desktop & Pacote Web Store
+              </div>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* UID Quick Navigation Cheatsheet & Guide */}
@@ -538,6 +564,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
         <div className="flex items-center gap-2 flex-wrap text-[11px]">
           {[
             { label: 'Páginas Especiais', uid: 'Special:SpecialPages' },
+            { label: 'App Chrome / PC', uid: 'Special:ChromeApp' },
             { label: 'Previsão do Tempo', uid: 'Special:Weather' },
             { label: 'Google Acadêmico', uid: 'Special:Scholar' },
             { label: 'Ferramentas de Uso', uid: 'Special:Tools' },

@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
         manifest: {
           id: '/',
-          name: 'WikiZero - Enciclopédia Livre',
-          short_name: 'WikiZero',
-          description: 'WikiZero - Enciclopédia colaborativa e livre com leitura e edição para Smart TV, Android e Web.',
+          name: 'WikiWorldWeb - Enciclopédia Livre',
+          short_name: 'WikiWorldWeb',
+          description: 'WikiWorldWeb - A Enciclopédia Livre, Rápida e Sem Anúncios. Aplicativo oficial para Google Chrome, Computadores (PC/Mac/Linux) e Dispositivos Móveis.',
           theme_color: '#2563eb',
           background_color: '#ffffff',
           display: 'standalone',
@@ -24,6 +24,43 @@ export default defineConfig(() => {
           start_url: '/',
           scope: '/',
           categories: ['education', 'books', 'reference', 'entertainment', 'lifestyle'],
+          shortcuts: [
+            {
+              name: 'Página Inicial',
+              short_name: 'Início',
+              description: 'Abrir a página principal da WikiWorldWeb',
+              url: '/',
+              icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
+            },
+            {
+              name: 'Pesquisar Artigos',
+              short_name: 'Pesquisar',
+              description: 'Buscar verbetes e documentos da enciclopédia',
+              url: '/?uid=search',
+              icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
+            },
+            {
+              name: 'Previsão do Tempo',
+              short_name: 'Tempo',
+              description: 'Previsão meteorológica global em tempo real',
+              url: '/?uid=Special:Weather',
+              icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
+            },
+            {
+              name: 'Google Acadêmico',
+              short_name: 'Acadêmico',
+              description: 'Pesquisa acadêmica e científica avançada',
+              url: '/?uid=Special:Scholar',
+              icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
+            },
+            {
+              name: 'Caderno IA Gemini',
+              short_name: 'Caderno IA',
+              description: 'Síntese de fontes com inteligência artificial',
+              url: '/?view=notebook',
+              icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }],
+            },
+          ],
           icons: [
             {
               src: '/pwa-192x192.png',
@@ -81,7 +118,7 @@ export default defineConfig(() => {
           ],
         },
         devOptions: {
-          enabled: false,
+          enabled: true,
         },
       }),
     ],

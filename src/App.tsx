@@ -101,7 +101,7 @@ export default function App() {
   const [uploadInitialTargetName, setUploadInitialTargetName] = useState<string>('');
   const [ucocInitialTab, setUcocInitialTab] = useState<'principles' | 'new-report' | 'track' | 'cases'>('principles');
   const [ucocInitialProtocol, setUcocInitialProtocol] = useState<string>('');
-  const [toolsInitialTab, setToolsInitialTab] = useState<'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker'>('weather');
+  const [toolsInitialTab, setToolsInitialTab] = useState<'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app'>('weather');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [notFoundQuery, setNotFoundQuery] = useState<string>('');

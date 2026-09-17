@@ -33,6 +33,7 @@ import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '.
 import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { StorageService } from '../services/storageService';
+import { PWAInstallPrompt } from './PWAInstallPrompt';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -1382,6 +1383,9 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             )}
           </div>
+
+          {/* Desktop & Mobile App Install Button (Chrome / PWA) */}
+          <PWAInstallPrompt buttonStyle="header" />
 
           {/* Notification Bell */}
           <div className="relative" ref={notifRef}>

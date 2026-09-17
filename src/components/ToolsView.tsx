@@ -25,10 +25,12 @@ import {
   AlertCircle,
   CloudSun,
   GraduationCap,
+  Monitor,
 } from 'lucide-react';
 import { AppTheme } from '../types';
 import { WeatherTool } from './WeatherTool';
 import { GoogleScholarTool } from './GoogleScholarTool';
+import { ChromeAppTool } from './ChromeAppTool';
 
 interface ToolsViewProps {
   theme?: AppTheme;
@@ -37,7 +39,7 @@ interface ToolsViewProps {
   onOpenEditor?: (title?: string) => void;
 }
 
-export type ToolTab = 'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker';
+export type ToolTab = 'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app';
 
 // ==========================================
 // 1. CALCULADORA INTERATIVA COM HISTÓRICO
@@ -1392,8 +1394,8 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
           )}
         </div>
 
-        {/* Seletor das 5 Ferramentas */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+        {/* Seletor das 6 Ferramentas */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
           {/* Aba 1: Previsão do Tempo */}
           <button
             id="tab-btn-weather"
@@ -1506,7 +1508,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
           <button
             id="tab-btn-keyboard"
             onClick={() => setActiveTab('keyboard-checker')}
-            className={`p-3 rounded-2xl border text-left transition flex items-center gap-2.5 cursor-pointer col-span-2 sm:col-span-1 ${
+            className={`p-3 rounded-2xl border text-left transition flex items-center gap-2.5 cursor-pointer ${
               activeTab === 'keyboard-checker'
                 ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 text-blue-950 dark:text-blue-100 ring-2 ring-blue-400/20'
                 : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
@@ -1528,6 +1530,33 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
               </div>
             </div>
           </button>
+
+          {/* Aba 6: App Chrome & Computador */}
+          <button
+            id="tab-btn-chrome-app"
+            onClick={() => setActiveTab('chrome-app')}
+            className={`p-3 rounded-2xl border text-left transition flex items-center gap-2.5 cursor-pointer ${
+              activeTab === 'chrome-app'
+                ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-100 ring-2 ring-indigo-400/20'
+                : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <div
+              className={`p-2 rounded-xl shrink-0 ${
+                activeTab === 'chrome-app'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              <Monitor size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold truncate">App Chrome/PC</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Web Store & Desktop
+              </div>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -1537,6 +1566,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
       {activeTab === 'calculator' && <CalculatorTab theme={theme} />}
       {activeTab === 'world-clock' && <WorldClockTab theme={theme} />}
       {activeTab === 'keyboard-checker' && <KeyboardCheckerTab theme={theme} />}
+      {activeTab === 'chrome-app' && <ChromeAppTool theme={theme} />}
     </div>
   );
 };
