@@ -1,7 +1,14 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, Firestore, setLogLevel } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { ACTIVE_FIREBASE_CONFIG, getActiveFirebaseConfig } from '../config/firebaseCustomConfig';
+
+// Configura o nível de log do Firestore para 'error', evitando alertas informativos ou falsos positivos de reconexão
+try {
+  setLogLevel('error');
+} catch {
+  // Ignora se já estiver definido
+}
 
 export enum OperationType {
   CREATE = 'create',
@@ -72,7 +79,8 @@ export function getDb(): Firestore {
     const activeCfg = getActiveFirebaseConfig();
     const dbId = activeCfg.firestoreDatabaseId || ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId;
     const settings = {
-      experimentalForceLongPolling: true,
+      experimentalAutoDetectLongPolling: true,
+      ignoreUndefinedProperties: true,
     };
     try {
       dbInstance = dbId && dbId !== '(default)'

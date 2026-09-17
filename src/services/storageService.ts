@@ -508,6 +508,7 @@ export const StorageService = {
           callback(list);
         },
         (error) => {
+          if (error?.code === 'unavailable') return;
           console.warn('[StorageService] Erro no listener em tempo real de artigos:', error);
         }
       );
@@ -565,6 +566,7 @@ export const StorageService = {
           callback(updated);
         },
         (error) => {
+          if (error?.code === 'unavailable') return;
           console.warn('[StorageService] Erro no listener em tempo real de páginas:', error);
         }
       );
