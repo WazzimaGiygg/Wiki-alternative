@@ -40,6 +40,7 @@ import {
   BookOpen,
   Crown,
   Calculator,
+  GraduationCap,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -288,6 +289,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="truncate">Wiki dos Livros</span>
                   <span className="text-[8px] bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-mono font-bold px-1 rounded-xs">
                     LIVROS
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
+              id="btn-sidebar-academic"
+              onClick={() => onNavigate('academic')}
+              title="Wiki Universitário (Repositório Acadêmico, Google Acadêmico, Teses, Artigos e Citações)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'academic'
+                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <GraduationCap size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Wiki Universitário</span>
+                  <span className="text-[8px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono font-bold px-1 rounded-xs">
+                    ACADÊMICO
                   </span>
                 </div>
               )}

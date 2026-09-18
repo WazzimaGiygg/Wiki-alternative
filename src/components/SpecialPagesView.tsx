@@ -36,6 +36,7 @@ import {
   FileQuestion,
   Calculator,
   Laptop,
+  GraduationCap,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -64,6 +65,7 @@ interface SpecialPagesViewProps {
   onNavigateToNotFound?: () => void;
   onNavigateToTools?: () => void;
   onNavigateToLibrary?: () => void;
+  onNavigateToAcademic?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -89,6 +91,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToNotFound,
   onNavigateToTools,
   onNavigateToLibrary,
+  onNavigateToAcademic,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -545,6 +548,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Wiki dos Livros & Periódicos (Biblioteca)
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToAcademic && (
+          <button
+            id="btn-specialpages-academic"
+            onClick={onNavigateToAcademic}
+            className="p-3 rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-blue-700 text-white shrink-0 shadow-2xs">
+              <GraduationCap size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-blue-900 dark:text-blue-200 truncate group-hover:underline">
+                  Special:Academic
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-blue-700 text-white">
+                  Universitário
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Wiki Universitário (Google Acadêmico & Teses)
               </div>
             </div>
           </button>

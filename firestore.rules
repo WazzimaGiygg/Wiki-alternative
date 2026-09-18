@@ -285,6 +285,20 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
+    // ✅ Wiki Universitário / Repositório Acadêmico (Artigos, Teses, Dissertações, Preprints - Google Acadêmico)
+    match /academic_publications/{pubId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && isNotBanned();
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.submittedByUid == request.auth.uid);
+    }
+
+    // ✅ Pareceres e Avaliação por Pares do Wiki Universitário
+    match /academic_peer_reviews/{reviewId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && isNotBanned();
+      allow delete: if isAuthenticated() && (resource.data.reviewerUid == request.auth.uid || isAdmin());
+    }
+
     // ✅ Regra fallback - leitura pública, escrita apenas para registrados
     match /{document=**} {
       allow read: if true;  // ✅ QUALQUER UM PODE LER TUDO

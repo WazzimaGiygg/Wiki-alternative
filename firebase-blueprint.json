@@ -256,6 +256,39 @@
         "createdAt": { "type": "string" }
       },
       "required": ["id", "itemId", "userId", "userName", "rating", "reviewText", "createdAt"]
+    },
+    "AcademicPublication": {
+      "title": "AcademicPublication",
+      "description": "Publicações científicas, teses, dissertações, artigos, preprints e anais do Wiki Universitário / Google Acadêmico",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tipo": { "type": "string" },
+        "titulo": { "type": "string" },
+        "anoPublicacao": { "type": "number" },
+        "resumo": { "type": "string" },
+        "statusAcesso": { "type": "string" },
+        "statusRevisao": { "type": "string" },
+        "totalCitacoes": { "type": "number" },
+        "dataCriacao": { "type": "string" }
+      },
+      "required": ["id", "tipo", "titulo", "anoPublicacao", "resumo", "statusAcesso", "statusRevisao", "dataCriacao"]
+    },
+    "AcademicPeerReview": {
+      "title": "AcademicPeerReview",
+      "description": "Avaliação por pares aberta e pareceres acadêmicos para publicações do Wiki Universitário",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "publicationId": { "type": "string" },
+        "reviewerUid": { "type": "string" },
+        "reviewerName": { "type": "string" },
+        "tituloParecer": { "type": "string" },
+        "parecerTexto": { "type": "string" },
+        "parecerDecisao": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "publicationId", "reviewerUid", "reviewerName", "tituloParecer", "parecerTexto", "parecerDecisao", "createdAt"]
     }
   },
   "firestore": {
@@ -334,6 +367,14 @@
     "/library_reviews/{reviewId}": {
       "schema": "LibraryReview",
       "description": "Avaliações e resenhas críticas dos itens do acervo bibliográfico"
+    },
+    "/academic_publications/{pubId}": {
+      "schema": "AcademicPublication",
+      "description": "Publicações científicas, teses, dissertações, artigos e preprints do Wiki Universitário"
+    },
+    "/academic_peer_reviews/{reviewId}": {
+      "schema": "AcademicPeerReview",
+      "description": "Pareceres de revisão por pares aberta para produções científicas"
     }
   }
 }

@@ -22,6 +22,7 @@ import {
   Gamepad2,
   Award,
   BookOpen,
+  GraduationCap,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -229,6 +230,15 @@ export const Footer: React.FC<FooterProps> = ({
             >
               <BookOpen size={11} className="text-emerald-600 dark:text-emerald-400" />
               <span>Wiki dos Livros & Periódicos</span>
+            </button>
+            <button
+              id="btn-footer-academic"
+              onClick={() => onNavigate('academic')}
+              title="Wiki Universitário: Repositório Institucional de Produção Científica, Teses, Google Acadêmico e Citações"
+              className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800/60 transition shadow-xs"
+            >
+              <GraduationCap size={11} className="text-blue-600 dark:text-blue-400" />
+              <span>Wiki Universitário (Repositório & Google Acadêmico)</span>
             </button>
             <button
               id="btn-footer-comparison"

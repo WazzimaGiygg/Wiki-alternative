@@ -54,6 +54,7 @@ import { WazzimaGiyggProfileView } from './components/WazzimaGiyggProfileView';
 import { NotFoundView } from './components/NotFoundView';
 import { ToolsView } from './components/ToolsView';
 import { LibraryCatalogView } from './components/LibraryCatalogView';
+import { AcademicCatalogView } from './components/AcademicCatalogView';
 import { updateSEO } from './utils/seoManager';
 import { StorageService } from './services/storageService';
 import {
@@ -1081,6 +1082,7 @@ export default function App() {
               onNavigateToNotFound={() => handleShowNotFound('Special:NotFound', 'generic')}
               onNavigateToTools={() => handleNavigate('tools')}
               onNavigateToLibrary={() => handleNavigate('library')}
+              onNavigateToAcademic={() => handleNavigate('academic')}
               initialTab="all"
             />
           )}
@@ -1108,6 +1110,7 @@ export default function App() {
               onNavigateToNotFound={() => handleShowNotFound('Special:NotFound', 'generic')}
               onNavigateToTools={() => handleNavigate('tools')}
               onNavigateToLibrary={() => handleNavigate('library')}
+              onNavigateToAcademic={() => handleNavigate('academic')}
               initialTab="watchlist"
             />
           )}
@@ -1474,6 +1477,32 @@ export default function App() {
                     titulo: title,
                     descricao: `= ${title} =\nArtigo associado ao acervo bibliográfico da WikiWorldWeb.`,
                     categoria: 'Livros e Periódicos',
+                    idioma: 'Português',
+                    dataCriacao: new Date().toISOString(),
+                  });
+                  setCurrentView('editor');
+                }
+              }}
+              onNavigateBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'academic' && (
+            <AcademicCatalogView
+              currentUser={user}
+              onNavigateToArticle={(title) => {
+                const found = articles.find(
+                  (a) => a.titulo.toLowerCase().trim() === title.toLowerCase().trim()
+                );
+                if (found) {
+                  handleSelectArticle(found.id);
+                } else {
+                  setEditingArticle({
+                    id: '',
+                    pageUid: pages[0]?.uid || 'wikizero_info',
+                    titulo: title,
+                    descricao: `= ${title} =\nArtigo associado à produção científica do Wiki Universitário.`,
+                    categoria: 'Wiki Universitário',
                     idioma: 'Português',
                     dataCriacao: new Date().toISOString(),
                   });

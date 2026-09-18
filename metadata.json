@@ -1,6 +1,6 @@
 {
   "name": "WikiWorldWeb - Enciclopédia Livre",
-  "description": "WikiWorldWeb - A Enciclopédia Livre, Rápida e Sem Anúncios. Uma alternativa moderna e aberta à Wikipédia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, Gemini Notebook para síntese multifontes, temas visuais e conformidade LGPD.",
+  "description": "WikiWorldWeb - A Enciclopédia Livre, Rápida e Sem Anúncios. Uma alternativa moderna e aberta à Wikipédia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, Gemini Notebook, Wiki dos Livros, Wiki Universitário (Repositório Acadêmico e Google Acadêmico), temas visuais e sincronização Cloud Firestore.",
   "requestFramePermissions": [
     "geolocation"
   ],

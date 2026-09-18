@@ -567,7 +567,8 @@ export type ViewMode =
   | 'vpn-checker'
   | 'not-found'
   | 'tools'
-  | 'library';
+  | 'library'
+  | 'academic';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)
