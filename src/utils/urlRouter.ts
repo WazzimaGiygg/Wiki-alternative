@@ -241,6 +241,12 @@ export function getCanonicalUid(
     case 'wazzimagiygg':
       return 'Special:WazzimaGiygg';
 
+    case 'academic':
+      return 'Special:Academic';
+
+    case 'news':
+      return 'Special:News';
+
     case 'create-page':
       return 'Special:CreatePage';
 
@@ -492,10 +498,6 @@ export function resolveNavigationUid(
     'special:previsaodotempo': { view: 'tools', initialTab: 'weather' },
     'special:previsao': { view: 'tools', initialTab: 'weather' },
     'special:weather': { view: 'tools', initialTab: 'weather' },
-    'special:scholar': { view: 'tools', initialTab: 'scholar' },
-    'special:google-scholar': { view: 'tools', initialTab: 'scholar' },
-    'special:academico': { view: 'tools', initialTab: 'scholar' },
-    'special:googleacademico': { view: 'tools', initialTab: 'scholar' },
     'special:chromeapp': { view: 'tools', initialTab: 'chrome-app' },
     'special:chrome': { view: 'tools', initialTab: 'chrome-app' },
     'special:chromewebstore': { view: 'tools', initialTab: 'chrome-app' },
@@ -527,10 +529,6 @@ export function resolveNavigationUid(
     'previsaodotempo': { view: 'tools', initialTab: 'weather' },
     'previsao': { view: 'tools', initialTab: 'weather' },
     'weather': { view: 'tools', initialTab: 'weather' },
-    'scholar': { view: 'tools', initialTab: 'scholar' },
-    'google-scholar': { view: 'tools', initialTab: 'scholar' },
-    'academico': { view: 'tools', initialTab: 'scholar' },
-    'google-academico': { view: 'tools', initialTab: 'scholar' },
 
     // Wiki dos Livros & Periódicos / Acervo Bibliográfico
     'special:library': { view: 'library' },
@@ -551,6 +549,37 @@ export function resolveNavigationUid(
     'acervo': { view: 'library' },
     'wiki-dos-livros': { view: 'library' },
     'wikidoslivros': { view: 'library' },
+
+    // Wiki Universitário / Repositório Acadêmico
+    'special:academic': { view: 'academic' },
+    'special:academico': { view: 'academic' },
+    'special:scholar': { view: 'academic' },
+    'special:google-scholar': { view: 'academic' },
+    'special:googleacademico': { view: 'academic' },
+    'special:universitario': { view: 'academic' },
+    'special:wikiuniversitario': { view: 'academic' },
+    'special:wiki-universitario': { view: 'academic' },
+    'academic': { view: 'academic' },
+    'academico': { view: 'academic' },
+    'scholar': { view: 'academic' },
+    'google-scholar': { view: 'academic' },
+    'google-academico': { view: 'academic' },
+    'googleacademico': { view: 'academic' },
+    'wiki-universitario': { view: 'academic' },
+    'wikiuniversitario': { view: 'academic' },
+    'universitario': { view: 'academic' },
+
+    // Jornal WazzimaGiygg / Notícias
+    'special:news': { view: 'news' },
+    'special:noticias': { view: 'news' },
+    'special:jornal': { view: 'news' },
+    'special:jornal-wazzimagiygg': { view: 'news' },
+    'special:jornalwazzimagiygg': { view: 'news' },
+    'news': { view: 'news' },
+    'noticias': { view: 'news' },
+    'jornal': { view: 'news' },
+    'jornal-wazzimagiygg': { view: 'news' },
+    'jornalwazzimagiygg': { view: 'news' },
   };
 
   // 2b. Special:NotFound/<query> or Special:404/<query>

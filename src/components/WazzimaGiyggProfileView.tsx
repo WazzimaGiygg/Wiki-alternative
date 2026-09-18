@@ -16,6 +16,7 @@ import {
   Scale,
   Users,
   Terminal,
+  Newspaper,
 } from 'lucide-react';
 import { ViewMode } from '../types';
 import { updateSEO } from '../utils/seoManager';
@@ -340,6 +341,45 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition"
               >
                 <span>Ver Código no GitHub</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          </div>
+
+          {/* Project 5: Jornal WazzimaGiygg */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-3">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
+                  <Newspaper size={18} />
+                </span>
+                <span className="text-[10px] font-mono font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800">
+                  Jornalismo
+                </span>
+              </div>
+              <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                Jornal WazzimaGiygg (jornal.wazzimagiygg.com)
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Portal de notícias independentes, apurações em tempo real e investigações sobre política,
+                economia e geopolítica. Integrado à enciclopédia em modo de visualização.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => onNavigate('news')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <Newspaper size={12} />
+                <span>Ler Notícias no Wiki</span>
+              </button>
+              <a
+                href={formatExternalUrl('https://jornal.wazzimagiygg.com/')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition"
+              >
+                <span>Site Oficial</span>
                 <ExternalLink size={12} />
               </a>
             </div>

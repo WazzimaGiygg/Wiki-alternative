@@ -23,6 +23,7 @@ import {
   Award,
   BookOpen,
   GraduationCap,
+  Newspaper,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -239,6 +240,15 @@ export const Footer: React.FC<FooterProps> = ({
             >
               <GraduationCap size={11} className="text-blue-600 dark:text-blue-400" />
               <span>Wiki Universitário (Repositório & Google Acadêmico)</span>
+            </button>
+            <button
+              id="btn-footer-news"
+              onClick={() => onNavigate('news')}
+              title="Jornal WazzimaGiygg: Notícias, Investigações e Edição Digital Integrada"
+              className="hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800/60 transition shadow-xs"
+            >
+              <Newspaper size={11} className="text-rose-600 dark:text-rose-400" />
+              <span>Jornal WazzimaGiygg (Notícias)</span>
             </button>
             <button
               id="btn-footer-comparison"

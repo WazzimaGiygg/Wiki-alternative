@@ -568,7 +568,8 @@ export type ViewMode =
   | 'not-found'
   | 'tools'
   | 'library'
-  | 'academic';
+  | 'academic'
+  | 'news';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)

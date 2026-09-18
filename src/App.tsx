@@ -55,6 +55,7 @@ import { NotFoundView } from './components/NotFoundView';
 import { ToolsView } from './components/ToolsView';
 import { LibraryCatalogView } from './components/LibraryCatalogView';
 import { AcademicCatalogView } from './components/AcademicCatalogView';
+import { JornalNewsView } from './components/JornalNewsView';
 import { updateSEO } from './utils/seoManager';
 import { StorageService } from './services/storageService';
 import {
@@ -1083,6 +1084,7 @@ export default function App() {
               onNavigateToTools={() => handleNavigate('tools')}
               onNavigateToLibrary={() => handleNavigate('library')}
               onNavigateToAcademic={() => handleNavigate('academic')}
+              onNavigateToNews={() => handleNavigate('news')}
               initialTab="all"
             />
           )}
@@ -1111,6 +1113,7 @@ export default function App() {
               onNavigateToTools={() => handleNavigate('tools')}
               onNavigateToLibrary={() => handleNavigate('library')}
               onNavigateToAcademic={() => handleNavigate('academic')}
+              onNavigateToNews={() => handleNavigate('news')}
               initialTab="watchlist"
             />
           )}
@@ -1510,6 +1513,31 @@ export default function App() {
                 }
               }}
               onNavigateBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'news' && (
+            <JornalNewsView
+              onNavigateBack={() => handleNavigate('hub')}
+              onNavigateToArticle={(title) => {
+                const found = articles.find(
+                  (a) => a.titulo.toLowerCase().trim() === title.toLowerCase().trim()
+                );
+                if (found) {
+                  handleSelectArticle(found.id);
+                } else {
+                  setEditingArticle({
+                    id: '',
+                    pageUid: pages[0]?.uid || 'wikizero_info',
+                    titulo: title,
+                    descricao: `= ${title} =\nArtigo relacionado à cobertura noticiosa do Jornal WazzimaGiygg.\n\n== Referências ==\n* [https://jornal.wazzimagiygg.com/ Jornal WazzimaGiygg - Portal Oficial]`,
+                    categoria: 'Notícias & Jornalismo',
+                    idioma: 'Português',
+                    dataCriacao: new Date().toISOString(),
+                  });
+                  setCurrentView('editor');
+                }
+              }}
             />
           )}
 

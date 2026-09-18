@@ -41,6 +41,7 @@ import {
   Crown,
   Calculator,
   GraduationCap,
+  Newspaper,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -310,6 +311,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="truncate">Wiki Universitário</span>
                   <span className="text-[8px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono font-bold px-1 rounded-xs">
                     ACADÊMICO
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
+              id="btn-sidebar-news"
+              onClick={() => onNavigate('news')}
+              title="Jornal WazzimaGiygg (Notícias, Investigações e Edição Digital)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'news'
+                  ? 'bg-white dark:bg-slate-800 text-rose-700 dark:text-rose-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Newspaper size={15} className="text-rose-600 dark:text-rose-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Jornal WazzimaGiygg</span>
+                  <span className="text-[8px] bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-mono font-bold px-1 rounded-xs">
+                    NOTÍCIAS
                   </span>
                 </div>
               )}
