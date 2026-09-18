@@ -273,6 +273,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
+              id="btn-sidebar-library"
+              onClick={() => onNavigate('library')}
+              title="Wiki dos Livros e Periódicos (Acervo Bibliográfico)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'library'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <BookOpen size={15} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Wiki dos Livros</span>
+                  <span className="text-[8px] bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-mono font-bold px-1 rounded-xs">
+                    LIVROS
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
               id="btn-sidebar-tools"
               onClick={() => onNavigate('tools')}
               title="Ferramentas Comuns: Calculadora, Horário Certo e Verificador de Teclado (Special:Tools)"

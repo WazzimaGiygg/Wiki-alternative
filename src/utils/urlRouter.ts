@@ -208,6 +208,9 @@ export function getCanonicalUid(
     case 'tools':
       return 'Special:Tools';
 
+    case 'library':
+      return 'Special:Library';
+
     case 'privacy':
       return 'Special:Privacy';
 
@@ -528,6 +531,26 @@ export function resolveNavigationUid(
     'google-scholar': { view: 'tools', initialTab: 'scholar' },
     'academico': { view: 'tools', initialTab: 'scholar' },
     'google-academico': { view: 'tools', initialTab: 'scholar' },
+
+    // Wiki dos Livros & Periódicos / Acervo Bibliográfico
+    'special:library': { view: 'library' },
+    'special:biblioteca': { view: 'library' },
+    'special:livros': { view: 'library' },
+    'special:books': { view: 'library' },
+    'special:periodicos': { view: 'library' },
+    'special:catalogo': { view: 'library' },
+    'special:acervo': { view: 'library' },
+    'special:wiki-dos-livros': { view: 'library' },
+    'special:wikidoslivros': { view: 'library' },
+    'library': { view: 'library' },
+    'biblioteca': { view: 'library' },
+    'livros': { view: 'library' },
+    'books': { view: 'library' },
+    'periodicos': { view: 'library' },
+    'catalogo': { view: 'library' },
+    'acervo': { view: 'library' },
+    'wiki-dos-livros': { view: 'library' },
+    'wikidoslivros': { view: 'library' },
   };
 
   // 2b. Special:NotFound/<query> or Special:404/<query>

@@ -566,7 +566,8 @@ export type ViewMode =
   | 'ucoc'
   | 'vpn-checker'
   | 'not-found'
-  | 'tools';
+  | 'tools'
+  | 'library';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)
@@ -1168,5 +1169,137 @@ export interface FirebaseConsoleConfig {
     retentionDays: number;
   };
 }
+
+// ============================================================================
+// WIKI DOS LIVROS & PERIÓDICOS (ACERVO BIBLIOGRÁFICO DE BIBLIOTECA FÍSICA E DIGITAL)
+// ============================================================================
+
+export type LibraryItemType =
+  | 'livro'              // Monografia / Livro impresso ou digital
+  | 'periodico'          // Revista / Journal científico / Magazine / Periódico seriado
+  | 'tese'               // Tese de Doutorado / Dissertação de Mestrado / Monografia Acadêmica
+  | 'artigo_cientifico'  // Artigo em periódico ou anais de congresso
+  | 'obra_rara'          // Obras raras, incunábulos, manuscritos históricos
+  | 'partitura'          // Partitura musical
+  | 'mapa'               // Mapa / Cartografia / Atlas
+  | 'audiovisual';       // Registro sonoro / DVD / Mídia digital
+
+export type PhysicalConservationState =
+  | 'novo'
+  | 'excelente'
+  | 'bom'
+  | 'regular'
+  | 'danificado'
+  | 'em_restauracao';
+
+export type PhysicalCirculationStatus =
+  | 'disponivel'       // Disponível para empréstimo domiciliar ou leitura imediata
+  | 'consulta_local'   // Não circula (apenas para consulta no recinto da biblioteca)
+  | 'emprestado'       // Emprestado a leitor
+  | 'reservado'        // Reservado aguardando retirada
+  | 'em_quarentena'    // Higienização / Catalogação / Processamento técnico
+  | 'extraviado';      // Desaparecido ou em averiguação patrimonial
+
+export interface LibraryItemPhysicalLocation {
+  predio?: string;           // ex: "Biblioteca Central - Bloco B"
+  andar?: string;            // ex: "1º Pavimento"
+  secao: string;             // ex: "Acervo Geral", "Obras Raras", "Periódicos Científicos", "Referência"
+  estante: string;           // ex: "Estante E-12"
+  prateleira: string;        // ex: "Prateleira 4"
+  codigoChamada: string;     // Notação completa de chamada (ex: "004.678 S586w 2.ed.")
+  tomboPatrimonial?: string; // Número de Tombo / Registro de Patrimônio / Código de Barras
+}
+
+export interface LibraryReview {
+  id: string;
+  itemId: string;
+  userId: string;
+  userName: string;
+  userEmail?: string;
+  rating: number;            // 1 a 5 estrelas
+  reviewTitle: string;
+  reviewText: string;
+  clarityRating?: number;    // 1 a 5 estrelas
+  rigorRating?: number;      // 1 a 5 estrelas
+  createdAt: string;
+  updatedAt?: string;
+  likesCount?: number;
+  tags?: string[];
+  recommends: boolean;
+}
+
+export interface LibraryItem {
+  id: string;
+  tipo: LibraryItemType;
+  titulo: string;
+  subtitulo?: string;
+  autores: string[];         // ex: ["Silva, Maria Aparecida da", "Peres, Pedro Henrique"]
+  organizadores?: string[];  // para coletâneas organizadas
+  tradutores?: string[];
+  editora: string;
+  localPublicacao: string;   // Cidade/País, ex: "São Paulo, SP"
+  anoPublicacao: number;
+  edicao?: string;           // ex: "3ª ed. rev. e ampl."
+  volume?: string;           // ex: "v. 1" ou "Vol. 4"
+  fasciculoNumero?: string;  // Para periódicos: ex: "v. 18, n. 3"
+  mesAnoPeriodico?: string;  // ex: "Julho/Setembro de 2024"
+  
+  // Identificadores universais
+  isbn?: string;             // ISBN-10 ou ISBN-13
+  issn?: string;             // Para periódicos (ex: 2317-6881)
+  doi?: string;              // Digital Object Identifier
+  codigoBarras?: string;     // Código de barras físico
+  
+  // Classificações biblioteconômicas (MARC21 / AACR2 / CDD / CDU)
+  cdd?: string;              // Classificação Decimal de Dewey (ex: 004, 340, 981)
+  cdu?: string;              // Classificação Decimal Universal
+  cutter?: string;           // Notação de autor (ex: S586w)
+  assuntos: string[];        // Tesauro / Assuntos / Cabeçalhos de assunto
+  
+  // Descrição física
+  paginas?: number;
+  dimensoesCm?: string;      // ex: "23 cm"
+  ilustrado?: boolean;
+  capaUrl?: string;          // Imagem de capa ou placeholder estético
+  idioma: string;            // ex: "Português", "Inglês", "Espanhol"
+  idiomaOriginal?: string;
+  
+  // Conteúdo & Resumo
+  sinopse: string;
+  sumarioOuNotas?: string;   // Notas sobre a obra, sumário estruturado ou bibliografia
+  
+  // Gestão física & Circulação
+  localizacao: LibraryItemPhysicalLocation;
+  exemplaresTotais: number;
+  exemplaresDisponiveis: number;
+  estadoConservacao: PhysicalConservationState;
+  statusCirculacao: PhysicalCirculationStatus;
+  
+  // Vínculos com a Enciclopédia WikiWorldWeb
+  artigoWikiVinculadoId?: string;
+  artigoWikiVinculadoTitulo?: string;
+  
+  // Metadados do cadastro e auditoria
+  cadastradoPorUid?: string;
+  cadastradoPorNome?: string;
+  dataCadastro: string;
+  ultimaModificacao?: string;
+  
+  // Métricas comunitárias
+  visualizacoes?: number;
+  mediaAvaliacoes?: number;  // 1.0 a 5.0
+  totalAvaliacoes?: number;
+}
+
+export interface LibraryFilterOptions {
+  searchTerm: string;
+  tipo?: LibraryItemType | 'todos';
+  statusCirculacao?: PhysicalCirculationStatus | 'todos';
+  cddClasse?: string;        // '000', '100', '200', etc.
+  idioma?: string;
+  apenasComDisponibilidade?: boolean;
+  ordenacao?: 'recentes' | 'titulo' | 'autor' | 'ano_desc' | 'ano_asc' | 'avaliacoes';
+}
+
 
 

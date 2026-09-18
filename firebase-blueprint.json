@@ -218,6 +218,44 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["id", "protocolNumber", "category", "title", "targetUsername", "status", "createdAt"]
+    },
+    "LibraryItem": {
+      "title": "LibraryItem",
+      "description": "Itens do acervo bibliográfico da biblioteca física e digital (livros, periódicos, teses, manuscritos)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tipo": { "type": "string", "enum": ["livro", "periodico", "tese", "artigo_cientifico", "obra_rara", "partitura", "mapa", "audiovisual"] },
+        "titulo": { "type": "string" },
+        "subtitulo": { "type": "string" },
+        "autores": { "type": "array" },
+        "editora": { "type": "string" },
+        "anoPublicacao": { "type": "number" },
+        "isbn": { "type": "string" },
+        "issn": { "type": "string" },
+        "cdd": { "type": "string" },
+        "localizacao": { "type": "object" },
+        "exemplaresTotais": { "type": "number" },
+        "exemplaresDisponiveis": { "type": "number" },
+        "statusCirculacao": { "type": "string" }
+      },
+      "required": ["id", "tipo", "titulo", "autores", "editora", "anoPublicacao"]
+    },
+    "LibraryReview": {
+      "title": "LibraryReview",
+      "description": "Avaliações e resenhas críticas da comunidade para itens do acervo",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewTitle": { "type": "string" },
+        "reviewText": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "itemId", "userId", "userName", "rating", "reviewText", "createdAt"]
     }
   },
   "firestore": {
@@ -288,6 +326,14 @@
     "/system_updates/{updateId}": {
       "schema": "SystemUpdateEntry",
       "description": "Notas de versão e atualizações do sistema gerenciadas por administradores"
+    },
+    "/library_items/{itemId}": {
+      "schema": "LibraryItem",
+      "description": "Itens catalogados do acervo bibliográfico (livros, periódicos, teses)"
+    },
+    "/library_reviews/{reviewId}": {
+      "schema": "LibraryReview",
+      "description": "Avaliações e resenhas críticas dos itens do acervo bibliográfico"
     }
   }
 }

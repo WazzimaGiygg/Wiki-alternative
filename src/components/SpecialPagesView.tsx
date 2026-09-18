@@ -63,6 +63,7 @@ interface SpecialPagesViewProps {
   onNavigateToAdminFirebase?: () => void;
   onNavigateToNotFound?: () => void;
   onNavigateToTools?: () => void;
+  onNavigateToLibrary?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -87,6 +88,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToAdminFirebase,
   onNavigateToNotFound,
   onNavigateToTools,
+  onNavigateToLibrary,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -518,6 +520,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Previsão do Tempo, Google Acadêmico, Calculadora e Teclado
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToLibrary && (
+          <button
+            id="btn-specialpages-library"
+            onClick={onNavigateToLibrary}
+            className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-emerald-600 text-white shrink-0 shadow-2xs">
+              <BookOpen size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate group-hover:underline">
+                  Special:Library
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-emerald-600 text-white">
+                  Acervo
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Wiki dos Livros & Periódicos (Biblioteca)
               </div>
             </div>
           </button>

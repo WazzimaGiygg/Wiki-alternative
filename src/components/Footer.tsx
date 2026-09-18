@@ -21,6 +21,7 @@ import {
   Pickaxe,
   Gamepad2,
   Award,
+  BookOpen,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -220,6 +221,15 @@ export const Footer: React.FC<FooterProps> = ({
               <span>Suporte & Tickets</span>
               <ExternalLink size={9} />
             </a>
+            <button
+              id="btn-footer-library"
+              onClick={() => onNavigate('library')}
+              title="Wiki dos Livros & Periódicos: Catálogo de Acervo Bibliográfico, Ficha Catalográfica e Avaliações"
+              className="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60 transition shadow-xs"
+            >
+              <BookOpen size={11} className="text-emerald-600 dark:text-emerald-400" />
+              <span>Wiki dos Livros & Periódicos</span>
+            </button>
             <button
               id="btn-footer-comparison"
               onClick={() => onNavigate('comparison')}

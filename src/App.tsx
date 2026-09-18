@@ -53,6 +53,7 @@ import { WikiCompetitorComparisonView } from './components/WikiCompetitorCompari
 import { WazzimaGiyggProfileView } from './components/WazzimaGiyggProfileView';
 import { NotFoundView } from './components/NotFoundView';
 import { ToolsView } from './components/ToolsView';
+import { LibraryCatalogView } from './components/LibraryCatalogView';
 import { updateSEO } from './utils/seoManager';
 import { StorageService } from './services/storageService';
 import {
@@ -1079,6 +1080,7 @@ export default function App() {
               onNavigateToAdminFirebase={() => handleNavigate('admin-firebase')}
               onNavigateToNotFound={() => handleShowNotFound('Special:NotFound', 'generic')}
               onNavigateToTools={() => handleNavigate('tools')}
+              onNavigateToLibrary={() => handleNavigate('library')}
               initialTab="all"
             />
           )}
@@ -1105,6 +1107,7 @@ export default function App() {
               onNavigateToAdminFirebase={() => handleNavigate('admin-firebase')}
               onNavigateToNotFound={() => handleShowNotFound('Special:NotFound', 'generic')}
               onNavigateToTools={() => handleNavigate('tools')}
+              onNavigateToLibrary={() => handleNavigate('library')}
               initialTab="watchlist"
             />
           )}
@@ -1452,6 +1455,32 @@ export default function App() {
                   handleOpenNewEditor();
                 }
               }}
+            />
+          )}
+
+          {currentView === 'library' && (
+            <LibraryCatalogView
+              currentUser={user}
+              onNavigateToArticle={(title) => {
+                const found = articles.find(
+                  (a) => a.titulo.toLowerCase().trim() === title.toLowerCase().trim()
+                );
+                if (found) {
+                  handleSelectArticle(found.id);
+                } else {
+                  setEditingArticle({
+                    id: '',
+                    pageUid: pages[0]?.uid || 'wikizero_info',
+                    titulo: title,
+                    descricao: `= ${title} =\nArtigo associado ao acervo bibliográfico da WikiWorldWeb.`,
+                    categoria: 'Livros e Periódicos',
+                    idioma: 'Português',
+                    dataCriacao: new Date().toISOString(),
+                  });
+                  setCurrentView('editor');
+                }
+              }}
+              onNavigateBack={() => handleNavigate('hub')}
             />
           )}
 
