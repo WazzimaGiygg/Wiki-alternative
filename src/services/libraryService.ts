@@ -38,315 +38,209 @@ export const DEWEY_CLASSES: { code: string; label: string; icon: string }[] = [
   { code: '900', label: '900 - História, Geografia, Viagens e Biografias', icon: '🌍' },
 ];
 
-export const INITIAL_LIBRARY_ITEMS: LibraryItem[] = [
-  {
-    id: 'lib-item-001',
-    tipo: 'livro',
-    titulo: 'Dom Casmurro',
-    subtitulo: 'Memórias de Bento Santiago',
-    autores: ['Assis, Machado de'],
-    editora: 'Garnier',
-    localPublicacao: 'Rio de Janeiro, RJ - Brasil',
-    anoPublicacao: 1899,
-    edicao: 'Edição Crítica Comemorativa',
-    isbn: '978-85-359-1066-8',
-    cdd: '869.3',
-    cdu: '821.134.3(81)-3',
-    cutter: 'A848d',
-    codigoBarras: '789123456001',
-    assuntos: ['Literatura Brasileira', 'Romance Psicológico', 'Realismo', 'Ciúme na Ficção', 'Rio de Janeiro Século XIX'],
-    paginas: 256,
-    dimensoesCm: '21 cm',
-    ilustrado: false,
-    idioma: 'Português',
-    sinopse: 'Narrado em primeira pessoa por Bento Santiago (Bentinho), o livro reconstrói sua juventude e seu relacionamento com Capitu. Uma das obras-primas da literatura universal, célebre pela dúvida eterna sobre a traição com Escobar.',
-    sumarioOuNotas: 'Contém prefácio crítico, notas explicativas de vocabulário e cronologia da vida do autor.',
-    localizacao: {
-      predio: 'Biblioteca Central WikiWorldWeb',
-      andar: '2º Pavimento',
-      secao: 'Literatura Brasileira e Lusófona',
-      estante: 'Estante L-04',
-      prateleira: 'Prateleira 2',
-      codigoChamada: '869.3 A848d 1899',
-      tomboPatrimonial: 'TOMBO-2026-0042',
-    },
-    exemplaresTotais: 4,
-    exemplaresDisponiveis: 3,
-    estadoConservacao: 'excelente',
-    statusCirculacao: 'disponivel',
-    artigoWikiVinculadoTitulo: 'Dom Casmurro',
-    dataCadastro: '2026-01-15T10:00:00.000Z',
-    mediaAvaliacoes: 4.9,
-    totalAvaliacoes: 18,
-    visualizacoes: 420,
-  },
-  {
-    id: 'lib-item-002',
-    tipo: 'periodico',
-    titulo: 'Revista Brasileira de História da Ciência',
-    subtitulo: 'Publicação Oficial da Sociedade Brasileira de História da Ciência (SBHC)',
-    autores: ['Sociedade Brasileira de História da Ciência (SBHC)'],
-    organizadores: ['Alfonso-Goldfarb, Ana Maria', 'Ferraz, Márcia Helena'],
-    editora: 'SBHC / FAPESP',
-    localPublicacao: 'São Paulo, SP - Brasil',
-    anoPublicacao: 2024,
-    volume: 'v. 17',
-    fasciculoNumero: 'n. 1 (Semestral)',
-    mesAnoPeriodico: 'Janeiro/Junho 2024',
-    issn: '2176-3275',
-    doi: '10.53727/rbhc.v17i1',
-    cdd: '509',
-    cutter: 'R454b',
-    assuntos: ['História da Ciência', 'Epistemologia', 'Ciência no Brasil', 'Astronomia Histórica', 'História Natural'],
-    paginas: 184,
-    dimensoesCm: '28 cm',
-    ilustrado: true,
-    idioma: 'Português / Inglês',
-    sinopse: 'Periódico arbitrado dedicado à difusão de pesquisas originais e documentos sobre a história das ciências exatas, biológicas, humanas e da medicina no Brasil e na América Latina.',
-    sumarioOuNotas: 'Dossiê: O Observatório Nacional e a transição republicana; Artigos livres de história da medicina.',
-    localizacao: {
-      predio: 'Biblioteca Central WikiWorldWeb',
-      andar: '1º Pavimento',
-      secao: 'Hemeroteca & Periódicos Científicos',
-      estante: 'Estante P-08',
-      prateleira: 'Prateleira 1',
-      codigoChamada: 'PER 509 R454b v.17 n.1',
-      tomboPatrimonial: 'PER-2024-0891',
-    },
-    exemplaresTotais: 2,
-    exemplaresDisponiveis: 2,
-    estadoConservacao: 'novo',
-    statusCirculacao: 'consulta_local',
-    dataCadastro: '2026-02-10T14:30:00.000Z',
-    mediaAvaliacoes: 4.8,
-    totalAvaliacoes: 7,
-    visualizacoes: 185,
-  },
-  {
-    id: 'lib-item-003',
-    tipo: 'livro',
-    titulo: 'Os Sertões',
-    subtitulo: 'Campanha de Canudos',
-    autores: ['Cunha, Euclides da'],
-    editora: 'Laemmert & C.',
-    localPublicacao: 'Rio de Janeiro, RJ - Brasil',
-    anoPublicacao: 1902,
-    edicao: '1ª edição fac-similar comentada',
-    isbn: '978-85-7480-456-9',
-    cdd: '981.05',
-    cutter: 'C972s',
-    assuntos: ['Guerra de Canudos', 'História do Brasil República', 'Sociologia do Sertão', 'Geografia do Nordeste', 'Antônio Conselheiro'],
-    paginas: 650,
-    dimensoesCm: '24 cm',
-    ilustrado: true,
-    idioma: 'Português',
-    sinopse: 'Dividido em "A Terra", "O Homem" e "A Luta", a obra funde jornalismo de guerra, tratado geográfico, estudo sociológico e epopeia literária sobre o massacre da comunidade de Canudos.',
-    localizacao: {
-      predio: 'Biblioteca Central WikiWorldWeb',
-      andar: '2º Pavimento',
-      secao: 'História do Brasil & Coleção Especial',
-      estante: 'Estante H-02',
-      prateleira: 'Prateleira 3',
-      codigoChamada: '981.05 C972s 1902',
-      tomboPatrimonial: 'TOMBO-2026-0115',
-    },
-    exemplaresTotais: 3,
-    exemplaresDisponiveis: 1,
-    estadoConservacao: 'bom',
-    statusCirculacao: 'disponivel',
-    dataCadastro: '2026-02-18T09:15:00.000Z',
-    mediaAvaliacoes: 5.0,
-    totalAvaliacoes: 12,
-    visualizacoes: 310,
-  },
-  {
-    id: 'lib-item-004',
-    tipo: 'tese',
-    titulo: 'Modelagem de Sistemas de Conhecimento Colaborativo em Ambientes Wiki Descentralizados',
-    subtitulo: 'Arquiteturas resilientes para enciclopédias digitais abertas',
-    autores: ['Peres, Pedro Henrique Cardona'],
-    editora: 'Universidade de São Paulo (USP) - Escola Politécnica',
-    localPublicacao: 'São Paulo, SP - Brasil',
-    anoPublicacao: 2025,
-    cdd: '004.678',
-    cdu: '004.738.5:001.92',
-    cutter: 'P437m',
-    assuntos: ['Sistemas Distribuídos', 'Wikis', 'Gestão do Conhecimento', 'Bancos de Dados NoSQL', 'Indexação em Tempo Real'],
-    paginas: 210,
-    dimensoesCm: '30 cm',
-    ilustrado: true,
-    idioma: 'Português',
-    sinopse: 'Tese acadêmica investigando mecanismos de persistência híbrida, integridade de dados e arquitetura de enciclopédias sem censura utilizando nós locais e computação em nuvem.',
-    localizacao: {
-      predio: 'Biblioteca Central WikiWorldWeb',
-      andar: '3º Pavimento',
-      secao: 'Teses e Dissertações Acadêmicas',
-      estante: 'Estante T-01',
-      prateleira: 'Prateleira 4',
-      codigoChamada: 'TES 004.678 P437m 2025',
-      tomboPatrimonial: 'TES-2025-0019',
-    },
-    exemplaresTotais: 2,
-    exemplaresDisponiveis: 2,
-    estadoConservacao: 'novo',
-    statusCirculacao: 'consulta_local',
-    dataCadastro: '2026-03-01T11:00:00.000Z',
-    mediaAvaliacoes: 5.0,
-    totalAvaliacoes: 5,
-    visualizacoes: 290,
-  },
-];
+// Dados especulativos desativados: apenas dados estritamente presentes no Cloud Firestore são carregados
+export const INITIAL_LIBRARY_ITEMS: LibraryItem[] = [];
+export const INITIAL_REVIEWS: LibraryReview[] = [];
 
-export const INITIAL_REVIEWS: LibraryReview[] = [
-  {
-    id: 'rev-001',
-    itemId: 'lib-item-001',
-    userId: 'user-pedro-admin',
-    userName: 'Pedro Henrique (Bibliotecário)',
-    rating: 5,
-    reviewTitle: 'Obra fundamental com riqueza psicológica inesgotável',
-    reviewText: 'Dom Casmurro permanece como a mais fina ironia da literatura brasileira. O exemplar físico da biblioteca conta com excelente encadernação e notas de rodapé indispensáveis.',
-    clarityRating: 5,
-    rigorRating: 5,
-    createdAt: '2026-01-20T16:00:00.000Z',
-    recommends: true,
-    likesCount: 8,
-  },
-  {
-    id: 'rev-002',
-    itemId: 'lib-item-002',
-    userId: 'user-pesquisador-1',
-    userName: 'Dra. Helena Martins (Historiadora)',
-    rating: 5,
-    reviewTitle: 'Dossiê impecável sobre a ciência brasileira',
-    reviewText: 'Artigos rigorosos e documentação primária farta. Fundamental para quem pesquisa o desenvolvimento da astronomia e geodesia no Brasil.',
-    clarityRating: 5,
-    rigorRating: 5,
-    createdAt: '2026-02-15T19:30:00.000Z',
-    recommends: true,
-    likesCount: 4,
-  },
-];
+// Constantes e flags para expurgar dados especulativos antigos do cache local
+const PURGE_SPECULATIVE_LIBRARY_FLAG = 'wiki_library_purged_speculative_v3_pure_firebase';
+const SPECULATIVE_ITEM_IDS = new Set(['lib-item-001', 'lib-item-002', 'lib-item-003', 'lib-item-004']);
+const SPECULATIVE_REVIEW_IDS = new Set(['rev-001', 'rev-002']);
 
-export const LibraryService = {
-  // === RECUPERAÇÃO DE ITENS DO ACERVO ===
-  async getLibraryItems(): Promise<LibraryItem[]> {
-    let local: LibraryItem[] = [];
+export function purgeSpeculativeLibraryData(): void {
+  if (typeof window === 'undefined') return;
+  if (!localStorage.getItem(PURGE_SPECULATIVE_LIBRARY_FLAG)) {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY_LIBRARY_ITEMS);
-      if (raw) {
-        local = JSON.parse(raw);
+      const rawItems = localStorage.getItem(STORAGE_KEY_LIBRARY_ITEMS);
+      if (rawItems) {
+        const parsed = JSON.parse(rawItems);
+        if (Array.isArray(parsed)) {
+          const cleaned = parsed.filter((it: any) => it && !SPECULATIVE_ITEM_IDS.has(it.id));
+          localStorage.setItem(STORAGE_KEY_LIBRARY_ITEMS, JSON.stringify(cleaned));
+        }
+      }
+      const rawReviews = localStorage.getItem(STORAGE_KEY_LIBRARY_REVIEWS);
+      if (rawReviews) {
+        const parsedRev = JSON.parse(rawReviews);
+        if (Array.isArray(parsedRev)) {
+          const cleanedRev = parsedRev.filter((r: any) => r && !SPECULATIVE_REVIEW_IDS.has(r.id));
+          localStorage.setItem(STORAGE_KEY_LIBRARY_REVIEWS, JSON.stringify(cleanedRev));
+        }
       }
     } catch {
-      local = [];
+      localStorage.removeItem(STORAGE_KEY_LIBRARY_ITEMS);
+      localStorage.removeItem(STORAGE_KEY_LIBRARY_REVIEWS);
     }
+    localStorage.setItem(PURGE_SPECULATIVE_LIBRARY_FLAG, 'true');
+  }
+}
 
-    if (!Array.isArray(local) || local.length === 0) {
-      local = [...INITIAL_LIBRARY_ITEMS];
-      try {
-        localStorage.setItem(STORAGE_KEY_LIBRARY_ITEMS, JSON.stringify(local));
-      } catch {
-        // ignora erro de quota
-      }
-    }
+function normalizeLibraryItem(id: string, data: any): LibraryItem {
+  return {
+    id: data.id || id,
+    tipo: data.tipo || 'livro',
+    titulo: data.titulo || 'Sem título',
+    subtitulo: data.subtitulo || undefined,
+    autores: Array.isArray(data.autores) && data.autores.length > 0 ? data.autores : ['Autor Desconhecido'],
+    organizadores: Array.isArray(data.organizadores) ? data.organizadores : undefined,
+    tradutores: Array.isArray(data.tradutores) ? data.tradutores : undefined,
+    editora: data.editora || 'Editora Independente',
+    localPublicacao: data.localPublicacao || 'Brasil',
+    anoPublicacao: Number(data.anoPublicacao) || new Date().getFullYear(),
+    edicao: data.edicao || undefined,
+    volume: data.volume || undefined,
+    fasciculoNumero: data.fasciculoNumero || undefined,
+    mesAnoPeriodico: data.mesAnoPeriodico || undefined,
+    isbn: data.isbn || undefined,
+    issn: data.issn || undefined,
+    doi: data.doi || undefined,
+    codigoBarras: data.codigoBarras || undefined,
+    cdd: data.cdd || undefined,
+    cdu: data.cdu || undefined,
+    cutter: data.cutter || undefined,
+    assuntos: Array.isArray(data.assuntos) ? data.assuntos : [],
+    paginas: data.paginas ? Number(data.paginas) : undefined,
+    dimensoesCm: data.dimensoesCm || undefined,
+    ilustrado: !!data.ilustrado,
+    capaUrl: data.capaUrl || undefined,
+    idioma: data.idioma || 'Português',
+    idiomaOriginal: data.idiomaOriginal || undefined,
+    sinopse: data.sinopse || '',
+    sumarioOuNotas: data.sumarioOuNotas || undefined,
+    localizacao: data.localizacao || {
+      predio: 'Biblioteca Central WikiWorldWeb',
+      andar: '1º Pavimento',
+      secao: 'Acervo Geral',
+      estante: 'Estante Geral',
+      prateleira: 'Prateleira 1',
+      codigoChamada: '000',
+    },
+    exemplaresTotais: Number(data.exemplaresTotais) || 1,
+    exemplaresDisponiveis: Number(data.exemplaresDisponiveis) || 1,
+    estadoConservacao: data.estadoConservacao || 'bom',
+    statusCirculacao: data.statusCirculacao || 'disponivel',
+    artigoWikiVinculadoId: data.artigoWikiVinculadoId || undefined,
+    artigoWikiVinculadoTitulo: data.artigoWikiVinculadoTitulo || undefined,
+    cadastradoPorUid: data.cadastradoPorUid || undefined,
+    cadastradoPorNome: data.cadastradoPorNome || undefined,
+    dataCadastro: data.dataCadastro || new Date().toISOString(),
+    ultimaModificacao: data.ultimaModificacao || undefined,
+    visualizacoes: Number(data.visualizacoes) || 0,
+    mediaAvaliacoes: Number(data.mediaAvaliacoes) || 0,
+    totalAvaliacoes: Number(data.totalAvaliacoes) || 0,
+  };
+}
 
+function normalizeLibraryReview(id: string, data: any): LibraryReview {
+  return {
+    id: data.id || id,
+    itemId: data.itemId,
+    userId: data.userId || 'anonimo',
+    userName: data.userName || 'Usuário',
+    rating: Number(data.rating) || 5,
+    reviewTitle: data.reviewTitle || '',
+    reviewText: data.reviewText || '',
+    clarityRating: data.clarityRating ? Number(data.clarityRating) : undefined,
+    rigorRating: data.rigorRating ? Number(data.rigorRating) : undefined,
+    createdAt: data.createdAt || new Date().toISOString(),
+    recommends: data.recommends !== false,
+    likesCount: Number(data.likesCount) || 0,
+  };
+}
+
+export const LibraryService = {
+  // === RECUPERAÇÃO DE ITENS DO ACERVO (ESTRITO AO FIREBASE) ===
+  async getLibraryItems(): Promise<LibraryItem[]> {
+    purgeSpeculativeLibraryData();
     const db = getDb();
     if (db) {
       try {
         const snap = await getDocs(collection(db, COLLECTION_ITEMS));
-        if (!snap.empty) {
-          const remoteList: LibraryItem[] = [];
-          snap.forEach((d) => {
-            const data = d.data();
-            remoteList.push({
-              id: data.id || d.id,
-              tipo: data.tipo || 'livro',
-              titulo: data.titulo || 'Sem título',
-              subtitulo: data.subtitulo || undefined,
-              autores: Array.isArray(data.autores) ? data.autores : ['Autor Desconhecido'],
-              organizadores: Array.isArray(data.organizadores) ? data.organizadores : undefined,
-              tradutores: Array.isArray(data.tradutores) ? data.tradutores : undefined,
-              editora: data.editora || 'Editora Independente',
-              localPublicacao: data.localPublicacao || 'Brasil',
-              anoPublicacao: Number(data.anoPublicacao) || new Date().getFullYear(),
-              edicao: data.edicao || undefined,
-              volume: data.volume || undefined,
-              fasciculoNumero: data.fasciculoNumero || undefined,
-              mesAnoPeriodico: data.mesAnoPeriodico || undefined,
-              isbn: data.isbn || undefined,
-              issn: data.issn || undefined,
-              doi: data.doi || undefined,
-              codigoBarras: data.codigoBarras || undefined,
-              cdd: data.cdd || undefined,
-              cdu: data.cdu || undefined,
-              cutter: data.cutter || undefined,
-              assuntos: Array.isArray(data.assuntos) ? data.assuntos : [],
-              paginas: data.paginas ? Number(data.paginas) : undefined,
-              dimensoesCm: data.dimensoesCm || undefined,
-              ilustrado: !!data.ilustrado,
-              capaUrl: data.capaUrl || undefined,
-              idioma: data.idioma || 'Português',
-              idiomaOriginal: data.idiomaOriginal || undefined,
-              sinopse: data.sinopse || '',
-              sumarioOuNotas: data.sumarioOuNotas || undefined,
-              localizacao: data.localizacao || {
-                secao: 'Acervo Geral',
-                estante: 'Estante Geral',
-                prateleira: 'Prateleira 1',
-                codigoChamada: '000',
-              },
-              exemplaresTotais: Number(data.exemplaresTotais) || 1,
-              exemplaresDisponiveis: Number(data.exemplaresDisponiveis) || 1,
-              estadoConservacao: data.estadoConservacao || 'bom',
-              statusCirculacao: data.statusCirculacao || 'disponivel',
-              artigoWikiVinculadoId: data.artigoWikiVinculadoId || undefined,
-              artigoWikiVinculadoTitulo: data.artigoWikiVinculadoTitulo || undefined,
-              cadastradoPorUid: data.cadastradoPorUid || undefined,
-              cadastradoPorNome: data.cadastradoPorNome || undefined,
-              dataCadastro: data.dataCadastro || new Date().toISOString(),
-              ultimaModificacao: data.ultimaModificacao || undefined,
-              visualizacoes: Number(data.visualizacoes) || 0,
-              mediaAvaliacoes: Number(data.mediaAvaliacoes) || 0,
-              totalAvaliacoes: Number(data.totalAvaliacoes) || 0,
-            });
-          });
-
-          // Atualiza o cache local
-          try {
-            localStorage.setItem(STORAGE_KEY_LIBRARY_ITEMS, JSON.stringify(remoteList));
-          } catch {
-            // ignora erro
-          }
-          return remoteList;
-        } else {
-          // Se o banco remoto estiver vazio, realiza o seed inicial no Firestore em background
-          this.seedInitialItemsToFirestore(db, local).catch((err) =>
-            console.warn('[LibraryService] Aviso ao propagar semente para o Firestore:', err)
-          );
-        }
-      } catch (err) {
-        console.warn('[LibraryService] Operando com cache local de itens bibliográficos:', err);
-      }
-    }
-
-    return local;
-  },
-
-  async seedInitialItemsToFirestore(db: ReturnType<typeof getDb>, items: LibraryItem[]): Promise<void> {
-    if (!db) return;
-    for (const item of items) {
-      try {
-        await setDoc(doc(db, COLLECTION_ITEMS, item.id), {
-          ...item,
-          _serverCreated: serverTimestamp(),
+        const remoteList: LibraryItem[] = [];
+        snap.forEach((d) => {
+          const data = d.data();
+          if (SPECULATIVE_ITEM_IDS.has(d.id) || SPECULATIVE_ITEM_IDS.has(data.id)) return;
+          remoteList.push(normalizeLibraryItem(d.id, data));
         });
-      } catch {
-        // silencia se offline
+
+        // Ordena por data de cadastro mais recente
+        remoteList.sort((a, b) => new Date(b.dataCadastro).getTime() - new Date(a.dataCadastro).getTime());
+
+        // Grava no cache estritamente os dados presentes no Firebase
+        try {
+          localStorage.setItem(STORAGE_KEY_LIBRARY_ITEMS, JSON.stringify(remoteList));
+        } catch {
+          // ignora erro de quota
+        }
+        return remoteList;
+      } catch (err) {
+        console.warn('[LibraryService] Erro ao consultar Firestore, verificando cache local:', err);
       }
     }
+
+    // Fallback: se offline, apenas dados reais já gravados no cache (sem itens especulativos)
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_LIBRARY_ITEMS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((it: LibraryItem) => it && !SPECULATIVE_ITEM_IDS.has(it.id));
+        }
+      }
+    } catch {
+      // ignora erro
+    }
+    return [];
   },
 
+  // === SINCRONIZAÇÃO / IMPORTAÇÃO DIRETA DO FIREBASE ===
+  async importFromFirebase(): Promise<{ items: LibraryItem[]; reviews: LibraryReview[]; count: number; timestamp: string }> {
+    purgeSpeculativeLibraryData();
+    const db = getDb();
+    if (!db) {
+      throw new Error('Cloud Firestore não está conectado.');
+    }
+
+    // 1. Importar todos os livros e periódicos do Firebase
+    const snapItems = await getDocs(collection(db, COLLECTION_ITEMS));
+    const importedItems: LibraryItem[] = [];
+    snapItems.forEach((d) => {
+      const data = d.data();
+      if (!SPECULATIVE_ITEM_IDS.has(d.id) && !SPECULATIVE_ITEM_IDS.has(data.id)) {
+        importedItems.push(normalizeLibraryItem(d.id, data));
+      }
+    });
+    importedItems.sort((a, b) => new Date(b.dataCadastro).getTime() - new Date(a.dataCadastro).getTime());
+
+    // 2. Importar todas as resenhas do Firebase
+    const snapReviews = await getDocs(collection(db, COLLECTION_REVIEWS));
+    const importedReviews: LibraryReview[] = [];
+    snapReviews.forEach((d) => {
+      const data = d.data();
+      if (!SPECULATIVE_REVIEW_IDS.has(d.id) && !SPECULATIVE_REVIEW_IDS.has(data.id)) {
+        importedReviews.push(normalizeLibraryReview(d.id, data));
+      }
+    });
+
+    // 3. Atualizar cache local com dados puros do Firebase
+    try {
+      localStorage.setItem(STORAGE_KEY_LIBRARY_ITEMS, JSON.stringify(importedItems));
+      localStorage.setItem(STORAGE_KEY_LIBRARY_REVIEWS, JSON.stringify(importedReviews));
+    } catch {
+      // ignora quota
+    }
+
+    return {
+      items: importedItems,
+      reviews: importedReviews,
+      count: importedItems.length,
+      timestamp: new Date().toISOString(),
+    };
+  },
+
+  // Subscrição em tempo real aos itens do Firestore
   subscribeToLibraryItems(callback: (items: LibraryItem[]) => void): () => void {
+    purgeSpeculativeLibraryData();
     const db = getDb();
     if (!db) {
       this.getLibraryItems().then(callback);
@@ -358,18 +252,20 @@ export const LibraryService = {
       return onSnapshot(
         q,
         (snap) => {
-          if (!snap.empty) {
-            const list: LibraryItem[] = [];
-            snap.forEach((d) => list.push(d.data() as LibraryItem));
-            try {
-              localStorage.setItem(STORAGE_KEY_LIBRARY_ITEMS, JSON.stringify(list));
-            } catch {
-              // quota
+          const list: LibraryItem[] = [];
+          snap.forEach((d) => {
+            const data = d.data();
+            if (!SPECULATIVE_ITEM_IDS.has(d.id) && !SPECULATIVE_ITEM_IDS.has(data.id)) {
+              list.push(normalizeLibraryItem(d.id, data));
             }
-            callback(list);
-          } else {
-            this.getLibraryItems().then(callback);
+          });
+          list.sort((a, b) => new Date(b.dataCadastro).getTime() - new Date(a.dataCadastro).getTime());
+          try {
+            localStorage.setItem(STORAGE_KEY_LIBRARY_ITEMS, JSON.stringify(list));
+          } catch {
+            // quota
           }
+          callback(list);
         },
         (error) => {
           if (error?.code === 'unavailable') return;
@@ -383,7 +279,9 @@ export const LibraryService = {
     }
   },
 
+  // Gravação de item no Firebase
   async saveLibraryItem(itemData: Partial<LibraryItem> & { titulo: string; tipo: LibraryItemType }): Promise<LibraryItem> {
+    purgeSpeculativeLibraryData();
     const currentList = await this.getLibraryItems();
     const id = itemData.id || `lib-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const now = new Date().toISOString();
@@ -402,8 +300,8 @@ export const LibraryService = {
       autores: Array.isArray(itemData.autores) && itemData.autores.length > 0 ? itemData.autores : ['Autor Desconhecido'],
       organizadores: itemData.organizadores || undefined,
       tradutores: itemData.tradutores || undefined,
-      editora: itemData.editora?.trim() || 'Editora não informada',
-      localPublicacao: itemData.localPublicacao?.trim() || 'Local não informado',
+      editora: itemData.editora?.trim() || 'Editora Independente',
+      localPublicacao: itemData.localPublicacao?.trim() || 'Brasil',
       anoPublicacao: Number(itemData.anoPublicacao) || new Date().getFullYear(),
       edicao: itemData.edicao?.trim() || undefined,
       volume: itemData.volume?.trim() || undefined,
@@ -426,6 +324,8 @@ export const LibraryService = {
       sinopse: itemData.sinopse?.trim() || '',
       sumarioOuNotas: itemData.sumarioOuNotas?.trim() || undefined,
       localizacao: itemData.localizacao || {
+        predio: 'Biblioteca Central WikiWorldWeb',
+        andar: '1º Pavimento',
         secao: 'Acervo Geral',
         estante: 'Estante 1',
         prateleira: 'Prateleira 1',
@@ -446,18 +346,7 @@ export const LibraryService = {
       totalAvaliacoes: existing?.totalAvaliacoes || 0,
     };
 
-    if (existingIndex >= 0) {
-      currentList[existingIndex] = fullItem;
-    } else {
-      currentList.unshift(fullItem);
-    }
-
-    try {
-      localStorage.setItem(STORAGE_KEY_LIBRARY_ITEMS, JSON.stringify(currentList));
-    } catch {
-      // quota
-    }
-
+    // 1. Grava no Cloud Firestore
     const db = getDb();
     if (db) {
       try {
@@ -470,9 +359,23 @@ export const LibraryService = {
       }
     }
 
+    // 2. Atualiza cache local
+    if (existingIndex >= 0) {
+      currentList[existingIndex] = fullItem;
+    } else {
+      currentList.unshift(fullItem);
+    }
+
+    try {
+      localStorage.setItem(STORAGE_KEY_LIBRARY_ITEMS, JSON.stringify(currentList));
+    } catch {
+      // quota
+    }
+
     return fullItem;
   },
 
+  // Remoção de item no Firebase
   async deleteLibraryItem(id: string): Promise<boolean> {
     const currentList = await this.getLibraryItems();
     const filtered = currentList.filter((item) => item.id !== id);
@@ -493,27 +396,9 @@ export const LibraryService = {
     return true;
   },
 
-  // === AVALIAÇÕES & RESENHAS CRÍTICAS ===
+  // === AVALIAÇÕES & RESENHAS CRÍTICAS (ESTRITAS AO FIREBASE) ===
   async getLibraryReviews(itemId?: string): Promise<LibraryReview[]> {
-    let local: LibraryReview[] = [];
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_LIBRARY_REVIEWS);
-      if (raw) {
-        local = JSON.parse(raw);
-      }
-    } catch {
-      local = [];
-    }
-
-    if (!Array.isArray(local) || local.length === 0) {
-      local = [...INITIAL_REVIEWS];
-      try {
-        localStorage.setItem(STORAGE_KEY_LIBRARY_REVIEWS, JSON.stringify(local));
-      } catch {
-        // quota
-      }
-    }
-
+    purgeSpeculativeLibraryData();
     const db = getDb();
     if (db) {
       try {
@@ -521,23 +406,40 @@ export const LibraryService = {
           ? query(collection(db, COLLECTION_REVIEWS), where('itemId', '==', itemId))
           : collection(db, COLLECTION_REVIEWS);
         const snap = await getDocs(q);
-        if (!snap.empty) {
-          const list: LibraryReview[] = [];
-          snap.forEach((d) => list.push(d.data() as LibraryReview));
-          return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        }
+        const list: LibraryReview[] = [];
+        snap.forEach((d) => {
+          const data = d.data();
+          if (SPECULATIVE_REVIEW_IDS.has(d.id) || SPECULATIVE_REVIEW_IDS.has(data.id)) return;
+          list.push(normalizeLibraryReview(d.id, data));
+        });
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        return list;
       } catch (err) {
         console.warn('[LibraryService] Fallback de reviews para cache local:', err);
       }
     }
 
-    if (itemId) {
-      return local.filter((r) => r.itemId === itemId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Fallback de cache local seguro (sem reviews especulativas)
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_LIBRARY_REVIEWS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter((r: LibraryReview) => r && !SPECULATIVE_REVIEW_IDS.has(r.id));
+          if (itemId) {
+            return filtered.filter((r) => r.itemId === itemId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          }
+          return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
+      }
+    } catch {
+      // ignora
     }
-    return local.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return [];
   },
 
   subscribeToLibraryReviews(itemId: string, callback: (reviews: LibraryReview[]) => void): () => void {
+    purgeSpeculativeLibraryData();
     const db = getDb();
     if (!db) {
       this.getLibraryReviews(itemId).then(callback);
@@ -550,7 +452,12 @@ export const LibraryService = {
         q,
         (snap) => {
           const list: LibraryReview[] = [];
-          snap.forEach((d) => list.push(d.data() as LibraryReview));
+          snap.forEach((d) => {
+            const data = d.data();
+            if (!SPECULATIVE_REVIEW_IDS.has(d.id) && !SPECULATIVE_REVIEW_IDS.has(data.id)) {
+              list.push(normalizeLibraryReview(d.id, data));
+            }
+          });
           list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           callback(list);
         },
@@ -566,7 +473,9 @@ export const LibraryService = {
     }
   },
 
+  // Gravar avaliação no Firebase
   async addLibraryReview(reviewData: Omit<LibraryReview, 'id' | 'createdAt'>): Promise<LibraryReview> {
+    purgeSpeculativeLibraryData();
     const id = `rev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const newReview: LibraryReview = {
       ...reviewData,
@@ -575,22 +484,7 @@ export const LibraryService = {
       likesCount: 0,
     };
 
-    // Atualiza cache local de avaliações
-    let localReviews: LibraryReview[] = [];
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_LIBRARY_REVIEWS);
-      localReviews = raw ? JSON.parse(raw) : [...INITIAL_REVIEWS];
-    } catch {
-      localReviews = [];
-    }
-    localReviews.unshift(newReview);
-    try {
-      localStorage.setItem(STORAGE_KEY_LIBRARY_REVIEWS, JSON.stringify(localReviews));
-    } catch {
-      // quota
-    }
-
-    // Grava no Firestore
+    // 1. Grava no Cloud Firestore
     const db = getDb();
     if (db) {
       try {
@@ -603,7 +497,23 @@ export const LibraryService = {
       }
     }
 
-    // Recalcula média de avaliações do item
+    // 2. Atualiza cache local de avaliações
+    let localReviews: LibraryReview[] = [];
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_LIBRARY_REVIEWS);
+      localReviews = raw ? JSON.parse(raw) : [];
+    } catch {
+      localReviews = [];
+    }
+    localReviews = localReviews.filter((r) => r && !SPECULATIVE_REVIEW_IDS.has(r.id));
+    localReviews.unshift(newReview);
+    try {
+      localStorage.setItem(STORAGE_KEY_LIBRARY_REVIEWS, JSON.stringify(localReviews));
+    } catch {
+      // quota
+    }
+
+    // 3. Recalcula média de avaliações do item no Firebase
     const itemReviews = localReviews.filter((r) => r.itemId === reviewData.itemId);
     const total = itemReviews.length;
     const avg = total > 0 ? Number((itemReviews.reduce((acc, cur) => acc + cur.rating, 0) / total).toFixed(1)) : 0;

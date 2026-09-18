@@ -166,7 +166,7 @@ export const DAILY_EDITOR_EDIT_LIMIT = 5;
 
 
 // Flag para expurgar dados estáticos e pré-definidos que não existem no banco de dados real
-const PURGE_PREDEFINED_FLAG = 'wikizero_purged_predefined_v8_pure_firebase';
+const PURGE_PREDEFINED_FLAG = 'wikizero_purged_predefined_v9_pure_firebase_no_speculative';
 
 function purgePredefinedNonDatabaseData() {
   if (typeof window === 'undefined') return;
@@ -192,6 +192,9 @@ function purgePredefinedNonDatabaseData() {
   localStorage.setItem(STORAGE_KEYS.ARBITRATION_MEMBERS, JSON.stringify([]));
   localStorage.setItem(STORAGE_KEYS.EMERGENCY_REPORTS, JSON.stringify([]));
   localStorage.setItem(STORAGE_KEYS.RATINGS, JSON.stringify({}));
+  // Limpar também acervo bibliográfico especulativo
+  localStorage.removeItem('wiki_library_items_cache_v1');
+  localStorage.removeItem('wiki_library_reviews_cache_v1');
 
   localStorage.setItem(PURGE_PREDEFINED_FLAG, 'true');
 }

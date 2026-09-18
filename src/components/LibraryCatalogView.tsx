@@ -26,6 +26,9 @@ import {
   CheckCircle2,
   X,
   Sparkles,
+  RefreshCw,
+  Database,
+  Cloud,
 } from 'lucide-react';
 import {
   LibraryItem,
@@ -177,6 +180,27 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
       return [];
     }
   });
+
+  // Estado de Sincronização Estrita com o Firebase
+  const [isSyncingFirebase, setIsSyncingFirebase] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+
+  const handleSyncWithFirebase = async () => {
+    setIsSyncingFirebase(true);
+    try {
+      const res = await LibraryService.importFromFirebase();
+      setItems(res.items);
+      setLastSyncTime(new Date().toLocaleTimeString());
+      setFormSuccessMessage(`Sincronização com Cloud Firestore concluída! ${res.count} obra(s) catalogada(s) carregada(s).`);
+      setTimeout(() => setFormSuccessMessage(null), 4500);
+    } catch (err: any) {
+      console.error('Erro na sincronização Firebase:', err);
+      setFormSuccessMessage(`Erro na sincronização Firebase: ${err?.message || 'Falha de conexão com Firestore'}`);
+      setTimeout(() => setFormSuccessMessage(null), 5000);
+    } finally {
+      setIsSyncingFirebase(false);
+    }
+  };
 
   // Carregar dados iniciais e subscrição em tempo real
   useEffect(() => {
@@ -513,24 +537,28 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
 
       setSelectedItem(saved);
       setActiveTab('acervo');
-      setFormSuccessMessage(isEditing ? 'Item atualizado no acervo bibliográfico!' : 'Novo item catalogado com sucesso!');
-      setTimeout(() => setFormSuccessMessage(null), 3500);
+      setFormSuccessMessage(
+        isEditing
+          ? 'Item bibliográfico atualizado e gravado com sucesso no Firebase!'
+          : 'Novo item catalogado e gravado diretamente no Cloud Firestore!'
+      );
+      setTimeout(() => setFormSuccessMessage(null), 4000);
     } catch (err) {
       console.error('Erro ao salvar item:', err);
-      alert('Houve uma falha ao cadastrar o item bibliográfico.');
+      alert('Houve uma falha ao cadastrar o item bibliográfico no Firebase.');
     }
   };
 
   // Excluir Item
   const handleDeleteItem = async (id: string) => {
-    if (!confirm('Deseja realmente remover esta obra do acervo da biblioteca?')) return;
+    if (!confirm('Deseja realmente remover esta obra do acervo da biblioteca e do Firebase?')) return;
     try {
       await LibraryService.deleteLibraryItem(id);
       if (selectedItem?.id === id) {
         setSelectedItem(null);
       }
-      setFormSuccessMessage('Item removido do acervo.');
-      setTimeout(() => setFormSuccessMessage(null), 3000);
+      setFormSuccessMessage('Item removido do acervo e excluído do Firebase.');
+      setTimeout(() => setFormSuccessMessage(null), 3500);
     } catch (err) {
       console.error('Erro ao excluir:', err);
     }
@@ -564,12 +592,42 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
             </button>
           )}
           <button
+            onClick={handleSyncWithFirebase}
+            disabled={isSyncingFirebase}
+            className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors shadow-sm disabled:opacity-50"
+            title="Importar e sincronizar catálogo diretamente do Cloud Firestore"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingFirebase ? 'animate-spin text-emerald-600' : ''}`} />
+            <span>{isSyncingFirebase ? 'Sincronizando...' : 'Sincronizar com Firebase'}</span>
+          </button>
+          <button
             onClick={startNewItemForm}
             className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Cadastrar Livro ou Periódico</span>
           </button>
+        </div>
+      </div>
+
+      {/* Painel de Status de Sincronia Estrita com o Firebase */}
+      <div className="mt-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-mono font-medium text-[11px]">
+            <Database className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Firebase Cloud Firestore</span>
+          </div>
+          <span className="text-slate-600 dark:text-slate-400">
+            Sincronia ativa: <strong>Apenas dados presentes no Firebase são carregados</strong>. Dados especulativos desativados.
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+          {lastSyncTime && (
+            <span>Última sincronização: <strong>{lastSyncTime}</strong></span>
+          )}
+          <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+            {items.length} obras oficiais no Firestore
+          </span>
         </div>
       </div>
 
@@ -771,7 +829,34 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
           {loading ? (
             <div className="text-center py-16 text-slate-500 dark:text-slate-400">
               <div className="animate-spin w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full mx-auto mb-3" />
-              <p className="text-xs">Consultando catálogo bibliográfico...</p>
+              <p className="text-xs">Consultando catálogo oficial no Cloud Firestore...</p>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-16 rounded-xl border border-dashed border-emerald-300 dark:border-emerald-800/60 bg-emerald-50/30 dark:bg-emerald-950/10 p-8">
+              <Database className="w-12 h-12 text-emerald-600/70 mx-auto mb-3" />
+              <h3 className="text-base font-serif font-bold text-slate-900 dark:text-slate-100">
+                Nenhuma obra cadastrada no Cloud Firestore ainda
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 max-w-lg mx-auto leading-relaxed">
+                O sistema está operando em <strong>sincronização estrita com o Firebase</strong>. Dados pré-definidos ou especulativos foram expurgados. Cadastre a primeira obra abaixo para gravá-la diretamente no banco de dados.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  onClick={startNewItemForm}
+                  className="px-4 py-2.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Cadastrar Primeiro Livro / Periódico</span>
+                </button>
+                <button
+                  onClick={handleSyncWithFirebase}
+                  disabled={isSyncingFirebase}
+                  className="px-4 py-2.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-2"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncingFirebase ? 'animate-spin' : ''}`} />
+                  <span>Sincronizar com Firebase</span>
+                </button>
+              </div>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="text-center py-16 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 p-8">
