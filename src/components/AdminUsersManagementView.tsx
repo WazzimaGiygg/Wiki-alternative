@@ -297,6 +297,15 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
 
     if (result.success && result.user) {
       setAvatarFeedback({ msg: result.message, type: 'success' });
+      const sanitizedUser: UserProfile = {
+        ...result.user,
+        photoURL: undefined,
+        avatarRemovedByAdmin: true,
+      };
+      delete (sanitizedUser as any).photoURL;
+      setUsers((prev) =>
+        prev.map((u) => (u.uid === sanitizedUser.uid ? { ...u, ...sanitizedUser } : u))
+      );
       await loadUsers();
       setTimeout(() => {
         setTargetUserForAvatarLGPD(null);
@@ -1363,7 +1372,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                   {/* Top Avatar & Name Info */}
                   <div className="flex items-start gap-3">
                     <div className="relative shrink-0">
-                      {u.photoURL ? (
+                      {u.photoURL && !u.avatarRemovedByAdmin ? (
                         <img
                           src={u.photoURL}
                           alt={u.displayName || u.username}
@@ -1492,7 +1501,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
                           <div className="relative shrink-0">
-                            {u.photoURL ? (
+                            {u.photoURL && !u.avatarRemovedByAdmin ? (
                               <img
                                 src={u.photoURL}
                                 alt={u.displayName}
@@ -1712,7 +1721,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
               <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="relative shrink-0">
-                    {targetUserForAvatarLGPD.photoURL ? (
+                    {targetUserForAvatarLGPD.photoURL && !targetUserForAvatarLGPD.avatarRemovedByAdmin ? (
                       <img
                         src={targetUserForAvatarLGPD.photoURL}
                         alt="Foto Atual"
@@ -1729,7 +1738,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                       {targetUserForAvatarLGPD.displayName || targetUserForAvatarLGPD.username}
                     </div>
                     <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                      {targetUserForAvatarLGPD.photoURL ? 'Foto personalizada ativa' : 'Avatar com inicial ativo'}
+                      {targetUserForAvatarLGPD.photoURL && !targetUserForAvatarLGPD.avatarRemovedByAdmin ? 'Foto personalizada ativa' : 'Avatar com inicial ativo'}
                     </div>
                     {targetUserForAvatarLGPD.avatarRemovedByAdmin && (
                       <div className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 mt-0.5">

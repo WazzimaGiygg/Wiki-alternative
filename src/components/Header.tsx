@@ -1304,11 +1304,11 @@ export const Header: React.FC<HeaderProps> = ({
                         className="px-3 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          {u.photoURL ? (
+                          {u.photoURL && !u.avatarRemovedByAdmin ? (
                             <img src={u.photoURL} alt={u.displayName} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                           ) : (
                             <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                              {u.displayName?.charAt(0).toUpperCase() || 'U'}
+                              {(u.displayName || u.username || 'U').charAt(0).toUpperCase()}
                             </div>
                           )}
                           <div className="min-w-0">
@@ -1469,7 +1469,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-1.5 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs"
               >
-                {user.photoURL ? (
+                {user.photoURL && !user.avatarRemovedByAdmin ? (
                   <img
                     src={user.photoURL}
                     alt={user.displayName}
@@ -1477,7 +1477,7 @@ export const Header: React.FC<HeaderProps> = ({
                   />
                 ) : (
                   <div className="w-5 h-5 rounded-xs bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
-                    {user.displayName?.charAt(0).toUpperCase() || 'U'}
+                    {(user.displayName || user.username || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
                 <span className="font-semibold text-slate-800 dark:text-slate-200 hidden sm:inline max-w-[90px] truncate">

@@ -128,7 +128,7 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
           {user ? (
             <div className="flex items-center justify-between bg-black/20 p-2.5 rounded-xl border border-white/10 mt-1">
               <div className="flex items-center gap-2.5 min-w-0">
-                {user.photoURL ? (
+                {user.photoURL && !user.avatarRemovedByAdmin ? (
                   <img
                     src={user.photoURL}
                     alt={user.displayName}
@@ -136,7 +136,7 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center border border-white/40">
-                    {user.displayName?.charAt(0).toUpperCase() || 'U'}
+                    {(user.displayName || user.username || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0">

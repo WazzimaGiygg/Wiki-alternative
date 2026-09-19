@@ -8,6 +8,8 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
+  updateDoc,
+  deleteField,
   onSnapshot,
   query,
   where,
@@ -1428,12 +1430,17 @@ export const StorageService = {
       : (existingProfile?.role && existingProfile.role !== 'convidado' ? existingProfile.role : 'editor');
 
     const isPrivileged = determinedRole === 'admin' || determinedRole === 'moderador';
+    const isAvatarRemovedByAdmin = Boolean(existingProfile?.avatarRemovedByAdmin);
 
     const userProfile: UserProfile = {
       uid: u.uid,
       email: u.email || '',
       displayName: u.displayName || u.email?.split('@')[0] || 'Usuário Google',
-      photoURL: u.photoURL || undefined,
+      photoURL: isAvatarRemovedByAdmin ? undefined : (u.photoURL || undefined),
+      avatarRemovedByAdmin: isAvatarRemovedByAdmin ? true : undefined,
+      avatarRemovedAt: existingProfile?.avatarRemovedAt,
+      avatarRemovedReason: existingProfile?.avatarRemovedReason,
+      avatarRemovedBy: existingProfile?.avatarRemovedBy,
       isGuest: false,
       isBanned,
       banReason: isBanned ? (banStatus.reason || 'Violação das políticas comunitárias.') : undefined,
@@ -1449,6 +1456,9 @@ export const StorageService = {
       isOnline: true,
       createdAt: existingProfile?.createdAt || new Date().toISOString(),
     };
+    if (isAvatarRemovedByAdmin) {
+      delete (userProfile as any).photoURL;
+    }
 
     // Criar e disponibilizar publicamente a página de usuário caso ainda não exista
     const publicProfile = await this.ensureUserPage(userProfile);
@@ -2407,7 +2417,12 @@ export const StorageService = {
         const snap = await getDocs(collection(db, 'userpage'));
         const remoteUsers: UserProfile[] = [];
         snap.forEach((d) => {
-          remoteUsers.push(d.data() as UserProfile);
+          const u = d.data() as UserProfile;
+          if (u.avatarRemovedByAdmin) {
+            delete (u as any).photoURL;
+            u.photoURL = undefined;
+          }
+          remoteUsers.push(u);
         });
 
         const usersSnap = await getDocs(collection(db, 'users'));
@@ -2415,25 +2430,50 @@ export const StorageService = {
         usersSnap.forEach((d) => {
           if (!existingUids.has(d.id)) {
             const data = d.data();
-            remoteUsers.push({
+            const isAvatarRemoved = Boolean(data.avatarRemovedByAdmin);
+            const userObj: UserProfile = {
               uid: d.id,
               username: data.username || data.displayName || d.id,
               displayName: data.displayName || data.username || d.id,
               email: data.email || '',
+              photoURL: isAvatarRemoved ? undefined : data.photoURL,
+              avatarRemovedByAdmin: isAvatarRemoved ? true : undefined,
+              avatarRemovedAt: data.avatarRemovedAt,
+              avatarRemovedReason: data.avatarRemovedReason,
+              avatarRemovedBy: data.avatarRemovedBy,
               role: data.role || 'leitor',
               editsCount: data.editsCount || data.editCount || 0,
               createdAt: data.createdAt || new Date().toISOString(),
               isBanned: data.isBanned || false,
               isGuest: false,
-            });
+            };
+            if (isAvatarRemoved) {
+              delete (userObj as any).photoURL;
+            }
+            remoteUsers.push(userObj);
             existingUids.add(d.id);
           }
         });
 
         if (remoteUsers.length > 0) {
           const mergedMap = new Map<string, UserProfile>();
-          localUsers.forEach((u) => mergedMap.set(u.uid, u));
-          remoteUsers.forEach((u) => mergedMap.set(u.uid, { ...(mergedMap.get(u.uid) || {}), ...u }));
+          localUsers.forEach((u) => {
+            if (u.avatarRemovedByAdmin) {
+              delete (u as any).photoURL;
+              u.photoURL = undefined;
+            }
+            mergedMap.set(u.uid, u);
+          });
+          remoteUsers.forEach((u) => {
+            const prev = mergedMap.get(u.uid);
+            const combined = { ...(prev || {}), ...u };
+            if (combined.avatarRemovedByAdmin || u.avatarRemovedByAdmin || prev?.avatarRemovedByAdmin) {
+              combined.avatarRemovedByAdmin = true;
+              delete (combined as any).photoURL;
+              combined.photoURL = undefined;
+            }
+            mergedMap.set(u.uid, combined);
+          });
           const merged = Array.from(mergedMap.values());
           localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(merged));
           return merged;
@@ -2465,7 +2505,12 @@ export const StorageService = {
         (snap) => {
           const remoteUsers: UserProfile[] = [];
           snap.forEach((d) => {
-            remoteUsers.push(d.data() as UserProfile);
+            const u = d.data() as UserProfile;
+            if (u.avatarRemovedByAdmin) {
+              delete (u as any).photoURL;
+              u.photoURL = undefined;
+            }
+            remoteUsers.push(u);
           });
 
           initializeLocalStorage();
@@ -2478,8 +2523,23 @@ export const StorageService = {
           }
 
           const mergedMap = new Map<string, UserProfile>();
-          localUsers.forEach((u) => mergedMap.set(u.uid, u));
-          remoteUsers.forEach((u) => mergedMap.set(u.uid, { ...(mergedMap.get(u.uid) || {}), ...u }));
+          localUsers.forEach((u) => {
+            if (u.avatarRemovedByAdmin) {
+              delete (u as any).photoURL;
+              u.photoURL = undefined;
+            }
+            mergedMap.set(u.uid, u);
+          });
+          remoteUsers.forEach((u) => {
+            const prev = mergedMap.get(u.uid);
+            const combined = { ...(prev || {}), ...u };
+            if (combined.avatarRemovedByAdmin || u.avatarRemovedByAdmin || prev?.avatarRemovedByAdmin) {
+              combined.avatarRemovedByAdmin = true;
+              delete (combined as any).photoURL;
+              combined.photoURL = undefined;
+            }
+            mergedMap.set(u.uid, combined);
+          });
           const merged = Array.from(mergedMap.values());
           localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(merged));
           callback(merged);
@@ -2584,12 +2644,17 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 {{Userbox|✏️|Editor(a) com rastreamento ativo de edições}}
 {{Userbox|🛡️|Comprometido(a) com a veracidade das informações}}`;
 
+      const hasAvatarRemovedNew = Boolean(user.avatarRemovedByAdmin);
       const newUserPage: UserProfile = {
         uid: user.uid,
         username: resolvedUsername,
         displayName: resolvedDisplayName,
         email: user.email || '',
-        photoURL: user.photoURL,
+        photoURL: hasAvatarRemovedNew ? undefined : user.photoURL,
+        avatarRemovedByAdmin: hasAvatarRemovedNew ? true : undefined,
+        avatarRemovedAt: user.avatarRemovedAt,
+        avatarRemovedReason: user.avatarRemovedReason,
+        avatarRemovedBy: user.avatarRemovedBy,
         role: user.role || 'editor',
         isGuest: false,
         isBanned: false,
@@ -2628,13 +2693,21 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         barnstars: user.barnstars || [],
         recentActivity: user.recentActivity || [],
       };
+      if (hasAvatarRemovedNew) {
+        delete (newUserPage as any).photoURL;
+      }
 
       await this.saveCommunityUser(newUserPage);
 
       // Persistir no Firestore na coleção 'userpage' com chave newUserPage.uid
       if (firebaseActive && db) {
         try {
-          await setDoc(doc(db, 'userpage', newUserPage.uid), newUserPage, { merge: true });
+          const firestorePayload: any = { ...newUserPage };
+          if (hasAvatarRemovedNew) {
+            delete firestorePayload.photoURL;
+            firestorePayload.photoURL = deleteField();
+          }
+          await setDoc(doc(db, 'userpage', newUserPage.uid), firestorePayload, { merge: true });
         } catch (err) {
           console.warn('[StorageService] Erro ao sincronizar nova userpage no Firestore:', err);
         }
@@ -2643,22 +2716,36 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       return newUserPage;
     } else {
       // Usuário já existente: manter integridade do UID e nome pré-existente
+      const hasAvatarRemovedExisting = Boolean(existing.avatarRemovedByAdmin || user.avatarRemovedByAdmin);
       const updated: UserProfile = {
         ...existing,
         ...user,
         uid: existing.uid,
         displayName: existing.displayName || user.displayName || 'Editor WikiWorldWeb',
         username: existing.username || user.username || existing.displayName || 'Editor',
+        photoURL: hasAvatarRemovedExisting ? undefined : (user.photoURL ?? existing.photoURL),
+        avatarRemovedByAdmin: hasAvatarRemovedExisting ? true : undefined,
+        avatarRemovedAt: user.avatarRemovedAt || existing.avatarRemovedAt,
+        avatarRemovedReason: user.avatarRemovedReason || existing.avatarRemovedReason,
+        avatarRemovedBy: user.avatarRemovedBy || existing.avatarRemovedBy,
         bio: existing.bio || user.bio,
         lastActive: now,
         recentActivity: existing.recentActivity || [],
       };
+      if (hasAvatarRemovedExisting) {
+        delete (updated as any).photoURL;
+      }
 
       await this.saveCommunityUser(updated);
 
       if (firebaseActive && db) {
         try {
-          await setDoc(doc(db, 'userpage', updated.uid), updated, { merge: true });
+          const firestorePayload: any = { ...updated };
+          if (hasAvatarRemovedExisting) {
+            delete firestorePayload.photoURL;
+            firestorePayload.photoURL = deleteField();
+          }
+          await setDoc(doc(db, 'userpage', updated.uid), firestorePayload, { merge: true });
         } catch (err) {
           console.warn('[StorageService] Erro ao atualizar userpage no Firestore:', err);
         }
@@ -2869,23 +2956,50 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     let updatedUsers: UserProfile[];
     if (index >= 0) {
       updatedUsers = [...users];
-      updatedUsers[index] = { ...updatedUsers[index], ...user };
+      const merged = { ...updatedUsers[index], ...user };
+      if (user.avatarRemovedByAdmin || updatedUsers[index].avatarRemovedByAdmin) {
+        merged.avatarRemovedByAdmin = true;
+        delete (merged as any).photoURL;
+        merged.photoURL = undefined;
+      }
+      updatedUsers[index] = merged;
     } else {
-      updatedUsers = [user, ...users];
+      const newUser = { ...user };
+      if (newUser.avatarRemovedByAdmin) {
+        delete (newUser as any).photoURL;
+        newUser.photoURL = undefined;
+      }
+      updatedUsers = [newUser, ...users];
     }
 
     localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(updatedUsers));
 
-    // Atualizar usuário local se for o próprio (pelo UID)
+    // Atualizar usuário local se for o próprio (pelo UID ou email)
     const currentUser = this.getCurrentUser();
-    if (currentUser && currentUser.uid === user.uid) {
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify({ ...currentUser, ...user }));
+    if (currentUser && (currentUser.uid === user.uid || (currentUser.email && currentUser.email === user.email))) {
+      const mergedCurrent = { ...currentUser, ...user };
+      if (user.avatarRemovedByAdmin || currentUser.avatarRemovedByAdmin) {
+        mergedCurrent.avatarRemovedByAdmin = true;
+        delete (mergedCurrent as any).photoURL;
+        mergedCurrent.photoURL = undefined;
+      }
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mergedCurrent));
     }
 
-    // Sincronizar na coleção 'userpage' do Firestore indexado por UID
+    // Sincronizar na coleção 'userpage' e 'users' do Firestore indexado por UID
     if (firebaseActive && db && user.uid) {
       try {
-        await setDoc(doc(db, 'userpage', user.uid), user, { merge: true });
+        const firestorePayload: any = { ...user };
+        if (user.avatarRemovedByAdmin) {
+          delete firestorePayload.photoURL;
+          firestorePayload.photoURL = deleteField();
+        }
+        await setDoc(doc(db, 'userpage', user.uid), firestorePayload, { merge: true });
+        try {
+          await setDoc(doc(db, 'users', user.uid), firestorePayload, { merge: true });
+        } catch {
+          // ignora
+        }
       } catch (err) {
         console.warn('[StorageService] Erro ao sincronizar userpage no Firestore:', err);
       }
@@ -3109,6 +3223,41 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       avatarRemovedReason: justificationText,
       avatarRemovedBy: adminUser?.displayName || adminUser?.username || adminUser?.email || 'Administrador',
     };
+    delete (updatedUser as any).photoURL;
+
+    // Direct Firestore update with deleteField() to guarantee immediate removal in Firestore
+    if (firebaseActive && db && user.uid) {
+      try {
+        await setDoc(
+          doc(db, 'userpage', user.uid),
+          {
+            avatarRemovedByAdmin: true,
+            avatarRemovedAt: updatedUser.avatarRemovedAt,
+            avatarRemovedReason: updatedUser.avatarRemovedReason,
+            avatarRemovedBy: updatedUser.avatarRemovedBy,
+            photoURL: deleteField(),
+          },
+          { merge: true }
+        );
+        try {
+          await setDoc(
+            doc(db, 'users', user.uid),
+            {
+              avatarRemovedByAdmin: true,
+              avatarRemovedAt: updatedUser.avatarRemovedAt,
+              avatarRemovedReason: updatedUser.avatarRemovedReason,
+              avatarRemovedBy: updatedUser.avatarRemovedBy,
+              photoURL: deleteField(),
+            },
+            { merge: true }
+          );
+        } catch {
+          // ignora caso users não exista
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao deletar photoURL no Firestore:', err);
+      }
+    }
 
     // Save updated user in community users & Firestore
     await this.saveCommunityUser(updatedUser);
@@ -3118,7 +3267,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     if (currentRaw) {
       try {
         const parsedCurrent: UserProfile = JSON.parse(currentRaw);
-        if (parsedCurrent.uid === user.uid || parsedCurrent.email === user.email) {
+        if (parsedCurrent.uid === user.uid || (parsedCurrent.email && parsedCurrent.email === user.email)) {
           const updatedCurrent = {
             ...parsedCurrent,
             photoURL: undefined,
@@ -3132,6 +3281,16 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         }
       } catch (e) {
         console.error('Error updating current session user avatar:', e);
+      }
+    }
+
+    // Broadcast avatar update so all active components update instantaneously
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('wikizero:user-avatar-updated', { detail: updatedUser }));
+        window.dispatchEvent(new Event('storage'));
+      } catch {
+        // ignore in SSR
       }
     }
 

@@ -432,6 +432,35 @@ export default function App() {
     };
   }, []);
 
+  // Sincronização em tempo real de avatar removido sob LGPD
+  useEffect(() => {
+    const handleAvatarUpdated = (e: Event) => {
+      const customEvt = e as CustomEvent<UserProfile>;
+      const updatedProfile = customEvt.detail;
+      if (updatedProfile) {
+        setUser((prev) => {
+          if (!prev) return null;
+          if (prev.uid === updatedProfile.uid || (prev.email && prev.email === updatedProfile.email)) {
+            const copy = {
+              ...prev,
+              ...updatedProfile,
+              photoURL: undefined,
+              avatarRemovedByAdmin: true,
+            };
+            delete (copy as any).photoURL;
+            return copy;
+          }
+          return prev;
+        });
+      }
+    };
+
+    window.addEventListener('wikizero:user-avatar-updated', handleAvatarUpdated);
+    return () => {
+      window.removeEventListener('wikizero:user-avatar-updated', handleAvatarUpdated);
+    };
+  }, []);
+
   // Listen to browser Back/Forward (popstate) and hash changes for deep linking
   useEffect(() => {
     const handleUrlChange = () => {

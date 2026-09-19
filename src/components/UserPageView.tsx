@@ -242,6 +242,28 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
     return () => unsubscribe();
   }, [userProfile?.uid]);
 
+  // Sincronização em tempo real de remoção de foto sob LGPD
+  useEffect(() => {
+    const handleAvatarUpdated = (e: Event) => {
+      const customEvt = e as CustomEvent<UserProfile>;
+      const updatedUser = customEvt.detail;
+      if (updatedUser && userProfile && (updatedUser.uid === userProfile.uid || updatedUser.email === userProfile.email)) {
+        const copy: UserProfile = {
+          ...userProfile,
+          ...updatedUser,
+          photoURL: undefined,
+          avatarRemovedByAdmin: true,
+        };
+        delete (copy as any).photoURL;
+        setUserProfile(copy);
+      }
+    };
+    window.addEventListener('wikizero:user-avatar-updated', handleAvatarUpdated);
+    return () => {
+      window.removeEventListener('wikizero:user-avatar-updated', handleAvatarUpdated);
+    };
+  }, [userProfile?.uid, userProfile?.email]);
+
   // Sync active tab whenever initialTab prop changes
   useEffect(() => {
     if (initialTab) {
@@ -514,7 +536,13 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
     setIsProcessingAvatar(false);
 
     if (result.success && result.user) {
-      setUserProfile(result.user);
+      const sanitized: UserProfile = {
+        ...result.user,
+        photoURL: undefined,
+        avatarRemovedByAdmin: true,
+      };
+      delete (sanitized as any).photoURL;
+      setUserProfile(sanitized);
       setAuditLogs(StorageService.getUserAuditLogs(userProfile.uid));
       setTalkMessages(StorageService.getUserTalkMessages(userProfile.uid));
       setAdminFeedback({ msg: result.message, type: 'success' });
@@ -648,7 +676,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
           {/* Avatar & Identificação Principal */}
           <div className="flex items-start sm:items-center gap-4">
             <div className="relative flex-shrink-0">
-              {userProfile.photoURL ? (
+              {userProfile.photoURL && !userProfile.avatarRemovedByAdmin ? (
                 <img
                   src={userProfile.photoURL}
                   alt={userProfile.displayName}
@@ -656,7 +684,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                 />
               ) : (
                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-serif text-2xl sm:text-3xl font-bold shadow-xs border-2 border-white/20">
-                  {userProfile.displayName?.charAt(0).toUpperCase() || 'U'}
+                  {(userProfile.displayName || userProfile.username || 'U').charAt(0).toUpperCase()}
                 </div>
               )}
               {/* Online / Status Indicator Badge */}
@@ -1794,7 +1822,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                   <div className="flex items-center justify-between flex-wrap gap-4 bg-white dark:bg-slate-900/80 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800">
                     <div className="flex items-center gap-3">
                       <div className="relative shrink-0">
-                        {userProfile.photoURL ? (
+                        {userProfile.photoURL && !userProfile.avatarRemovedByAdmin ? (
                           <img
                             src={userProfile.photoURL}
                             alt="Foto Atual"
@@ -1816,7 +1844,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                       </div>
                       <div>
                         <div className="font-bold text-xs text-slate-800 dark:text-slate-200">
-                          {userProfile.photoURL ? 'Foto personalizada cadastrada' : 'Avatar com inicial do nome ativo'}
+                          {userProfile.photoURL && !userProfile.avatarRemovedByAdmin ? 'Foto personalizada cadastrada' : 'Avatar com inicial do nome ativo'}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400">
                           {userProfile.avatarRemovedByAdmin ? (
