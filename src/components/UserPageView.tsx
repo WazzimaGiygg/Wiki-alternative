@@ -38,6 +38,8 @@ import {
   UserX,
   Link2,
   Copy,
+  ImageOff,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   UserProfile,
@@ -155,6 +157,12 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   const [renameJustification, setRenameJustification] = useState('Solicitação do Titular de Dados (Art. 18, III LGPD)');
   const [customJustification, setCustomJustification] = useState('');
   const [isRenaming, setIsRenaming] = useState(false);
+
+  // Admin Avatar Removal (LGPD Art. 18 - Inicial do Nome) State
+  const [avatarJustification, setAvatarJustification] = useState('Proteção e minimização de dados pessoais (Art. 6º, III e Art. 18 LGPD)');
+  const [customAvatarJustification, setCustomAvatarJustification] = useState('');
+  const [isProcessingAvatar, setIsProcessingAvatar] = useState(false);
+
   const [dailyLimitStatus, setDailyLimitStatus] = useState<DailyEditLimitStatus | null>(null);
 
   const isAdminOrMod =
@@ -485,6 +493,39 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
     }
   };
 
+  // Handle Admin Remove Avatar (LGPD Art. 18 / Proteção de Dados - Inicial do Nome)
+  const handleAdminRemoveAvatarLGPD = async () => {
+    if (!userProfile) return;
+    if (!isRealAdmin) {
+      setAdminFeedback({ msg: 'Acesso negado: Apenas Administradores podem remover a foto de usuários sob a LGPD.', type: 'error' });
+      return;
+    }
+
+    const justification = avatarJustification === 'outros'
+      ? (customAvatarJustification.trim() || 'Proteção e minimização de dados pessoais sob a LGPD')
+      : avatarJustification;
+
+    setIsProcessingAvatar(true);
+    const result = await StorageService.adminRemoveUserAvatarLGPD(
+      userProfile.uid,
+      justification,
+      currentUser
+    );
+    setIsProcessingAvatar(false);
+
+    if (result.success && result.user) {
+      setUserProfile(result.user);
+      setAuditLogs(StorageService.getUserAuditLogs(userProfile.uid));
+      setTalkMessages(StorageService.getUserTalkMessages(userProfile.uid));
+      setAdminFeedback({ msg: result.message, type: 'success' });
+      setCustomAvatarJustification('');
+      setTimeout(() => setAdminFeedback(null), 5000);
+    } else {
+      setAdminFeedback({ msg: result.message, type: 'error' });
+      setTimeout(() => setAdminFeedback(null), 5000);
+    }
+  };
+
   // Filtered Talk Messages
   const filteredTalkMessages = useMemo(() => {
     const safeTalkMessages = Array.isArray(talkMessages) ? talkMessages : [];
@@ -629,6 +670,16 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
               >
                 {userProfile.isBanned ? <Lock size={10} /> : <Check size={10} />}
               </div>
+
+              {/* LGPD Image Protection Badge */}
+              {userProfile.avatarRemovedByAdmin && (
+                <div
+                  className="absolute -top-1.5 -left-1.5 p-1 rounded-full bg-emerald-600 text-white border-2 border-white dark:border-slate-900 shadow-xs"
+                  title="LGPD: Imagem alterada pela Administração para salvaguarda de dados pessoais (Inicial do nome aplicada)"
+                >
+                  <ShieldCheck size={11} />
+                </div>
+              )}
             </div>
 
             <div>
@@ -643,6 +694,17 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                   <RoleIcon size={11} />
                   {userProfile.isBanned ? 'Conta Bloqueada' : currentRoleStyle.label}
                 </span>
+
+                {/* LGPD Tag if Avatar Protected */}
+                {userProfile.avatarRemovedByAdmin && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300"
+                    title={`Foto de perfil protegida pela Administração sob a LGPD em ${userProfile.avatarRemovedAt ? new Date(userProfile.avatarRemovedAt).toLocaleDateString('pt-BR') : ''}. Motivo: ${userProfile.avatarRemovedReason || 'Proteção de dados'}`}
+                  >
+                    <ShieldCheck size={11} className="text-emerald-600 dark:text-emerald-400" />
+                    <span>LGPD: Foto Protegida (Inicial)</span>
+                  </span>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">
@@ -1705,6 +1767,147 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                   <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
                   <p>
                     Seu nível de acesso atual é <strong>Moderador</strong>. Por exigência legal da LGPD e Marco Civil da Internet, a retificação de nomes cadastrais só pode ser homologada por um <strong>Administrador do Sistema</strong>.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 0.1 Proteção e Remoção de Imagem de Usuário (LGPD Art. 18 & Art. 16 - Exclusivo Administrador) */}
+            <div className="bg-white dark:bg-slate-900 border-2 border-emerald-300 dark:border-emerald-800/80 rounded-lg p-5 shadow-xs md:col-span-2">
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-900 dark:text-emerald-200 font-mono flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>Proteção e Remoção de Imagem de Usuário (LGPD Art. 18 & Art. 16)</span>
+                </h3>
+                <span className="text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-700">
+                  Exclusivo para Administrador
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 mb-4 leading-relaxed">
+                Segundo a <strong>LGPD (Lei Geral de Proteção de Dados - Lei 13.709/2018)</strong>, para proteção de dados do usuário e resguardo de privacidade, a Administração pode remover a imagem do usuário. <strong>A alteração fará com que o avatar passe a exibir a primeira letra do nome do usuário</strong> (somente se o administrador fizer a remoção).
+              </p>
+
+              {isRealAdmin ? (
+                <div className="bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/60 rounded-lg p-4 space-y-4">
+                  {/* Status Atual e Prévia */}
+                  <div className="flex items-center justify-between flex-wrap gap-4 bg-white dark:bg-slate-900/80 p-3 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                    <div className="flex items-center gap-3">
+                      <div className="relative shrink-0">
+                        {userProfile.photoURL ? (
+                          <img
+                            src={userProfile.photoURL}
+                            alt="Foto Atual"
+                            className="w-12 h-12 rounded-lg object-cover border border-slate-300 dark:border-slate-700"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-blue-600 text-white flex items-center justify-center font-serif text-xl font-bold">
+                            {(userProfile.displayName || userProfile.username || 'U').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        {userProfile.avatarRemovedByAdmin && (
+                          <div
+                            className="absolute -top-1 -right-1 p-0.5 bg-emerald-600 text-white rounded-full border border-white dark:border-slate-900 shadow-xs"
+                            title="Imagem protegida pela Administração"
+                          >
+                            <ShieldCheck size={9} />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                          {userProfile.photoURL ? 'Foto personalizada cadastrada' : 'Avatar com inicial do nome ativo'}
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {userProfile.avatarRemovedByAdmin ? (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
+                              <ShieldCheck size={12} />
+                              Protegido sob LGPD por {userProfile.avatarRemovedBy || 'Administrador'} em {userProfile.avatarRemovedAt ? new Date(userProfile.avatarRemovedAt).toLocaleDateString('pt-BR') : ''}
+                            </span>
+                          ) : (
+                            'Nenhuma remoção administrativa de imagem aplicada no momento'
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase font-mono">Padrão LGPD com Inicial:</span>
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-serif text-lg font-bold shadow-xs border-2 border-emerald-500">
+                        {(userProfile.displayName || userProfile.username || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Fundamento Legal / Motivação da Remoção LGPD:
+                    </label>
+                    <select
+                      value={avatarJustification}
+                      onChange={(e) => setAvatarJustification(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                    >
+                      <option value="Proteção e minimização de dados pessoais (Art. 6º, III e Art. 18 LGPD)">
+                        Proteção e minimização de dados pessoais (Art. 6º, III e Art. 18 LGPD)
+                      </option>
+                      <option value="Solicitação do Titular para Eliminação de Foto/Imagem (Art. 18, VI LGPD)">
+                        Solicitação do Titular para Eliminação de Foto/Imagem (Art. 18, VI LGPD)
+                      </option>
+                      <option value="Medida Protetiva Administrativa de Salvaguarda da Privacidade">
+                        Medida Protetiva Administrativa de Salvaguarda da Privacidade
+                      </option>
+                      <option value="Prevenção contra Exposição Indevida de Menor ou Imagem Sensível">
+                        Prevenção contra Exposição Indevida de Menor ou Imagem Sensível
+                      </option>
+                      <option value="outros">Outra Motivação Específica (Descrever abaixo)</option>
+                    </select>
+                  </div>
+
+                  {avatarJustification === 'outros' && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Descreva a justificativa jurídica ou técnica:
+                      </label>
+                      <input
+                        type="text"
+                        value={customAvatarJustification}
+                        onChange={(e) => setCustomAvatarJustification(e.target.value)}
+                        placeholder="Ex: Exclusão de foto pessoal conforme protocolo DPO #44810."
+                        className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-4 pt-1 flex-wrap">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      A remoção registrará um evento no <strong>Log de Auditoria</strong> e notificará o usuário em sua Discussão.
+                    </div>
+                    <button
+                      id="btn-admin-apply-remove-avatar"
+                      onClick={handleAdminRemoveAvatarLGPD}
+                      disabled={isProcessingAvatar}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded text-xs font-bold shadow-xs transition flex items-center gap-1.5 active:scale-95"
+                    >
+                      {isProcessingAvatar ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Processando Remoção...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ImageOff size={14} />
+                          <span>Remover Foto e Aplicar Inicial (LGPD)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                  <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p>
+                    Seu nível de acesso atual é <strong>Moderador</strong>. Por exigência da LGPD, a remoção e alteração administrativa de imagens de perfil só pode ser realizada pelo <strong>Administrador do Sistema</strong>.
                   </p>
                 </div>
               )}

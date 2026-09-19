@@ -3074,6 +3074,95 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     };
   },
 
+  async adminRemoveUserAvatarLGPD(
+    targetUid: string,
+    legalJustification: string,
+    adminUser: UserProfile | null
+  ): Promise<{ success: boolean; user?: UserProfile; message: string }> {
+    // 1. Permission check: Exclusivo para Administrador
+    const isAdmin =
+      adminUser?.role === 'admin' ||
+      adminUser?.email === 'pedrohenriquecardonaperes@gmail.com';
+
+    if (!isAdmin) {
+      return {
+        success: false,
+        message: 'Acesso negado: A remoção e alteração da imagem de usuário sob a LGPD é restrita exclusivamente a Administradores.',
+      };
+    }
+
+    const user = await this.getUserProfile(targetUid);
+    if (!user) {
+      return { success: false, message: 'Usuário não encontrado.' };
+    }
+
+    const userName = user.displayName || user.username || user.uid;
+    const initialLetter = (user.displayName || user.username || 'U').charAt(0).toUpperCase();
+    const justificationText = (legalJustification || '').trim() || 'Proteção e minimização de dados pessoais (Art. 6º, III e Art. 18 da LGPD)';
+
+    // Update user profile: remove photoURL, activate LGPD avatar protection flags
+    const updatedUser: UserProfile = {
+      ...user,
+      photoURL: undefined,
+      avatarRemovedByAdmin: true,
+      avatarRemovedAt: new Date().toISOString(),
+      avatarRemovedReason: justificationText,
+      avatarRemovedBy: adminUser?.displayName || adminUser?.username || adminUser?.email || 'Administrador',
+    };
+
+    // Save updated user in community users & Firestore
+    await this.saveCommunityUser(updatedUser);
+
+    // If current logged-in user is this user, update localStorage current user
+    const currentRaw = localStorage.getItem(STORAGE_KEYS.USER);
+    if (currentRaw) {
+      try {
+        const parsedCurrent: UserProfile = JSON.parse(currentRaw);
+        if (parsedCurrent.uid === user.uid || parsedCurrent.email === user.email) {
+          const updatedCurrent = {
+            ...parsedCurrent,
+            photoURL: undefined,
+            avatarRemovedByAdmin: true,
+            avatarRemovedAt: updatedUser.avatarRemovedAt,
+            avatarRemovedReason: updatedUser.avatarRemovedReason,
+            avatarRemovedBy: updatedUser.avatarRemovedBy,
+          };
+          delete (updatedCurrent as any).photoURL;
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedCurrent));
+        }
+      } catch (e) {
+        console.error('Error updating current session user avatar:', e);
+      }
+    }
+
+    // Log user audit action
+    this.logUserAuditAction(
+      user.uid,
+      userName,
+      'avatar_lgpd_removal',
+      `Foto do usuário removida administrativamente sob a LGPD para proteção de dados pessoais (substituída pela inicial '${initialLetter}'). Fundamento: ${justificationText}. Administrador: ${adminUser?.displayName || adminUser?.email}.`,
+      adminUser
+    );
+
+    // Send talk message notice to user
+    this.addUserTalkMessage(
+      user.uid,
+      userName,
+      {
+        titulo: `🛡️ Proteção de Imagem e Dados Pessoais (LGPD Art. 18)`,
+        conteudo: `Sua foto de perfil foi removida pela Administração em conformidade com as diretrizes da Lei Geral de Proteção de Dados Pessoais (LGPD) para salvaguarda e privacidade de dados pessoais.\n\nSeu avatar agora exibe a primeira letra do seu nome ('''${initialLetter}''').\n\n'''Fundamento / Justificativa:''' ${justificationText}\n\n'''Executado por:''' ${adminUser?.displayName || 'Administração WikiZero'}.`,
+        tipo: 'aviso_admin',
+      },
+      adminUser
+    );
+
+    return {
+      success: true,
+      user: updatedUser,
+      message: `Imagem removida com sucesso sob a LGPD. O avatar do usuário exibirá a primeira letra do nome ('${initialLetter}').`,
+    };
+  },
+
   async banUser(
     uid: string,
     reason: string,

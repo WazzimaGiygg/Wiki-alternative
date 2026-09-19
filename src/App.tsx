@@ -56,6 +56,7 @@ import { ToolsView } from './components/ToolsView';
 import { LibraryCatalogView } from './components/LibraryCatalogView';
 import { AcademicCatalogView } from './components/AcademicCatalogView';
 import { JornalNewsView } from './components/JornalNewsView';
+import { CustomContextMenu } from './components/CustomContextMenu';
 import { updateSEO } from './utils/seoManager';
 import { StorageService } from './services/storageService';
 import {
@@ -127,6 +128,32 @@ export default function App() {
       setCurrentView('smart-tv');
     }
   };
+
+  // Custom right-click context menu (Bloqueio do menu nativo e menu alternativo por símbolos)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; isOpen: boolean }>({
+    x: 0,
+    y: 0,
+    isOpen: false,
+  });
+
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      // Bloqueio do botão direito no Wiki
+      e.preventDefault();
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        isOpen: true,
+      });
+    };
+
+    // Use capture: true para garantir que o bloqueio intercepte qualquer clique com botão direito
+    window.addEventListener('contextmenu', handleContextMenu, { capture: true });
+    return () => {
+      window.removeEventListener('contextmenu', handleContextMenu, { capture: true });
+    };
+  }, []);
+
   // Multi-theme state supporting light, dark, google, google-dark, win95, genshin, android15, stardew, repo, minecraft, roblox, nokia3310
   const [theme, setTheme] = useState<AppTheme>(() => {
     const saved = localStorage.getItem('wikizero_theme_v3') as AppTheme | null;
@@ -542,6 +569,34 @@ export default function App() {
     setTargetUserIdentifier(identifier);
     setCurrentView('checkuser');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handlers para o menu alternativo do botão direito (por símbolos)
+  const handleContextMenuRefresh = async () => {
+    try {
+      const [a, p, n] = await Promise.all([
+        StorageService.getArticles(),
+        StorageService.getPages(),
+        Promise.resolve(StorageService.getNotifications()),
+      ]);
+      setArticles(Array.isArray(a) ? a : []);
+      setPages(Array.isArray(p) ? p : []);
+      setNotifications(Array.isArray(n) ? n : []);
+      handleNotify('Wiki atualizado e sincronizado com sucesso.', 'info');
+    } catch (err) {
+      console.warn('Erro na atualização via context menu:', err);
+      window.location.reload();
+    }
+  };
+
+  const handleContextMenuHome = () => {
+    setSelectedArticleId(null);
+    setSelectedPageUid(null);
+    handleNavigate('hub');
+  };
+
+  const handleContextMenuTools = () => {
+    handleNavigate('tools');
   };
 
   const handleSelectPage = (pageUid: string) => {
@@ -1793,6 +1848,17 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* 8. Menu Alternativo do Botão Direito (por símbolos) */}
+      <CustomContextMenu
+        isOpen={contextMenu.isOpen}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        onClose={() => setContextMenu((prev) => ({ ...prev, isOpen: false }))}
+        onRefresh={handleContextMenuRefresh}
+        onHome={handleContextMenuHome}
+        onTools={handleContextMenuTools}
+      />
     </div>
   );
 };

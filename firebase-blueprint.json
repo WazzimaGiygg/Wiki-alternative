@@ -12,6 +12,11 @@
         "role": { "type": "string", "enum": ["admin", "moderador", "editor", "leitor", "convidado"] },
         "isBanned": { "type": "boolean" },
         "banReason": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "avatarRemovedByAdmin": { "type": "boolean" },
+        "avatarRemovedAt": { "type": "string" },
+        "avatarRemovedReason": { "type": "string" },
+        "avatarRemovedBy": { "type": "string" },
         "isGeminiPremium": { "type": "boolean" },
         "geminiPlan": { "type": "string" },
         "createdAt": { "type": "string" }

@@ -43,6 +43,8 @@ import {
   TrendingUp,
   UserPlus,
   Share2,
+  ImageOff,
+  ShieldCheck,
 } from 'lucide-react';
 import { UserProfile, UserRole } from '../types';
 import { StorageService } from '../services/storageService';
@@ -116,6 +118,13 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
   const [customJustification, setCustomJustification] = useState('');
   const [isProcessingRename, setIsProcessingRename] = useState(false);
   const [renameFeedback, setRenameFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  // Admin Avatar Removal Modal State (LGPD Art. 18 / Proteção de Dados - Inicial do Nome)
+  const [targetUserForAvatarLGPD, setTargetUserForAvatarLGPD] = useState<UserProfile | null>(null);
+  const [avatarJustification, setAvatarJustification] = useState('Proteção e minimização de dados pessoais (Art. 6º, III e Art. 18 LGPD)');
+  const [customAvatarJustification, setCustomAvatarJustification] = useState('');
+  const [isProcessingAvatarLGPD, setIsProcessingAvatarLGPD] = useState(false);
+  const [avatarFeedback, setAvatarFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const isRealAdmin =
     currentUser?.role === 'admin' ||
@@ -258,6 +267,43 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
       }, 1800);
     } else {
       setRenameFeedback({ msg: result.message, type: 'error' });
+    }
+  };
+
+  // Avatar LGPD Modal handlers (Remoção Administrativa - Inicial do Nome)
+  const handleOpenAvatarModal = (u: UserProfile, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTargetUserForAvatarLGPD(u);
+    setAvatarJustification('Proteção e minimização de dados pessoais (Art. 6º, III e Art. 18 LGPD)');
+    setCustomAvatarJustification('');
+    setAvatarFeedback(null);
+  };
+
+  const handleExecuteRemoveAvatar = async () => {
+    if (!targetUserForAvatarLGPD) return;
+
+    const justification =
+      avatarJustification === 'outros'
+        ? customAvatarJustification.trim() || 'Proteção de dados pessoais e privacidade sob a LGPD'
+        : avatarJustification;
+
+    setIsProcessingAvatarLGPD(true);
+    const result = await StorageService.adminRemoveUserAvatarLGPD(
+      targetUserForAvatarLGPD.uid,
+      justification,
+      currentUser
+    );
+    setIsProcessingAvatarLGPD(false);
+
+    if (result.success && result.user) {
+      setAvatarFeedback({ msg: result.message, type: 'success' });
+      await loadUsers();
+      setTimeout(() => {
+        setTargetUserForAvatarLGPD(null);
+        setAvatarFeedback(null);
+      }, 1800);
+    } else {
+      setAvatarFeedback({ msg: result.message, type: 'error' });
     }
   };
 
@@ -1316,17 +1362,27 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                 <div>
                   {/* Top Avatar & Name Info */}
                   <div className="flex items-start gap-3">
-                    {u.photoURL ? (
-                      <img
-                        src={u.photoURL}
-                        alt={u.displayName || u.username}
-                        className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold font-serif text-lg shrink-0 shadow-xs">
-                        {(u.displayName || u.username || 'U').charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <div className="relative shrink-0">
+                      {u.photoURL ? (
+                        <img
+                          src={u.photoURL}
+                          alt={u.displayName || u.username}
+                          className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold font-serif text-lg shrink-0 shadow-xs">
+                          {(u.displayName || u.username || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {u.avatarRemovedByAdmin && (
+                        <div
+                          className="absolute -top-1.5 -right-1.5 bg-emerald-600 text-white p-1 rounded-full shadow-xs border-2 border-white dark:border-slate-900"
+                          title="LGPD: Imagem protegida pela administração (Inicial aplicada)"
+                        >
+                          <Shield size={10} />
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
@@ -1376,13 +1432,26 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
 
                   <div className="flex items-center gap-1.5">
                     {isRealAdmin && (
-                      <button
-                        onClick={(e) => handleOpenRenameModal(u, e)}
-                        className="p-1 rounded hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-600 dark:text-purple-400 transition"
-                        title="Retificar Nome (LGPD Art. 18, III)"
-                      >
-                        <UserCog size={13} />
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => handleOpenAvatarModal(u, e)}
+                          className={`p-1 rounded transition ${
+                            u.avatarRemovedByAdmin
+                              ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                              : 'text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/60'
+                          }`}
+                          title="Alterar / Remover Imagem sob a LGPD (Inicial do Nome)"
+                        >
+                          <ImageOff size={13} />
+                        </button>
+                        <button
+                          onClick={(e) => handleOpenRenameModal(u, e)}
+                          className="p-1 rounded hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-600 dark:text-purple-400 transition"
+                          title="Retificar Nome (LGPD Art. 18, III)"
+                        >
+                          <UserCog size={13} />
+                        </button>
+                      </>
                     )}
                     <span className="text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition flex items-center gap-0.5">
                       Ver Perfil <ChevronRight size={11} />
@@ -1422,17 +1491,27 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                     >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          {u.photoURL ? (
-                            <img
-                              src={u.photoURL}
-                              alt={u.displayName}
-                              className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold font-serif text-xs">
-                              {(u.displayName || u.username || 'U').charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                          <div className="relative shrink-0">
+                            {u.photoURL ? (
+                              <img
+                                src={u.photoURL}
+                                alt={u.displayName}
+                                className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold font-serif text-xs">
+                                {(u.displayName || u.username || 'U').charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            {u.avatarRemovedByAdmin && (
+                              <div
+                                className="absolute -top-1 -right-1 bg-emerald-600 text-white p-0.5 rounded-full shadow-xs border border-white dark:border-slate-900"
+                                title="LGPD: Imagem protegida pela administração (Inicial aplicada)"
+                              >
+                                <Shield size={8} />
+                              </div>
+                            )}
+                          </div>
                           <div>
                             <div className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
                               {u.displayName || u.username}
@@ -1463,13 +1542,26 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {isRealAdmin && (
-                            <button
-                              onClick={(e) => handleOpenRenameModal(u, e)}
-                              className="p-1.5 rounded hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-600 dark:text-purple-400 transition"
-                              title="Retificar Nome (LGPD)"
-                            >
-                              <UserCog size={14} />
-                            </button>
+                            <>
+                              <button
+                                onClick={(e) => handleOpenAvatarModal(u, e)}
+                                className={`p-1.5 rounded transition ${
+                                  u.avatarRemovedByAdmin
+                                    ? 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                                    : 'text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/60'
+                                }`}
+                                title="Alterar / Remover Imagem sob a LGPD (Inicial do Nome)"
+                              >
+                                <ImageOff size={14} />
+                              </button>
+                              <button
+                                onClick={(e) => handleOpenRenameModal(u, e)}
+                                className="p-1.5 rounded hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-600 dark:text-purple-400 transition"
+                                title="Retificar Nome (LGPD)"
+                              >
+                                <UserCog size={14} />
+                              </button>
+                            </>
                           )}
                           <span className="text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition font-semibold text-xs flex items-center gap-0.5">
                             Acessar <ChevronRight size={12} />
@@ -1586,6 +1678,143 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                   <Check size={13} />
                 )}
                 Retificar e Registrar Auditoria
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Admin LGPD User Avatar Removal Modal */}
+      {targetUserForAvatarLGPD && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden animate-in zoom-in-95 text-xs">
+            <div className="bg-[#1e293b] p-3 text-white flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-2 font-mono">
+                <ShieldCheck size={16} className="text-emerald-400" />
+                <h3 className="font-bold text-xs uppercase tracking-wider">
+                  Proteção de Imagem do Usuário (LGPD Art. 18)
+                </h3>
+              </div>
+              <button
+                onClick={() => setTargetUserForAvatarLGPD(null)}
+                className="text-white/70 hover:text-white p-0.5"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-900 dark:text-emerald-200 leading-relaxed">
+                Em conformidade com a <strong>LGPD (Lei 13.709/2018)</strong> para proteção e minimização de dados pessoais, a remoção da foto do usuário pelo <strong>Administrador</strong> fará com que o avatar passe a exibir exclusivamente a <strong>primeira letra do nome</strong>, salvaguardando a privacidade e dados biométricos do titular.
+              </div>
+
+              {/* Status Atual & Prévia da Alteração */}
+              <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative shrink-0">
+                    {targetUserForAvatarLGPD.photoURL ? (
+                      <img
+                        src={targetUserForAvatarLGPD.photoURL}
+                        alt="Foto Atual"
+                        className="w-12 h-12 rounded-lg object-cover border border-slate-300 dark:border-slate-600"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-lg font-serif">
+                        {(targetUserForAvatarLGPD.displayName || targetUserForAvatarLGPD.username || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-slate-800 dark:text-slate-100 truncate">
+                      {targetUserForAvatarLGPD.displayName || targetUserForAvatarLGPD.username}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                      {targetUserForAvatarLGPD.photoURL ? 'Foto personalizada ativa' : 'Avatar com inicial ativo'}
+                    </div>
+                    {targetUserForAvatarLGPD.avatarRemovedByAdmin && (
+                      <div className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
+                        <Shield size={10} /> Já protegido sob LGPD
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-1 shrink-0">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase font-mono">Após Remoção</span>
+                  <div className="w-11 h-11 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-lg font-serif shadow-xs border-2 border-emerald-500">
+                    {(targetUserForAvatarLGPD.displayName || targetUserForAvatarLGPD.username || 'U').charAt(0).toUpperCase()}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1 font-mono">
+                  Fundamento Legal / Justificativa LGPD:
+                </label>
+                <select
+                  value={avatarJustification}
+                  onChange={(e) => setAvatarJustification(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                >
+                  <option value="Proteção e minimização de dados pessoais (Art. 6º, III e Art. 18 LGPD)">
+                    Proteção e minimização de dados pessoais (Art. 6º, III e Art. 18 LGPD)
+                  </option>
+                  <option value="Solicitação do Titular para Eliminação de Foto/Imagem (Art. 18, VI LGPD)">
+                    Solicitação do Titular para Eliminação de Foto/Imagem (Art. 18, VI LGPD)
+                  </option>
+                  <option value="Medida Protetiva Administrativa de Salvaguarda da Privacidade">
+                    Medida Protetiva Administrativa de Salvaguarda da Privacidade
+                  </option>
+                  <option value="Prevenção contra Exposição Indevida de Menor ou Imagem Sensível">
+                    Prevenção contra Exposição Indevida de Menor ou Imagem Sensível
+                  </option>
+                  <option value="outros">Outro Fundamento (Personalizado)...</option>
+                </select>
+              </div>
+
+              {avatarJustification === 'outros' && (
+                <div>
+                  <textarea
+                    value={customAvatarJustification}
+                    onChange={(e) => setCustomAvatarJustification(e.target.value)}
+                    placeholder="Descreva a justificativa LGPD para a remoção da foto..."
+                    rows={2}
+                    className="w-full px-2.5 py-1 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+              )}
+
+              {avatarFeedback && (
+                <div
+                  className={`p-2 rounded text-[11px] ${
+                    avatarFeedback.type === 'success'
+                      ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300'
+                      : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border border-rose-300'
+                  }`}
+                >
+                  {avatarFeedback.msg}
+                </div>
+              )}
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+              <button
+                onClick={() => setTargetUserForAvatarLGPD(null)}
+                className="px-3 py-1 text-xs rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleExecuteRemoveAvatar}
+                disabled={isProcessingAvatarLGPD}
+                className="px-3.5 py-1 text-xs rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition flex items-center gap-1.5"
+              >
+                {isProcessingAvatarLGPD ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <ShieldCheck size={13} />
+                )}
+                Remover Imagem e Aplicar Inicial (LGPD)
               </button>
             </div>
           </div>

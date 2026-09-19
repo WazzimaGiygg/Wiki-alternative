@@ -92,6 +92,10 @@ export interface UserProfile {
   displayName: string;
   username?: string;
   photoURL?: string;
+  avatarRemovedByAdmin?: boolean;
+  avatarRemovedAt?: string;
+  avatarRemovedReason?: string;
+  avatarRemovedBy?: string;
   isGuest: boolean;
   isBanned: boolean;
   banReason?: string;
