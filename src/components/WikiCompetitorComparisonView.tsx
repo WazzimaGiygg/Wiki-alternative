@@ -19,6 +19,12 @@ import {
   BookMarked,
   Cpu,
   FileText,
+  UserCheck,
+  GraduationCap,
+  Library,
+  Smartphone,
+  Monitor,
+  Lock,
 } from 'lucide-react';
 import { ViewMode } from '../types';
 import { updateSEO } from '../utils/seoManager';
@@ -60,6 +66,56 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
     fandom: false,
     mediawiki: 'Inexistente',
     wikidot: false,
+    highlight: true,
+  },
+  {
+    name: 'Direito LGPD: Solicitação & Controle de Nome Civil e Foto de Perfil',
+    category: 'Privacidade & Proteção de Dados (LGPD)',
+    wikizero: 'Nativo (Conforme LGPD)',
+    wikipedia: 'Burocrático / Rígido',
+    fandom: 'Sem Controle LGPD',
+    mediawiki: 'Inexistente',
+    wikidot: 'Não',
+    highlight: true,
+  },
+  {
+    name: 'Portal Unificado de Artigos Universitários (Estilo SciELO & Google Acadêmico)',
+    category: 'Pesquisa Acadêmica & Universitária',
+    wikizero: 'Nativo e Centralizado',
+    wikipedia: 'Deletado por Notoriedade',
+    fandom: false,
+    mediawiki: 'Requer Servidor Próprio',
+    wikidot: false,
+    highlight: true,
+  },
+  {
+    name: 'Wiki de Livros Integrada (Fichas Catalográficas, ISBN e Resenhas)',
+    category: 'Literatura & Biblioteca de Obras',
+    wikizero: 'Integrada na Mesma Wiki',
+    wikipedia: 'Exige Outro Site (Wikibooks)',
+    fandom: 'Não',
+    mediawiki: 'Não',
+    wikidot: 'Não',
+    highlight: true,
+  },
+  {
+    name: 'App Universal Multiplataforma (Computador, Celular e Smart TV 10-Foot)',
+    category: 'Multiplataforma & Acessibilidade',
+    wikizero: 'PC, Celular e Smart TV',
+    wikipedia: 'Apenas Mobile Limitado',
+    fandom: 'Apenas Web Poluída',
+    mediawiki: 'Apenas Web Legada',
+    wikidot: 'Não',
+    highlight: true,
+  },
+  {
+    name: 'Ecossistema Centralizado em Uma Só Plataforma (Sem Dispersão em Sites Separados)',
+    category: 'Arquitetura de Conhecimento',
+    wikizero: 'Tudo no Mesmo Site',
+    wikipedia: 'Fragmentado em 12+ Projetos',
+    fandom: 'Ilhas Isoladas',
+    mediawiki: 'Silos Independentes',
+    wikidot: 'Isolado',
     highlight: true,
   },
   {
@@ -281,13 +337,93 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
+        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-teal-200 dark:border-teal-900/60 shadow-xs space-y-2">
           <div className="w-10 h-10 rounded-lg bg-teal-100 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 flex items-center justify-center">
             <ShieldCheck size={20} />
           </div>
           <h2 className="text-sm font-bold text-slate-900 dark:text-white">Governança Transparente</h2>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
             Sem panelas burocráticas ou perseguições como na Wikipédia. Conselho de Arbitragem (ArbCom) com registros públicos e auditáveis.
+          </p>
+        </div>
+
+        {/* 7. Proteção LGPD: Solicitação de Nome e Foto de Perfil */}
+        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/60 shadow-xs space-y-2 relative overflow-hidden">
+          <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <UserCheck size={20} />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Privacidade & LGPD</h2>
+            <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+              Lei 13.709
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Controle total do titular: solicitação transparente de nome civil, alteração ou exclusão de foto de perfil e portabilidade de dados.
+          </p>
+        </div>
+
+        {/* 8. Artigos Universitários (SciELO & Google Acadêmico) */}
+        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-900/60 shadow-xs space-y-2 relative overflow-hidden">
+          <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+            <GraduationCap size={20} />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Artigos Universitários</h2>
+            <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300">
+              Científico
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Portal unificado para publicar e indexar teses, monografias e artigos acadêmicos com padrão SciELO e Google Acadêmico sem censura de notoriedade.
+          </p>
+        </div>
+
+        {/* 9. Wiki de Livros Integrada */}
+        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/60 shadow-xs space-y-2 relative overflow-hidden">
+          <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <Library size={20} />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Wiki de Livros Integrada</h2>
+            <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
+              Biblioteca
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Cadastre sinopses, ISBN, fichas catalográficas e análises literárias na mesma enciclopédia, sem precisar de projetos irmãos externos como o Wikibooks.
+          </p>
+        </div>
+
+        {/* 10. Multiplataforma: PC, Celular e Smart TV */}
+        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-violet-200 dark:border-violet-900/60 shadow-xs space-y-2 relative overflow-hidden">
+          <div className="w-10 h-10 rounded-lg bg-violet-100 dark:bg-violet-950/80 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+            <Tv size={20} />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">PC, Celular & Smart TV</h2>
+            <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/60 text-violet-700 dark:text-violet-300">
+              Universal
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Instalável no computador como PWA/Desktop, fluido no smartphone e com interface 10-foot dedicada para controle remoto de Smart TV.
+          </p>
+        </div>
+
+        {/* 11. Conhecimento 100% Centralizado */}
+        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900/60 shadow-xs space-y-2 relative overflow-hidden">
+          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <Globe2 size={20} />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Tudo em Uma Só Plataforma</h2>
+            <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+              Centralizado
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Adeus à fragmentação da Wikimedia em 12+ sites separados: verbetes, artigos acadêmicos, livros, IA e governança numa única página integrada.
           </p>
         </div>
       </section>
@@ -633,6 +769,379 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
             </span>
           </div>
         </div>
+
+        {/* 7. WikiWorldWeb vs Outros: Proteção LGPD & Solicitação de Nome e Foto */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-emerald-300 dark:border-emerald-800/80 shadow-sm space-y-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-500/15 via-emerald-400/5 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
+                07
+              </span>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Privacidade do Titular & LGPD (Lei 13.709/2018)
+                </span>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Solicitação de Nome e Foto de Perfil: Respeito Pleno aos Direitos da LGPD
+                </h2>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate('mydata')}
+              className="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-semibold text-xs hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <UserCheck size={14} />
+              <span>Painel Meus Dados & LGPD</span>
+              <ArrowRight size={12} />
+            </button>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Na <strong>Wikipédia</strong>, nomes de usuários e dados civis acidentalmente inseridos ficam cravados nos históricos públicos de banco de dados, sendo quase impossível retificar ou expurgar sem processos burocráticos humilhantes e longas disputas com administradores. No <strong>Fandom</strong> e no <strong>Wikidot</strong>, o rastreamento comercial e a falta de conformidade com a legislação brasileira deixam os dados do usuário vulneráveis.
+          </p>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Na <strong>WikiWorldWeb</strong>, a privacidade é um pilar fundacional: dispomos de ferramentas dedicadas onde o usuário pode solicitar a <strong>retificação ou exclusão de seu nome civil</strong>, atualizar ou <strong>remover sua foto de perfil/avatar</strong> e exercer todos os direitos previstos no <strong>Artigo 18 da LGPD</strong> (Acesso, Retificação, Anonimização, Portabilidade e Eliminação de dados pessoais), tudo auditado com transparência e sem burocracia opressiva.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-emerald-600 dark:text-emerald-400">Direito ao Nome Civil</div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Altere ou solicite anonimização do nome de exibição a qualquer momento, sem registros públicos invasivos.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-teal-600 dark:text-teal-400">Controle de Foto e Avatar</div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Liberdade para carregar, alterar ou apagar sua foto de perfil instantaneamente com respeito à imagem pessoal.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-blue-600 dark:text-blue-400">Sem Venda de Dados</div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Seus dados de navegação nunca são compartilhados ou vendidos para corretoras de publicidade de terceiros.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-indigo-600 dark:text-indigo-400">Portabilidade e Exclusão</div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Exportação de dados em formato aberto (JSON) e direito integral ao esquecimento e exclusão de conta.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-wrap gap-2 text-[11px]">
+            <span className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono border border-emerald-200 dark:border-emerald-900/40">
+              ✓ Total conformidade com a LGPD (Lei 13.709/2018)
+            </span>
+            <span className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono border border-emerald-200 dark:border-emerald-900/40">
+              ✓ Solicitação e remoção facilitada de nome e foto de perfil
+            </span>
+            <span className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono border border-emerald-200 dark:border-emerald-900/40">
+              ✓ Painel dedicado do titular para portabilidade
+            </span>
+            <span className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono border border-emerald-200 dark:border-emerald-900/40">
+              ✓ Inexistente ou excessivamente rígido em outras wikis
+            </span>
+          </div>
+        </div>
+
+        {/* 8. WikiWorldWeb vs Outros: Portal Unificado de Artigos Universitários (SciELO e Google Acadêmico) */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-sky-300 dark:border-sky-800/80 shadow-sm space-y-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-sky-500/15 via-sky-400/5 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold text-xs">
+                08
+              </span>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">
+                  Pesquisa Científica & Repositório Universitário
+                </span>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Portal Unificado de Artigos Universitários: No Nível de SciELO e Google Acadêmico
+                </h2>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate('academic')}
+              className="px-3 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/70 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 font-semibold text-xs hover:bg-sky-100 dark:hover:bg-sky-900/60 transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <GraduationCap size={14} />
+              <span>Explorar Artigos Acadêmicos</span>
+              <ArrowRight size={12} />
+            </button>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Na <strong>Wikipédia</strong>, a produção acadêmica legítima de estudantes, professores e pesquisadores é frequentemente alvo de <strong>eliminação rápida sumária</strong> sob o pretexto de "falta de notoriedade da grande mídia" ou alegações de "pesquisa inédita", forçando os acadêmicos a buscarem plataformas fragmentadas e repositórios dispersos. No Fandom e Wikidot, não há qualquer suporte nativo para citações ABNT, DOI, resumos científicos ou teses.
+          </p>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            A <strong>WikiWorldWeb</strong> inova com uma <strong>página unificada de artigos universitários e científicos</strong>, equiparando-se a plataformas de referência como o <strong>Google Acadêmico, SciELO, CAPES e Latindex</strong>. Aqui, produções universitárias, monografias, dissertações de mestrado, teses e relatórios técnicos encontram um lar centralizado, com campos de metadados para autores, orientadores, instituição de ensino, resumo, palavras-chave, DOI e formato de citação padronizado.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-sky-700 dark:text-sky-400 flex items-center gap-1.5">
+                <FileText size={14} />
+                <span>1. Inserção Unificada e Ágil</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Formulário próprio para submissão de artigos científicos, teses e TCCs com indexação instantânea na enciclopédia.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                <BookOpen size={14} />
+                <span>2. Metadados & Citação ABNT / DOI</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Geração automática de referências bibliográficas prontas para copiar no formato ABNT, APA e links DOI verificados.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                <Award size={14} />
+                <span>3. Sem Censura de Notoriedade</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Seu esforço de pesquisa acadêmica não é descartado por moderadores arbitrários: a ciência aberta é valorizada e preservada.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-wrap gap-2 text-[11px]">
+            <span className="px-2.5 py-1 rounded bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-mono border border-sky-200 dark:border-sky-900/40">
+              ✓ Portal acadêmico integrado no mesmo ecossistema
+            </span>
+            <span className="px-2.5 py-1 rounded bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-mono border border-sky-200 dark:border-sky-900/40">
+              ✓ Equiparado a SciELO, Google Acadêmico e repositórios CAPES
+            </span>
+            <span className="px-2.5 py-1 rounded bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-mono border border-sky-200 dark:border-sky-900/40">
+              ✓ Citações automáticas em ABNT e suporte a DOI
+            </span>
+            <span className="px-2.5 py-1 rounded bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 font-mono border border-sky-200 dark:border-sky-900/40">
+              ✓ Democratização real do conhecimento científico
+            </span>
+          </div>
+        </div>
+
+        {/* 9. WikiWorldWeb vs Outros: Wiki de Livros Integrada (Fichas Catalográficas e ISBN) */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-amber-300 dark:border-amber-800/80 shadow-sm space-y-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-500/15 via-amber-400/5 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-xs">
+                09
+              </span>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                  Biblioteca & Acervo Bibliográfico Centralizado
+                </span>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Wiki de Livros Integrada: Obras, Sinopses e Fichas Catalográficas em um Só Lugar
+                </h2>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate('library')}
+              className="px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 font-semibold text-xs hover:bg-amber-100 dark:hover:bg-amber-900/60 transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <Library size={14} />
+              <span>Acessar Wiki de Livros</span>
+              <ArrowRight size={12} />
+            </button>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            No universo Wikimedia, o conhecimento sobre livros foi artificialmente repartido entre múltiplos sites desconexos: para saber a sinopse você vai na Wikipédia; para ler capítulos você é redirecionado para o <em>Wikibooks</em>; para ver textos originais precisa ir ao <em>Wikisource</em>; e para frases famosas precisa do <em>Wikiquote</em>. São <strong>quatro domínios diferentes, interfaces divergentes e bancos de dados fragmentados</strong>.
+          </p>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Na <strong>WikiWorldWeb</strong>, a <strong>"Wiki de Livros" (Biblioteca)</strong> é uma experiência centralizada e integrada: é possível catalogar informações completas sobre livros nacionais e internacionais, com registro de <strong>ISBN, ficha catalográfica, biografia do autor, editora, gênero literário, resenha crítica e notas de estudo</strong>, tudo perfeitamente cruzado com os artigos enciclopédicos da própria plataforma.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-amber-600 dark:text-amber-400">Ficha Catalográfica & ISBN</div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Padrão bibliotecário formal com ano de publicação, edição, número de páginas e código de barras ISBN.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-orange-600 dark:text-orange-400">Sinopses e Resenhas</div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Resumos aprofundados dos capítulos, guias de leitura, análises de personagens e contexto histórico.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-emerald-600 dark:text-emerald-400">Vinculação de Autores</div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Navegação bidirecional: do livro para a biografia do autor e da biografia para a bibliografia completa.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-blue-600 dark:text-blue-400">Fim dos Saltos Externos</div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Consulte literatura e dados enciclopédicos sem precisar trocar de abas ou abrir outros portais.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-wrap gap-2 text-[11px]">
+            <span className="px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-mono border border-amber-200 dark:border-amber-900/40">
+              ✓ Biblioteca de livros centralizada e integrada
+            </span>
+            <span className="px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-mono border border-amber-200 dark:border-amber-900/40">
+              ✓ Fichas catalográficas completas com validação de ISBN
+            </span>
+            <span className="px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-mono border border-amber-200 dark:border-amber-900/40">
+              ✓ Sem fragmentação de projetos secundários como Wikibooks
+            </span>
+            <span className="px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-mono border border-amber-200 dark:border-amber-900/40">
+              ✓ Interligação direta com artigos temáticos da enciclopédia
+            </span>
+          </div>
+        </div>
+
+        {/* 10. WikiWorldWeb vs Outros: Aplicativo para Computador, Celular e Smart TV */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-violet-300 dark:border-violet-800/80 shadow-sm space-y-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-violet-500/15 via-violet-400/5 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center font-bold text-xs">
+                10
+              </span>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">
+                  Acessibilidade Universal & Multiplataforma
+                </span>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Aplicativo Multiplataforma: Computador, Celular e Smart TV (Interface 10-Foot)
+                </h2>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate('smart-tv')}
+              className="px-3 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/70 border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 font-semibold text-xs hover:bg-violet-100 dark:hover:bg-violet-900/60 transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <Tv size={14} />
+              <span>Experimentar Modo Smart TV</span>
+              <ArrowRight size={12} />
+            </button>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Plataformas legadas como Wikipédia e MediaWiki foram desenhadas para telas de desktop do início dos anos 2000. Seus aplicativos mobile são versões simplificadas e não existe <strong>nenhum suporte para televisores ou salas de aula conectadas</strong>. No Fandom, navegar em uma Smart TV é inviável devido a popups pesados que travam o navegador da TV.
+          </p>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            A <strong>WikiWorldWeb</strong> foi concebida para qualquer dispositivo moderno através de uma experiência unificada:
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-violet-700 dark:text-violet-400 flex items-center gap-1.5">
+                <Monitor size={14} />
+                <span>1. Computador (Desktop / PWA)</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Pode ser instalado no Windows, Mac e Linux via Progressive Web App (PWA), funcionando como app nativo com atalhos de teclado ágeis e modo tela cheia.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                <Smartphone size={14} />
+                <span>2. Celular (Mobile Touch)</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Layout reativo ultrafino adaptado para toque, gestos de swipe, modo escuro AMOLED e baixo consumo de pacote de dados móveis.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 space-y-1">
+              <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                <Tv size={14} />
+                <span>3. Smart TV (Interface 10-Foot)</span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Modo exclusivo de 10 pés com tipografia de alta legibilidade, foco por setas do controle remoto (D-Pad), ideal para salas, auditórios e escolas.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-wrap gap-2 text-[11px]">
+            <span className="px-2.5 py-1 rounded bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 font-mono border border-violet-200 dark:border-violet-900/40">
+              ✓ App PWA instalável no Computador
+            </span>
+            <span className="px-2.5 py-1 rounded bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 font-mono border border-violet-200 dark:border-violet-900/40">
+              ✓ Navegação móvel fluida e ergonômica
+            </span>
+            <span className="px-2.5 py-1 rounded bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 font-mono border border-violet-200 dark:border-violet-900/40">
+              ✓ Suporte pioneiro a Smart TVs com controle remoto
+            </span>
+            <span className="px-2.5 py-1 rounded bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 font-mono border border-violet-200 dark:border-violet-900/40">
+              ✓ Sincronização e modo offline em todas as telas
+            </span>
+          </div>
+        </div>
+
+        {/* 11. WikiWorldWeb vs Outros: Ecossistema Centralizado vs Fragmentação de Projetos */}
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border-2 border-blue-300 dark:border-blue-800/80 shadow-sm space-y-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-500/15 via-indigo-400/5 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
+                11
+              </span>
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  Arquitetura Unificada de Conhecimento
+                </span>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  O Poder da Centralização: O Fim dos Ecossistemas Fragmentados
+                </h2>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigate('hub')}
+              className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-semibold text-xs hover:bg-blue-100 dark:hover:bg-blue-900/60 transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <Globe2 size={14} />
+              <span>Explorar Hub Centralizado</span>
+              <ArrowRight size={12} />
+            </button>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Em outras plataformas colaborativas históricas, como o ecossistema Wikimedia, a arquitetura foi desenhada em <strong>silos isolados e fragmentados</strong>: o usuário precisa navegar entre a Wikipédia (artigos), Wikilivros (manuais), Wikisource (documentos históricos), Wikiversidade (educação), Wikinotícias (atualidades), Wikcionário (termos), Wikimedia Commons (arquivos) e Wikidata (dados estruturados). Cada um possui regras próprias, páginas de discussão separadas e layouts desiguais.
+          </p>
+
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Na <strong>WikiWorldWeb</strong>, todos esses benefícios estão <strong>centralizados no mesmo ambiente</strong>. O usuário pesquisa, redige e consulta artigos enciclopédicos, artigos universitários e científicos (estilo SciELO/Google Acadêmico), a biblioteca de livros (Wiki de Livros), o assistente Gemini e o caderno Gemini Notebook, tudo com a mesma conta, a mesma sessão segura e a mesma interface elegante, rápida e intuitiva.
+          </p>
+
+          <div className="pt-2 flex flex-wrap gap-2 text-[11px]">
+            <span className="px-2.5 py-1 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono border border-blue-200 dark:border-blue-900/40">
+              ✓ Todos os recursos em uma única plataforma coesa
+            </span>
+            <span className="px-2.5 py-1 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono border border-blue-200 dark:border-blue-900/40">
+              ✓ Fim da dispersão em dezenas de sites e subdomínios diferentes
+            </span>
+            <span className="px-2.5 py-1 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono border border-blue-200 dark:border-blue-900/40">
+              ✓ Busca unificada que localiza artigos, livros e pesquisas acadêmicas
+            </span>
+            <span className="px-2.5 py-1 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono border border-blue-200 dark:border-blue-900/40">
+              ✓ Gestão transparente e integrada com privacidade LGPD
+            </span>
+          </div>
+        </div>
       </section>
 
       {/* SEO FAQ Section (Targeting Search Engine Rich Snippets) */}
@@ -645,6 +1154,51 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
         </div>
 
         <div className="space-y-3 text-xs sm:text-sm">
+          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+            <h3 className="font-bold text-slate-900 dark:text-white mb-1">
+              Como a WikiWorldWeb garante a privacidade do nome e foto de perfil perante a LGPD?
+            </h3>
+            <p className="text-slate-600 dark:text-slate-300">
+              A WikiWorldWeb segue estritamente a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018). Disponibilizamos um painel dedicado onde o usuário pode solicitar a retificação ou exclusão de seu nome civil, alterar ou expurgar sua foto de perfil, exportar todos os seus dados em formato interoperável e revogar consentimentos, sem que registros indesejados fiquem eternamente expostos em bancos de dados públicos.
+            </p>
+          </div>
+
+          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+            <h3 className="font-bold text-slate-900 dark:text-white mb-1">
+              Como funciona o portal de artigos universitários comparado a Google Acadêmico e SciELO?
+            </h3>
+            <p className="text-slate-600 dark:text-slate-300">
+              Diferente da Wikipédia, onde artigos científicos e teses de estudantes são constantemente apagados sob o pretexto burocrático de "falta de notoriedade da grande mídia", a WikiWorldWeb oferece um portal acadêmico unificado. Nele, autores podem submeter monografias, dissertações, artigos e relatórios técnicos com campos estruturados para resumo, palavras-chave, autores, DOI e citações ABNT, equiparando-se a repositórios como SciELO e Google Acadêmico.
+            </p>
+          </div>
+
+          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+            <h3 className="font-bold text-slate-900 dark:text-white mb-1">
+              Qual a vantagem de inserir informações de livros na "Wiki de Livros" integrada?
+            </h3>
+            <p className="text-slate-600 dark:text-slate-300">
+              Em vez de exigir a criação de contas em múltiplos sites separados como o Wikibooks ou Wikisource da Wikimedia, a WikiWorldWeb possui a "Wiki de Livros" (Biblioteca) totalmente integrada. Nela, é possível consultar e cadastrar fichas catalográficas, ISBN, sinopses por capítulo, análises críticas e biografias dos autores de forma centralizada e sem saltos entre domínios.
+            </p>
+          </div>
+
+          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+            <h3 className="font-bold text-slate-900 dark:text-white mb-1">
+              A WikiWorldWeb funciona como aplicativo em computador, celular e Smart TV?
+            </h3>
+            <p className="text-slate-600 dark:text-slate-300">
+              Sim! A plataforma é universal: no computador roda como PWA ou app Desktop instalável com alta performance; no celular conta com interface responsiva e modo touch ergonômico; e na Smart TV oferece uma interface pioneira de 10 pés (10-Foot UI) otimizada para navegação com o controle remoto (D-Pad), fontes ampliadas e leitura confortável na sala ou sala de aula.
+            </p>
+          </div>
+
+          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+            <h3 className="font-bold text-slate-900 dark:text-white mb-1">
+              Por que a experiência centralizada da WikiWorldWeb é superior à fragmentação de outras plataformas?
+            </h3>
+            <p className="text-slate-600 dark:text-slate-300">
+              Na Wikimedia ou em redes de wikis isoladas, o usuário precisa de mais de 10 links e diferentes contas para acessar verbetes, livros, dados e pesquisas. A WikiWorldWeb reúne enciclopédia geral, pesquisas acadêmicas, acervo de livros, ferramentas inteligentes de IA e proteção de privacidade em um só portal, com busca universal integrada e sessão unificada.
+            </p>
+          </div>
+
           <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
             <h3 className="font-bold text-slate-900 dark:text-white mb-1">
               Como o Gemini Notebook auxilia na criação de artigos na WikiWorldWeb?
@@ -698,7 +1252,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           Junte-se à Revolução do Conhecimento Livre & Inteligente
         </h2>
         <p className="text-xs sm:text-sm text-blue-100 max-w-2xl mx-auto">
-          Crie artigos de alta qualidade com o auxílio do Gemini Notebook e do Assistente Gemini, ou explore nossa enciclopédia sem anúncios e com liberdade editorial.
+          Crie artigos de alta qualidade com auxílio do Gemini Notebook, acesse pesquisas universitárias, explore a Wiki de Livros e aproveite a plataforma no computador, celular ou Smart TV.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           {onOpenGeminiNotebook && (
@@ -719,6 +1273,34 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
               <span>Abrir Assistente Gemini</span>
             </button>
           )}
+          <button
+            onClick={() => onNavigate('academic')}
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer"
+          >
+            <GraduationCap size={15} />
+            <span>Portal Acadêmico</span>
+          </button>
+          <button
+            onClick={() => onNavigate('library')}
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer"
+          >
+            <Library size={15} />
+            <span>Wiki de Livros</span>
+          </button>
+          <button
+            onClick={() => onNavigate('smart-tv')}
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer"
+          >
+            <Tv size={15} />
+            <span>Modo Smart TV</span>
+          </button>
+          <button
+            onClick={() => onNavigate('mydata')}
+            className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer"
+          >
+            <UserCheck size={15} />
+            <span>Meus Dados (LGPD)</span>
+          </button>
           <button
             onClick={() => onOpenEditor()}
             className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold text-xs sm:text-sm transition flex items-center gap-2 cursor-pointer"
