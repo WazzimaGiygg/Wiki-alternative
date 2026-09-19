@@ -1233,13 +1233,23 @@ export const StorageService = {
     const raw = localStorage.getItem(STORAGE_KEYS.USER);
     if (!raw) return null;
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // Política restritiva: Bloqueio permanente de sessão de usuários convidados ou não registrados
+      if (parsed?.isGuest || parsed?.role === 'convidado') {
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        return null;
+      }
+      return parsed;
     } catch {
       return null;
     }
   },
 
   saveUser(user: UserProfile) {
+    if (user?.isGuest || user?.role === 'convidado') {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      return;
+    }
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
   },
 
@@ -1248,78 +1258,10 @@ export const StorageService = {
   },
 
   async createGuestUser(): Promise<UserProfile> {
-    let guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
-
-    // Tentar autenticar anonimamente no Firebase Auth para vincular ao Firestore (se permitido no projeto)
-    if (auth && isAnonymousAuthSupported) {
-      try {
-        const anonCred = await signInAnonymously(auth);
-        if (anonCred?.user?.uid) {
-          guestId = anonCred.user.uid;
-        }
-      } catch (anonErr: any) {
-        if (
-          anonErr?.code === 'auth/admin-restricted-operation' ||
-          anonErr?.code === 'auth/operation-not-allowed' ||
-          anonErr?.message?.includes('admin-restricted-operation')
-        ) {
-          isAnonymousAuthSupported = false;
-        } else {
-          console.warn('[StorageService] signInAnonymously indisponível ou desativado, operando com ID local:', anonErr);
-        }
-      }
-    }
-
-    // Verificar se o ID anônimo ou IP está bloqueado
-    const banStatus = await this.getUserBanStatus(guestId);
-    if (banStatus.isBanned) {
-      if (auth) {
-        try {
-          await signOut(auth);
-        } catch {
-          // Ignora
-        }
-      }
-      this.clearUser();
-      throw new Error(
-        `Acesso Bloqueado: Usuários bloqueados não podem realizar login ou editar na WikiWorldWeb. Motivo: ${banStatus.reason || 'Bloqueio de acesso.'}`
-      );
-    }
-
-    // Verificação de segurança: Bloqueio para conexões mascaradas por VPN/Proxy
-    const vpnCheck = await checkClientVpnConnection();
-    if (vpnCheck.blocked) {
-      logVpnBlockAttempt({
-        ip: vpnCheck.ip,
-        provider: vpnCheck.provider,
-        reason: vpnCheck.reason,
-        attemptType: 'guest_login',
-        riskScore: vpnCheck.riskScore,
-        country: vpnCheck.country,
-      });
-      this.logUserAuditAction(
-        guestId,
-        'Convidado (Tentativa)',
-        'vpn_login_blocked',
-        `Tentativa de criação de sessão de convidado bloqueada: VPN/Proxy detectado (${vpnCheck.provider || vpnCheck.ip}, Risco: ${vpnCheck.riskScore}%)`,
-        null
-      );
-      throw new Error(
-        `Acesso bloqueado: Criação de sessão de convidado desabilitada para conexões via VPN/Proxy anônimo (${vpnCheck.provider || vpnCheck.ip}). Desative sua VPN para acessar a WikiWorldWeb.`
-      );
-    }
-
-    const guest: UserProfile = {
-      uid: guestId,
-      email: `${guestId}@convidado.wikizero.com`,
-      displayName: `Convidado (${guestId.substring(6, 10)})`,
-      isGuest: true,
-      isBanned: false,
-      role: 'convidado',
-      createdAt: new Date().toISOString(),
-    };
-    this.saveUser(guest);
-    return guest;
+    // Política de Governança: Login de convidados e usuários não registrados permanentemente desabilitado
+    throw new Error(
+      'Acesso desabilitado: O login para usuários convidados ou não registrados foi desabilitado no sistema da Wiki. Apenas usuários devidamente registrados pela administração possuem permissão para efetuar login.'
+    );
   },
 
   async loginWithGoogle(): Promise<UserProfile> {
@@ -1417,50 +1359,136 @@ export const StorageService = {
     const banStatus = await this.getUserBanStatus(u.uid, u.email || undefined, u.displayName || undefined);
     const isBanned = !!banStatus.isBanned;
 
-    // Tentar recuperar perfil pré-existente para manter cargo (moderador/admin) se houver
+    // Tentar recuperar perfil pré-existente para validar se o usuário é previamente registrado
     let existingProfile: UserProfile | null = null;
     try {
       existingProfile = await this.getUserProfile(u.uid);
+      if (!existingProfile && u.email) {
+        existingProfile = await this.getUserProfile(u.email);
+      }
     } catch {
       // fallback
     }
 
+    // Se ainda não achou, consultar diretamente nas coleções 'userpage' e 'users' do Firestore por email
+    if (!existingProfile && firebaseActive && db && u.email) {
+      try {
+        const emailLower = u.email.toLowerCase().trim();
+        const qUsers = query(collection(db, 'users'), where('email', '==', emailLower));
+        const snapUsers = await getDocs(qUsers);
+        if (!snapUsers.empty) {
+          existingProfile = snapUsers.docs[0].data() as UserProfile;
+        } else {
+          const qUserpage = query(collection(db, 'userpage'), where('email', '==', emailLower));
+          const snapUserpage = await getDocs(qUserpage);
+          if (!snapUserpage.empty) {
+            existingProfile = snapUserpage.docs[0].data() as UserProfile;
+          }
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao consultar registro prévio no Firestore:', err);
+      }
+    }
+
+    const isProjectAdmin = u.email?.toLowerCase().trim() === 'pedrohenriquecardonaperes@gmail.com';
+
+    // 1. POLÍTICA DE SEGURANÇA: Bloqueio permanente de usuários convidados
+    if (existingProfile?.isGuest || existingProfile?.role === 'convidado') {
+      try {
+        await signOut(currentAuth);
+      } catch {
+        // ignora
+      }
+      this.clearUser();
+      throw new Error(
+        'Acesso negado: O login de usuários convidados está permanentemente desabilitado no sistema da Wiki.'
+      );
+    }
+
+    // 2. POLÍTICA DE SEGURANÇA: Bloqueio estrito de usuários NÃO REGISTRADOS
+    if (!existingProfile && !isProjectAdmin) {
+      try {
+        await signOut(currentAuth);
+      } catch {
+        // ignora
+      }
+      this.clearUser();
+      this.logUserAuditAction(
+        u.uid,
+        u.displayName || u.email || 'Tentativa Não Registrada',
+        'unregistered_login_blocked',
+        `Tentativa de login de usuário não registrado bloqueada (${u.email || u.uid}). Autocadastro de contas não autorizadas desabilitado.`,
+        null
+      );
+      throw new Error(
+        `Acesso não autorizado: O usuário (${u.email || u.uid}) não está registrado no sistema da Wiki. O login de usuários convidados ou não registrados está estritamente desabilitado. Solicite à administração o cadastramento prévio da sua conta.`
+      );
+    }
+
+    // Se for o administrador fundador do projeto e for seu primeiro login:
+    if (!existingProfile && isProjectAdmin) {
+      const adminProfile: UserProfile = {
+        uid: u.uid,
+        email: u.email || 'pedrohenriquecardonaperes@gmail.com',
+        displayName: u.displayName || 'Pedro Henrique Peres',
+        username: 'PedroHenriquePeres',
+        photoURL: u.photoURL || undefined,
+        role: 'admin',
+        isGuest: false,
+        isBanned: false,
+        permissions: {
+          canEdit: true,
+          canCreate: true,
+          canTalk: true,
+          canDelete: true,
+          canGrantBarnstars: true,
+        },
+        lastActive: new Date().toISOString(),
+        isOnline: true,
+        createdAt: new Date().toISOString(),
+      };
+      const publicProfile = await this.ensureUserPage(adminProfile);
+      this.saveUser(publicProfile);
+      return publicProfile;
+    }
+
     const determinedRole: UserRole = isBanned
       ? 'leitor'
-      : (existingProfile?.role && existingProfile.role !== 'convidado' ? existingProfile.role : 'editor');
+      : (existingProfile!.role || 'editor');
 
     const isPrivileged = determinedRole === 'admin' || determinedRole === 'moderador';
-    const isAvatarRemovedByAdmin = Boolean(existingProfile?.avatarRemovedByAdmin);
+    const isAvatarRemovedByAdmin = Boolean(existingProfile!.avatarRemovedByAdmin);
 
     const userProfile: UserProfile = {
+      ...existingProfile!,
       uid: u.uid,
-      email: u.email || '',
-      displayName: u.displayName || u.email?.split('@')[0] || 'Usuário Google',
-      photoURL: isAvatarRemovedByAdmin ? undefined : (u.photoURL || undefined),
+      email: u.email || existingProfile!.email || '',
+      displayName: existingProfile!.displayName || u.displayName || u.email?.split('@')[0] || 'Usuário Registrado',
+      photoURL: isAvatarRemovedByAdmin ? undefined : (u.photoURL || existingProfile!.photoURL),
       avatarRemovedByAdmin: isAvatarRemovedByAdmin ? true : undefined,
-      avatarRemovedAt: existingProfile?.avatarRemovedAt,
-      avatarRemovedReason: existingProfile?.avatarRemovedReason,
-      avatarRemovedBy: existingProfile?.avatarRemovedBy,
+      avatarRemovedAt: existingProfile!.avatarRemovedAt,
+      avatarRemovedReason: existingProfile!.avatarRemovedReason,
+      avatarRemovedBy: existingProfile!.avatarRemovedBy,
       isGuest: false,
       isBanned,
       banReason: isBanned ? (banStatus.reason || 'Violação das políticas comunitárias.') : undefined,
       role: determinedRole,
       permissions: {
         canEdit: !isBanned,
-        canCreate: !isBanned,
+        canCreate: !isBanned && determinedRole !== 'leitor',
         canTalk: !isBanned,
         canDelete: isPrivileged,
         canGrantBarnstars: !isBanned,
       },
       lastActive: new Date().toISOString(),
       isOnline: true,
-      createdAt: existingProfile?.createdAt || new Date().toISOString(),
+      createdAt: existingProfile!.createdAt || new Date().toISOString(),
     };
     if (isAvatarRemovedByAdmin) {
       delete (userProfile as any).photoURL;
     }
 
-    // Criar e disponibilizar publicamente a página de usuário caso ainda não exista
+    // Atualizar e disponibilizar publicamente a página de usuário
     const publicProfile = await this.ensureUserPage(userProfile);
     this.saveUser(publicProfile);
     return publicProfile;
@@ -1479,7 +1507,12 @@ export const StorageService = {
     await ensureFirebaseAuth();
     const existing = await this.getUserProfile(uid);
     if (!existing) {
-      throw new Error('Usuário comunitário não encontrado');
+      throw new Error('Acesso negado: Usuário não registrado no sistema da Wiki.');
+    }
+
+    // Bloqueio de usuários convidados
+    if (existing.isGuest || existing.role === 'convidado') {
+      throw new Error('Acesso negado: Usuários convidados não possuem permissão para efetuar login.');
     }
 
     // 2. Verificação de segurança: Bloqueio estrito para nicknames de administradores da Wikimedia Foundation
@@ -1542,42 +1575,30 @@ export const StorageService = {
     const isBanned = banStatus.isBanned || !!existing?.isBanned;
 
     if (!existing) {
-      existing = {
-        uid,
-        username: cleanUsername,
-        displayName: displayName || cleanUsername,
-        email: `${cleanUsername.toLowerCase()}@wikizero.org`,
-        role: isBanned ? 'leitor' : role,
-        isGuest: false,
-        isBanned,
-        banReason: isBanned ? (banStatus.reason || 'Violação das políticas comunitárias.') : undefined,
-        permissions: {
-          canEdit: !isBanned,
-          canCreate: !isBanned && role !== 'leitor',
-          canTalk: !isBanned,
-          canDelete: !isBanned && (role === 'admin' || role === 'moderador'),
-          canGrantBarnstars: !isBanned,
-        },
-        lastActive: new Date().toISOString(),
-        isOnline: true,
-        createdAt: new Date().toISOString(),
-      };
-    } else {
-      existing = {
-        ...existing,
-        isBanned,
-        banReason: isBanned ? (banStatus.reason || existing.banReason || 'Violação das políticas comunitárias.') : undefined,
-        permissions: {
-          canEdit: !isBanned,
-          canCreate: !isBanned && existing.role !== 'leitor',
-          canTalk: !isBanned,
-          canDelete: !isBanned && (existing.role === 'admin' || existing.role === 'moderador'),
-          canGrantBarnstars: !isBanned,
-        },
-        lastActive: new Date().toISOString(),
-        isOnline: true,
-      };
+      throw new Error(
+        `Acesso negado: O usuário '${cleanUsername}' não está registrado no sistema da Wiki. O login de usuários não registrados está desabilitado. Solicite o cadastro prévio à administração.`
+      );
     }
+
+    if (existing.isGuest || existing.role === 'convidado') {
+      throw new Error('Acesso negado: Usuários convidados não possuem permissão para efetuar login.');
+    }
+
+    existing = {
+      ...existing,
+      isBanned,
+      banReason: isBanned ? (banStatus.reason || existing.banReason || 'Violação das políticas comunitárias.') : undefined,
+      permissions: {
+        canEdit: !isBanned,
+        canCreate: !isBanned && existing.role !== 'leitor',
+        canTalk: !isBanned,
+        canDelete: !isBanned && (existing.role === 'admin' || existing.role === 'moderador'),
+        canGrantBarnstars: !isBanned,
+      },
+      lastActive: new Date().toISOString(),
+      isOnline: true,
+    };
+
     const publicProfile = await this.ensureUserPage(existing);
     this.saveUser(publicProfile);
     return publicProfile;
@@ -3568,6 +3589,110 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     );
 
     return updated;
+  },
+
+  async registerNewUser(
+    userData: {
+      email: string;
+      displayName: string;
+      username?: string;
+      role: UserRole;
+      bio?: string;
+    },
+    adminUser: UserProfile | null
+  ): Promise<{ success: boolean; user?: UserProfile; message: string }> {
+    // 1. Validar permissão administrativa
+    if (!adminUser || (adminUser.role !== 'admin' && adminUser.role !== 'moderador')) {
+      throw new Error('Acesso negado: Somente administradores ou moderadores podem cadastrar novos usuários.');
+    }
+
+    // 2. Não permitir cadastrar como convidado
+    if (userData.role === 'convidado') {
+      throw new Error('Operação inválida: O perfil de "convidado" está permanentemente desabilitado para registro.');
+    }
+
+    const cleanEmail = (userData.email || '').toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new Error('Por favor, informe um endereço de e-mail válido para o registro.');
+    }
+
+    const cleanName = (userData.displayName || '').trim();
+    if (!cleanName) {
+      throw new Error('Por favor, informe um nome de exibição ou nome completo.');
+    }
+
+    const cleanUsername = (userData.username || cleanName).replace(/\s+/g, '_').trim();
+
+    // 3. Checagem contra administradores WMF
+    const adminCheck = validateUserIdentifiersAgainstWikimediaAdmins({
+      displayName: cleanName,
+      username: cleanUsername,
+      email: cleanEmail,
+    });
+    if (adminCheck.isBlocked) {
+      throw new Error(
+        `Registro bloqueado: O identificador informado corresponde a um administrador da Wikimedia Foundation (${adminCheck.matchedAdmin}). O uso deste identificador é proibido.`
+      );
+    }
+
+    // 4. Checar se o e-mail ou username já existe
+    const existingUsers = await this.getCommunityUsers();
+    const duplicateEmail = existingUsers.find((u) => u.email && u.email.toLowerCase().trim() === cleanEmail);
+    if (duplicateEmail) {
+      throw new Error(`Já existe um usuário registrado com o e-mail '${cleanEmail}' (${duplicateEmail.displayName || duplicateEmail.username}).`);
+    }
+
+    const duplicateUsername = existingUsers.find(
+      (u) => (u.username || '').toLowerCase() === cleanUsername.toLowerCase()
+    );
+    if (duplicateUsername) {
+      throw new Error(`Já existe um usuário registrado com o nome de usuário '${cleanUsername}'.`);
+    }
+
+    // 5. Criar o UserProfile registrado
+    const newUid = `user_reg_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+    const isPrivileged = userData.role === 'admin' || userData.role === 'moderador';
+
+    const newUser: UserProfile = {
+      uid: newUid,
+      email: cleanEmail,
+      displayName: cleanName,
+      username: cleanUsername,
+      role: userData.role,
+      isGuest: false,
+      isBanned: false,
+      permissions: {
+        canEdit: true,
+        canCreate: userData.role !== 'leitor',
+        canTalk: true,
+        canDelete: isPrivileged,
+        canGrantBarnstars: true,
+      },
+      bio: userData.bio || `= ${cleanName} =\nUsuário devidamente registrado e autorizado pela administração da WikiWorldWeb.`,
+      editsCount: 0,
+      reputationScore: userData.role === 'admin' ? 100 : userData.role === 'moderador' ? 50 : 10,
+      createdAt: new Date().toISOString(),
+      lastActive: new Date().toISOString(),
+      isOnline: false,
+    };
+
+    // Salvar no Firestore e LocalStorage
+    await this.saveCommunityUser(newUser);
+
+    // Registrar no log de auditoria
+    this.logUserAuditAction(
+      newUser.uid,
+      newUser.displayName || newUser.username || newUser.uid,
+      'user_registered',
+      `Novo usuário cadastrado e autorizado por ${adminUser.displayName || 'Administrador'} com cargo '${userData.role}' e e-mail '${cleanEmail}'.`,
+      adminUser
+    );
+
+    return {
+      success: true,
+      user: newUser,
+      message: `Usuário '${cleanName}' (${cleanEmail}) registrado com sucesso com o cargo de '${userData.role}'. Ele agora possui autorização para efetuar login.`,
+    };
   },
 
   // === USER TALK MESSAGES / DISCUSSÃO DO USUÁRIO ===

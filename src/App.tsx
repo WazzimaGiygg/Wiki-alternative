@@ -309,17 +309,21 @@ export default function App() {
       setNotifications(Array.isArray(n) ? n : []);
       setCookieConsent(c);
 
-      // Verificar banimento do usuário em cache ao carregar
+      // Verificar banimento e restrição de convidados em cache ao carregar
       if (u) {
-        const banCheck = await StorageService.getUserBanStatus(u.uid, u.email, u.username || u.displayName);
-        if (banCheck.isBanned || u.isBanned) {
-          await StorageService.logout();
+        if (u.isGuest || u.role === 'convidado') {
+          StorageService.clearUser();
           setUser(null);
-          console.warn('[App] Sessão revogada: usuário bloqueado por decisão administrativa.');
+          console.warn('[App] Sessão revogada: login de convidados não é permitido.');
         } else {
-          setUser(u);
-          // Garantir que a página pública do usuário logado exista e esteja sincronizada
-          if (!u.isGuest) {
+          const banCheck = await StorageService.getUserBanStatus(u.uid, u.email, u.username || u.displayName);
+          if (banCheck.isBanned || u.isBanned) {
+            await StorageService.logout();
+            setUser(null);
+            console.warn('[App] Sessão revogada: usuário bloqueado por decisão administrativa.');
+          } else {
+            setUser(u);
+            // Garantir que a página pública do usuário logado exista e esteja sincronizada
             StorageService.ensureUserPage(u).then((verified) => {
               setUser(verified);
             }).catch((e) => console.warn('[App] ensureUserPage error on boot:', e));
@@ -772,6 +776,12 @@ export default function App() {
   };
 
   const handleLoginSuccess = async (loggedUser: UserProfile) => {
+    if (loggedUser.isGuest || loggedUser.role === 'convidado') {
+      await StorageService.logout();
+      setUser(null);
+      alert('Acesso negado: O login de usuários convidados ou não registrados está estritamente desabilitado.');
+      return;
+    }
     const banCheck = await StorageService.getUserBanStatus(
       loggedUser.uid,
       loggedUser.email,
@@ -787,13 +797,9 @@ export default function App() {
       );
       return;
     }
-    if (!loggedUser.isGuest) {
-      const verified = await StorageService.ensureUserPage(loggedUser);
-      setUser(verified);
-      setTargetUserIdentifier(verified.uid);
-    } else {
-      setUser(loggedUser);
-    }
+    const verified = await StorageService.ensureUserPage(loggedUser);
+    setUser(verified);
+    setTargetUserIdentifier(verified.uid);
   };
 
   const handleLogout = async () => {

@@ -126,6 +126,16 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
   const [isProcessingAvatarLGPD, setIsProcessingAvatarLGPD] = useState(false);
   const [avatarFeedback, setAvatarFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
+  // Admin Pre-Register User Modal State (Política de Bloqueio de Usuários Não Registrados)
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [regEmail, setRegEmail] = useState('');
+  const [regDisplayName, setRegDisplayName] = useState('');
+  const [regUsername, setRegUsername] = useState('');
+  const [regRole, setRegRole] = useState<UserRole>('editor');
+  const [regBio, setRegBio] = useState('');
+  const [isProcessingRegister, setIsProcessingRegister] = useState(false);
+  const [regFeedback, setRegFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
   const isRealAdmin =
     currentUser?.role === 'admin' ||
     currentUser?.email === 'pedrohenriquecardonaperes@gmail.com';
@@ -521,6 +531,49 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
     setTimeout(() => setExportFeedback(null), 3000);
   };
 
+  const handleRegisterUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regEmail.trim()) {
+      setRegFeedback({ msg: 'Por favor, informe o e-mail do usuário.', type: 'error' });
+      return;
+    }
+    if (!regDisplayName.trim()) {
+      setRegFeedback({ msg: 'Por favor, informe o nome do usuário.', type: 'error' });
+      return;
+    }
+
+    setIsProcessingRegister(true);
+    setRegFeedback(null);
+    try {
+      const res = await StorageService.registerNewUser(
+        {
+          email: regEmail.trim(),
+          displayName: regDisplayName.trim(),
+          username: regUsername.trim() || undefined,
+          role: regRole,
+          bio: regBio.trim() || undefined,
+        },
+        currentUser
+      );
+
+      setRegFeedback({ msg: res.message, type: 'success' });
+      setRegEmail('');
+      setRegDisplayName('');
+      setRegUsername('');
+      setRegRole('editor');
+      setRegBio('');
+      await loadUsers();
+      setTimeout(() => {
+        setShowRegisterModal(false);
+        setRegFeedback(null);
+      }, 2200);
+    } catch (err: any) {
+      setRegFeedback({ msg: err?.message || 'Falha ao cadastrar usuário.', type: 'error' });
+    } finally {
+      setIsProcessingRegister(false);
+    }
+  };
+
   const getRoleBadge = (u: UserProfile) => {
     if (u.isBanned) {
       return {
@@ -875,6 +928,21 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                 <BarChart3 size={14} />
               </button>
             </div>
+
+            {/* Cadastrar Usuário Autorizado (Controle Estrito de Acesso) */}
+            {isRealAdmin && (
+              <button
+                onClick={() => {
+                  setShowRegisterModal(true);
+                  setRegFeedback(null);
+                }}
+                className="px-2.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                title="Cadastrar e autorizar novo usuário (Login restrito)"
+              >
+                <UserPlus size={13} />
+                <span className="hidden sm:inline">Cadastrar Usuário</span>
+              </button>
+            )}
 
             {/* Export Dropdown / Buttons */}
             <div className="flex items-center gap-1">
@@ -1826,6 +1894,166 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                 Remover Imagem e Aplicar Inicial (LGPD)
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. MODAL DE CADASTRO PRÉVIO DE USUÁRIO (RESTRIÇÃO DE REGISTRO / LOGIN) */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl max-w-lg w-full shadow-2xl overflow-hidden animate-in zoom-in-95">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                  <UserPlus size={18} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                    Cadastrar e Autorizar Usuário
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Controle de Acesso: Usuários convidados ou não cadastrados estão bloqueados.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRegisterModal(false);
+                  setRegFeedback(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleRegisterUser}>
+              <div className="p-4 space-y-3 max-h-[75vh] overflow-y-auto">
+                <div className="p-2.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-lg text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
+                  <strong>Política de Segurança:</strong> Ao cadastrar previamente este usuário, ele estará autorizado a efetuar login no sistema (via Google OIDC com este mesmo e-mail ou credenciais da comunidade). Contas de convidados continuam estritamente desabilitadas.
+                </div>
+
+                {/* E-mail */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    E-mail do Usuário <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="ex: usuario@gmail.com"
+                    className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400">
+                    O usuário precisará usar este mesmo e-mail ao efetuar login com o Google.
+                  </span>
+                </div>
+
+                {/* Nome de Exibição */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Nome Completo ou Nome de Exibição <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={regDisplayName}
+                    onChange={(e) => setRegDisplayName(e.target.value)}
+                    placeholder="ex: Maria Silva"
+                    className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                {/* Nome de Usuário / Nickname (Opcional) */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Nome de Usuário (Wiki Username / Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={regUsername}
+                    onChange={(e) => setRegUsername(e.target.value)}
+                    placeholder="ex: MariaSilva_Wiki"
+                    className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                {/* Cargo */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Cargo / Nível de Acesso Inicial
+                  </label>
+                  <select
+                    value={regRole}
+                    onChange={(e) => setRegRole(e.target.value as UserRole)}
+                    className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="editor">Editor (Pode criar, editar artigos e páginas de discussão)</option>
+                    <option value="leitor">Leitor (Apenas leitura; sem permissão de edição direta)</option>
+                    <option value="moderador">Moderador (Pode moderar conteúdos, reverter edições e excluir)</option>
+                    <option value="admin">Administrador (Controle total da Wiki, segurança e usuários)</option>
+                  </select>
+                </div>
+
+                {/* Biografia / Nota Administrativa */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Biografia / Nota de Cadastro (Opcional)
+                  </label>
+                  <textarea
+                    value={regBio}
+                    onChange={(e) => setRegBio(e.target.value)}
+                    placeholder="Breve descrição sobre a autorização deste usuário..."
+                    rows={2}
+                    className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                {regFeedback && (
+                  <div
+                    className={`p-2.5 rounded text-xs flex items-center gap-2 ${
+                      regFeedback.type === 'success'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800'
+                        : 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-800'
+                    }`}
+                  >
+                    {regFeedback.type === 'success' ? (
+                      <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                    ) : (
+                      <AlertTriangle size={14} className="shrink-0 text-rose-600" />
+                    )}
+                    <span>{regFeedback.msg}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRegisterModal(false);
+                    setRegFeedback(null);
+                  }}
+                  className="px-3 py-1.5 text-xs rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessingRegister}
+                  className="px-4 py-1.5 text-xs rounded bg-blue-600 hover:bg-blue-700 text-white font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isProcessingRegister ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <UserPlus size={13} />
+                  )}
+                  Cadastrar e Autorizar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

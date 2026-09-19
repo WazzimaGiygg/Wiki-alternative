@@ -174,26 +174,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
-  const handleGuestLoginFallback = async () => {
-    if (vpnCheckResult?.blocked) {
-      setLoginError(
-        `Acesso bloqueado: Criação de sessão de convidado desabilitada para conexões via VPN ou Proxy anônimo (${vpnCheckResult.provider || vpnCheckResult.ip}). Desative sua VPN para prosseguir.`
-      );
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const guest = await StorageService.createGuestUser();
-      onLoginSuccess(guest);
-      onClose();
-    } catch (err: any) {
-      setLoginError(err?.message || 'Falha ao iniciar como convidado.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const runIpVerification = async () => {
     setIsCheckingIp(true);
     try {
@@ -498,16 +478,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <p className="text-[11px] leading-relaxed text-amber-900 dark:text-amber-200">
               <strong>Motivo do erro:</strong> Você cadastrou o domínio no console do projeto <strong>wzzm-ce3fc</strong>, mas a aplicação está apontando para o projeto <strong>{activeProjectId}</strong>.
             </p>
-
-            <div className="pt-1.5 border-t border-amber-200 dark:border-amber-800/80">
-              <button
-                type="button"
-                onClick={handleGuestLoginFallback}
-                className="w-full py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-semibold text-xs transition cursor-pointer shadow-sm flex items-center justify-center gap-2"
-              >
-                <span>👤 Entrar como Convidado / Sessão Local (Usar Wiki Agora)</span>
-              </button>
-            </div>
           </div>
         )}
 
@@ -588,6 +558,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         {/* Content Area with scroll if needed */}
         <div className="flex-1 overflow-y-auto pr-1 space-y-3">
+          {/* Restricted Access Policy Card */}
+          <div className="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/70 rounded-xl p-3 text-xs space-y-1">
+            <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-200 font-bold text-[11px]">
+              <Lock size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>Acesso Restrito: Apenas Usuários Previamente Registrados</span>
+            </div>
+            <p className="text-[11px] text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+              O login de <strong>convidados</strong> e o acesso de <strong>usuários não registrados</strong> estão estritamente desabilitados. Para entrar, sua conta deve estar previamente cadastrada pela administração da Wiki.
+            </p>
+          </div>
+
           {/* OIDC Information Badge */}
           <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs space-y-1.5">
             <div className="flex items-center justify-between flex-wrap gap-2">
