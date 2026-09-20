@@ -1667,9 +1667,13 @@ export default function App() {
       {/* 4. Mobile Bottom Navigation Bar (Fixed at bottom for smartphones) */}
       <MobileBottomNav
         currentView={currentView}
+        unreadNotificationsCount={notifications.filter((n) => !n.read).length}
+        unreadCount={notifications.filter((n) => !n.read).length}
         onNavigate={handleNavigate}
         onRandomPage={handleRandomPage}
+        onOpenNewArticle={() => handleOpenNewEditor()}
         onOpenDrawer={() => setIsMobileDrawerOpen(true)}
+        onOpenMenuDrawer={() => setIsMobileDrawerOpen(true)}
         onOpenSearch={() => setIsMobileSearchOpen(true)}
       />
 

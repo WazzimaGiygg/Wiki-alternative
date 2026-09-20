@@ -118,7 +118,7 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
       </div>
 
       {/* Search Results / Suggestions List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {onOpenAdvancedSearch && (
           <button
             onClick={() => {

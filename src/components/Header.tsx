@@ -484,7 +484,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="btn-header-mobile-drawer"
             onClick={onOpenMobileDrawer}
-            className="p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden active:scale-95 transition"
+            className="p-2 -ml-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden active:scale-95 transition min-w-[40px] min-h-[40px] flex items-center justify-center"
             aria-label="Abrir menu de navegação"
           >
             <Menu size={20} />
@@ -1131,11 +1131,11 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="btn-header-mobile-search"
             onClick={onOpenMobileSearch}
-            className="p-1.5 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden transition"
+            className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden transition active:scale-95 min-w-[38px] min-h-[38px] flex items-center justify-center"
             aria-label="Pesquisar artigos"
             title="Buscar"
           >
-            <Search size={16} />
+            <Search size={18} />
           </button>
           <nav className="hidden lg:flex items-center gap-1 text-xs font-medium mr-1 border-r border-slate-200 dark:border-slate-800 pr-2">
             <button
@@ -1373,7 +1373,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Notification Dropdown */}
             {showNotifs && (
-              <div className="absolute right-0 mt-1.5 w-84 bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-700 shadow-xl py-1 z-50 animate-in fade-in text-xs">
+              <div className="fixed sm:absolute inset-x-2 sm:inset-x-auto right-auto sm:right-0 top-14 sm:top-auto sm:mt-1.5 w-auto sm:w-84 max-w-[calc(100vw-1rem)] bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-700 shadow-2xl py-1 z-50 animate-in fade-in text-xs">
                 <div className="px-3 py-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
                   <div>
                     <div className="flex items-center gap-1.5">
@@ -1521,7 +1521,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* User Dropdown */}
               {showUserMenu && (
-                <div className="absolute right-0 mt-1.5 w-60 bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 shadow-lg py-1 z-50 animate-in fade-in text-xs">
+                <div className="fixed sm:absolute right-2 sm:right-0 top-14 sm:top-auto sm:mt-1.5 w-60 max-w-[calc(100vw-1rem)] bg-white dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-700 shadow-2xl py-1 z-50 animate-in fade-in text-xs">
                   <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
                     <p className="font-bold text-slate-900 dark:text-white truncate">
                       {user.displayName}
