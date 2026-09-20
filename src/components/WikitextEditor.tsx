@@ -31,6 +31,7 @@ import {
   BookOpen,
   Lock,
   Code2,
+  ExternalLink,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus } from '../types';
@@ -1022,6 +1023,25 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
               {isSaving ? 'Salvando...' : isTargetLocked ? 'Bloqueado pela Moderação' : 'Salvar e Publicar Alterações'}
             </button>
           </div>
+        </div>
+
+        {/* Compliance & Ethics Bar */}
+        <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck size={12} className="text-emerald-500 shrink-0" />
+            <span>
+              Todas as edições devem respeitar a <strong>LGPD (Lei 13.709/2018)</strong>, <strong>GDPR</strong> e os <strong>direitos autorais</strong>.
+            </span>
+          </div>
+          <a
+            href="/?uid=Special:EditingEthics"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
+          >
+            <span>Ver Regras de Ética de Edição</span>
+            <ExternalLink size={10} />
+          </a>
         </div>
       </div>
 

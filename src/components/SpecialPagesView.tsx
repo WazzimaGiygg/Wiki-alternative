@@ -61,6 +61,7 @@ interface SpecialPagesViewProps {
   onNavigateToFilesList?: () => void;
   onNavigateToArbitration?: () => void;
   onNavigateToUcoc?: () => void;
+  onNavigateToEditingEthics?: () => void;
   onNavigateToAppearance?: () => void;
   onNavigateToAdminFirebase?: () => void;
   onNavigateToNotFound?: () => void;
@@ -81,6 +82,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToContactAdmin,
   onNavigateToEmergencyContact,
   onNavigateToUcoc,
+  onNavigateToEditingEthics,
   onNavigateToPromotionRequests,
   onNavigateToUnblockRequests,
   onNavigateToCheckUser,
@@ -380,6 +382,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
           </button>
         )}
 
+        {onNavigateToEditingEthics && (
+          <button
+            id="btn-specialpages-editing-ethics"
+            onClick={onNavigateToEditingEthics}
+            className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-emerald-600 text-white shrink-0">
+              <Scale size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate group-hover:underline">
+                  Special:EditingEthics
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-emerald-600 text-white">
+                  LGPD/GDPR
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Regras de Ética de Edição, Adição e Privacidade
+              </div>
+            </div>
+          </button>
+        )}
+
         {onNavigateToPromotionRequests && (
           <button
             onClick={onNavigateToPromotionRequests}
@@ -647,6 +674,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
         <div className="flex items-center gap-2 flex-wrap text-[11px]">
           {[
             { label: 'Páginas Especiais', uid: 'Special:SpecialPages' },
+            { label: 'Ética de Edição (LGPD)', uid: 'Special:EditingEthics' },
             { label: 'App Chrome / PC', uid: 'Special:ChromeApp' },
             { label: 'Previsão do Tempo', uid: 'Special:Weather' },
             { label: 'Google Acadêmico', uid: 'Special:Scholar' },

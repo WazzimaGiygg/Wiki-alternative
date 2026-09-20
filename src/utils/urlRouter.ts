@@ -217,6 +217,9 @@ export function getCanonicalUid(
     case 'terms':
       return 'Special:Terms';
 
+    case 'editing-ethics':
+      return 'Special:EditingEthics';
+
     case 'security':
       return 'Special:Security';
 
@@ -417,6 +420,20 @@ export function resolveNavigationUid(
     'special:terms': { view: 'terms' },
     'terms': { view: 'terms' },
     'termos': { view: 'terms' },
+
+    'special:editingethics': { view: 'editing-ethics' },
+    'special:ethics': { view: 'editing-ethics' },
+    'special:eticadeedicao': { view: 'editing-ethics' },
+    'special:regrasdeedicao': { view: 'editing-ethics' },
+    'special:regras': { view: 'editing-ethics' },
+    'editing-ethics': { view: 'editing-ethics' },
+    'editorial-ethics': { view: 'editing-ethics' },
+    'regras-de-edicao': { view: 'editing-ethics' },
+    'etica-de-edicao': { view: 'editing-ethics' },
+    'etica': { view: 'editing-ethics' },
+    'regras': { view: 'editing-ethics' },
+    'privacidade-e-etica': { view: 'editing-ethics' },
+    'etica-editorial': { view: 'editing-ethics' },
 
     'special:security': { view: 'security' },
     'security': { view: 'security' },

@@ -18,6 +18,16 @@ import {
   LifeBuoy,
   Smartphone,
   Tv,
+  Scale,
+  AlertTriangle,
+  XCircle,
+  CheckCircle2,
+  Globe,
+  Building2,
+  EyeOff,
+  ShieldCheck,
+  ShieldAlert,
+  UserCheck,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle } from '../types';
 import { formatExternalUrl } from '../utils/linkUtils';
@@ -30,6 +40,7 @@ interface InformativeViewsProps {
   onNavigateToArticle: (id: string) => void;
   onOpenEditor: () => void;
   onOpenSmartTVModal?: () => void;
+  onNavigate?: (view: any) => void;
 }
 
 // === 1. SECURITY VIEW ===
@@ -232,7 +243,7 @@ export const DonationView: React.FC<InformativeViewsProps> = () => {
 };
 
 // === 3. PRIVACY POLICY VIEW (LGPD) ===
-export const PrivacyPolicyView: React.FC<InformativeViewsProps> = () => {
+export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in select-none">
       <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-6 shadow-xs">
@@ -245,43 +256,249 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = () => {
               Política de Privacidade e Proteção de Dados (LGPD)
             </h2>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Conformidade total com a Lei nº 13.709/2018 e Marco Civil da Internet (Lei nº 12.965/2014).
+              Conformidade total com a Lei nº 13.709/2018, Marco Civil da Internet (Lei nº 12.965/2014) e padrões internacionais de proteção ao cidadão.
             </p>
           </div>
         </div>
 
-        <div className="space-y-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-wiki-body">
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">1. Identificação do Controlador</h3>
-          <p>
-            O projeto <strong>WikiWorldWeb</strong> opera sob a governança comunitária de <em>WazzimaGiygg</em>. O encarregado oficial pelo tratamento de dados pessoais (DPO) pode ser acionado diretamente no e-mail: <code>pedrohenriquecardonaperes@gmail.com</code>.
-          </p>
+        <div className="space-y-4 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-wiki-body">
+          {/* 1. Identificação do Controlador */}
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading mb-1">
+              1. Identificação do Controlador
+            </h3>
+            <p>
+              O projeto <strong>WikiWorldWeb</strong> opera sob a governança comunitária de <em>WazzimaGiygg</em>. O encarregado oficial pelo tratamento de dados pessoais (Data Protection Officer - DPO) pode ser acionado diretamente no e-mail: <code>pedrohenriquecardonaperes@gmail.com</code>.
+            </p>
+          </div>
 
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">2. Dados Pessoais Coletados e Finalidades</h3>
-          <ul className="list-disc pl-4 space-y-0.5">
-            <li><strong>Autenticação Google:</strong> nome, e-mail e foto para atribuição de autoria pública e prevenção contra vandalismo.</li>
-            <li><strong>Identificador Criptográfico (UID):</strong> chave primária de associação com o banco de dados Firestore.</li>
-            <li><strong>Registros de Acesso (Logs):</strong> data, hora e metadados coletados conforme exigência legal do Art. 15 do Marco Civil da Internet.</li>
-          </ul>
+          {/* 2. Dados Coletados */}
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading mb-1">
+              2. Dados Pessoais Coletados e Finalidades
+            </h3>
+            <ul className="list-disc pl-4 space-y-1">
+              <li><strong>Autenticação Google:</strong> nome, e-mail e foto para atribuição de autoria pública e prevenção contra vandalismo.</li>
+              <li><strong>Identificador Criptográfico (UID):</strong> chave primária de associação com o banco de dados Firestore.</li>
+              <li><strong>Registros de Acesso (Logs):</strong> data, hora e metadados coletados conforme exigência legal do Art. 15 do Marco Civil da Internet.</li>
+            </ul>
+          </div>
 
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">3. Seus Direitos (Art. 18 da LGPD) e Abertura de Tickets</h3>
-          <p>
-            Você pode exercer a qualquer momento seus direitos de acesso, retificação, portabilidade e revogação de consentimento através do botão "Meus Dados" no menu de navegação ou abrindo um chamado direto com a equipe de privacidade na <a href={formatExternalUrl("https://support.wazzimagiygg.com/")} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 font-bold underline">Central de Tickets WazzimaGiygg</a>.
-          </p>
+          {/* 3. Direitos do Titular */}
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading mb-1">
+              3. Seus Direitos (Art. 18 da LGPD) e Atendimento
+            </h3>
+            <p>
+              Você pode exercer a qualquer momento seus direitos de confirmação de tratamento, acesso, retificação, portabilidade, anonimização, bloqueio ou eliminação através do botão <strong>"Meus Dados"</strong> no menu de navegação ou abrindo um chamado formal com a equipe de privacidade na <a href={formatExternalUrl("https://support.wazzimagiygg.com/")} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 font-bold underline">Central de Tickets WazzimaGiygg</a>.
+            </p>
+          </div>
 
-          <div className="p-3 rounded bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/70 flex items-center justify-between gap-3 mt-2">
+          {/* 4. SEÇÃO PRINCIPAL: POR QUE A WIKIWORLDWEB SEGUE A LGPD E A WIKIPÉDIA NÃO */}
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-bold text-sm font-serif-heading">
+              <Scale size={18} />
+              <h3>4. Por que a WikiWorldWeb segue as regras da LGPD e a Wikipédia (Wikimedia Foundation) não?</h3>
+            </div>
+
+            <p>
+              A conformidade com a <strong>Lei Geral de Proteção de Dados Pessoais (LGPD - Lei nº 13.709/2018)</strong> é um dos maiores divisores de águas entre a <strong>WikiWorldWeb</strong> e a enciclopédia tradicional <strong>Wikipédia</strong>. Essa discrepância decorre de fundamentos de jurisdição territorial, estrutura jurídica internacional e filosofias divergentes quanto à prevalência da privacidade do indivíduo:
+            </p>
+
+            <div className="space-y-3 pt-1">
+              {/* Ponto 1: Jurisdição e Sede Internacional */}
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-xs">
+                  <Building2 size={15} className="text-blue-600 dark:text-blue-400" />
+                  <span>A. Sede Internacional e Jurisdição Territorial (Art. 3º da LGPD)</span>
+                </div>
+                <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                  <p>
+                    <strong>Por que a Wikipédia não segue:</strong> A Wikipédia é gerida pela <em>Wikimedia Foundation Inc. (WMF)</em>, entidade sem fins lucrativos sediada em São Francisco, Califórnia (Estados Unidos). A WMF não possui sede, filial, escritório ou representação jurídica no Brasil. Diante de notificações e contestações extrajudiciais movidas por cidadãos brasileiros com base na LGPD, a Wikimedia Foundation habitualmente sustenta que está fora da jurisdição direta do Brasil, invocando as proteções da legislação federal dos EUA (em especial a Seção 230 do <em>Communications Decency Act</em> de 1996 e a Primeira Emenda à Constituição americana), demandando cartas rogatórias ou decisões em tribunais norte-americanos para qualquer cumprimento.
+                  </p>
+                  <p>
+                    <strong>Como a WikiWorldWeb atua:</strong> A WikiWorldWeb possui governança comunitária orientada à comunidade lusófona e brasileira. Submetemo-nos expressamente à jurisdição brasileira e ao <strong>Art. 3º da LGPD</strong> — que estabelece a aplicação obrigatória da lei a qualquer operação de tratamento realizada no território nacional ou que tenha por objetivo a oferta ou o fornecimento de serviços a pessoas localizadas no Brasil. Reconhecemos a autoridade fiscalizatória da <strong>Autoridade Nacional de Proteção de Dados (ANPD)</strong> e dos tribunais brasileiros.
+                  </p>
+                </div>
+              </div>
+
+              {/* Ponto 2: Exposição de IPs Públicos */}
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-xs">
+                  <EyeOff size={15} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>B. Exposição Pública de Endereços IP vs. Confidencialidade e Marco Civil</span>
+                </div>
+                <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                  <p>
+                    <strong>Na Wikipédia:</strong> Qualquer usuário que edita ou cria um artigo sem estar logado tem o seu <strong>endereço de IP completo exposto publicamente</strong> no histórico permanente de revisões da página, acessível a qualquer leitor e a motores de busca. Sob a ótica da LGPD e das autoridades de proteção de dados, o endereço IP é um dado pessoal, pois viabiliza a identificação do provedor de acesso, localização geográfica e eventualmente a identidade civil do usuário. Essa exposição pública deliberada viola os princípios da <em>segurança</em>, da <em>prevenção</em> e da <em>privacidade desde a concepção (Privacy by Design)</em>, sujeitando internautas a rastreamento indevido e perseguições (*doxxing*).
+                  </p>
+                  <p>
+                    <strong>Na WikiWorldWeb:</strong> Adotamos o princípio fundamental de que nenhum endereço IP ou metadado técnico de usuário é jamais divulgado abertamente no histórico ou em registros públicos. Os dados técnicos de conexão são mantidos em sigilo estrito e criptografados, sendo armazenados exclusivamente nos parâmetros mandatórios do <strong>Art. 15 do Marco Civil da Internet (Lei nº 12.965/2014)</strong> para fins exclusivos de segurança da aplicação e fornecimento estritamente sob ordem judicial específica.
+                  </p>
+                </div>
+              </div>
+
+              {/* Ponto 3: Direitos do Titular e DPO */}
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-xs">
+                  <UserCheck size={15} className="text-purple-600 dark:text-purple-400" />
+                  <span>C. Encarregado de Dados (DPO) e Atendimento aos Direitos do Titular (Art. 18 e 41)</span>
+                </div>
+                <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                  <p>
+                    <strong>Na Wikipédia:</strong> A Wikimedia Foundation não possui Encarregado pelo Tratamento de Dados Pessoais (DPO) nos termos do Art. 41 da LGPD para interlocução com titulares brasileiros e a ANPD. Pedidos de cidadãos para retificar informações inverídicas, anonimizar biografias ou excluir dados pessoais costumam ser jogados em fóruns públicos de votação da comunidade de voluntários ("páginas para eliminar"), provocando o chamado <em>Efeito Streisand</em> (amplificação do dano e humilhação pública) ou são indeferidos sob o dogma de "registro histórico perpétuo".
+                  </p>
+                  <p>
+                    <strong>Na WikiWorldWeb:</strong> Mantemos um DPO oficial formalmente identificado (<code>pedrohenriquecardonaperes@gmail.com</code>) e uma central de tickets estruturada. O titular brasileiro dispõe de um canal seguro e confidencial para requerer retificação, anonimização, bloqueio ou eliminação de seus dados, sem exposição vexatória e com prazos compatíveis com a regulamentação da ANPD.
+                  </p>
+                </div>
+              </div>
+
+              {/* Ponto 4: Dados Sensíveis, Menores e Supressão (Oversight) */}
+              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-xs">
+                  <ShieldAlert size={15} className="text-rose-600 dark:text-rose-400" />
+                  <span>D. Dados Sensíveis (Art. 11), Proteção a Menores (Art. 14) e Supressão Definitiva</span>
+                </div>
+                <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                  <p>
+                    <strong>Na Wikipédia:</strong> Informações íntimas, detalhes médicos, acusações policiais em andamento e dados de familiares ou crianças ligadas a personalidades públicas são frequentemente mantidos em artigos biográficos se houver mera citação em reportagens jornalísticas, sem ponderação de dados sensíveis ou tutela ao melhor interesse da criança (ECA).
+                  </p>
+                  <p>
+                    <strong>Na WikiWorldWeb:</strong> Nossas <strong>Regras de Ética de Edição (Special:EditingEthics)</strong> impõem tolerância zero a doxxing (CPFs, endereços, telefones), blindagem absoluta a crianças e adolescentes (Art. 14 da LGPD) e rigor probatório para dados sensíveis (Art. 11). Contamos com a ferramenta de <strong>Supressão e Oversight</strong>, que expurga dados violadores diretamente do banco de dados, impossibilitando que continuem gravados em logs ou versões antigas de histórico.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quadro Comparativo Resumo */}
+            <div className="pt-2">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono mb-2 flex items-center gap-1.5">
+                <Scale size={14} className="text-blue-600 dark:text-blue-400" />
+                <span>Quadro Comparativo: WikiWorldWeb vs. Wikipédia (Wikimedia Foundation)</span>
+              </h4>
+
+              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700">
+                      <th className="p-2.5 font-bold">Diretriz / Requisito Legal</th>
+                      <th className="p-2.5 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/60 dark:bg-emerald-950/30">
+                        WikiWorldWeb (WazzimaGiygg)
+                      </th>
+                      <th className="p-2.5 font-bold text-slate-600 dark:text-slate-400">
+                        Wikipédia (Wikimedia Foundation)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-[11px]">
+                    <tr>
+                      <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                        Jurisdição e Submissão à LGPD (Art. 3º)
+                      </td>
+                      <td className="p-2.5 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/40 dark:bg-emerald-950/20">
+                        Sim. Reconhece expressamente a LGPD e a autoridade da ANPD.
+                      </td>
+                      <td className="p-2.5 text-slate-600 dark:text-slate-400">
+                        Não. Sediada nos EUA; alega extraterritorialidade e aplica leis norte-americanas (Seção 230 do CDA).
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                        Exposição Pública de Endereço IP
+                      </td>
+                      <td className="p-2.5 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/40 dark:bg-emerald-950/20">
+                        Nunca. IPs são protegidos e tratados sob o sigilo do Marco Civil (Art. 15).
+                      </td>
+                      <td className="p-2.5 text-rose-600 dark:text-rose-400">
+                        Sim. IPs de editores não logados são gravados e expostos publicamente no histórico mundial.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                        Encarregado de Dados (DPO) Oficial
+                      </td>
+                      <td className="p-2.5 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/40 dark:bg-emerald-950/20">
+                        Sim. Canal direto: <code>pedrohenriquecardonaperes@gmail.com</code>.
+                      </td>
+                      <td className="p-2.5 text-slate-600 dark:text-slate-400">
+                        Não possui DPO designado para a LGPD brasileira.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                        Exercício dos Direitos do Titular (Art. 18)
+                      </td>
+                      <td className="p-2.5 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/40 dark:bg-emerald-950/20">
+                        Painel "Meus Dados" e canal de tickets sigiloso sem exposição pública.
+                      </td>
+                      <td className="p-2.5 text-slate-600 dark:text-slate-400">
+                        Discussões públicas comunitárias (fóruns/PE) ou recusa sob alegação de registro imutável.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                        Dados Sensíveis e Menores (Arts. 11 e 14)
+                      </td>
+                      <td className="p-2.5 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/40 dark:bg-emerald-950/20">
+                        Rigor absoluto; vedada exposição de menores sem notoriedade autônoma.
+                      </td>
+                      <td className="p-2.5 text-slate-600 dark:text-slate-400">
+                        Critérios flexíveis guiados por reportagens de terceiros e consensos comunitários.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                        Expurgo de Dados (Oversight / Supressão)
+                      </td>
+                      <td className="p-2.5 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/40 dark:bg-emerald-950/20">
+                        Protocolo de expurgo permanente ativado para violações de privacidade.
+                      </td>
+                      <td className="p-2.5 text-slate-600 dark:text-slate-400">
+                        Ferramenta restrita a administradores globais para casos criminais extremos.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Quick action buttons */}
+            {onNavigate && (
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                <button
+                  onClick={() => onNavigate('editing-ethics')}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-100 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <ShieldCheck size={14} className="text-emerald-600" />
+                  <span>Ver Regras de Ética de Edição (LGPD & GDPR)</span>
+                </button>
+                <button
+                  onClick={() => onNavigate('mydata')}
+                  className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <UserCheck size={14} className="text-blue-600" />
+                  <span>Acessar Painel "Meus Dados" (Art. 18)</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Suporte e Central de Tickets */}
+          <div className="p-3 rounded bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-3">
             <div className="flex items-center gap-2">
               <LifeBuoy size={16} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
               <span className="text-[11px] text-slate-700 dark:text-slate-300">
-                Precisa de auxílio com seus dados ou suporte aos serviços WazzimaGiygg?
+                Dúvidas sobre o tratamento de seus dados ou requisições formais à governança WazzimaGiygg?
               </span>
             </div>
             <a
               href={formatExternalUrl("https://support.wazzimagiygg.com/")}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-2.5 py-1 text-xs font-semibold rounded bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center gap-1 shadow-xs whitespace-nowrap"
+              className="px-2.5 py-1 text-xs font-semibold rounded bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center gap-1 shadow-xs whitespace-nowrap self-start sm:self-auto"
             >
-              <span>Tickets & Suporte</span>
+              <span>Central de Tickets & Suporte</span>
               <ExternalLink size={11} />
             </a>
           </div>

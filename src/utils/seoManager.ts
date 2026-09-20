@@ -310,6 +310,19 @@ export function updateSEO(config: SEOConfig) {
         'diretrizes de aplicação ucoc',
         'combate ao assédio wiki'
       );
+    } else if (config.view === 'editing-ethics') {
+      finalTitle = 'Regras de Ética de Edição e Privacidade (LGPD & GDPR) - WikiWorldWeb';
+      finalDesc =
+        'Diretrizes normativas de ética editorial, adição e contribuição enciclopédica na WikiWorldWeb em conformidade com a LGPD (Lei 13.709/2018), Marco Civil da Internet e leis européias de privacidade (GDPR).';
+      canonicalUrl = `${BASE_URL}/?uid=Special:EditingEthics`;
+      keywords.push(
+        'ética de edição wiki',
+        'regras de contribuição enciclopédia',
+        'LGPD edição wiki',
+        'GDPR privacidade wikipédia alternativa',
+        'biografias de pessoas vivas',
+        'diretrizes editoriais wiki'
+      );
     } else if (config.view === 'not-found') {
       finalTitle = 'Página não encontrada (Erro 404) - WikiWorldWeb';
       finalDesc =

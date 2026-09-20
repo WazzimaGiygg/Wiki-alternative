@@ -33,6 +33,7 @@ import {
   BetaModeView,
   OfflineModeView,
 } from './components/InformativeViews';
+import { EditingEthicsView } from './components/EditingEthicsView';
 import { SiteUpdatesView } from './components/SiteUpdatesView';
 import { FileUploadView } from './components/FileUploadView';
 import { FilePageView } from './components/FilePageView';
@@ -1171,6 +1172,7 @@ export default function App() {
               onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
               onNavigateToEmergencyContact={() => handleNavigate('emergency-contact')}
               onNavigateToUcoc={() => handleNavigate('ucoc')}
+              onNavigateToEditingEthics={() => handleNavigate('editing-ethics')}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
@@ -1200,6 +1202,7 @@ export default function App() {
               onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
               onNavigateToEmergencyContact={() => handleNavigate('emergency-contact')}
               onNavigateToUcoc={() => handleNavigate('ucoc')}
+              onNavigateToEditingEthics={() => handleNavigate('editing-ethics')}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
@@ -1413,6 +1416,7 @@ export default function App() {
               articles={articles}
               onNavigateToArticle={handleSelectArticle}
               onOpenEditor={() => handleOpenNewEditor()}
+              onNavigate={handleNavigate}
             />
           )}
 
@@ -1422,6 +1426,14 @@ export default function App() {
               pages={pages}
               articles={articles}
               onNavigateToArticle={handleSelectArticle}
+              onOpenEditor={() => handleOpenNewEditor()}
+            />
+          )}
+
+          {currentView === 'editing-ethics' && (
+            <EditingEthicsView
+              user={user}
+              onNavigate={handleNavigate}
               onOpenEditor={() => handleOpenNewEditor()}
             />
           )}

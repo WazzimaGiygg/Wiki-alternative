@@ -203,6 +203,23 @@ export const SaveReasonModal: React.FC<SaveReasonModalProps> = ({
             </label>
           </div>
 
+          {/* Legal & Ethics Compliance Notice */}
+          <div className="p-2.5 rounded bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 flex items-start gap-2 text-[10px] text-slate-600 dark:text-slate-300">
+            <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <span>
+              Ao salvar, você concorda com os termos da licença CC BY-SA 4.0 e confirma que esta edição cumpre as{' '}
+              <a
+                href="/?uid=Special:EditingEthics"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-700 dark:text-emerald-300 font-semibold underline hover:text-emerald-800"
+              >
+                Regras de Ética de Edição (LGPD & GDPR)
+              </a>
+              , sem dados pessoais privados (doxxing) ou violações de direitos autorais.
+            </span>
+          </div>
+
           {/* Actions Footer */}
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
             <span className="text-[10px] text-slate-400 font-mono">

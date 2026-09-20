@@ -24,6 +24,7 @@ import {
   BookOpen,
   GraduationCap,
   Newspaper,
+  Scale,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -306,6 +307,14 @@ export const Footer: React.FC<FooterProps> = ({
             >
               <ShieldCheck size={12} className="text-emerald-600 dark:text-emerald-400" />
               <span>LGPD & Marco Civil</span>
+            </button>
+            <button
+              onClick={() => onNavigate('editing-ethics')}
+              title="Regras de Ética de Edição, Adição e Contribuição (LGPD & GDPR)"
+              className="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800/60 transition"
+            >
+              <Scale size={12} className="text-blue-600 dark:text-blue-400" />
+              <span>Regras de Ética & Privacidade</span>
             </button>
             <button
               onClick={() => onNavigate('privacy')}

@@ -742,6 +742,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
+              id="btn-sidebar-editing-ethics"
+              onClick={() => onNavigate('editing-ethics')}
+              title="Regras de Ética de Edição e Privacidade (LGPD & GDPR)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'editing-ethics'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Scale size={15} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Ética de Edição</span>
+                  <span className="text-[8px] bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-mono font-bold px-1 rounded-xs">
+                    LGPD/GDPR
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
               onClick={() => onNavigate('terms')}
               title={t('sidebar.terms')}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${

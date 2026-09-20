@@ -562,6 +562,7 @@ export type ViewMode =
   | 'donation'
   | 'privacy'
   | 'terms'
+  | 'editing-ethics'
   | 'mydata'
   | 'site-updates'
   | 'beta'
