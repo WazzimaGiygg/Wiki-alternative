@@ -15,7 +15,6 @@ import {
   PlusCircle,
   Globe2,
   ChevronDown,
-  ChevronRight,
   Database,
   Menu,
   Monitor,
@@ -1171,22 +1170,6 @@ export const Header: React.FC<HeaderProps> = ({
               <Edit3 size={13} />
               {t('header.nav_editor')}
             </button>
-            <button
-              id="btn-header-site-updates"
-              onClick={() => onNavigate('site-updates')}
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 transition font-semibold ${
-                currentView === 'site-updates'
-                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-              title="Ver melhorias e notas de versão do sistema"
-            >
-              <Sparkles size={13} className="text-amber-500" />
-              <span>Atualizações</span>
-              <span className="text-[9px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1 py-0.2 rounded-xs font-mono font-bold">
-                v3.3
-              </span>
-            </button>
           </nav>
 
           {/* Language Switcher Dropdown */}
@@ -1467,29 +1450,18 @@ export const Header: React.FC<HeaderProps> = ({
                     })
                   )}
                 </div>
-                <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 flex items-center justify-between gap-2 px-3">
+                <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 flex items-center justify-center gap-2 px-3">
                   <button
                     type="button"
                     onClick={() => {
                       onNavigate('mydata');
                       setShowNotifs(false);
                     }}
-                    className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer py-0.5"
                     title="Configurar quais alertas LGPD você recebe"
                   >
                     <ShieldCheck size={12} />
                     <span>Configurar Notificações LGPD</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onNavigate('site-updates');
-                      setShowNotifs(false);
-                    }}
-                    className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer"
-                  >
-                    <span>Notas da Versão</span>
-                    <ChevronRight size={12} />
                   </button>
                 </div>
               </div>
