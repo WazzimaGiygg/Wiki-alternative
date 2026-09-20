@@ -815,6 +815,14 @@ export default function App() {
 
   const handleNotificationClick = (notif: NotificationItem) => {
     if (notif.link) {
+      if (notif.link === '#mydata' || notif.link === 'mydata') {
+        setShowMyDataModal(true);
+        return;
+      }
+      if (notif.link === '#privacy' || notif.link === 'privacy') {
+        setCurrentView('privacy');
+        return;
+      }
       handleNavigateToArticleByTitle(notif.link);
     }
   };
@@ -849,6 +857,7 @@ export default function App() {
       setShowLgpdModal(false);
       const u = StorageService.getCurrentUser();
       setUser(u);
+      setNotifications(StorageService.getNotifications());
     }
   };
 
@@ -861,6 +870,7 @@ export default function App() {
     setCookieConsent(null);
     setShowLgpdModal(true);
     setShowMyDataModal(false);
+    setNotifications(StorageService.getNotifications());
   };
 
   const handleRequestDeletion = () => {
@@ -1773,6 +1783,7 @@ export default function App() {
         }}
         onRevokeConsent={handleRevokeConsent}
         onRequestDeletion={handleRequestDeletion}
+        onRefreshNotifications={() => setNotifications(StorageService.getNotifications())}
       />
 
       {/* Cookie Consent Banner */}

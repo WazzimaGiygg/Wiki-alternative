@@ -20,6 +20,8 @@ import {
   Terminal,
   Pickaxe,
   Gamepad2,
+  Bell,
+  ShieldCheck,
 } from 'lucide-react';
 import { AppTheme, DeviceMode, ViewMode } from '../types';
 
@@ -719,6 +721,25 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                   <span className="font-semibold text-emerald-600">LGPD & Marco Civil</span>
                 </div>
               </div>
+            </div>
+
+            {/* Configurar Notificações LGPD */}
+            <div className="bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-lg p-3 space-y-2 text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-200">
+                <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
+                <span>Notificações LGPD & Privacidade</span>
+              </div>
+              <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 leading-relaxed">
+                Personalize quais avisos de consentimento, verificação de maioridade e portabilidade disparam notificações no sino do aplicativo.
+              </p>
+              <button
+                type="button"
+                onClick={() => onNavigate('mydata')}
+                className="w-full py-1.5 px-2.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+              >
+                <Bell size={12} />
+                <span>Configurar Notificações LGPD</span>
+              </button>
             </div>
           </div>
         </div>

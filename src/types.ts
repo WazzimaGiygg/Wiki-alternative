@@ -308,6 +308,13 @@ export interface CookieConsent {
   version: string;
 }
 
+export interface LgpdNotificationPreferences {
+  notifyOnTermsAccepted: boolean;
+  notifyOnPrivacyUpdate: boolean;
+  notifyOnDataPortability: boolean;
+  notifyOnAccountChanges: boolean;
+}
+
 export interface TalkReply {
   id: string;
   autor: string;

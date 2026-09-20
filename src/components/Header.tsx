@@ -26,6 +26,7 @@ import {
   Gamepad2,
   Smartphone,
   ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -1408,54 +1409,87 @@ export const Header: React.FC<HeaderProps> = ({
                       <p className="text-[11px] text-slate-400 mt-0.5">Você está na versão mais recente do sistema.</p>
                     </div>
                   ) : (
-                    notifications.map((notif) => (
-                      <div
-                        key={notif.id}
-                        onClick={() => {
-                          onNotificationClick(notif);
-                          setShowNotifs(false);
-                        }}
-                        className={`p-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition flex items-start gap-2.5 ${
-                          !notif.read ? 'bg-blue-50/40 dark:bg-blue-950/20' : ''
-                        }`}
-                      >
+                    notifications.map((notif) => {
+                      const isLgpd =
+                        notif.id?.startsWith('lgpd-') ||
+                        notif.link === '#mydata' ||
+                        notif.title.toLowerCase().includes('lgpd') ||
+                        notif.title.toLowerCase().includes('privacidade');
+
+                      return (
                         <div
-                          className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${
-                            notif.type === 'success'
-                              ? 'bg-emerald-500 shadow-xs shadow-emerald-500/50'
-                              : notif.type === 'warning'
-                              ? 'bg-amber-500'
-                              : 'bg-blue-600'
+                          key={notif.id}
+                          onClick={() => {
+                            onNotificationClick(notif);
+                            setShowNotifs(false);
+                          }}
+                          className={`p-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition flex items-start gap-2.5 ${
+                            !notif.read ? 'bg-blue-50/40 dark:bg-blue-950/20' : ''
                           }`}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-1">
-                            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
-                              {notif.title}
-                            </h4>
-                            <span className="text-[9px] text-slate-400 font-mono flex-shrink-0">
-                              {notif.date}
-                            </span>
+                        >
+                          {isLgpd ? (
+                            <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5 border border-emerald-300 dark:border-emerald-700">
+                              <ShieldCheck size={11} />
+                            </div>
+                          ) : (
+                            <div
+                              className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${
+                                notif.type === 'success'
+                                  ? 'bg-emerald-500 shadow-xs shadow-emerald-500/50'
+                                  : notif.type === 'warning'
+                                  ? 'bg-amber-500'
+                                  : 'bg-blue-600'
+                              }`}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
+                                  {notif.title}
+                                </h4>
+                                {isLgpd && (
+                                  <span className="text-[9px] font-semibold uppercase tracking-wider px-1 py-0.2 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex-shrink-0">
+                                    LGPD
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[9px] text-slate-400 font-mono flex-shrink-0">
+                                {notif.date}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                              {notif.message}
+                            </p>
                           </div>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed line-clamp-2">
-                            {notif.message}
-                          </p>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
-                <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 text-center">
+                <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 flex items-center justify-between gap-2 px-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onNavigate('mydata');
+                      setShowNotifs(false);
+                    }}
+                    className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    title="Configurar quais alertas LGPD você recebe"
+                  >
+                    <ShieldCheck size={12} />
+                    <span>Configurar Notificações LGPD</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
                       onNavigate('site-updates');
                       setShowNotifs(false);
                     }}
-                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center gap-1.5 w-full py-1 cursor-pointer"
+                    className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer"
                   >
-                    <span>Ver todas as Notas de Versão do Sistema</span>
-                    <ChevronRight size={13} />
+                    <span>Notas da Versão</span>
+                    <ChevronRight size={12} />
                   </button>
                 </div>
               </div>

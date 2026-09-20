@@ -74,6 +74,7 @@ import {
   UcocActionLog,
   UcocReportComment,
   CookieConsent,
+  LgpdNotificationPreferences,
   WatchlistItem,
   ArticleRatingData,
   DailyEditLimitStatus,
@@ -161,6 +162,7 @@ const STORAGE_KEYS = {
   EMERGENCY_REPORTS: 'wikizero_emergency_reports_v1',
   EMERGENCY_IP_REPORTS: 'wikizero_emergency_ip_reports_v1',
   UCOC_REPORTS: 'wikizero_ucoc_reports_v1',
+  LGPD_NOTIFICATION_CONFIG: 'wikizero_lgpd_notif_config_v1',
   DAILY_EDITS_PREFIX: 'wikizero_daily_edits_',
 };
 
@@ -1773,8 +1775,16 @@ export const StorageService = {
   },
 
   addNotification(notif: Omit<NotificationItem, 'id' | 'date' | 'read'>): NotificationItem[] {
-    // Restrito estritamente a notas de versão e atualizações do sistema
+    const isLgpdNotif =
+      notif.link === '#mydata' ||
+      notif.link === 'mydata' ||
+      notif.title.toLowerCase().includes('lgpd') ||
+      notif.title.toLowerCase().includes('privacidade') ||
+      notif.title.toLowerCase().includes('consentimento');
+
+    // Restrito a notas de versão, atualizações do sistema e notificações oficiais de privacidade LGPD
     const isSystemUpdate =
+      isLgpdNotif ||
       notif.link === 'site-updates' ||
       notif.title.toLowerCase().includes('v3.') ||
       notif.title.toLowerCase().includes('atualização') ||
@@ -1782,17 +1792,17 @@ export const StorageService = {
       notif.title.toLowerCase().includes('release');
 
     if (!isSystemUpdate) {
-      // Ignorar notificações de eventos pontuais no sininho (mantendo o sininho 100% focado em notas de versão)
+      // Ignorar notificações de eventos pontuais no sininho (mantendo o sininho 100% focado em notas e LGPD)
       return this.getNotifications();
     }
 
     const list = this.getNotifications();
     const item: NotificationItem = {
       ...notif,
-      id: `upd-notif-${Date.now()}`,
+      id: isLgpdNotif ? `lgpd-notif-${Date.now()}` : `upd-notif-${Date.now()}`,
       date: 'Agora',
       read: false,
-      link: 'site-updates',
+      link: notif.link || (isLgpdNotif ? '#mydata' : 'site-updates'),
     };
     const updated = [item, ...list];
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(updated));
@@ -1877,6 +1887,18 @@ export const StorageService = {
       user.birthdate = birthdate;
       this.saveUser(user);
     }
+
+    // Notificação LGPD conforme preferências do titular
+    const notifPrefs = this.getLgpdNotificationPreferences();
+    if (notifPrefs.notifyOnTermsAccepted) {
+      this.addNotification({
+        title: 'Consentimento LGPD Ativo',
+        message: 'Seus termos de privacidade da LGPD e confirmação de idade (> 14 anos) foram validados com sucesso.',
+        link: '#mydata',
+        type: 'success',
+      });
+    }
+
     return { success: true, age };
   },
 
@@ -1885,6 +1907,58 @@ export const StorageService = {
     localStorage.removeItem(STORAGE_KEYS.CONSENT);
     localStorage.removeItem(STORAGE_KEYS.BIRTHDATE);
     localStorage.removeItem(STORAGE_KEYS.USER_AGE);
+
+    const notifPrefs = this.getLgpdNotificationPreferences();
+    if (notifPrefs.notifyOnPrivacyUpdate) {
+      this.addNotification({
+        title: 'Consentimento LGPD Revogado',
+        message: 'Suas permissões e cookies foram revogados conforme o Artigo 18 da LGPD.',
+        link: '#mydata',
+        type: 'warning',
+      });
+    }
+  },
+
+  // === PREFERÊNCIAS DE NOTIFICAÇÃO LGPD ===
+  getLgpdNotificationPreferences(): LgpdNotificationPreferences {
+    const defaults: LgpdNotificationPreferences = {
+      notifyOnTermsAccepted: true,
+      notifyOnPrivacyUpdate: true,
+      notifyOnDataPortability: true,
+      notifyOnAccountChanges: true,
+    };
+    const raw = localStorage.getItem(STORAGE_KEYS.LGPD_NOTIFICATION_CONFIG);
+    if (!raw) return defaults;
+    try {
+      return { ...defaults, ...JSON.parse(raw) };
+    } catch {
+      return defaults;
+    }
+  },
+
+  saveLgpdNotificationPreferences(prefs: Partial<LgpdNotificationPreferences>): LgpdNotificationPreferences {
+    const current = this.getLgpdNotificationPreferences();
+    const updated = { ...current, ...prefs };
+    localStorage.setItem(STORAGE_KEYS.LGPD_NOTIFICATION_CONFIG, JSON.stringify(updated));
+    return updated;
+  },
+
+  sendLgpdNotification(
+    title: string,
+    message: string,
+    prefKey: keyof LgpdNotificationPreferences = 'notifyOnPrivacyUpdate',
+    type: 'info' | 'success' | 'warning' = 'info'
+  ) {
+    const prefs = this.getLgpdNotificationPreferences();
+    if (!prefs[prefKey]) {
+      return null;
+    }
+    return this.addNotification({
+      title,
+      message,
+      link: '#mydata',
+      type,
+    });
   },
 
   // === EDITOR DRAFTS ===
