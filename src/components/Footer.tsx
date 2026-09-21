@@ -150,6 +150,47 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
         )}
 
+        {/* Windows 95 Retrô Taskbar Strip */}
+        {theme === 'win95' && (
+          <div className="p-1.5 bg-[#c0c0c0] border-t-2 border-white border-b-2 border-black font-sans text-xs flex flex-wrap items-center justify-between gap-2 select-none shadow-inner">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="win95-button flex items-center gap-1.5 px-3 py-1 font-bold text-xs"
+                title="Menu Iniciar do Windows 95"
+              >
+                <div className="w-3.5 h-3.5 grid grid-cols-2 gap-0.5">
+                  <div className="bg-[#ff0000]" />
+                  <div className="bg-[#00aa00]" />
+                  <div className="bg-[#0000ff]" />
+                  <div className="bg-[#ffff00]" />
+                </div>
+                <span>Iniciar</span>
+              </button>
+
+              <div className="win95-sunken px-3 py-1 text-black font-bold text-[11px] flex items-center gap-1.5">
+                <span className="text-[#000080]">📖</span>
+                <span>WikiZero 95</span>
+              </div>
+
+              <div className="win95-sunken px-2.5 py-1 text-black text-[11px] flex items-center gap-1.5 bg-[#ffffcc]">
+                <span>📎</span>
+                <span className="font-semibold text-blue-900">Clippy (Bot Ativo)</span>
+              </div>
+            </div>
+
+            <div className="win95-sunken px-2.5 py-1 text-black font-mono text-[11px] flex items-center gap-2">
+              <span className="text-emerald-700 font-bold" title="Modem Dial-up 28.8k conectado">
+                MODEM: 28.8K
+              </span>
+              <span>•</span>
+              <span className="font-bold">
+                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Official Wikimedia-style Mobile / Desktop View Selector Bar */}
         <div className="bg-slate-200/70 dark:bg-slate-850 p-2 rounded-lg flex flex-wrap items-center justify-between gap-2 border border-slate-300/80 dark:border-slate-800">
           <div className="flex items-center gap-2">

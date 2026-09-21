@@ -50,6 +50,7 @@ import { SmartTVView } from './components/SmartTVView';
 import { SmartTVInstallModal } from './components/SmartTVInstallModal';
 import { AppearanceSettingsView } from './components/AppearanceSettingsView';
 import { WindowsXPBootScreen } from './components/WindowsXPBootScreen';
+import { Windows95Bot } from './components/Windows95Bot';
 import { AdvancedSearchView } from './components/AdvancedSearchView';
 import { WikiCompetitorComparisonView } from './components/WikiCompetitorComparisonView';
 import { WazzimaGiyggProfileView } from './components/WazzimaGiyggProfileView';
@@ -1855,18 +1856,30 @@ export default function App() {
       {/* Network & PWA Offline Indicator */}
       <OfflineIndicator />
 
-      {/* Floating Gemini Chatbot Launcher (Accessible across all views except TV mode) */}
+      {/* Floating Assistant Launcher: Windows 95 Clippy Bot vs Standard Gemini Trigger */}
       {currentView !== 'smart-tv' && (
-        <button
-          id="wikizero-gemini-floating-trigger"
-          type="button"
-          onClick={() => setShowGeminiChatbot(true)}
-          className="fixed bottom-16 sm:bottom-6 right-4 sm:right-6 z-40 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-900 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 text-xs font-bold border border-white/20 select-none cursor-pointer"
-          title="Abrir Chatbot Gemini (Google AI Studio) - Auxílio em Artigos e Coleções"
-        >
-          <Sparkles size={16} className="text-amber-300 animate-pulse" />
-          <span className="hidden sm:inline">Assistente Gemini</span>
-        </button>
+        theme === 'win95' ? (
+          <Windows95Bot
+            onRandomArticle={handleRandomPage}
+            onOpenSearch={() => {
+              setCurrentView('search');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenGeminiFull={() => setShowGeminiChatbot(true)}
+            currentArticleTitle={articles.find((a) => a.id === selectedArticleId)?.titulo}
+          />
+        ) : (
+          <button
+            id="wikizero-gemini-floating-trigger"
+            type="button"
+            onClick={() => setShowGeminiChatbot(true)}
+            className="fixed bottom-16 sm:bottom-6 right-4 sm:right-6 z-40 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-900 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 text-xs font-bold border border-white/20 select-none cursor-pointer"
+            title="Abrir Chatbot Gemini (Google AI Studio) - Auxílio em Artigos e Coleções"
+          >
+            <Sparkles size={16} className="text-amber-300 animate-pulse" />
+            <span className="hidden sm:inline">Assistente Gemini</span>
+          </button>
+        )
       )}
 
       {/* Global Gemini Chatbot Drawer */}

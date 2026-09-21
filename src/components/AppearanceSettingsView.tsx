@@ -156,9 +156,9 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
     {
       id: 'win95',
       name: 'Windows 95 Retrô OS',
-      subtitle: 'Nostalgia Clássica dos Anos 90',
-      description: 'Visual autêntico do clássico Windows 95, com barras de título em azul marinho com gradiente, bordas chanfradas 3D (outset/inset) e cinza industrial.',
-      tag: 'Nostalgia Anos 90',
+      subtitle: 'Nostalgia Clássica dos Anos 90 com Clippy Bot',
+      description: 'Visual autêntico do clássico Windows 95, com barras de título azul marinho, bordas chanfradas 3D, barra de tarefas com botão Iniciar e o clássico Bot Assistente Clippy integrado.',
+      tag: 'Clippy Bot + Anos 90',
       accentColor: '#000080',
       bgPreview: 'bg-[#c0c0c0] border-t-white border-l-white border-r-black border-b-black border-2 text-black font-sans',
       badgeStyle: 'bg-[#000080] text-white font-bold',
