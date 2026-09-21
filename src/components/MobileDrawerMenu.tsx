@@ -300,6 +300,32 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <span className="hidden xs:inline">3310</span>
             </button>
 
+            {/* Quick Windows XP Toggle */}
+            <button
+              id="btn-drawer-quick-winxp-theme"
+              onClick={() => {
+                if (theme === 'winxp') {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('winxp');
+                }
+              }}
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 font-sans text-[10px] font-bold ${
+                theme === 'winxp'
+                  ? 'bg-[#0055ea] border-[#003bb3] text-white ring-1 ring-[#0055ea]/50 shadow-[0_0_8px_rgba(0,85,234,0.4)]'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={theme === 'winxp' ? 'Desativar Tema Windows XP' : 'Ativar Tema Windows XP Luna'}
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                <path fill="#f25022" d="M2 3h9v9H2z" />
+                <path fill="#7fba00" d="M13 3h9v9h-9z" />
+                <path fill="#00a4ef" d="M2 13h9v9H2z" />
+                <path fill="#ffb900" d="M13 13h9v9h-9z" />
+              </svg>
+              <span className="hidden xs:inline">XP</span>
+            </button>
+
             {/* Dark Mode Toggle */}
             <button
               onClick={onToggleTheme}

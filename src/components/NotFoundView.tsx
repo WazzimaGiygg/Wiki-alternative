@@ -51,6 +51,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
   const [searchInputValue, setSearchInputValue] = useState(query || '');
 
   const isWin95 = theme === 'win95';
+  const isWinXP = theme === 'winxp';
   const isGenshin = theme === 'genshin';
   const isAndroid = theme === 'android15';
   const isStardew = theme === 'stardew';
@@ -154,6 +155,8 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
         className={`p-6 sm:p-10 rounded-2xl border transition-all mb-8 shadow-sm ${
           isWin95
             ? 'win95-window'
+            : isWinXP
+            ? 'winxp-window'
             : isGenshin
             ? 'bg-[#181e36] border-[#d3bc8e]/40 text-[#f2dfb7]'
             : isStardew

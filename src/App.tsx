@@ -49,6 +49,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { SmartTVView } from './components/SmartTVView';
 import { SmartTVInstallModal } from './components/SmartTVInstallModal';
 import { AppearanceSettingsView } from './components/AppearanceSettingsView';
+import { WindowsXPBootScreen } from './components/WindowsXPBootScreen';
 import { AdvancedSearchView } from './components/AdvancedSearchView';
 import { WikiCompetitorComparisonView } from './components/WikiCompetitorComparisonView';
 import { WazzimaGiyggProfileView } from './components/WazzimaGiyggProfileView';
@@ -155,13 +156,19 @@ export default function App() {
     };
   }, []);
 
-  // Multi-theme state supporting light, dark, google, google-dark, win95, genshin, android15, stardew, repo, minecraft, roblox, nokia3310
+  // Multi-theme state supporting light, dark, google, google-dark, win95, winxp, genshin, android15, stardew, repo, minecraft, roblox, nokia3310
   const [theme, setTheme] = useState<AppTheme>(() => {
     const saved = localStorage.getItem('wikizero_theme_v3') as AppTheme | null;
-    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'genshin' || saved === 'android15' || saved === 'stardew' || saved === 'repo' || saved === 'minecraft' || saved === 'roblox' || saved === 'nokia3310')) {
+    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'winxp' || saved === 'genshin' || saved === 'android15' || saved === 'stardew' || saved === 'repo' || saved === 'minecraft' || saved === 'roblox' || saved === 'nokia3310')) {
       return saved;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  // Controls classic Windows XP boot startup animation
+  const [showWinXPBoot, setShowWinXPBoot] = useState<boolean>(() => {
+    const saved = localStorage.getItem('wikizero_theme_v3');
+    return saved === 'winxp';
   });
 
   const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'genshin' || theme === 'android15' || theme === 'repo' || theme === 'minecraft' || theme === 'roblox';
@@ -169,7 +176,7 @@ export default function App() {
   // Apply appropriate theme classes to document root
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310');
+    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -179,6 +186,8 @@ export default function App() {
       root.classList.add('dark', 'theme-google', 'theme-google-dark');
     } else if (theme === 'win95') {
       root.classList.add('theme-win95');
+    } else if (theme === 'winxp') {
+      root.classList.add('theme-winxp');
     } else if (theme === 'genshin') {
       root.classList.add('dark', 'theme-genshin');
     } else if (theme === 'android15') {
@@ -541,6 +550,9 @@ export default function App() {
 
   // === HANDLERS ===
   const handleSetTheme = (newTheme: AppTheme) => {
+    if (newTheme === 'winxp') {
+      setShowWinXPBoot(true);
+    }
     setTheme(newTheme);
   };
 
@@ -1041,6 +1053,7 @@ export default function App() {
         onNotificationClick={handleNotificationClick}
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
         onOpenSmartTVModal={() => setShowSmartTVModal(true)}
+        onRebootWinXP={() => setShowWinXPBoot(true)}
       />
 
       {/* 2. Main Workspace Layout */}
@@ -1673,6 +1686,7 @@ export default function App() {
         deviceMode={deviceMode}
         onToggleDeviceMode={handleToggleDeviceMode}
         onSetTheme={handleSetTheme}
+        onRebootWinXP={() => setShowWinXPBoot(true)}
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
       />
 
@@ -1921,6 +1935,13 @@ export default function App() {
         onHome={handleContextMenuHome}
         onTools={handleContextMenuTools}
       />
+
+      {/* 9. Animação de Inicialização Clássica Windows XP (Boot Loader) */}
+      {showWinXPBoot && (
+        <WindowsXPBootScreen
+          onComplete={() => setShowWinXPBoot(false)}
+        />
+      )}
     </div>
   );
 };

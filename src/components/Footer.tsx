@@ -38,6 +38,7 @@ interface FooterProps {
   onToggleDeviceMode?: (mode: DeviceMode) => void;
   onOpenLanguagesModal?: () => void;
   onSetTheme?: (theme: AppTheme) => void;
+  onRebootWinXP?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -47,6 +48,7 @@ export const Footer: React.FC<FooterProps> = ({
   onToggleDeviceMode,
   onOpenLanguagesModal,
   onSetTheme,
+  onRebootWinXP,
 }) => {
   const { currentLanguage, t } = useLanguage();
 
@@ -110,6 +112,40 @@ export const Footer: React.FC<FooterProps> = ({
               <span>BATERIA: [||||]</span>
               <span className="bg-[#1f281b] text-[#c2d6a4] px-1.5 py-0.5">SNAKE II PRONTO</span>
               <span>CONNECTING PEOPLE</span>
+            </div>
+          </div>
+        )}
+
+        {/* Windows XP Taskbar / Luna strip */}
+        {theme === 'winxp' && (
+          <div className="winxp-taskbar p-2 rounded-t-lg text-xs font-sans text-white flex flex-wrap items-center justify-between gap-3 select-none">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onRebootWinXP?.()}
+                className="winxp-start-button flex items-center gap-1.5 px-3 py-1 font-bold text-sm tracking-wide text-white italic shadow-sm cursor-pointer"
+                title="Clique para reiniciar e rever o boot clássico do Windows XP"
+              >
+                <svg className="w-4 h-4 not-italic" viewBox="0 0 24 24">
+                  <path fill="#f25022" d="M2 3h9v9H2z" />
+                  <path fill="#7fba00" d="M13 3h9v9h-9z" />
+                  <path fill="#00a4ef" d="M2 13h9v9H2z" />
+                  <path fill="#ffb900" d="M13 13h9v9h-9z" />
+                </svg>
+                <span className="lowercase font-black">iniciar</span>
+              </button>
+              <span className="text-xs text-blue-100 font-medium hidden sm:inline ml-2">
+                Microsoft Windows XP Professional [Versão 5.1.2600 Service Pack 3]
+              </span>
+            </div>
+            <div className="winxp-tray flex items-center gap-3 px-3 py-1 rounded-sm text-[11px] font-medium">
+              <span className="text-emerald-200 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span> Conectado: 100,0 Mbps
+              </span>
+              <span className="text-blue-200 hidden xs:inline">Volume: 100%</span>
+              <span className="bg-[#0b388f] px-2 py-0.5 rounded border border-[#1b58bf] text-white font-mono">
+                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
             </div>
           </div>
         )}

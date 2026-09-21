@@ -56,6 +56,7 @@ interface HeaderProps {
   onNotificationClick: (notif: NotificationItem) => void;
   onOpenLanguagesModal?: () => void;
   onOpenSmartTVModal?: () => void;
+  onRebootWinXP?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -82,6 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNotificationClick,
   onOpenLanguagesModal,
   onOpenSmartTVModal,
+  onRebootWinXP,
 }) => {
   const { currentLanguage, setLanguage, t, allLanguages } = useLanguage();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -97,6 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
   const isWin95 = theme === 'win95';
+  const isWinXP = theme === 'winxp';
   const isGenshin = theme === 'genshin';
   const isAndroid = theme === 'android15';
   const isStardew = theme === 'stardew';
@@ -168,6 +171,47 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onSetTheme?.('light')}
               className="w-4 h-3.5 bg-[#c0c0c0] text-black font-black text-[9px] flex items-center justify-center border-t border-l border-white border-r border-b border-black active:border-black leading-none hover:bg-red-600 hover:text-white"
               title="Fechar / Sair do Modo Windows 95"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Windows XP Luna Blue Top Window Title Bar */}
+      {isWinXP && (
+        <div className="winxp-titlebar font-sans text-xs flex items-center justify-between px-3 py-1 select-none shadow-sm">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-4 h-4 flex items-center justify-center shrink-0">
+              <svg className="w-3.5 h-3.5 filter drop-shadow" viewBox="0 0 24 24">
+                <path fill="#f25022" d="M2 3h9v9H2z" />
+                <path fill="#7fba00" d="M13 3h9v9h-9z" />
+                <path fill="#00a4ef" d="M2 13h9v9H2z" />
+                <path fill="#ffb900" d="M13 13h9v9h-9z" />
+              </svg>
+            </div>
+            <span className="font-bold text-white text-xs truncate tracking-wide">
+              WikiWorldWeb XP Professional - Enciclopédia Multimídia [Luna Blue SP3]
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+            {onRebootWinXP && (
+              <button
+                type="button"
+                onClick={onRebootWinXP}
+                className="winxp-btn-min px-2 h-5 flex items-center gap-1 text-white font-sans text-[10px] font-bold"
+                title="Reiniciar e rever a clássica animação de boot do Windows XP"
+              >
+                <span>Boot XP</span>
+                <span className="text-[9px]">↺</span>
+              </button>
+            )}
+            <button className="winxp-btn-min w-5 h-5 flex items-center justify-center text-white font-bold text-xs" title="Minimizar">_</button>
+            <button className="winxp-btn-max w-5 h-5 flex items-center justify-center text-white font-bold text-[10px]" title="Maximizar">□</button>
+            <button
+              onClick={() => onSetTheme?.('light')}
+              className="winxp-btn-close w-5 h-5 flex items-center justify-center text-white font-bold text-xs"
+              title="Fechar / Sair do Modo Windows XP"
             >
               ✕
             </button>
@@ -775,6 +819,42 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={onRandomPage}
                 title="Artigo Aleatório"
                 className="win95-button"
+              >
+                {t('header.random_page')}
+              </button>
+            </div>
+          </div>
+        ) : isWinXP ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div className="flex items-center gap-2">
+              <div
+                onClick={handleSearchInputClick}
+                className="flex-1 winxp-input flex items-center px-3 py-1.5 bg-white cursor-pointer rounded shadow-inner border border-[#7f9db9]"
+              >
+                <Search className="w-4 h-4 text-[#0055ea] mr-2 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onClick={handleSearchInputClick}
+                  onFocus={handleSearchInputClick}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Pesquisar na WikiWorldWeb XP..."
+                  className="w-full text-xs bg-transparent border-none outline-none text-slate-900 font-sans placeholder:text-slate-500 cursor-text"
+                />
+              </div>
+              <button
+                onClick={onSearchSubmit}
+                className="winxp-start-button font-bold flex items-center gap-1.5 px-3 py-1.5 text-xs text-white italic shadow-sm"
+                title="Pesquisar na Enciclopédia XP"
+              >
+                <Search size={13} className="text-white not-italic" />
+                <span className="not-italic">Buscar</span>
+              </button>
+              <button
+                onClick={onRandomPage}
+                title="Artigo Aleatório no Windows XP"
+                className="winxp-button text-xs px-2.5 py-1"
               >
                 {t('header.random_page')}
               </button>

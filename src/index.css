@@ -497,6 +497,263 @@ html.theme-win95 .wiki-rendered-content .wikitable td {
 }
 
 /* ========================================================================== */
+/* TEMA WINDOWS XP (Luna Blue, Bliss & Iniciar 2001)                          */
+/* ========================================================================== */
+
+/* Windows XP Classic Boot Loading Screen */
+@keyframes winxp-boot-slider {
+  0% {
+    transform: translateX(-48px);
+  }
+  100% {
+    transform: translateX(185px);
+  }
+}
+
+.winxp-boot-track {
+  width: 172px;
+  height: 14px;
+  background-color: #000000;
+  border: 1px solid #4a6cb3;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 4px rgba(74, 108, 179, 0.5);
+}
+
+.winxp-boot-blocks-container {
+  display: flex;
+  gap: 2px;
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  animation: winxp-boot-slider 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.winxp-boot-block {
+  width: 9px;
+  height: 100%;
+  border-radius: 1.5px;
+  background: linear-gradient(180deg, #6ba7ff 0%, #296eec 45%, #084bc7 50%, #0036a3 100%);
+  box-shadow: 0 0 4px rgba(41, 110, 236, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+html.theme-winxp {
+  color-scheme: light;
+}
+
+html.theme-winxp body {
+  font-family: 'Tahoma', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #3b74dc;
+  background-image: 
+    linear-gradient(180deg, #2b60d3 0%, #437fe6 25%, #76aaf8 60%, #b3d7ff 85%, #d9ecff 100%);
+  background-attachment: fixed;
+  color: #000000;
+}
+
+/* Classic Windows XP Luna Window */
+.winxp-window {
+  background-color: #ece9d8 !important;
+  border: 3px solid #0055ea !important;
+  border-radius: 8px 8px 4px 4px !important;
+  box-shadow: 0 4px 16px rgba(0, 50, 150, 0.35) !important;
+}
+
+/* Windows XP Luna Title Bar */
+.winxp-titlebar {
+  background: linear-gradient(180deg, #0058ee 0%, #3593ff 4%, #288eff 18%, #127dff 35%, #036ffc 70%, #0262ee 100%) !important;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  color: #ffffff !important;
+  font-weight: bold;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  letter-spacing: 0.3px;
+  font-size: 12px;
+  text-shadow: 1px 1px 2px #002266;
+  border-bottom: 1px solid #003bb3;
+  user-select: none;
+}
+
+/* Windows XP Minimize / Maximize Buttons */
+.winxp-btn-min,
+.winxp-btn-max {
+  background: linear-gradient(180deg, #388bf2 0%, #1a6fe8 50%, #0c57d3 51%, #1e6de6 100%) !important;
+  border: 1px solid #ffffff !important;
+  border-radius: 3px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  color: #ffffff !important;
+  cursor: pointer;
+  transition: filter 0.1s;
+}
+.winxp-btn-min:hover,
+.winxp-btn-max:hover {
+  filter: brightness(1.15);
+}
+
+/* Iconic Windows XP Red Close Button */
+.winxp-btn-close {
+  background: linear-gradient(180deg, #f27260 0%, #e04530 50%, #d83a24 51%, #c02a14 100%) !important;
+  border: 1px solid #ffffff !important;
+  border-radius: 3px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+  color: #ffffff !important;
+  cursor: pointer;
+  transition: filter 0.1s;
+}
+.winxp-btn-close:hover {
+  filter: brightness(1.2) saturate(1.25);
+}
+
+/* Windows XP Classic Luna Button */
+.winxp-button {
+  background: linear-gradient(180deg, #ffffff 0%, #f0efe8 45%, #e1decb 50%, #d3ceb7 100%) !important;
+  border: 1px solid #003c74 !important;
+  border-radius: 3px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+  color: #000000 !important;
+  font-family: 'Tahoma', sans-serif !important;
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+.winxp-button:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #fffbe6 45%, #fcebb0 50%, #fbd885 100%) !important;
+  border-color: #e68b00 !important;
+}
+.winxp-button:active {
+  background: linear-gradient(180deg, #d3ceb7 0%, #e1decb 50%, #f0efe8 100%) !important;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Windows XP Start Button (Iniciar) */
+.winxp-start-button {
+  background: linear-gradient(180deg, #3c9f3e 0%, #2f8e32 45%, #237825 50%, #1e6e20 100%) !important;
+  border: 1px solid #165618 !important;
+  border-radius: 0 12px 12px 0 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 1px 2px 4px rgba(0, 0, 0, 0.3) !important;
+  color: #ffffff !important;
+  text-shadow: 1px 1px 1px #0f3f10;
+  cursor: pointer;
+  transition: filter 0.1s;
+}
+.winxp-start-button:hover {
+  filter: brightness(1.12);
+}
+
+/* Windows XP Taskbar */
+.winxp-taskbar {
+  background: linear-gradient(180deg, #1f6bdf 0%, #287aeb 10%, #226bdf 30%, #185ecb 80%, #0d4ab5 100%) !important;
+  border-top: 1px solid #3c8ef7 !important;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+.winxp-tray {
+  background: linear-gradient(180deg, #0e52b8 0%, #145ec7 50%, #0b459e 100%) !important;
+  border-left: 1px solid #093b82 !important;
+  box-shadow: inset 1px 0 1px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Windows XP Inputs & Content */
+.winxp-input,
+.winxp-sunken {
+  background-color: #ffffff !important;
+  border: 1px solid #7f9db9 !important;
+  border-radius: 2px !important;
+  color: #000000 !important;
+  box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.1) !important;
+}
+
+html.theme-winxp header {
+  background-color: #ece9d8 !important;
+  border-bottom: 2px solid #0055ea !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+html.theme-winxp main {
+  background-color: transparent !important;
+}
+
+html.theme-winxp .bg-white,
+html.theme-winxp .dark\:bg-slate-900,
+html.theme-winxp .dark\:bg-\[\#0f172a\] {
+  background-color: #ece9d8 !important;
+  border-color: #7f9db9 !important;
+  color: #000000 !important;
+}
+
+html.theme-winxp .bg-slate-50,
+html.theme-winxp .dark\:bg-slate-800,
+html.theme-winxp .dark\:bg-\[\#1e293b\] {
+  background-color: #ffffff !important;
+  border-color: #7f9db9 !important;
+  color: #000000 !important;
+}
+
+html.theme-winxp article,
+html.theme-winxp .wiki-rendered-content {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #7f9db9 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
+  padding: 18px !important;
+}
+
+html.theme-winxp .wiki-rendered-content h1,
+html.theme-winxp .wiki-rendered-content h2,
+html.theme-winxp .wiki-rendered-content h3 {
+  color: #003399 !important;
+  font-family: 'Tahoma', 'Trebuchet MS', sans-serif !important;
+}
+
+html.theme-winxp .wiki-rendered-content h1 {
+  border-bottom: 2px solid #0055ea !important;
+}
+
+html.theme-winxp .wiki-rendered-content .wiki-link {
+  color: #0044bb !important;
+  text-decoration: underline !important;
+}
+html.theme-winxp .wiki-rendered-content .wiki-link:hover {
+  color: #ff3300 !important;
+}
+
+html.theme-winxp .wiki-rendered-content .wikitable {
+  border: 1px solid #7f9db9 !important;
+  background-color: #ffffff !important;
+}
+html.theme-winxp .wiki-rendered-content .wikitable th {
+  background: linear-gradient(180deg, #f2f7fd 0%, #dce8fa 100%) !important;
+  color: #003399 !important;
+  border: 1px solid #b2c9ea !important;
+  font-weight: bold !important;
+}
+html.theme-winxp .wiki-rendered-content .wikitable td {
+  border: 1px solid #dce8fa !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html.theme-winxp aside {
+  background-color: #ece9d8 !important;
+  border-color: #0055ea !important;
+}
+
+html.theme-winxp footer {
+  background-color: #ece9d8 !important;
+  border-top: 2px solid #0055ea !important;
+  color: #333333 !important;
+}
+
+html.theme-winxp footer a {
+  color: #0044bb !important;
+}
+
+/* ========================================================================== */
 /* TEMA GENSHIN IMPACT (Teyvat Astral Night, Primogem & Celestial Gold)       */
 /* ========================================================================== */
 html.theme-genshin {

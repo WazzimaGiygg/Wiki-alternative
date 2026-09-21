@@ -165,6 +165,24 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       icon: <Monitor size={18} className="text-teal-600" />,
     },
     {
+      id: 'winxp',
+      name: 'Windows XP Luna Blue (2001)',
+      subtitle: 'Nostalgia Clássica do Windows XP, Luna & Bliss',
+      description: 'A lendária interface do Windows XP com animação clássica de boot e som de inicialização: barras de título Luna Blue, botão vermelho de fechar, botão Iniciar verde, caixas bege e papel de parede Bliss.',
+      tag: 'Boot Clássico + Luna',
+      accentColor: '#0055ea',
+      bgPreview: 'bg-[#ece9d8] border-[#0055ea] border-2 text-[#000000] font-sans shadow-md',
+      badgeStyle: 'bg-gradient-to-r from-[#0055ea] to-[#3a84f3] text-white font-bold border border-[#003bb3]',
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24">
+          <path fill="#f25022" d="M2 3h9v9H2z" />
+          <path fill="#7fba00" d="M13 3h9v9h-9z" />
+          <path fill="#00a4ef" d="M2 13h9v9H2z" />
+          <path fill="#ffb900" d="M13 13h9v9h-9z" />
+        </svg>
+      ),
+    },
+    {
       id: 'genshin',
       name: 'Genshin Impact Astral',
       subtitle: 'Teyvat Celestia & Primogem',
@@ -390,27 +408,43 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                   <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase">
                     ID: {t.id}
                   </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectTheme(t.id);
-                    }}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold transition flex items-center gap-1 ${
-                      isSelected
-                        ? 'bg-blue-600 text-white font-bold shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {isSelected ? (
-                      <>
-                        <Check size={12} />
-                        <span>Ativo</span>
-                      </>
-                    ) : (
-                      <span>Ativar</span>
+                  <div className="flex items-center gap-2">
+                    {t.id === 'winxp' && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectTheme('winxp');
+                        }}
+                        className="px-2.5 py-1 rounded-md text-[11px] font-medium border border-blue-300 dark:border-blue-700 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition flex items-center gap-1"
+                        title="Executar animação clássica de boot do Windows XP"
+                      >
+                        <span>Boot XP</span>
+                        <span className="text-[10px]">↺</span>
+                      </button>
                     )}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectTheme(t.id);
+                      }}
+                      className={`px-3 py-1 rounded-md text-xs font-semibold transition flex items-center gap-1 ${
+                        isSelected
+                          ? 'bg-blue-600 text-white font-bold shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {isSelected ? (
+                        <>
+                          <Check size={12} />
+                          <span>Ativo</span>
+                        </>
+                      ) : (
+                        <span>Ativar</span>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
