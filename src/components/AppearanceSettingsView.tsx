@@ -24,6 +24,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { AppTheme, DeviceMode, ViewMode } from '../types';
+import { playPCSpeakerBeep, playWin95Tada } from '../utils/win95Audio';
 
 interface AppearanceSettingsViewProps {
   currentTheme: AppTheme;
@@ -71,6 +72,12 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
 
   const handleSelectTheme = (newTheme: AppTheme) => {
     onSetTheme(newTheme);
+    if (newTheme === 'win1') {
+      playPCSpeakerBeep(880, 0.12, 0.25);
+      setTimeout(() => playPCSpeakerBeep(1174, 0.14, 0.25), 130);
+    } else if (newTheme === 'win95') {
+      playWin95Tada(0.25);
+    }
     setShowSavedFeedback(true);
     setTimeout(() => setShowSavedFeedback(false), 2200);
   };
@@ -150,6 +157,21 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
           <span className="w-2 h-2 rounded-full bg-[#f28b82]" />
           <span className="w-2 h-2 rounded-full bg-[#fdd663]" />
           <span className="w-2 h-2 rounded-full bg-[#81c995]" />
+        </div>
+      ),
+    },
+    {
+      id: 'win1',
+      name: 'Windows 1.0 (1985)',
+      subtitle: 'MS-DOS Executive, Janelas Lado a Lado & Paleta EGA',
+      description: 'A histórica primeira versão do Windows lançada em novembro de 1985: janelas lado a lado sem sobreposição, barra de título azul sólido (#0000aa) com caixa de menu [-], fundo teal (#008080), botões com borda preta sólida e área de ícones clássica com Reversi, Clock e MS-DOS Executive.',
+      tag: 'EGA 1985 MS-DOS',
+      accentColor: '#0000aa',
+      bgPreview: 'bg-[#008080] border-2 border-black text-black font-mono shadow-md',
+      badgeStyle: 'bg-[#0000aa] text-white font-bold border border-black',
+      icon: (
+        <div className="w-4 h-4 bg-[#0000aa] border border-black flex items-center justify-center text-[9px] font-mono font-bold text-white">
+          W1
         </div>
       ),
     },
@@ -409,6 +431,21 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                     ID: {t.id}
                   </span>
                   <div className="flex items-center gap-2">
+                    {t.id === 'win1' && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playPCSpeakerBeep(880, 0.12, 0.3);
+                          setTimeout(() => playPCSpeakerBeep(1174, 0.15, 0.3), 130);
+                        }}
+                        className="px-2.5 py-1 rounded-none text-[11px] font-bold border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-colors flex items-center gap-1 font-mono"
+                        title="Tocar Beep do PC Speaker de 1985"
+                      >
+                        <span>Beep 8086</span>
+                        <span className="text-[10px]">🔊</span>
+                      </button>
+                    )}
                     {t.id === 'winxp' && (
                       <button
                         type="button"

@@ -139,3 +139,33 @@ export function playWin95Tada(volume: number = 0.3) {
     // ignore
   }
 }
+
+/**
+ * Beep autêntico de PC Speaker 8253 PIT do IBM PC XT / AT (Windows 1.0 - 1985)
+ */
+export function playPCSpeakerBeep(frequency: number = 880, duration: number = 0.12, volume: number = 0.25) {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'square'; // Pura onda quadrada de 1-bit do PC Speaker de 1985
+    osc.frequency.setValueAtTime(frequency, now);
+
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.setValueAtTime(volume, now + duration - 0.005);
+    gain.gain.linearRampToValueAtTime(0.0001, now + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+  } catch {
+    // ignore
+  }
+}
+

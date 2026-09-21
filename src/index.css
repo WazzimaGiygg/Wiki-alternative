@@ -2022,6 +2022,219 @@ html.theme-nokia3310 ::-webkit-scrollbar-thumb:hover {
   background: #2e3d28;
 }
 
+/* ========================================================================== */
+/* TEMA WINDOWS 1.0 (MS-DOS Executive, Janelas Lado a Lado & Paleta EGA - 1985) */
+/* ========================================================================== */
+html.theme-win1 {
+  color-scheme: light;
+}
+
+html.theme-win1 body {
+  background-color: #008080;
+  color: #000000;
+  font-family: 'Courier New', 'Fixedsys', Consolas, Monaco, ui-monospace, monospace;
+  image-rendering: pixelated;
+  letter-spacing: -0.01em;
+}
+
+/* Sharp geometry: NO border radius in Windows 1.0 */
+html.theme-win1 * {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Inverted high-contrast selection */
+html.theme-win1 ::selection {
+  background-color: #0000aa;
+  color: #ffffff;
+}
+
+/* Windows 1.0 Header */
+html.theme-win1 header {
+  background-color: #ffffff !important;
+  border-bottom: 2px solid #000000 !important;
+}
+
+/* Main window container and layout: Stark white tiled window with thick 2px black border */
+html.theme-win1 main,
+html.theme-win1 .bg-white,
+html.theme-win1 .dark\:bg-slate-900,
+html.theme-win1 .dark\:bg-\[\#0f172a\],
+html.theme-win1 .dark\:bg-slate-850 {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html.theme-win1 .bg-slate-50,
+html.theme-win1 .dark\:bg-slate-800,
+html.theme-win1 .dark\:bg-\[\#1e293b\] {
+  background-color: #f4f4f4 !important;
+  color: #000000 !important;
+}
+
+/* Stark black borders */
+html.theme-win1 .border-slate-200,
+html.theme-win1 .border-slate-300,
+html.theme-win1 .border-slate-700,
+html.theme-win1 .border-slate-800,
+html.theme-win1 .dark\:border-slate-800,
+html.theme-win1 .dark\:border-slate-700 {
+  border-color: #000000 !important;
+}
+
+/* High contrast typography */
+html.theme-win1 .text-slate-900,
+html.theme-win1 .text-slate-800,
+html.theme-win1 .text-slate-700,
+html.theme-win1 .text-slate-600,
+html.theme-win1 .dark\:text-white,
+html.theme-win1 .dark\:text-slate-100,
+html.theme-win1 .dark\:text-slate-200,
+html.theme-win1 .dark\:text-slate-300 {
+  color: #000000 !important;
+}
+
+html.theme-win1 .text-slate-500,
+html.theme-win1 .text-slate-400,
+html.theme-win1 .dark\:text-slate-400,
+html.theme-win1 .dark\:text-slate-500 {
+  color: #333333 !important;
+}
+
+/* Windows 1.0 Buttons: Flat rectangular with 2px black border, inverting on hover */
+html.theme-win1 button:not([class*="bg-"]):not([class*="text-"]),
+html.theme-win1 .win1-button {
+  background-color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  color: #000000 !important;
+  font-family: 'Courier New', 'Fixedsys', monospace !important;
+  font-weight: bold !important;
+}
+
+html.theme-win1 button:hover {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Windows 1.0 Form Inputs */
+html.theme-win1 input[type="text"],
+html.theme-win1 input[type="search"],
+html.theme-win1 textarea,
+html.theme-win1 select {
+  background-color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  color: #000000 !important;
+  font-family: 'Courier New', 'Fixedsys', monospace !important;
+}
+
+/* Windows 1.0 Rendered Article Content */
+html.theme-win1 article,
+html.theme-win1 .wiki-rendered-content {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  padding: 16px !important;
+  font-family: 'Courier New', 'Fixedsys', monospace !important;
+}
+
+html.theme-win1 .wiki-rendered-content h1 {
+  font-size: 1.5rem !important;
+  font-weight: 900 !important;
+  border-bottom: 2px solid #0000aa !important;
+  padding-bottom: 4px !important;
+  color: #0000aa !important;
+  text-transform: uppercase !important;
+}
+
+html.theme-win1 .wiki-rendered-content h2 {
+  font-size: 1.25rem !important;
+  font-weight: 800 !important;
+  border-bottom: 2px solid #000000 !important;
+  padding-bottom: 2px !important;
+  color: #000000 !important;
+}
+
+html.theme-win1 .wiki-rendered-content h3 {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #0000aa !important;
+}
+
+html.theme-win1 .wiki-rendered-content .wiki-link,
+html.theme-win1 a {
+  color: #0000aa !important;
+  text-decoration: underline !important;
+  font-weight: bold !important;
+}
+
+html.theme-win1 .wiki-rendered-content .wiki-link:hover,
+html.theme-win1 a:hover {
+  color: #ff0000 !important;
+  background-color: #ffffaa !important;
+}
+
+/* Wikitables in Windows 1.0 */
+html.theme-win1 .wiki-rendered-content .wikitable {
+  border: 2px solid #000000 !important;
+  background-color: #ffffff !important;
+  border-collapse: collapse !important;
+}
+
+html.theme-win1 .wiki-rendered-content .wikitable th {
+  background-color: #0000aa !important;
+  color: #ffffff !important;
+  border: 1px solid #000000 !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+}
+
+html.theme-win1 .wiki-rendered-content .wikitable td {
+  border: 1px solid #000000 !important;
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
+/* Windows 1.0 Sidebar */
+html.theme-win1 aside {
+  background-color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  color: #000000 !important;
+}
+
+/* Windows 1.0 Footer */
+html.theme-win1 footer {
+  background-color: #008080 !important;
+  border-top: 2px solid #000000 !important;
+  color: #ffffff !important;
+}
+
+html.theme-win1 footer a {
+  color: #ffffff !important;
+  text-decoration: underline !important;
+}
+
+/* Windows 1.0 Scrollbars: Classic stippled 1985 pattern */
+html.theme-win1 ::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+html.theme-win1 ::-webkit-scrollbar-track {
+  background-color: #ffffff;
+  background-image: repeating-conic-gradient(#000000 0% 25%, #ffffff 0% 50%) 50% / 2px 2px;
+  border: 2px solid #000000;
+}
+
+html.theme-win1 ::-webkit-scrollbar-thumb {
+  background-color: #0000aa;
+  border: 2px solid #000000;
+}
+
+html.theme-win1 ::-webkit-scrollbar-thumb:hover {
+  background-color: #000000;
+}
+
+
 
 
 

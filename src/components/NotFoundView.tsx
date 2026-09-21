@@ -50,6 +50,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
 }) => {
   const [searchInputValue, setSearchInputValue] = useState(query || '');
 
+  const isWin1 = theme === 'win1';
   const isWin95 = theme === 'win95';
   const isWinXP = theme === 'winxp';
   const isGenshin = theme === 'genshin';
@@ -153,7 +154,9 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
       {/* Card Principal de Erro 404 */}
       <div
         className={`p-6 sm:p-10 rounded-2xl border transition-all mb-8 shadow-sm ${
-          isWin95
+          isWin1
+            ? 'bg-white border-2 border-black !rounded-none text-black font-mono shadow-none'
+            : isWin95
             ? 'win95-window'
             : isWinXP
             ? 'winxp-window'

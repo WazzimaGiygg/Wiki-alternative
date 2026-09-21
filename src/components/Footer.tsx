@@ -150,6 +150,51 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
         )}
 
+        {/* Windows 1.0 (1985) MS-DOS Executive Bottom Icon Area */}
+        {theme === 'win1' && (
+          <div className="p-2 bg-[#008080] border-t-2 border-b-2 border-black font-mono text-xs flex flex-wrap items-center justify-between gap-3 select-none text-white">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] uppercase font-bold text-cyan-200 tracking-wider">
+                ÁREA DE ÍCONES (1985):
+              </span>
+
+              {/* Minimized Program Tiles */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="border-2 border-black bg-white text-black px-2 py-0.5 text-[11px] font-bold flex items-center gap-1">
+                  <span>⏰</span>
+                  <span>CLOCK.EXE</span>
+                </div>
+                <div className="border-2 border-black bg-white text-black px-2 py-0.5 text-[11px] font-bold flex items-center gap-1">
+                  <span>♟️</span>
+                  <span>REVERSI.EXE</span>
+                </div>
+                <div className="border-2 border-black bg-white text-black px-2 py-0.5 text-[11px] font-bold flex items-center gap-1">
+                  <span>📝</span>
+                  <span>NOTEPAD.EXE</span>
+                </div>
+                <div className="border-2 border-black bg-white text-black px-2 py-0.5 text-[11px] font-bold flex items-center gap-1">
+                  <span>🎨</span>
+                  <span>PAINT.EXE</span>
+                </div>
+                <div className="border-2 border-black bg-[#0000aa] text-white px-2 py-0.5 text-[11px] font-bold flex items-center gap-1">
+                  <span>📖</span>
+                  <span>WIKIZERO.EXE [ATIVO]</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-2 border-black bg-black text-emerald-400 font-mono text-[11px] px-2.5 py-1 flex items-center gap-3">
+              <span>RAM: 640 KB TOTAL</span>
+              <span>•</span>
+              <span className="text-cyan-300">MODO REAL 8086</span>
+              <span>•</span>
+              <span className="text-white font-bold">
+                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Windows 95 Retrô Taskbar Strip */}
         {theme === 'win95' && (
           <div className="p-1.5 bg-[#c0c0c0] border-t-2 border-white border-b-2 border-black font-sans text-xs flex flex-wrap items-center justify-between gap-2 select-none shadow-inner">

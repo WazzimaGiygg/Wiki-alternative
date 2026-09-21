@@ -98,6 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
   const onlineMenuRef = useRef<HTMLDivElement>(null);
 
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
+  const isWin1 = theme === 'win1';
   const isWin95 = theme === 'win95';
   const isWinXP = theme === 'winxp';
   const isGenshin = theme === 'genshin';
@@ -153,6 +154,60 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-[#ffffff] dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 transition-colors select-none">
+      {/* Windows 1.0 (1985) MS-DOS Executive Window Title Bar */}
+      {isWin1 && (
+        <div className="bg-[#0000aa] text-white border-b-2 border-black font-mono text-xs select-none">
+          {/* Titlebar with [-] System Menu and Arrow controls */}
+          <div className="flex items-center justify-between px-2 py-1 bg-[#0000aa] text-white">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onSetTheme?.('light')}
+                className="w-4 h-4 bg-black text-white flex items-center justify-center font-bold text-xs border border-white leading-none hover:bg-white hover:text-black cursor-pointer"
+                title="Menu do Sistema (Fechar Windows 1.0)"
+              >
+                -
+              </button>
+              <span className="font-bold tracking-wider text-xs">
+                MS-DOS Executive - WikiZero [Versão 1.01 (1985)]
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="w-4 h-4 bg-black text-white flex items-center justify-center font-bold text-[10px] border border-white leading-none hover:bg-white hover:text-black cursor-pointer"
+                title="Minimizar para Área de Ícones"
+              >
+                ▼
+              </button>
+              <button
+                type="button"
+                className="w-4 h-4 bg-black text-white flex items-center justify-center font-bold text-[10px] border border-white leading-none hover:bg-white hover:text-black cursor-pointer"
+                title="Maximizar Janela"
+              >
+                ▲
+              </button>
+            </div>
+          </div>
+
+          {/* Windows 1.0 Menu Bar: File, View, Special */}
+          <div className="bg-white text-black border-t-2 border-b-2 border-black px-2 py-0.5 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold">
+            <div className="flex items-center gap-4">
+              <span className="cursor-pointer hover:bg-black hover:text-white px-1"><u>A</u>rquivo</span>
+              <span className="cursor-pointer hover:bg-black hover:text-white px-1"><u>E</u>xibir</span>
+              <span className="cursor-pointer hover:bg-black hover:text-white px-1"><u>E</u>special</span>
+              <span className="cursor-pointer hover:bg-black hover:text-white px-1" onClick={onRandomPage}><u>A</u>leatório</span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-slate-700">
+              <span className="bg-[#0000aa] text-white px-1.5 py-0.2">A:</span>
+              <span className="bg-[#0000aa] text-white px-1.5 py-0.2">B:</span>
+              <span className="bg-black text-white px-1.5 py-0.2 font-black">C:</span>
+              <span className="font-bold">C:\WIKIZERO\*.*</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Windows 95 Top Window Title Bar */}
       {isWin95 && (
         <div className="win95-titlebar font-mono text-xs flex items-center justify-between px-2 py-0.5 select-none">
@@ -788,7 +843,43 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Dense Global Search Bar (Desktop) */}
-        {isWin95 ? (
+        {isWin1 ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div className="flex items-center gap-1.5 font-mono">
+              <div
+                onClick={handleSearchInputClick}
+                className="flex-1 border-2 border-black bg-white flex items-center px-2 py-1 cursor-pointer"
+              >
+                <Search className="w-3.5 h-3.5 text-[#0000aa] mr-1.5 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onClick={handleSearchInputClick}
+                  onFocus={handleSearchInputClick}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="EXECUTE WIKIZERO.EXE..."
+                  className="w-full text-xs bg-transparent border-none outline-none text-black font-mono font-bold placeholder:text-slate-600 cursor-text uppercase"
+                />
+              </div>
+              <button
+                onClick={onSearchSubmit}
+                className="border-2 border-black bg-white hover:bg-black hover:text-white px-3 py-1 font-mono font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                title="Executar Busca no Windows 1.0"
+              >
+                <Search size={11} />
+                <span>BUSCA</span>
+              </button>
+              <button
+                onClick={onRandomPage}
+                title="Artigo Aleatório"
+                className="border-2 border-black bg-white hover:bg-black hover:text-white px-2 py-1 font-mono font-bold text-xs cursor-pointer transition-colors"
+              >
+                ALEATÓRIO
+              </button>
+            </div>
+          </div>
+        ) : isWin95 ? (
           <div className="flex-1 max-w-xl mx-2 hidden md:block">
             <div className="flex items-center gap-1.5">
               <div

@@ -946,7 +946,7 @@ export interface EmergencyReport {
   actionLogs: EmergencyReportActionLog[];
 }
 
-export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'winxp' | 'genshin' | 'android15' | 'stardew' | 'repo' | 'minecraft' | 'roblox' | 'nokia3310';
+export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'winxp' | 'genshin' | 'android15' | 'stardew' | 'repo' | 'minecraft' | 'roblox' | 'nokia3310' | 'win1';
 
 export interface GeminiChatbotConfig {
   chatbotId: string;

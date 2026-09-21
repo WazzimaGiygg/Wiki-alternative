@@ -300,6 +300,27 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <span className="hidden xs:inline">3310</span>
             </button>
 
+            {/* Quick Windows 1.0 Toggle */}
+            <button
+              id="btn-drawer-quick-win1-theme"
+              onClick={() => {
+                if (theme === 'win1') {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('win1');
+                }
+              }}
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 font-mono text-[10px] font-bold ${
+                theme === 'win1'
+                  ? 'bg-[#0000aa] border-black text-white ring-1 ring-black shadow-[1px_1px_0px_#000]'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={theme === 'win1' ? 'Desativar Tema Windows 1.0' : 'Ativar Tema Windows 1.0 (1985)'}
+            >
+              <span className="w-3.5 h-3.5 bg-[#0000aa] text-white border border-black flex items-center justify-center text-[8px] font-mono font-bold">1</span>
+              <span className="hidden xs:inline">W1.0</span>
+            </button>
+
             {/* Quick Windows XP Toggle */}
             <button
               id="btn-drawer-quick-winxp-theme"
