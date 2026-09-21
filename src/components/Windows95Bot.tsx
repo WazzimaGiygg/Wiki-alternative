@@ -51,9 +51,45 @@ export const Windows95Bot: React.FC<Windows95BotProps> = ({
     return localStorage.getItem('wikizero_win95_clippy_sound') !== 'false';
   });
 
+  const [isEntering, setIsEntering] = useState(true);
   const [activeTab, setActiveTab] = useState<'tips' | 'chat' | 'wikitext'>('tips');
   const [currentTipIndex, setCurrentTipIndex] = useState<number>(0);
-  const [clippyMood, setClippyMood] = useState<'idle' | 'talking' | 'thinking' | 'happy'>('idle');
+  const [clippyMood, setClippyMood] = useState<'idle' | 'talking' | 'thinking' | 'happy'>('happy');
+
+  // Entrance animation whenever component mounts / page is updated
+  useEffect(() => {
+    setIsEntering(true);
+    setClippyMood('happy');
+    if (soundEnabled) {
+      const popTimer = setTimeout(() => {
+        playClippyPop(0.3);
+      }, 350);
+      return () => clearTimeout(popTimer);
+    }
+    const moodTimer = setTimeout(() => {
+      setClippyMood('talking');
+    }, 900);
+    const endTimer = setTimeout(() => {
+      setIsEntering(false);
+      setClippyMood('idle');
+    }, 2500);
+    return () => {
+      clearTimeout(moodTimer);
+      clearTimeout(endTimer);
+    };
+  }, []);
+
+  const replayEntrance = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setIsEntering(true);
+    setClippyMood('happy');
+    if (soundEnabled) playClippyPop(0.32);
+    setTimeout(() => setClippyMood('talking'), 800);
+    setTimeout(() => {
+      setIsEntering(false);
+      setClippyMood('idle');
+    }, 2400);
+  };
 
   // Chat states
   const [chatInput, setChatInput] = useState('');
@@ -231,7 +267,7 @@ ${currentArticleTitle ? `O usuário está atualmente lendo o artigo: "${currentA
         </button>
       ) : (
         /* Full Expanded Windows 95 Bot with Character & Yellow Dialog Baloon */
-        <div className="flex flex-col items-end gap-2 animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div className={`flex flex-col items-end gap-2 ${isEntering ? 'clippy-entrance-anim' : 'animate-in fade-in slide-in-from-bottom-3 duration-200'}`}>
           {/* Authentic Yellow Post-it Speech Bubble Dialog */}
           <div
             className="w-[320px] sm:w-[360px] bg-[#ffffcc] text-black border border-black shadow-[4px_4px_0px_#000000] rounded-sm font-sans flex flex-col overflow-hidden text-xs"
@@ -244,6 +280,14 @@ ${currentArticleTitle ? `O usuário está atualmente lendo o artigo: "${currentA
                 <span>Assistente do Windows 95</span>
               </div>
               <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={replayEntrance}
+                  className="w-4 h-4 flex items-center justify-center hover:bg-[#ebd578] rounded text-slate-700"
+                  title="Repetir animação do Clippy"
+                >
+                  <RotateCcw size={10} className={isEntering ? 'animate-spin text-amber-700' : ''} />
+                </button>
                 <button
                   type="button"
                   onClick={toggleSound}
@@ -270,6 +314,17 @@ ${currentArticleTitle ? `O usuário está atualmente lendo o artigo: "${currentA
                 </button>
               </div>
             </div>
+
+            {/* Notification badge on page update / entrance */}
+            {isEntering && (
+              <div className="bg-[#fff3ad] border-b border-black/30 px-3 py-1 text-[10px] text-amber-950 font-bold flex items-center justify-between animate-pulse">
+                <div className="flex items-center gap-1.5">
+                  <span>✨</span>
+                  <span>Clippy reinicializado com sucesso!</span>
+                </div>
+                <span className="text-[9px] text-amber-800 font-mono">Win95 OS</span>
+              </div>
+            )}
 
             {/* Navigation tabs inside the assistant */}
             <div className="flex border-b border-black/20 bg-[#fff5b8] text-[11px] font-semibold">
@@ -527,9 +582,12 @@ ${currentArticleTitle ? `O usuário está atualmente lendo o artigo: "${currentA
 
           {/* Interactive Animated Clippy Character */}
           <div
-            onClick={handleNextTip}
-            className="w-20 h-24 sm:w-24 sm:h-28 relative cursor-pointer filter drop-shadow-[2px_4px_6px_rgba(0,0,0,0.35)] hover:scale-105 active:scale-95 transition-transform"
-            title="Clippy (Clique para interagir ou ver nova dica!)"
+            onClick={(e) => {
+              replayEntrance(e);
+              handleNextTip();
+            }}
+            className={`w-20 h-24 sm:w-24 sm:h-28 relative cursor-pointer filter drop-shadow-[2px_4px_6px_rgba(0,0,0,0.35)] hover:scale-105 active:scale-95 transition-transform ${isEntering ? 'clippy-wiggle' : ''}`}
+            title="Clippy (Clique para interagir, ver dica ou repetir animação!)"
           >
             <svg
               viewBox="0 0 100 130"

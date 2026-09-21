@@ -39,6 +39,7 @@ interface FooterProps {
   onOpenLanguagesModal?: () => void;
   onSetTheme?: (theme: AppTheme) => void;
   onRebootWinXP?: () => void;
+  onRebootWin95?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -49,6 +50,7 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenLanguagesModal,
   onSetTheme,
   onRebootWinXP,
+  onRebootWin95,
 }) => {
   const { currentLanguage, t } = useLanguage();
 
@@ -222,6 +224,18 @@ export const Footer: React.FC<FooterProps> = ({
                 <span>📎</span>
                 <span className="font-semibold text-blue-900">Clippy (Bot Ativo)</span>
               </div>
+
+              {onRebootWin95 && (
+                <button
+                  type="button"
+                  onClick={onRebootWin95}
+                  className="win95-button flex items-center gap-1 text-[11px] px-2 py-1 font-bold cursor-pointer"
+                  title="Reiniciar e rever a tela de inicialização clássica do Windows 95"
+                >
+                  <span>🔄</span>
+                  <span>Boot Win95</span>
+                </button>
+              )}
             </div>
 
             <div className="win95-sunken px-2.5 py-1 text-black font-mono text-[11px] flex items-center gap-2">

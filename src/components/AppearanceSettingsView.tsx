@@ -446,6 +446,20 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                         <span className="text-[10px]">🔊</span>
                       </button>
                     )}
+                    {t.id === 'win95' && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectTheme('win95');
+                        }}
+                        className="px-2.5 py-1 rounded-none text-[11px] font-bold border-t border-l border-white border-r border-b border-black bg-[#c0c0c0] text-black hover:bg-[#d4d0c8] transition flex items-center gap-1 font-mono shadow-xs"
+                        title="Executar animação clássica de boot e bot do Windows 95"
+                      >
+                        <span>Boot 95</span>
+                        <span className="text-[10px]">↺</span>
+                      </button>
+                    )}
                     {t.id === 'winxp' && (
                       <button
                         type="button"

@@ -2234,6 +2234,63 @@ html.theme-win1 ::-webkit-scrollbar-thumb:hover {
   background-color: #000000;
 }
 
+/* ========================================================================== */
+/* WINDOWS 95 BOOT SCREEN & CLIPPY BOT ENTRANCE ANIMATIONS                     */
+/* ========================================================================== */
+.win95-boot-marquee {
+  width: 40%;
+  height: 100%;
+  animation: win95-marquee 1.25s infinite ease-in-out alternate;
+}
+
+@keyframes win95-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
+
+.clippy-entrance-anim {
+  animation: clippy-entrance 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@keyframes clippy-entrance {
+  0% {
+    transform: translateY(110px) scale(0.65) rotate(-16deg);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-14px) scale(1.08) rotate(6deg);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(4px) scale(0.97) rotate(-2deg);
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.clippy-wiggle {
+  animation: clippy-wiggle 1.2s ease-in-out infinite;
+}
+
+@keyframes clippy-wiggle {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-6deg) scale(1.04);
+  }
+  75% {
+    transform: rotate(6deg) scale(1.04);
+  }
+}
+
+
 
 
 

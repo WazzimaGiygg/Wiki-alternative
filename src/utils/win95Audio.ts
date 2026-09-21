@@ -169,3 +169,74 @@ export function playPCSpeakerBeep(frequency: number = 880, duration: number = 0.
   }
 }
 
+/**
+ * Som de inicialização clássico do Windows 95 (Composição de Brian Eno - The Microsoft Sound)
+ * Sintetizado via Web Audio API com acordes atmosféricos e sinos harmônicos.
+ */
+export function playWin95StartupSound(volume: number = 0.35) {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.001, now);
+    master.gain.linearRampToValueAtTime(volume, now + 0.15);
+    master.gain.setValueAtTime(volume, now + 2.2);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 3.8);
+    master.connect(ctx.destination);
+
+    // Notas clássicas de abertura e shimmer do Windows 95
+    const pads = [
+      { freq: 116.54, type: 'triangle' as OscillatorType, start: 0.0, dur: 3.5, vol: 0.25 },
+      { freq: 174.61, type: 'sine' as OscillatorType, start: 0.05, dur: 3.5, vol: 0.2 },
+      { freq: 233.08, type: 'sine' as OscillatorType, start: 0.1, dur: 3.5, vol: 0.22 },
+      { freq: 349.23, type: 'triangle' as OscillatorType, start: 0.15, dur: 3.4, vol: 0.18 },
+    ];
+
+    pads.forEach((p) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = p.type;
+      osc.frequency.setValueAtTime(p.freq, now + p.start);
+
+      g.gain.setValueAtTime(0.001, now + p.start);
+      g.gain.linearRampToValueAtTime(p.vol, now + p.start + 0.3);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + p.start + p.dur);
+
+      osc.connect(g);
+      g.connect(master);
+      osc.start(now + p.start);
+      osc.stop(now + p.start + p.dur + 0.1);
+    });
+
+    // Sinos cintilantes agudos característicos do Windows 95
+    const chimes = [
+      { freq: 932.33, start: 0.25, dur: 1.8, vol: 0.15 },
+      { freq: 1174.66, start: 0.45, dur: 2.0, vol: 0.18 },
+      { freq: 1396.91, start: 0.65, dur: 2.2, vol: 0.2 },
+      { freq: 1864.66, start: 0.85, dur: 2.4, vol: 0.22 },
+      { freq: 2349.32, start: 1.05, dur: 2.4, vol: 0.16 },
+    ];
+
+    chimes.forEach((c) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(c.freq, now + c.start);
+
+      g.gain.setValueAtTime(0.001, now + c.start);
+      g.gain.linearRampToValueAtTime(c.vol, now + c.start + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + c.start + c.dur);
+
+      osc.connect(g);
+      g.connect(master);
+      osc.start(now + c.start);
+      osc.stop(now + c.start + c.dur + 0.1);
+    });
+  } catch {
+    // ignore
+  }
+}
+
+

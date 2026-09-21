@@ -50,6 +50,7 @@ import { SmartTVView } from './components/SmartTVView';
 import { SmartTVInstallModal } from './components/SmartTVInstallModal';
 import { AppearanceSettingsView } from './components/AppearanceSettingsView';
 import { WindowsXPBootScreen } from './components/WindowsXPBootScreen';
+import { Windows95BootScreen } from './components/Windows95BootScreen';
 import { Windows95Bot } from './components/Windows95Bot';
 import { AdvancedSearchView } from './components/AdvancedSearchView';
 import { WikiCompetitorComparisonView } from './components/WikiCompetitorComparisonView';
@@ -164,6 +165,12 @@ export default function App() {
       return saved;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  // Controls classic Windows 95 boot startup animation
+  const [showWin95Boot, setShowWin95Boot] = useState<boolean>(() => {
+    const saved = localStorage.getItem('wikizero_theme_v3');
+    return saved === 'win95';
   });
 
   // Controls classic Windows XP boot startup animation
@@ -553,7 +560,9 @@ export default function App() {
 
   // === HANDLERS ===
   const handleSetTheme = (newTheme: AppTheme) => {
-    if (newTheme === 'winxp') {
+    if (newTheme === 'win95') {
+      setShowWin95Boot(true);
+    } else if (newTheme === 'winxp') {
       setShowWinXPBoot(true);
     }
     setTheme(newTheme);
@@ -1057,6 +1066,7 @@ export default function App() {
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
         onOpenSmartTVModal={() => setShowSmartTVModal(true)}
         onRebootWinXP={() => setShowWinXPBoot(true)}
+        onRebootWin95={() => setShowWin95Boot(true)}
       />
 
       {/* 2. Main Workspace Layout */}
@@ -1690,6 +1700,7 @@ export default function App() {
         onToggleDeviceMode={handleToggleDeviceMode}
         onSetTheme={handleSetTheme}
         onRebootWinXP={() => setShowWinXPBoot(true)}
+        onRebootWin95={() => setShowWin95Boot(true)}
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
       />
 
@@ -1951,7 +1962,13 @@ export default function App() {
         onTools={handleContextMenuTools}
       />
 
-      {/* 9. Animação de Inicialização Clássica Windows XP (Boot Loader) */}
+      {/* 9. Animação de Inicialização Clássica Windows 95 e Windows XP (Boot Loader) */}
+      {showWin95Boot && (
+        <Windows95BootScreen
+          onComplete={() => setShowWin95Boot(false)}
+        />
+      )}
+
       {showWinXPBoot && (
         <WindowsXPBootScreen
           onComplete={() => setShowWinXPBoot(false)}

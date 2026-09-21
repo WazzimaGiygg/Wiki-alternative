@@ -57,6 +57,7 @@ interface HeaderProps {
   onOpenLanguagesModal?: () => void;
   onOpenSmartTVModal?: () => void;
   onRebootWinXP?: () => void;
+  onRebootWin95?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -84,6 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLanguagesModal,
   onOpenSmartTVModal,
   onRebootWinXP,
+  onRebootWin95,
 }) => {
   const { currentLanguage, setLanguage, t, allLanguages } = useLanguage();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -220,6 +222,17 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
           <div className="flex items-center gap-1 shrink-0 ml-2">
+            {onRebootWin95 && (
+              <button
+                type="button"
+                onClick={onRebootWin95}
+                className="px-1.5 h-3.5 bg-[#c0c0c0] text-black font-mono text-[9px] font-bold flex items-center gap-0.5 border-t border-l border-white border-r border-b border-black active:border-black leading-none cursor-pointer"
+                title="Reiniciar e rever a clássica animação de boot do Windows 95"
+              >
+                <span>Boot 95</span>
+                <span>↺</span>
+              </button>
+            )}
             <button className="w-4 h-3.5 bg-[#c0c0c0] text-black font-black text-[9px] flex items-center justify-center border-t border-l border-white border-r border-b border-black active:border-black leading-none" title="Minimizar">_</button>
             <button className="w-4 h-3.5 bg-[#c0c0c0] text-black font-black text-[9px] flex items-center justify-center border-t border-l border-white border-r border-b border-black active:border-black leading-none" title="Maximizar">□</button>
             <button
