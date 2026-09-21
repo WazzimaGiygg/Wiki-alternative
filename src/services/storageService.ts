@@ -1757,7 +1757,31 @@ export const StorageService = {
   // === NOTIFICATIONS ===
   getNotifications(): NotificationItem[] {
     initializeLocalStorage();
-    return safeGetArray<NotificationItem>(STORAGE_KEYS.NOTIFICATIONS, []);
+    const rawList = safeGetArray<NotificationItem>(STORAGE_KEYS.NOTIFICATIONS, []);
+    const seenIds = new Set<string>();
+    const deduplicated: NotificationItem[] = [];
+    let hadDuplicates = false;
+
+    for (let i = 0; i < rawList.length; i++) {
+      const item = rawList[i];
+      if (!item) continue;
+      let itemId = item.id;
+      if (!itemId || seenIds.has(itemId)) {
+        hadDuplicates = true;
+        itemId = itemId ? `${itemId}-${i}-${Math.random().toString(36).slice(2, 6)}` : `notif-${Date.now()}-${i}`;
+      }
+      seenIds.add(itemId);
+      deduplicated.push({ ...item, id: itemId });
+    }
+
+    if (hadDuplicates && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(deduplicated));
+      } catch {
+        // ignora erro silencioso de gravação
+      }
+    }
+    return deduplicated;
   },
 
   async fetchNotificationsFromFirestore(): Promise<NotificationItem[]> {
@@ -1765,7 +1789,18 @@ export const StorageService = {
       try {
         const snap = await getDocs(collection(db, 'notifications'));
         const list: NotificationItem[] = [];
-        snap.forEach((d) => list.push(d.data() as NotificationItem));
+        const seenIds = new Set<string>();
+        snap.forEach((d) => {
+          const item = d.data() as NotificationItem;
+          if (item) {
+            let itemId = item.id || d.id;
+            if (seenIds.has(itemId)) {
+              itemId = `${itemId}-${Math.random().toString(36).slice(2, 6)}`;
+            }
+            seenIds.add(itemId);
+            list.push({ ...item, id: itemId });
+          }
+        });
         list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
         return list;
@@ -1787,7 +1822,18 @@ export const StorageService = {
         q,
         (snap) => {
           const list: NotificationItem[] = [];
-          snap.forEach((d) => list.push(d.data() as NotificationItem));
+          const seenIds = new Set<string>();
+          snap.forEach((d) => {
+            const item = d.data() as NotificationItem;
+            if (item) {
+              let itemId = item.id || d.id;
+              if (seenIds.has(itemId)) {
+                itemId = `${itemId}-${Math.random().toString(36).slice(2, 6)}`;
+              }
+              seenIds.add(itemId);
+              list.push({ ...item, id: itemId });
+            }
+          });
           localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
           callback(list);
         },
@@ -1831,9 +1877,16 @@ export const StorageService = {
     }
 
     const list = this.getNotifications();
+    // Evitar inserções duplicadas imediatas com o mesmo título e mensagem (por exemplo, cliques rápidos ou remontagens no React)
+    const alreadyExists = list.length > 0 && list[0].title === notif.title && list[0].message === notif.message;
+    if (alreadyExists) {
+      return list;
+    }
+
+    const randomSalt = Math.random().toString(36).substring(2, 8);
     const item: NotificationItem = {
       ...notif,
-      id: isLgpdNotif ? `lgpd-notif-${Date.now()}` : `upd-notif-${Date.now()}`,
+      id: isLgpdNotif ? `lgpd-notif-${Date.now()}-${randomSalt}` : `upd-notif-${Date.now()}-${randomSalt}`,
       date: 'Agora',
       read: false,
       link: notif.link || (isLgpdNotif ? '#mydata' : 'site-updates'),

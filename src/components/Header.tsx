@@ -1392,7 +1392,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <p className="text-[11px] text-slate-400 mt-0.5">Você está na versão mais recente do sistema.</p>
                     </div>
                   ) : (
-                    notifications.map((notif) => {
+                    notifications.map((notif, notifIdx) => {
                       const isLgpd =
                         notif.id?.startsWith('lgpd-') ||
                         notif.link === '#mydata' ||
@@ -1401,7 +1401,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                       return (
                         <div
-                          key={notif.id}
+                          key={notif.id ? `${notif.id}-${notifIdx}` : `notif-${notifIdx}`}
                           onClick={() => {
                             onNotificationClick(notif);
                             setShowNotifs(false);
