@@ -558,14 +558,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         {/* Content Area with scroll if needed */}
         <div className="flex-1 overflow-y-auto pr-1 space-y-3">
-          {/* Restricted Access Policy Card */}
-          <div className="bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/70 rounded-xl p-3 text-xs space-y-1">
-            <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-200 font-bold text-[11px]">
-              <Lock size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>Acesso Restrito: Apenas Usuários Previamente Registrados</span>
+          {/* Open Google Login Card */}
+          <div className="bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/70 rounded-xl p-3 text-xs space-y-1">
+            <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-200 font-bold text-[11px]">
+              <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>Login Aberto via Conta Google</span>
             </div>
-            <p className="text-[11px] text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
-              O login de <strong>convidados</strong> e o acesso de <strong>usuários não registrados</strong> estão estritamente desabilitados. Para entrar, sua conta deve estar previamente cadastrada pela administração da Wiki.
+            <p className="text-[11px] text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
+              Usuários não cadastrados previamente podem entrar diretamente com sua <strong>Conta Google</strong>. Seu perfil de editor e página de usuário pública são provisionados automaticamente com segurança e transparência.
             </p>
           </div>
 

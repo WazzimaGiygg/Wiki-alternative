@@ -1407,50 +1407,84 @@ export const StorageService = {
       );
     }
 
-    // 2. POLÍTICA DE SEGURANÇA: Bloqueio estrito de usuários NÃO REGISTRADOS
-    if (!existingProfile && !isProjectAdmin) {
-      try {
-        await signOut(currentAuth);
-      } catch {
-        // ignora
+    // 2. ACESSO VIA GOOGLE: Usuários não previamente cadastrados são PERMITIDOS
+    // O sistema provisiona automaticamente o novo perfil de editor e sua página de usuário pública
+    if (!existingProfile) {
+      if (isProjectAdmin) {
+        const adminProfile: UserProfile = {
+          uid: u.uid,
+          email: u.email || 'pedrohenriquecardonaperes@gmail.com',
+          displayName: u.displayName || 'Pedro Henrique Peres',
+          username: 'PedroHenriquePeres',
+          photoURL: u.photoURL || undefined,
+          role: 'admin',
+          isGuest: false,
+          isBanned: false,
+          permissions: {
+            canEdit: true,
+            canCreate: true,
+            canTalk: true,
+            canDelete: true,
+            canGrantBarnstars: true,
+          },
+          lastActive: new Date().toISOString(),
+          isOnline: true,
+          createdAt: new Date().toISOString(),
+        };
+        const publicProfile = await this.ensureUserPage(adminProfile);
+        this.saveUser(publicProfile);
+        this.logUserAuditAction(
+          u.uid,
+          adminProfile.displayName,
+          'google_user_registered',
+          `Administrador fundador autenticado e perfil inicializado com sucesso (${u.email || u.uid}).`,
+          null
+        );
+        return publicProfile;
       }
-      this.clearUser();
-      this.logUserAuditAction(
-        u.uid,
-        u.displayName || u.email || 'Tentativa Não Registrada',
-        'unregistered_login_blocked',
-        `Tentativa de login de usuário não registrado bloqueada (${u.email || u.uid}). Autocadastro de contas não autorizadas desabilitado.`,
-        null
-      );
-      throw new Error(
-        `Acesso não autorizado: O usuário (${u.email || u.uid}) não está registrado no sistema da Wiki. O login de usuários convidados ou não registrados está estritamente desabilitado. Solicite à administração o cadastramento prévio da sua conta.`
-      );
-    }
 
-    // Se for o administrador fundador do projeto e for seu primeiro login:
-    if (!existingProfile && isProjectAdmin) {
-      const adminProfile: UserProfile = {
+      // NOVO USUÁRIO AUTENTICADO VIA GOOGLE: Cadastro automático e liberação de perfil
+      const rawName = (u.displayName || u.email?.split('@')[0] || 'Editor').trim();
+      const cleanUsername = rawName.replace(/\s+/g, '_');
+      const determinedRole: UserRole = isBanned ? 'leitor' : 'editor';
+
+      const newProfile: UserProfile = {
         uid: u.uid,
-        email: u.email || 'pedrohenriquecardonaperes@gmail.com',
-        displayName: u.displayName || 'Pedro Henrique Peres',
-        username: 'PedroHenriquePeres',
+        email: u.email || '',
+        displayName: rawName,
+        username: cleanUsername,
         photoURL: u.photoURL || undefined,
-        role: 'admin',
+        role: determinedRole,
         isGuest: false,
-        isBanned: false,
+        isBanned,
+        banReason: isBanned ? (banStatus.reason || 'Violação das políticas comunitárias.') : undefined,
         permissions: {
-          canEdit: true,
-          canCreate: true,
-          canTalk: true,
-          canDelete: true,
-          canGrantBarnstars: true,
+          canEdit: !isBanned,
+          canCreate: !isBanned && determinedRole !== 'leitor',
+          canTalk: !isBanned,
+          canDelete: false,
+          canGrantBarnstars: false,
         },
+        reputationScore: 100,
+        editsCount: 0,
+        warningCount: 0,
+        location: 'Brasil',
         lastActive: new Date().toISOString(),
         isOnline: true,
         createdAt: new Date().toISOString(),
       };
-      const publicProfile = await this.ensureUserPage(adminProfile);
+
+      const publicProfile = await this.ensureUserPage(newProfile);
       this.saveUser(publicProfile);
+
+      this.logUserAuditAction(
+        u.uid,
+        newProfile.displayName,
+        'google_user_registered',
+        `Novo usuário registrado e conectado via Google OAuth 2.0 / OpenID Connect (${u.email || u.uid}). Perfil criado e liberado com sucesso.`,
+        null
+      );
+
       return publicProfile;
     }
 
@@ -2794,7 +2828,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
       await this.saveCommunityUser(newUserPage);
 
-      // Persistir no Firestore na coleção 'userpage' com chave newUserPage.uid
+      // Persistir no Firestore nas coleções 'userpage' e 'users' com chave newUserPage.uid
       if (firebaseActive && db) {
         try {
           const firestorePayload: any = { ...newUserPage };
@@ -2803,6 +2837,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
             firestorePayload.photoURL = deleteField();
           }
           await setDoc(doc(db, 'userpage', newUserPage.uid), firestorePayload, { merge: true });
+          await setDoc(doc(db, 'users', newUserPage.uid), firestorePayload, { merge: true });
         } catch (err) {
           console.warn('[StorageService] Erro ao sincronizar nova userpage no Firestore:', err);
         }
@@ -2841,6 +2876,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
             firestorePayload.photoURL = deleteField();
           }
           await setDoc(doc(db, 'userpage', updated.uid), firestorePayload, { merge: true });
+          await setDoc(doc(db, 'users', updated.uid), firestorePayload, { merge: true });
         } catch (err) {
           console.warn('[StorageService] Erro ao atualizar userpage no Firestore:', err);
         }

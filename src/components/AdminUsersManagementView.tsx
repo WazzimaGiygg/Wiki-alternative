@@ -1912,7 +1912,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                     Cadastrar e Autorizar Usuário
                   </h4>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Controle de Acesso: Usuários convidados ou não cadastrados estão bloqueados.
+                    Definir cargo ou permissões específicas para editores e membros.
                   </p>
                 </div>
               </div>
@@ -1930,7 +1930,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
             <form onSubmit={handleRegisterUser}>
               <div className="p-4 space-y-3 max-h-[75vh] overflow-y-auto">
                 <div className="p-2.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-lg text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
-                  <strong>Política de Segurança:</strong> Ao cadastrar previamente este usuário, ele estará autorizado a efetuar login no sistema (via Google OIDC com este mesmo e-mail ou credenciais da comunidade). Contas de convidados continuam estritamente desabilitadas.
+                  <strong>Gestão de Acesso:</strong> Usuários com Conta Google podem entrar diretamente e ter seus perfis criados. Você pode utilizar este formulário para pré-cadastrar contas com cargos privilegiados (moderador, administrador) ou credenciais comunitárias personalizadas.
                 </div>
 
                 {/* E-mail */}

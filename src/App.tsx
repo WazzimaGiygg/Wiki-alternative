@@ -780,7 +780,7 @@ export default function App() {
     if (loggedUser.isGuest || loggedUser.role === 'convidado') {
       await StorageService.logout();
       setUser(null);
-      alert('Acesso negado: O login de usuários convidados ou não registrados está estritamente desabilitado.');
+      alert('Acesso negado: O login de contas de convidados sem autenticação está desabilitado.');
       return;
     }
     const banCheck = await StorageService.getUserBanStatus(
