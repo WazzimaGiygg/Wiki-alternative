@@ -131,13 +131,41 @@ export const ChromeRecommendationModal: React.FC<ChromeRecommendationModalProps>
 
         {/* Modal Scrollable Body */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-          {/* Main Statement */}
-          <div className="p-3.5 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-lg text-slate-800 dark:text-blue-200">
+          {/* Main Statement with direct download link */}
+          <div className="p-3.5 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-lg text-slate-800 dark:text-blue-200 space-y-2.5">
             <p className="leading-relaxed">
               Para garantir a melhor velocidade, compatibilidade de ferramentas e estabilidade de edição, a{' '}
-              <strong className="text-slate-900 dark:text-white font-semibold">WikiWorldWeb dá preferência e recomenda o uso do Google Chrome</strong>{' '}
+              <span className="font-semibold text-slate-900 dark:text-white">WikiWorldWeb dá preferência e recomenda o uso do</span>{' '}
+              <a
+                href="https://www.google.com/chrome/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline inline-flex items-center gap-0.5"
+                title="Acessar página de download do Google Chrome"
+              >
+                Google Chrome
+                <ExternalLink size={12} className="inline ml-0.5" />
+              </a>{' '}
               ao navegar e colaborar na nossa enciclopédia livre.
             </p>
+
+            <div className="pt-0.5 flex flex-wrap items-center gap-2">
+              <a
+                href="https://www.google.com/chrome/"
+                target="_blank"
+                rel="noopener noreferrer"
+                id="btn-chrome-recommendation-download-page"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-md shadow-xs transition hover:shadow cursor-pointer"
+                title="Ir para a página oficial de download do Google Chrome"
+              >
+                <Download size={13} />
+                <span>Página de Download do Google Chrome</span>
+                <ExternalLink size={12} className="opacity-80" />
+              </a>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                (Gratuito para PC, Mac, Linux, Android e iOS)
+              </span>
+            </div>
           </div>
 
           {/* Current Browser Detection Card */}
