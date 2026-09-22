@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Bold,
   Italic,
@@ -32,6 +32,13 @@ import {
   Lock,
   Code2,
   ExternalLink,
+  Search,
+  Replace,
+  ReplaceAll,
+  ChevronUp,
+  ChevronDown,
+  CaseSensitive,
+  WholeWord,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus } from '../types';
@@ -39,6 +46,7 @@ import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
 import { SaveReasonModal } from './SaveReasonModal';
 import { PdfExportModal } from './PdfExportModal';
+import { UnsavedChangesModal } from './UnsavedChangesModal';
 import { htmlToWikitext } from '../utils/wikitextConverters';
 import { GeminiChatbotDrawer } from './GeminiChatbotDrawer';
 
@@ -56,6 +64,7 @@ interface WikitextEditorProps {
   onOpenLoginModal?: () => void;
   onOpenPremiumModal?: (quotaType?: 'chats' | 'images' | 'notebook') => void;
   onOpenNotebookModal?: () => void;
+  onDirtyChange?: (isDirty: boolean, isNew: boolean) => void;
 }
 
 export const WikitextEditor: React.FC<WikitextEditorProps> = ({
@@ -68,6 +77,7 @@ export const WikitextEditor: React.FC<WikitextEditorProps> = ({
   onOpenLoginModal,
   onOpenPremiumModal,
   onOpenNotebookModal,
+  onDirtyChange,
 }) => {
   const [titulo, setTitulo] = useState(initialArticle?.titulo || '');
   const [pageUid, setPageUid] = useState(
@@ -103,6 +113,23 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [customWikitextCode, setCustomWikitextCode] = useState('');
   const [insertModalTab, setInsertModalTab] = useState<'edit' | 'preview'>('edit');
   const [dailyLimitStatus, setDailyLimitStatus] = useState<DailyEditLimitStatus | null>(null);
+
+  // Find & Replace state (Ctrl+H)
+  const [showFindReplace, setShowFindReplace] = useState(false);
+  const [findQuery, setFindQuery] = useState('');
+  const [replaceQuery, setReplaceQuery] = useState('');
+  const [matchCase, setMatchCase] = useState(false);
+  const [matchWholeWord, setMatchWholeWord] = useState(false);
+  const [currentMatchIdx, setCurrentMatchIdx] = useState(0);
+  const [findReplaceFeedback, setFindReplaceFeedback] = useState<string | null>(null);
+
+  const findInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+
+  // Estado de controle de alterações não salvas e modal de confirmação de saída
+  const isNewArticle = !initialArticle;
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
 
   const isModeratorOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
   const currentSelectedPage = pages.find((p) => p.uid === pageUid);
@@ -167,6 +194,64 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const previousLength = initialArticle?.descricao ? initialArticle.descricao.length : 0;
   const wordCount = descricao.trim() ? descricao.trim().split(/\s+/).length : 0;
   const readingTimeMin = Math.max(1, Math.ceil(wordCount / 200));
+
+  // Detecta se existem alterações não salvas ou se é um novo artigo em edição
+  const hasUnsavedChanges = useCallback(() => {
+    if (isSavedSuccessfully) return false;
+
+    if (isNewArticle) {
+      // Para novo artigo: qualquer texto inserido no título ou conteúdo
+      return Boolean(titulo.trim() || (descricao && descricao.trim()));
+    }
+
+    // Para artigo existente: compara com os valores originais
+    let currentContent = descricao;
+    if (viewMode === 'visual' && visualEditorRef.current) {
+      const converted = htmlToWikitext(visualEditorRef.current.innerHTML);
+      if (converted.trim()) {
+        currentContent = converted;
+      }
+    }
+
+    const titleChanged = titulo.trim() !== (initialArticle?.titulo || '').trim();
+    const contentChanged = currentContent.trim() !== (initialArticle?.descricao || '').trim();
+    const pageChanged = pageUid !== (initialArticle?.pageUid || defaultPageUid);
+    const categoryChanged = categoria !== (initialArticle?.categoria || 'Geral');
+    const languageChanged = idioma !== (initialArticle?.idioma || 'Português');
+
+    return titleChanged || contentChanged || pageChanged || categoryChanged || languageChanged;
+  }, [
+    isSavedSuccessfully,
+    isNewArticle,
+    initialArticle,
+    titulo,
+    descricao,
+    pageUid,
+    defaultPageUid,
+    categoria,
+    idioma,
+    viewMode,
+  ]);
+
+  // Propaga status de alterações pendentes para componentes pais
+  useEffect(() => {
+    const dirty = hasUnsavedChanges();
+    onDirtyChange?.(dirty, isNewArticle);
+  }, [hasUnsavedChanges, isNewArticle, onDirtyChange]);
+
+  // Alerta nativo de saída do navegador caso o usuário tente fechar a aba ou recarregar
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges()) {
+        e.preventDefault();
+        e.returnValue = 'Você possui alterações não salvas que serão perdidas.';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // Insertion of Formatted Wikitext (Converts markup to formatted HTML elements)
   const insertFormattedWikitextSnippet = (wikitext: string) => {
@@ -373,6 +458,21 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     setShowSaveModal(true);
   };
 
+  const handleCancelClick = () => {
+    if (hasUnsavedChanges()) {
+      setShowDiscardModal(true);
+    } else {
+      onCancel();
+    }
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowDiscardModal(false);
+    onDirtyChange?.(false, isNewArticle);
+    StorageService.clearDraft();
+    onCancel();
+  };
+
   const handleConfirmSave = async (editSummary: string, isMinor: boolean) => {
     setIsSaving(true);
     try {
@@ -410,6 +510,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       }
 
       StorageService.clearDraft();
+      setIsSavedSuccessfully(true);
+      onDirtyChange?.(false, isNewArticle);
     } catch (err: any) {
       console.error('Erro ao salvar artigo:', err);
       alert(err?.message || 'Ocorreu um erro ao salvar o artigo.');
@@ -418,6 +520,207 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       refreshDailyLimit();
     }
   };
+
+  // Helper para escapar caracteres de Regex no Localizar
+  const escapeRegExp = (str: string) => {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  };
+
+  // Calcula ocorrências em tempo real no conteúdo do artigo
+  const matches = useMemo(() => {
+    if (!findQuery) return [];
+    try {
+      let pattern = escapeRegExp(findQuery);
+      if (matchWholeWord) {
+        pattern = `\\b${pattern}\\b`;
+      }
+      const regex = new RegExp(pattern, matchCase ? 'g' : 'gi');
+      const results: { start: number; end: number; text: string }[] = [];
+      let match: RegExpExecArray | null;
+      while ((match = regex.exec(descricao)) !== null) {
+        results.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          text: match[0],
+        });
+        if (regex.lastIndex === match.index) {
+          regex.lastIndex++;
+        }
+      }
+      return results;
+    } catch (e) {
+      return [];
+    }
+  }, [descricao, findQuery, matchCase, matchWholeWord]);
+
+  // Navega até a ocorrência e seleciona no textarea se visível
+  const goToMatch = (index: number) => {
+    if (matches.length === 0) return;
+    const newIdx = (index + matches.length) % matches.length;
+    setCurrentMatchIdx(newIdx);
+    const m = matches[newIdx];
+    if (m && textareaRef.current && (viewMode === 'edit' || viewMode === 'split')) {
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(m.start, m.end);
+
+      const textBefore = descricao.substring(0, m.start);
+      const linesBefore = textBefore.split('\n').length;
+      const approxLineHeight = 18;
+      const targetScrollTop = Math.max(0, (linesBefore - 4) * approxLineHeight);
+      textareaRef.current.scrollTop = targetScrollTop;
+    }
+  };
+
+  // Substitui a ocorrência atual
+  const handleReplaceCurrent = () => {
+    if (matches.length === 0) {
+      setFindReplaceFeedback('Nenhuma ocorrência encontrada.');
+      return;
+    }
+    const safeIdx = Math.min(Math.max(0, currentMatchIdx), matches.length - 1);
+    const m = matches[safeIdx];
+    if (!m) return;
+
+    const newContent = descricao.substring(0, m.start) + replaceQuery + descricao.substring(m.end);
+    setDescricao(newContent);
+
+    if (viewMode === 'visual' && visualEditorRef.current) {
+      const { html } = parseWikitext(newContent);
+      visualEditorRef.current.innerHTML = html;
+    }
+
+    setFindReplaceFeedback('1 ocorrência substituída.');
+    setTimeout(() => setFindReplaceFeedback(null), 2500);
+
+    setTimeout(() => {
+      if (textareaRef.current && (viewMode === 'edit' || viewMode === 'split')) {
+        const nextStart = m.start;
+        const nextEnd = nextStart + replaceQuery.length;
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(nextStart, nextEnd);
+      }
+    }, 50);
+  };
+
+  // Substitui todas as ocorrências
+  const handleReplaceAll = () => {
+    if (matches.length === 0) {
+      setFindReplaceFeedback('Nenhuma ocorrência encontrada.');
+      return;
+    }
+    const count = matches.length;
+    let pattern = escapeRegExp(findQuery);
+    if (matchWholeWord) {
+      pattern = `\\b${pattern}\\b`;
+    }
+    const regex = new RegExp(pattern, matchCase ? 'g' : 'gi');
+    const newContent = descricao.replace(regex, replaceQuery);
+    setDescricao(newContent);
+
+    if (viewMode === 'visual' && visualEditorRef.current) {
+      const { html } = parseWikitext(newContent);
+      visualEditorRef.current.innerHTML = html;
+    }
+
+    setCurrentMatchIdx(0);
+    setFindReplaceFeedback(`${count} ocorrência${count > 1 ? 's' : ''} substituída${count > 1 ? 's' : ''}!`);
+    setTimeout(() => setFindReplaceFeedback(null), 3000);
+  };
+
+  // Abre ou foca a ferramenta de Localizar e Substituir (Ctrl+H)
+  const openFindReplace = () => {
+    setShowFindReplace(true);
+    let selected = '';
+    if (viewMode === 'edit' || viewMode === 'split') {
+      const el = textareaRef.current;
+      if (el && el.selectionStart !== el.selectionEnd) {
+        selected = descricao.substring(el.selectionStart, el.selectionEnd);
+      }
+    } else if (viewMode === 'visual') {
+      selected = window.getSelection()?.toString() || '';
+    }
+
+    if (selected.trim() && !selected.includes('\n')) {
+      setFindQuery(selected.trim());
+      setCurrentMatchIdx(0);
+    }
+
+    setTimeout(() => {
+      findInputRef.current?.focus();
+      findInputRef.current?.select();
+    }, 50);
+  };
+
+  // Atalhos de teclado globais no Editor: CTRL+S (Salvar artigo) e CTRL+H (Localizar e Substituir)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignora atalhos se modais de diálogo estiverem abertas
+      if (showSaveModal || showPdfModal || showInsertWikitextModal) return;
+
+      // ESC fecha a barra de localizar e substituir se estiver aberta
+      if (e.key === 'Escape' && showFindReplace) {
+        setShowFindReplace(false);
+        if (viewMode === 'edit' || viewMode === 'split') {
+          textareaRef.current?.focus();
+        } else if (viewMode === 'visual') {
+          visualEditorRef.current?.focus();
+        }
+        return;
+      }
+
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+      if (!isCtrlOrCmd) return;
+
+      // Atalho CTRL+S / CMD+S: Salvar artigo
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (isTargetLocked) {
+          alert('Bloqueado pela moderação: Apenas moderadores e administradores podem salvar alterações neste verbete ou coleção.');
+          return;
+        }
+
+        if (dailyLimitStatus && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed) {
+          alert('Você atingiu o limite de 5 edições diárias para o perfil de editor. Suas edições serão renovadas à meia-noite.');
+          return;
+        }
+
+        handleOpenSaveModal();
+      }
+      // Atalho CTRL+H / CMD+H: Localizar e Substituir
+      else if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        e.stopPropagation();
+        openFindReplace();
+      }
+      // Atalho adicional conveniente CTRL+F / CMD+F: Localizar
+      else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        e.stopPropagation();
+        openFindReplace();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    showSaveModal,
+    showPdfModal,
+    showInsertWikitextModal,
+    showFindReplace,
+    titulo,
+    descricao,
+    pageUid,
+    viewMode,
+    isSaving,
+    isTargetLocked,
+    dailyLimitStatus,
+    user,
+    findQuery,
+    replaceQuery,
+    matches,
+  ]);
 
   return (
     <div className="w-full space-y-3 animate-in fade-in select-none">
@@ -582,8 +885,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
             <button
               type="button"
-              onClick={onCancel}
-              className="px-2.5 py-1 rounded text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              onClick={handleCancelClick}
+              className="px-2.5 py-1 rounded text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Cancelar
             </button>
@@ -708,6 +1011,21 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
               <div># Item numerado</div>
               <div>&gt; Citação</div>
             </div>
+          </div>
+          <div className="pt-1.5 border-t border-[#eaddc5] dark:border-[#52441a] flex flex-wrap items-center gap-3 text-[11px] font-sans">
+            <span className="font-bold text-slate-800 dark:text-slate-200">Atalhos do Editor:</span>
+            <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
+              <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-[10px] font-semibold shadow-xs">Ctrl+S</kbd>
+              <span>Salvar e publicar artigo</span>
+            </span>
+            <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
+              <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-[10px] font-semibold shadow-xs">Ctrl+H</kbd>
+              <span>Abrir Localizar e Substituir</span>
+            </span>
+            <span className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
+              <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono text-[10px] font-semibold shadow-xs">Esc</kbd>
+              <span>Fechar barra de busca</span>
+            </span>
           </div>
         </div>
       )}
@@ -873,7 +1191,202 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           >
             <Code2 size={12} /> Inserir Wikitexto
           </button>
+
+          <span className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-0.5" />
+
+          {/* Botão Localizar e Substituir (Ctrl+H) */}
+          <button
+            type="button"
+            onClick={() => {
+              if (showFindReplace) {
+                setShowFindReplace(false);
+              } else {
+                openFindReplace();
+              }
+            }}
+            title="Localizar e Substituir no artigo (Atalho: Ctrl+H)"
+            className={`px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1.5 transition border cursor-pointer ${
+              showFindReplace
+                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+            }`}
+          >
+            <Replace size={12} />
+            <span>Localizar / Substituir</span>
+            <kbd
+              className={`text-[9px] font-mono px-1 py-0.2 rounded ${
+                showFindReplace ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              Ctrl+H
+            </kbd>
+          </button>
         </div>
+
+        {/* Painel Interativo de Localizar e Substituir (Atalho: Ctrl+H) */}
+        {showFindReplace && (
+          <div className="bg-slate-100/95 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-2 sm:px-3 text-xs animate-in slide-in-from-top-1 duration-150 shadow-inner">
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2 flex-1">
+                {/* Campo Localizar */}
+                <div className="relative flex items-center min-w-[200px] flex-1 sm:flex-initial sm:w-60">
+                  <Search size={13} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+                  <input
+                    ref={findInputRef}
+                    type="text"
+                    value={findQuery}
+                    onChange={(e) => {
+                      setFindQuery(e.target.value);
+                      setCurrentMatchIdx(0);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                          goToMatch(currentMatchIdx - 1);
+                        } else {
+                          goToMatch(currentMatchIdx + 1);
+                        }
+                      } else if (e.key === 'Escape') {
+                        setShowFindReplace(false);
+                      }
+                    }}
+                    placeholder="Localizar no texto..."
+                    className="w-full pl-8 pr-16 py-1 text-xs rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                  {/* Contador de ocorrências */}
+                  <div className="absolute right-2 text-[10px] font-mono select-none">
+                    {findQuery.trim() ? (
+                      matches.length > 0 ? (
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                          {currentMatchIdx + 1}/{matches.length}
+                        </span>
+                      ) : (
+                        <span className="text-rose-500 font-semibold">0/0</span>
+                      )
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Controles de Navegação e Filtros */}
+                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1 py-0.5">
+                  <button
+                    type="button"
+                    onClick={() => goToMatch(currentMatchIdx - 1)}
+                    disabled={matches.length === 0}
+                    title="Ocorrência anterior (Shift+Enter)"
+                    className="p-1 rounded text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                  >
+                    <ChevronUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => goToMatch(currentMatchIdx + 1)}
+                    disabled={matches.length === 0}
+                    title="Próxima ocorrência (Enter)"
+                    className="p-1 rounded text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
+                  >
+                    <ChevronDown size={14} />
+                  </button>
+
+                  <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 mx-0.5" />
+
+                  <button
+                    type="button"
+                    onClick={() => setMatchCase(!matchCase)}
+                    title="Diferenciar maiúsculas e minúsculas (Aa)"
+                    className={`p-1 rounded transition text-[11px] font-bold cursor-pointer ${
+                      matchCase
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    <CaseSensitive size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMatchWholeWord(!matchWholeWord)}
+                    title="Coincidir palavra inteira"
+                    className={`p-1 rounded transition text-[11px] font-bold cursor-pointer ${
+                      matchWholeWord
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    <WholeWord size={14} />
+                  </button>
+                </div>
+
+                {/* Campo Substituir */}
+                <div className="relative flex items-center min-w-[200px] flex-1 sm:flex-initial sm:w-60">
+                  <Replace size={13} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+                  <input
+                    ref={replaceInputRef}
+                    type="text"
+                    value={replaceQuery}
+                    onChange={(e) => setReplaceQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleReplaceCurrent();
+                      } else if (e.key === 'Escape') {
+                        setShowFindReplace(false);
+                      }
+                    }}
+                    placeholder="Substituir por..."
+                    className="w-full pl-8 pr-2 py-1 text-xs rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+
+                {/* Botões de Substituição */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleReplaceCurrent}
+                    disabled={matches.length === 0}
+                    title="Substituir a ocorrência selecionada"
+                    className="px-2.5 py-1 rounded bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-semibold flex items-center gap-1 disabled:opacity-40 disabled:hover:bg-white shadow-xs transition cursor-pointer"
+                  >
+                    <Replace size={12} />
+                    <span>Substituir</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReplaceAll}
+                    disabled={matches.length === 0}
+                    title="Substituir todas as ocorrências encontradas no artigo"
+                    className="px-2.5 py-1 rounded bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-semibold flex items-center gap-1 disabled:opacity-40 disabled:hover:bg-white shadow-xs transition cursor-pointer"
+                  >
+                    <ReplaceAll size={12} />
+                    <span>Substituir Tudo</span>
+                  </button>
+                </div>
+
+                {/* Feedback dinâmico */}
+                {findReplaceFeedback && (
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-semibold animate-in fade-in">
+                    {findReplaceFeedback}
+                  </span>
+                )}
+              </div>
+
+              {/* Botão de Fechar e Atalho */}
+              <div className="flex items-center gap-2 shrink-0 self-end lg:self-auto">
+                <span className="text-[10px] font-mono text-slate-400">
+                  <kbd className="px-1 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Esc</kbd> fechar
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowFindReplace(false)}
+                  title="Fechar Localizar e Substituir (Esc)"
+                  className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content Editing Canvas */}
         <div className="min-h-[440px] flex flex-col">
@@ -995,6 +1508,14 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
             <button
               type="button"
+              onClick={handleCancelClick}
+              className="px-3 py-1.5 text-xs font-semibold rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition shadow-xs cursor-pointer"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
               onClick={() => setShowPdfModal(true)}
               className="px-3 py-1.5 text-xs font-semibold rounded border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition flex items-center gap-1 shadow-xs"
             >
@@ -1011,16 +1532,19 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                   ? 'Bloqueado pela moderação: Apenas moderadores e administradores podem salvar alterações neste verbete ou coleção.'
                   : dailyLimitStatus && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed
                   ? 'Você atingiu o limite de 5 edições diárias para o perfil de editor. Moderadores e administradores têm edições ilimitadas.'
-                  : 'Salvar e Publicar Alterações'
+                  : 'Salvar e Publicar Alterações (Atalho: Ctrl+S)'
               }
-              className={`px-4 py-1.5 text-xs font-semibold rounded transition flex items-center gap-1.5 flex-shrink-0 shadow-xs ${
+              className={`px-4 py-1.5 text-xs font-semibold rounded transition flex items-center gap-1.5 flex-shrink-0 shadow-xs cursor-pointer ${
                 isTargetLocked
                   ? 'bg-amber-600/70 text-white cursor-not-allowed opacity-75'
                   : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
               }`}
             >
               {isTargetLocked ? <Lock size={13} /> : <Save size={13} />}
-              {isSaving ? 'Salvando...' : isTargetLocked ? 'Bloqueado pela Moderação' : 'Salvar e Publicar Alterações'}
+              <span>{isSaving ? 'Salvando...' : isTargetLocked ? 'Bloqueado pela Moderação' : 'Salvar e Publicar Alterações'}</span>
+              <kbd className="hidden sm:inline text-[9px] font-mono px-1 py-0.2 rounded bg-black/25 text-white/90 ml-1">
+                Ctrl+S
+              </kbd>
             </button>
           </div>
         </div>
@@ -1254,6 +1778,19 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         onOpenNotebook={() => {
           setShowGeminiDrawer(false);
           if (onOpenNotebookModal) onOpenNotebookModal();
+        }}
+      />
+
+      {/* Modal de Confirmação de Alterações Não Salvas */}
+      <UnsavedChangesModal
+        isOpen={showDiscardModal}
+        isNewArticle={isNewArticle}
+        articleTitle={titulo}
+        onStay={() => setShowDiscardModal(false)}
+        onDiscardAndLeave={handleConfirmDiscard}
+        onSave={() => {
+          setShowDiscardModal(false);
+          handleOpenSaveModal();
         }}
       />
     </div>

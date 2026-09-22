@@ -40,6 +40,7 @@ interface FooterProps {
   onSetTheme?: (theme: AppTheme) => void;
   onRebootWinXP?: () => void;
   onRebootWin95?: () => void;
+  onOpenChromeRecommendation?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -51,6 +52,7 @@ export const Footer: React.FC<FooterProps> = ({
   onSetTheme,
   onRebootWinXP,
   onRebootWin95,
+  onOpenChromeRecommendation,
 }) => {
   const { currentLanguage, t } = useLanguage();
 
@@ -452,6 +454,17 @@ export const Footer: React.FC<FooterProps> = ({
               <Scale size={12} className="text-blue-600 dark:text-blue-400" />
               <span>Regras de Ética & Privacidade</span>
             </button>
+            {onOpenChromeRecommendation && (
+              <button
+                id="btn-footer-chrome-recommendation"
+                onClick={onOpenChromeRecommendation}
+                title="Aviso de preferência e recomendação de uso do Google Chrome na WikiWorldWeb"
+                className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/60 transition shadow-2xs"
+              >
+                <Sparkles size={11} className="text-amber-500" />
+                <span>Recomendação do Chrome</span>
+              </button>
+            )}
             <button
               onClick={() => onNavigate('privacy')}
               className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-medium"

@@ -41,6 +41,8 @@ import { FilesGalleryView } from './components/FilesGalleryView';
 import { ArbitrationCommitteeView } from './components/ArbitrationCommitteeView';
 import { UcocView } from './components/UcocView';
 import { LoginModal } from './components/LoginModal';
+import { UnsavedChangesModal } from './components/UnsavedChangesModal';
+import { ChromeRecommendationModal } from './components/ChromeRecommendationModal';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileSearchModal } from './components/MobileSearchModal';
@@ -103,6 +105,11 @@ export default function App() {
   const [selectedPageUid, setSelectedPageUid] = useState<string | null>(null);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [editingArticle, setEditingArticle] = useState<WikiArticle | null>(null);
+  const [editorHasUnsavedChanges, setEditorHasUnsavedChanges] = useState<boolean>(false);
+  const [editorIsNewArticle, setEditorIsNewArticle] = useState<boolean>(false);
+  const [showExitEditorConfirmModal, setShowExitEditorConfirmModal] = useState<boolean>(false);
+  const [showChromeRecommendationModal, setShowChromeRecommendationModal] = useState<boolean>(false);
+  const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
   const [targetUserIdentifier, setTargetUserIdentifier] = useState<string>('WazzimaGiygg');
   const [userPageInitialTab, setUserPageInitialTab] = useState<'profile' | 'talk' | 'contributions' | 'admin'>('profile');
   const [selectedFileName, setSelectedFileName] = useState<string>('Logo_WikiZero.svg');
@@ -356,6 +363,11 @@ export default function App() {
       // Trigger LGPD term modal if not yet accepted
       if (!lgpdAccepted) {
         setShowLgpdModal(true);
+      } else {
+        // Se LGPD já foi aceito e o usuário está entrando pela primeira vez, dar aviso de recomendação do Chrome
+        if (!StorageService.isChromeRecommendationNoticed()) {
+          setShowChromeRecommendationModal(true);
+        }
       }
 
       // Check URL for ?uid= on first boot
@@ -580,31 +592,76 @@ export default function App() {
     }
   };
 
-  const handleNavigate = (view: ViewMode) => {
-    if (view === 'user-page' && user) {
-      setTargetUserIdentifier(user.uid || user.displayName || user.username);
-      setUserPageInitialTab('profile');
+  // Guardião para navegação quando há alterações não salvas no editor
+  const confirmNavigationIfDirty = (action: () => void) => {
+    if (currentView === 'editor' && editorHasUnsavedChanges) {
+      setPendingNavigationAction(() => action);
+      setShowExitEditorConfirmModal(true);
+      return false;
     }
-    setCurrentView(view);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    action();
+    return true;
+  };
+
+  const handleConfirmDiscardFromApp = () => {
+    setShowExitEditorConfirmModal(false);
+    setEditorHasUnsavedChanges(false);
+    StorageService.clearDraft();
+    handleNotify('Alterações descartadas: Você saiu da edição sem salvar o artigo.', 'warning');
+    if (pendingNavigationAction) {
+      pendingNavigationAction();
+      setPendingNavigationAction(null);
+    }
+  };
+
+  const handleStayInEditorFromApp = () => {
+    setShowExitEditorConfirmModal(false);
+    setPendingNavigationAction(null);
+  };
+
+  // Intercepta botão Voltar do navegador para não perder edições acidentalmente
+  useEffect(() => {
+    const handlePopState = () => {
+      if (currentView === 'editor' && editorHasUnsavedChanges) {
+        window.history.pushState(null, '', window.location.href);
+        setShowExitEditorConfirmModal(true);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentView, editorHasUnsavedChanges]);
+
+  const handleNavigate = (view: ViewMode) => {
+    confirmNavigationIfDirty(() => {
+      if (view === 'user-page' && user) {
+        setTargetUserIdentifier(user.uid || user.displayName || user.username);
+        setUserPageInitialTab('profile');
+      }
+      setCurrentView(view);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   const handleNavigateToFile = (fileName: string) => {
-    const sanitized = fileName.replace(/^(?:Arquivo|Ficheiro|File|Imagem|Image):/i, '').replace(/\s+/g, '_');
-    setSelectedFileName(sanitized);
-    setCurrentView('file-page');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    confirmNavigationIfDirty(() => {
+      const sanitized = fileName.replace(/^(?:Arquivo|Ficheiro|File|Imagem|Image):/i, '').replace(/\s+/g, '_');
+      setSelectedFileName(sanitized);
+      setCurrentView('file-page');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   const handleNavigateToUpload = (targetName?: string) => {
-    if (targetName) {
-      const sanitized = targetName.replace(/^(?:Arquivo|Ficheiro|File|Imagem|Image):/i, '').replace(/\s+/g, '_');
-      setUploadInitialTargetName(sanitized);
-    } else {
-      setUploadInitialTargetName('');
-    }
-    setCurrentView('upload');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    confirmNavigationIfDirty(() => {
+      if (targetName) {
+        const sanitized = targetName.replace(/^(?:Arquivo|Ficheiro|File|Imagem|Image):/i, '').replace(/\s+/g, '_');
+        setUploadInitialTargetName(sanitized);
+      } else {
+        setUploadInitialTargetName('');
+      }
+      setCurrentView('upload');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   const handleNotify = (message: string, type: 'success' | 'warning' | 'info' = 'info') => {
@@ -617,16 +674,20 @@ export default function App() {
   };
 
   const handleNavigateToUser = (identifier: string, initialTab: 'profile' | 'talk' | 'contributions' | 'admin' = 'profile') => {
-    setTargetUserIdentifier(identifier);
-    setUserPageInitialTab(initialTab);
-    setCurrentView('user-page');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    confirmNavigationIfDirty(() => {
+      setTargetUserIdentifier(identifier);
+      setUserPageInitialTab(initialTab);
+      setCurrentView('user-page');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   const handleNavigateToCheckUser = (identifier: string) => {
-    setTargetUserIdentifier(identifier);
-    setCurrentView('checkuser');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    confirmNavigationIfDirty(() => {
+      setTargetUserIdentifier(identifier);
+      setCurrentView('checkuser');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   // Handlers para o menu alternativo do botão direito (por símbolos)
@@ -658,56 +719,62 @@ export default function App() {
   };
 
   const handleSelectPage = (pageUid: string) => {
-    const existingPage = pages.find((p) => p.uid.toLowerCase() === pageUid.toLowerCase());
-    if (!existingPage) {
-      handleShowNotFound(pageUid, 'page');
-      return;
-    }
-    setSelectedPageUid(existingPage.uid);
-    const pageArticles = (articles || []).filter((a) => a && a.pageUid === existingPage.uid);
-    if (pageArticles.length > 0) {
-      setSelectedArticleId(pageArticles[0].id);
-      StorageService.incrementArticleViews(pageArticles[0].id);
-      setCurrentView('article');
-    } else {
-      // Prompt to create an article in this collection
-      setEditingArticle({
-        id: '',
-        pageUid: existingPage.uid,
-        titulo: `Novo artigo em ${existingPage.titulo}`,
-        descricao: `= Artigo em ${existingPage.titulo} =\nInicie a escrita deste verbete para a coleção.`,
-        categoria: 'Geral',
-        idioma: 'Português',
-        dataCriacao: new Date().toISOString(),
-      });
-      setCurrentView('editor');
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    confirmNavigationIfDirty(() => {
+      const existingPage = pages.find((p) => p.uid.toLowerCase() === pageUid.toLowerCase());
+      if (!existingPage) {
+        handleShowNotFound(pageUid, 'page');
+        return;
+      }
+      setSelectedPageUid(existingPage.uid);
+      const pageArticles = (articles || []).filter((a) => a && a.pageUid === existingPage.uid);
+      if (pageArticles.length > 0) {
+        setSelectedArticleId(pageArticles[0].id);
+        StorageService.incrementArticleViews(pageArticles[0].id);
+        setCurrentView('article');
+      } else {
+        // Prompt to create an article in this collection
+        setEditingArticle({
+          id: '',
+          pageUid: existingPage.uid,
+          titulo: `Novo artigo em ${existingPage.titulo}`,
+          descricao: `= Artigo em ${existingPage.titulo} =\nInicie a escrita deste verbete para a coleção.`,
+          categoria: 'Geral',
+          idioma: 'Português',
+          dataCriacao: new Date().toISOString(),
+        });
+        setCurrentView('editor');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   const handleSelectArticle = (articleId: string) => {
-    const art = articles.find((a) => a.id.toLowerCase() === articleId.toLowerCase());
-    if (!art) {
-      handleShowNotFound(articleId, 'article');
-      return;
-    }
-    setSelectedArticleId(art.id);
-    StorageService.incrementArticleViews(art.id);
-    setCurrentView('article');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleNavigateToArticleByTitle = async (title: string) => {
-    const art = await StorageService.getArticleByTitle(title);
-    if (art) {
+    confirmNavigationIfDirty(() => {
+      const art = articles.find((a) => a.id.toLowerCase() === articleId.toLowerCase());
+      if (!art) {
+        handleShowNotFound(articleId, 'article');
+        return;
+      }
       setSelectedArticleId(art.id);
       StorageService.incrementArticleViews(art.id);
       setCurrentView('article');
-    } else {
-      // Se o artigo não existe, direciona para a página 404 personalizada!
-      handleShowNotFound(title, 'article');
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  };
+
+  const handleNavigateToArticleByTitle = async (title: string) => {
+    confirmNavigationIfDirty(async () => {
+      const art = await StorageService.getArticleByTitle(title);
+      if (art) {
+        setSelectedArticleId(art.id);
+        StorageService.incrementArticleViews(art.id);
+        setCurrentView('article');
+      } else {
+        // Se o artigo não existe, direciona para a página 404 personalizada!
+        handleShowNotFound(title, 'article');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   const handleRandomPage = () => {
@@ -883,6 +950,11 @@ export default function App() {
       const u = StorageService.getCurrentUser();
       setUser(u);
       setNotifications(StorageService.getNotifications());
+
+      // Na primeira entrada, logo após o aceite de termos, exibir aviso de preferência e recomendação pelo Google Chrome
+      if (!StorageService.isChromeRecommendationNoticed()) {
+        setShowChromeRecommendationModal(true);
+      }
     }
   };
 
@@ -931,6 +1003,7 @@ export default function App() {
     setSelectedArticleId(saved.id);
     setSelectedPageUid(saved.pageUid);
     setEditingArticle(null);
+    setEditorHasUnsavedChanges(false);
     setCurrentView('article');
   };
 
@@ -966,35 +1039,41 @@ export default function App() {
   };
 
   const handleOpenEditorForEdit = (article: WikiArticle) => {
-    const isModOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
-    if (article.isLocked && !isModOrAdmin) {
-      handleNotify(
-        `O artigo "${article.titulo}" está protegido pela moderação (${article.lockReason || 'bloqueio administrativo'}). Apenas moderadores e administradores podem editar.`,
-        'warning'
-      );
-      return;
-    }
-    setEditingArticle(article);
-    setCurrentView('editor');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleOpenNewEditor = (defaultUid?: string) => {
-    const isModOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
-    if (defaultUid && !isModOrAdmin) {
-      const targetPage = pages.find((p) => p.uid.toLowerCase() === defaultUid.toLowerCase());
-      if (targetPage && targetPage.isLocked) {
+    confirmNavigationIfDirty(() => {
+      const isModOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
+      if (article.isLocked && !isModOrAdmin) {
         handleNotify(
-          `A coleção "${targetPage.titulo}" está protegida pela moderação. Não é permitido criar novos artigos nela.`,
+          `O artigo "${article.titulo}" está protegido pela moderação (${article.lockReason || 'bloqueio administrativo'}). Apenas moderadores e administradores podem editar.`,
           'warning'
         );
         return;
       }
-    }
-    setEditingArticle(null);
-    if (defaultUid) setSelectedPageUid(defaultUid);
-    setCurrentView('editor');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      setEditingArticle(article);
+      setEditorHasUnsavedChanges(false);
+      setCurrentView('editor');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  };
+
+  const handleOpenNewEditor = (defaultUid?: string) => {
+    confirmNavigationIfDirty(() => {
+      const isModOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
+      if (defaultUid && !isModOrAdmin) {
+        const targetPage = pages.find((p) => p.uid.toLowerCase() === defaultUid.toLowerCase());
+        if (targetPage && targetPage.isLocked) {
+          handleNotify(
+            `A coleção "${targetPage.titulo}" está protegida pela moderação. Não é permitido criar novos artigos nela.`,
+            'warning'
+          );
+          return;
+        }
+      }
+      setEditingArticle(null);
+      setEditorHasUnsavedChanges(false);
+      if (defaultUid) setSelectedPageUid(defaultUid);
+      setCurrentView('editor');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   // Gemini Premium & Notebook Handlers
@@ -1408,10 +1487,17 @@ export default function App() {
               pages={pages}
               user={user}
               onSave={handleSaveArticle}
-              onCancel={() => handleNavigate(selectedArticleId ? 'article' : 'hub')}
+              onCancel={() => {
+                setEditorHasUnsavedChanges(false);
+                handleNavigate(selectedArticleId ? 'article' : 'hub');
+              }}
               onOpenLoginModal={handleLoginClick}
               onOpenPremiumModal={handleOpenPremiumModal}
               onOpenNotebookModal={handleOpenNotebookModal}
+              onDirtyChange={(isDirty, isNew) => {
+                setEditorHasUnsavedChanges(isDirty);
+                setEditorIsNewArticle(isNew);
+              }}
             />
           )}
 
@@ -1702,6 +1788,7 @@ export default function App() {
         onRebootWinXP={() => setShowWinXPBoot(true)}
         onRebootWin95={() => setShowWin95Boot(true)}
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
+        onOpenChromeRecommendation={() => setShowChromeRecommendationModal(true)}
       />
 
       {/* 4. Mobile Bottom Navigation Bar (Fixed at bottom for smartphones) */}
@@ -1813,6 +1900,25 @@ export default function App() {
         onOpenVpnChecker={() => {
           setShowLoginModal(false);
           handleNavigate('vpn-checker');
+        }}
+      />
+
+      {/* Modal Global de Alterações Não Salvas no Editor */}
+      <UnsavedChangesModal
+        isOpen={showExitEditorConfirmModal}
+        isNewArticle={editorIsNewArticle}
+        articleTitle={editingArticle?.titulo}
+        onStay={handleStayInEditorFromApp}
+        onDiscardAndLeave={handleConfirmDiscardFromApp}
+      />
+
+      {/* Aviso de recomendação e preferência pelo Google Chrome na primeira entrada */}
+      <ChromeRecommendationModal
+        isOpen={showChromeRecommendationModal}
+        onClose={() => setShowChromeRecommendationModal(false)}
+        onOpenChromeAppGuide={() => {
+          setShowChromeRecommendationModal(false);
+          handleNavigate('tools');
         }}
       />
 

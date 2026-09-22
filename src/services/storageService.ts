@@ -164,6 +164,7 @@ const STORAGE_KEYS = {
   UCOC_REPORTS: 'wikizero_ucoc_reports_v1',
   LGPD_NOTIFICATION_CONFIG: 'wikizero_lgpd_notif_config_v1',
   DAILY_EDITS_PREFIX: 'wikizero_daily_edits_',
+  CHROME_PREFERENCE_NOTICED: 'wikizero_chrome_recommendation_noticed_v1',
 };
 
 export const DAILY_EDITOR_EDIT_LIMIT = 5;
@@ -1987,6 +1988,22 @@ export const StorageService = {
     }
 
     return { success: true, age };
+  },
+
+  // === RECOMENDAÇÃO DO GOOGLE CHROME ===
+  isChromeRecommendationNoticed(): boolean {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(STORAGE_KEYS.CHROME_PREFERENCE_NOTICED) === 'true';
+  },
+
+  setChromeRecommendationNoticed(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.CHROME_PREFERENCE_NOTICED, 'true');
+  },
+
+  resetChromeRecommendationNoticed(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(STORAGE_KEYS.CHROME_PREFERENCE_NOTICED);
   },
 
   revokeConsent() {
