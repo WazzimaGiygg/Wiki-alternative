@@ -205,6 +205,24 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       ),
     },
     {
+      id: 'win7',
+      name: 'Windows 7 Aero Glass (2009)',
+      subtitle: 'Aero Glass, Superbar & Transparência Cristalina',
+      description: 'O aclamado visual do Windows 7 com efeitos Aero Glass translúcidos, reflexos vítreos, Superbar com Aero Peek, botão Iniciar Orb esférico e a célebre animação de inicialização com as 4 esferas de luz convergentes e chime orquestral.',
+      tag: 'Aero Glass + Boot 7',
+      accentColor: '#00a4ef',
+      bgPreview: 'bg-gradient-to-b from-[#154c7d] to-[#2d82b2] border-[#7da2ce] border text-white font-sans shadow-md',
+      badgeStyle: 'bg-gradient-to-r from-[#0080ff] to-[#00c0ff] text-white font-bold border border-white/40',
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 160 160">
+          <path d="M 28 34 C 44 26, 62 46, 75 40 C 75 58, 74 76, 74 88 C 60 94, 44 74, 27 82 Z" fill="#f25022" />
+          <path d="M 83 39 C 97 33, 115 48, 133 42 C 132 60, 130 78, 129 90 C 114 96, 97 78, 83 87 Z" fill="#7fba00" />
+          <path d="M 26 89 C 43 82, 60 100, 74 95 C 73 112, 72 130, 71 142 C 58 147, 41 129, 25 137 Z" fill="#00a4ef" />
+          <path d="M 82 94 C 96 88, 114 103, 128 97 C 127 114, 125 131, 124 144 C 110 150, 94 132, 81 141 Z" fill="#ffb900" />
+        </svg>
+      ),
+    },
+    {
       id: 'genshin',
       name: 'Genshin Impact Astral',
       subtitle: 'Teyvat Celestia & Primogem',
@@ -471,6 +489,20 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                         title="Executar animação clássica de boot do Windows XP"
                       >
                         <span>Boot XP</span>
+                        <span className="text-[10px]">↺</span>
+                      </button>
+                    )}
+                    {t.id === 'win7' && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectTheme('win7');
+                        }}
+                        className="px-2.5 py-1 rounded-md text-[11px] font-medium border border-sky-300 dark:border-sky-700 bg-sky-50/80 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 transition flex items-center gap-1"
+                        title="Executar animação de inicialização do Windows 7"
+                      >
+                        <span>Boot 7</span>
                         <span className="text-[10px]">↺</span>
                       </button>
                     )}

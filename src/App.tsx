@@ -52,6 +52,7 @@ import { SmartTVView } from './components/SmartTVView';
 import { SmartTVInstallModal } from './components/SmartTVInstallModal';
 import { AppearanceSettingsView } from './components/AppearanceSettingsView';
 import { WindowsXPBootScreen } from './components/WindowsXPBootScreen';
+import { Windows7BootScreen } from './components/Windows7BootScreen';
 import { Windows95BootScreen } from './components/Windows95BootScreen';
 import { Windows95Bot } from './components/Windows95Bot';
 import { AdvancedSearchView } from './components/AdvancedSearchView';
@@ -186,12 +187,18 @@ export default function App() {
     return saved === 'winxp';
   });
 
+  // Controls Windows 7 boot startup animation (convergence of 4 colored light orbs & chime)
+  const [showWin7Boot, setShowWin7Boot] = useState<boolean>(() => {
+    const saved = localStorage.getItem('wikizero_theme_v3');
+    return saved === 'win7';
+  });
+
   const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'genshin' || theme === 'android15' || theme === 'repo' || theme === 'minecraft' || theme === 'roblox';
 
   // Apply appropriate theme classes to document root
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1');
+    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-win7', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -203,6 +210,8 @@ export default function App() {
       root.classList.add('theme-win95');
     } else if (theme === 'winxp') {
       root.classList.add('theme-winxp');
+    } else if (theme === 'win7') {
+      root.classList.add('theme-win7');
     } else if (theme === 'genshin') {
       root.classList.add('dark', 'theme-genshin');
     } else if (theme === 'android15') {
@@ -576,6 +585,8 @@ export default function App() {
       setShowWin95Boot(true);
     } else if (newTheme === 'winxp') {
       setShowWinXPBoot(true);
+    } else if (newTheme === 'win7') {
+      setShowWin7Boot(true);
     }
     setTheme(newTheme);
   };
@@ -1144,6 +1155,7 @@ export default function App() {
         onNotificationClick={handleNotificationClick}
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
         onOpenSmartTVModal={() => setShowSmartTVModal(true)}
+        onRebootWin7={() => setShowWin7Boot(true)}
         onRebootWinXP={() => setShowWinXPBoot(true)}
         onRebootWin95={() => setShowWin95Boot(true)}
       />
@@ -1785,6 +1797,7 @@ export default function App() {
         deviceMode={deviceMode}
         onToggleDeviceMode={handleToggleDeviceMode}
         onSetTheme={handleSetTheme}
+        onRebootWin7={() => setShowWin7Boot(true)}
         onRebootWinXP={() => setShowWinXPBoot(true)}
         onRebootWin95={() => setShowWin95Boot(true)}
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
@@ -2078,6 +2091,13 @@ export default function App() {
       {showWinXPBoot && (
         <WindowsXPBootScreen
           onComplete={() => setShowWinXPBoot(false)}
+        />
+      )}
+
+      {/* Windows 7 Aero Boot Screen */}
+      {showWin7Boot && (
+        <Windows7BootScreen
+          onComplete={() => setShowWin7Boot(false)}
         />
       )}
     </div>

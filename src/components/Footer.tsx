@@ -38,6 +38,7 @@ interface FooterProps {
   onToggleDeviceMode?: (mode: DeviceMode) => void;
   onOpenLanguagesModal?: () => void;
   onSetTheme?: (theme: AppTheme) => void;
+  onRebootWin7?: () => void;
   onRebootWinXP?: () => void;
   onRebootWin95?: () => void;
   onOpenChromeRecommendation?: () => void;
@@ -50,6 +51,7 @@ export const Footer: React.FC<FooterProps> = ({
   onToggleDeviceMode,
   onOpenLanguagesModal,
   onSetTheme,
+  onRebootWin7,
   onRebootWinXP,
   onRebootWin95,
   onOpenChromeRecommendation,
@@ -150,6 +152,55 @@ export const Footer: React.FC<FooterProps> = ({
               <span className="bg-[#0b388f] px-2 py-0.5 rounded border border-[#1b58bf] text-white font-mono">
                 {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
+            </div>
+          </div>
+        )}
+
+        {/* Windows 7 Aero Glass Superbar */}
+        {theme === 'win7' && (
+          <div className="win7-superbar p-2 rounded-t-lg text-xs font-sans text-white flex flex-wrap items-center justify-between gap-3 select-none">
+            <div className="flex items-center gap-3">
+              {/* The iconic Start Orb */}
+              <button
+                type="button"
+                onClick={() => onRebootWin7?.()}
+                className="win7-start-orb cursor-pointer"
+                title="Clique para reiniciar e rever a animação de inicialização do Windows 7"
+              >
+                <svg className="w-5 h-5 filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" viewBox="0 0 160 160">
+                  <path d="M 28 34 C 44 26, 62 46, 75 40 C 75 58, 74 76, 74 88 C 60 94, 44 74, 27 82 Z" fill="#f25022" />
+                  <path d="M 83 39 C 97 33, 115 48, 133 42 C 132 60, 130 78, 129 90 C 114 96, 97 78, 83 87 Z" fill="#7fba00" />
+                  <path d="M 26 89 C 43 82, 60 100, 74 95 C 73 112, 72 130, 71 142 C 58 147, 41 129, 25 137 Z" fill="#00a4ef" />
+                  <path d="M 82 94 C 96 88, 114 103, 128 97 C 127 114, 125 131, 124 144 C 110 150, 94 132, 81 141 Z" fill="#ffb900" />
+                </svg>
+              </button>
+
+              <div className="flex items-center gap-1">
+                <div className="px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium text-xs transition cursor-pointer flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-sky-400"></span>
+                  <span>WikiWorldWeb 7</span>
+                </div>
+                <span className="text-xs text-sky-200 font-medium hidden sm:inline ml-1">
+                  Windows 7 Ultimate [Service Pack 1 - 64-bit]
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 px-3 py-1 rounded bg-black/20 border border-white/10 text-[11px] font-medium text-sky-100">
+                <span className="flex items-center gap-1 text-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span> Rede: Internet Ativa
+                </span>
+                <span className="font-mono text-white">
+                  {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              {/* Aero Peek button on the right */}
+              <div
+                className="win7-aero-peek"
+                title="Mostrar Área de Trabalho (Aero Peek)"
+                onClick={() => onRebootWin7?.()}
+              />
             </div>
           </div>
         )}

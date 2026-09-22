@@ -56,6 +56,7 @@ interface HeaderProps {
   onNotificationClick: (notif: NotificationItem) => void;
   onOpenLanguagesModal?: () => void;
   onOpenSmartTVModal?: () => void;
+  onRebootWin7?: () => void;
   onRebootWinXP?: () => void;
   onRebootWin95?: () => void;
 }
@@ -84,6 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNotificationClick,
   onOpenLanguagesModal,
   onOpenSmartTVModal,
+  onRebootWin7,
   onRebootWinXP,
   onRebootWin95,
 }) => {
@@ -103,6 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isWin1 = theme === 'win1';
   const isWin95 = theme === 'win95';
   const isWinXP = theme === 'winxp';
+  const isWin7 = theme === 'win7';
   const isGenshin = theme === 'genshin';
   const isAndroid = theme === 'android15';
   const isStardew = theme === 'stardew';
@@ -280,6 +283,47 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onSetTheme?.('light')}
               className="winxp-btn-close w-5 h-5 flex items-center justify-center text-white font-bold text-xs"
               title="Fechar / Sair do Modo Windows XP"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Windows 7 Aero Glass Top Window Title Bar */}
+      {isWin7 && (
+        <div className="win7-titlebar font-sans text-xs flex items-center justify-between px-3 py-1 select-none shadow-sm">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-4 h-4 flex items-center justify-center shrink-0">
+              <svg className="w-3.5 h-3.5 filter drop-shadow" viewBox="0 0 160 160">
+                <path d="M 28 34 C 44 26, 62 46, 75 40 C 75 58, 74 76, 74 88 C 60 94, 44 74, 27 82 Z" fill="#f25022" />
+                <path d="M 83 39 C 97 33, 115 48, 133 42 C 132 60, 130 78, 129 90 C 114 96, 97 78, 83 87 Z" fill="#7fba00" />
+                <path d="M 26 89 C 43 82, 60 100, 74 95 C 73 112, 72 130, 71 142 C 58 147, 41 129, 25 137 Z" fill="#00a4ef" />
+                <path d="M 82 94 C 96 88, 114 103, 128 97 C 127 114, 125 131, 124 144 C 110 150, 94 132, 81 141 Z" fill="#ffb900" />
+              </svg>
+            </div>
+            <span className="font-semibold text-slate-900 text-xs truncate tracking-wide">
+              WikiWorldWeb 7 Ultimate - Enciclopédia Multimídia [Aero Glass]
+            </span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            {onRebootWin7 && (
+              <button
+                type="button"
+                onClick={onRebootWin7}
+                className="win7-button px-2 h-5 flex items-center gap-1 text-[#1e395b] font-sans text-[10px] font-semibold"
+                title="Reiniciar e rever a animação de inicialização do Windows 7"
+              >
+                <span>Boot 7</span>
+                <span className="text-[9px]">↺</span>
+              </button>
+            )}
+            <button className="win7-btn-min flex items-center justify-center font-bold text-xs" title="Minimizar">_</button>
+            <button className="win7-btn-max flex items-center justify-center font-bold text-[10px]" title="Maximizar">□</button>
+            <button
+              onClick={() => onSetTheme?.('light')}
+              className="win7-btn-close flex items-center justify-center font-bold text-xs"
+              title="Fechar / Sair do Modo Windows 7"
             >
               ✕
             </button>
@@ -959,6 +1003,42 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={onRandomPage}
                 title="Artigo Aleatório no Windows XP"
                 className="winxp-button text-xs px-2.5 py-1"
+              >
+                {t('header.random_page')}
+              </button>
+            </div>
+          </div>
+        ) : isWin7 ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div className="flex items-center gap-2">
+              <div
+                onClick={handleSearchInputClick}
+                className="flex-1 flex items-center px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-md shadow-inner border border-[#7da2ce] focus-within:border-[#3c7fb1] focus-within:ring-2 focus-within:ring-sky-400/40 cursor-pointer"
+              >
+                <Search className="w-4 h-4 text-[#0066cc] mr-2 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onClick={handleSearchInputClick}
+                  onFocus={handleSearchInputClick}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Pesquisar na WikiWorldWeb 7..."
+                  className="w-full text-xs bg-transparent border-none outline-none text-slate-900 font-sans placeholder:text-slate-500 cursor-text"
+                />
+              </div>
+              <button
+                onClick={onSearchSubmit}
+                className="win7-button flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#1e395b] shadow-xs"
+                title="Pesquisar na Enciclopédia Windows 7"
+              >
+                <Search size={13} className="text-[#0066cc]" />
+                <span>Buscar</span>
+              </button>
+              <button
+                onClick={onRandomPage}
+                title="Artigo Aleatório no Windows 7"
+                className="win7-button text-xs px-2.5 py-1"
               >
                 {t('header.random_page')}
               </button>

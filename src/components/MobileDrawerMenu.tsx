@@ -347,6 +347,32 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <span className="hidden xs:inline">XP</span>
             </button>
 
+            {/* Quick Windows 7 Toggle */}
+            <button
+              id="btn-drawer-quick-win7-theme"
+              onClick={() => {
+                if (theme === 'win7') {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('win7');
+                }
+              }}
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 font-sans text-[10px] font-bold ${
+                theme === 'win7'
+                  ? 'bg-[#154c7d] border-[#7da2ce] text-white ring-1 ring-sky-400/50 shadow-[0_0_8px_rgba(0,164,239,0.5)]'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={theme === 'win7' ? 'Desativar Tema Windows 7' : 'Ativar Tema Windows 7 Aero'}
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 160 160">
+                <path d="M 28 34 C 44 26, 62 46, 75 40 C 75 58, 74 76, 74 88 C 60 94, 44 74, 27 82 Z" fill="#f25022" />
+                <path d="M 83 39 C 97 33, 115 48, 133 42 C 132 60, 130 78, 129 90 C 114 96, 97 78, 83 87 Z" fill="#7fba00" />
+                <path d="M 26 89 C 43 82, 60 100, 74 95 C 73 112, 72 130, 71 142 C 58 147, 41 129, 25 137 Z" fill="#00a4ef" />
+                <path d="M 82 94 C 96 88, 114 103, 128 97 C 127 114, 125 131, 124 144 C 110 150, 94 132, 81 141 Z" fill="#ffb900" />
+              </svg>
+              <span className="hidden xs:inline">7</span>
+            </button>
+
             {/* Dark Mode Toggle */}
             <button
               onClick={onToggleTheme}

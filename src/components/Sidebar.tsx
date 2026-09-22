@@ -93,6 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isWin1 = theme === 'win1';
   const isWin95 = theme === 'win95';
   const isWinXP = theme === 'winxp';
+  const isWin7 = theme === 'win7';
   const isGenshin = theme === 'genshin';
   const isAndroid = theme === 'android15';
   const isStardew = theme === 'stardew';
@@ -118,6 +119,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ? 'win95-window !border-2 !rounded-none !bg-[#c0c0c0]'
           : isWinXP
           ? 'winxp-window !border-2 !border-[#0055ea] !rounded-t-lg !bg-[#ece9d8] text-slate-900'
+          : isWin7
+          ? 'win7-window !rounded-lg !border-white/60 !bg-sky-50/80 text-slate-900'
           : isNokia
           ? 'bg-[#b4c995] border-2 border-[#1f281b] !rounded-none shadow-[3px_3px_0px_#1f281b] font-mono text-[#1f281b]'
           : isRepo

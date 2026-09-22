@@ -754,6 +754,357 @@ html.theme-winxp footer a {
 }
 
 /* ========================================================================== */
+/* TEMA WINDOWS 7 (Aero Glass, Superbar & Boot Orbs 2009)                     */
+/* ========================================================================== */
+
+@keyframes win7-orb-red {
+  0% {
+    transform: translate(-90px, -90px) scale(0.3);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-45px, -30px) scale(1);
+  }
+  70% {
+    transform: translate(-10px, -20px) scale(1.1);
+  }
+  100% {
+    transform: translate(-16px, -16px) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes win7-orb-green {
+  0% {
+    transform: translate(90px, -90px) scale(0.3);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+    transform: translate(45px, -30px) scale(1);
+  }
+  70% {
+    transform: translate(10px, -20px) scale(1.1);
+  }
+  100% {
+    transform: translate(16px, -16px) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes win7-orb-blue {
+  0% {
+    transform: translate(-90px, 90px) scale(0.3);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-45px, 30px) scale(1);
+  }
+  70% {
+    transform: translate(-10px, 20px) scale(1.1);
+  }
+  100% {
+    transform: translate(-16px, 16px) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes win7-orb-yellow {
+  0% {
+    transform: translate(90px, 90px) scale(0.3);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+    transform: translate(45px, 30px) scale(1);
+  }
+  70% {
+    transform: translate(10px, 20px) scale(1.1);
+  }
+  100% {
+    transform: translate(16px, 16px) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes win7-logo-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 20px rgba(0, 164, 239, 0.5));
+  }
+  50% {
+    transform: scale(1.03);
+    filter: drop-shadow(0 0 35px rgba(0, 164, 239, 0.85)) drop-shadow(0 0 15px rgba(255, 255, 255, 0.9));
+  }
+}
+
+.animate-win7-orb-red {
+  animation: win7-orb-red 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.animate-win7-orb-green {
+  animation: win7-orb-green 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.animate-win7-orb-blue {
+  animation: win7-orb-blue 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.animate-win7-orb-yellow {
+  animation: win7-orb-yellow 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.animate-win7-logo-pulse {
+  animation: win7-logo-pulse 2s ease-in-out infinite;
+}
+
+/* Windows 7 Aero Glass Theme */
+html.theme-win7 {
+  color-scheme: light;
+}
+
+html.theme-win7 body {
+  font-family: 'Segoe UI', 'Segoe UI Web', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
+  background-color: #104273;
+  background-image:
+    radial-gradient(ellipse at 50% 20%, rgba(77, 160, 230, 0.45) 0%, transparent 65%),
+    linear-gradient(180deg, #0c3660 0%, #154c7d 30%, #20689b 65%, #2d82b2 100%);
+  background-attachment: fixed;
+  color: #1a1a1a;
+}
+
+/* Windows 7 Aero Glass Window */
+.win7-window {
+  background: rgba(235, 244, 255, 0.78) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.65) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 30px rgba(0, 30, 80, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Windows 7 Aero Title Bar */
+.win7-titlebar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(200, 225, 255, 0.25) 45%, rgba(160, 205, 255, 0.15) 50%, rgba(215, 235, 255, 0.35) 100%) !important;
+  backdrop-filter: blur(14px) !important;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Windows 7 Aero Titlebar Buttons */
+.win7-btn-min,
+.win7-btn-max {
+  width: 28px;
+  height: 20px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(210, 230, 255, 0.2) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  color: #1e3a5f;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.win7-btn-min:hover,
+.win7-btn-max:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(175, 215, 255, 0.6) 100%);
+  border-color: #6da2d9;
+  box-shadow: 0 0 6px rgba(50, 150, 255, 0.5), inset 0 1px 0 #ffffff;
+}
+
+.win7-btn-close {
+  width: 44px;
+  height: 20px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(240, 120, 120, 0.4) 0%, rgba(200, 60, 60, 0.4) 100%);
+  border: 1px solid rgba(255, 160, 160, 0.4);
+  color: #3a1e1e;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.win7-btn-close:hover {
+  background: linear-gradient(180deg, #f05050 0%, #d82020 50%, #b80000 100%);
+  border-color: #ff8888;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(230, 30, 30, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Windows 7 Aero Buttons */
+.win7-button {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(232, 242, 254, 0.9) 45%, rgba(214, 233, 253, 0.9) 50%, rgba(225, 240, 255, 0.9) 100%);
+  border: 1px solid #7da2ce;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 1px 0 #ffffff;
+  color: #1e395b;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.win7-button:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #e2efff 45%, #c5e0ff 50%, #dbedff 100%);
+  border-color: #3c7fb1;
+  box-shadow: 0 0 6px rgba(60, 150, 240, 0.5), inset 0 1px 0 #ffffff;
+}
+
+.win7-button:active {
+  background: linear-gradient(180deg, #cbe3fc 0%, #b9d8fb 100%);
+  border-color: #2c628b;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Windows 7 Superbar (Taskbar) */
+.win7-superbar {
+  background: linear-gradient(180deg, rgba(30, 65, 105, 0.82) 0%, rgba(15, 38, 68, 0.88) 100%) !important;
+  backdrop-filter: blur(18px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Windows 7 Start Orb Button */
+.win7-start-orb {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  position: relative;
+  background: radial-gradient(circle at 35% 30%, #5ce1e6 0%, #1e88e5 40%, #0d47a1 80%, #082d6b 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 8px rgba(30, 140, 240, 0.7), 0 2px 5px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.win7-start-orb:hover {
+  transform: scale(1.06);
+  background: radial-gradient(circle at 35% 30%, #80e8ff 0%, #29b6f6 40%, #1565c0 80%, #0d47a1 100%);
+  box-shadow: 0 0 16px rgba(66, 180, 255, 0.95), 0 0 28px rgba(0, 164, 239, 0.6), inset 0 2px 6px #ffffff;
+}
+
+/* Windows 7 Aero Peek button */
+.win7-aero-peek {
+  width: 14px;
+  height: 100%;
+  min-height: 28px;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.win7-aero-peek:hover {
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+/* Windows 7 Layout Overrides */
+html.theme-win7 header {
+  background: rgba(230, 242, 255, 0.82) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 4px 20px rgba(0, 25, 60, 0.2) !important;
+}
+
+html.theme-win7 main {
+  background-color: transparent !important;
+}
+
+html.theme-win7 .bg-white,
+html.theme-win7 .dark\:bg-slate-900,
+html.theme-win7 .dark\:bg-\[\#0f172a\] {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(8px) !important;
+  border-color: #b5d1ed !important;
+  color: #1a1a1a !important;
+}
+
+html.theme-win7 .bg-slate-50,
+html.theme-win7 .dark\:bg-slate-800,
+html.theme-win7 .dark\:bg-\[\#1e293b\] {
+  background: rgba(244, 249, 255, 0.88) !important;
+  border-color: #b5d1ed !important;
+  color: #1a1a1a !important;
+}
+
+html.theme-win7 article,
+html.theme-win7 .wiki-rendered-content {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #111827 !important;
+  border: 1px solid #b5d1ed !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 30, 70, 0.12) !important;
+  padding: 20px !important;
+}
+
+html.theme-win7 .wiki-rendered-content h1,
+html.theme-win7 .wiki-rendered-content h2,
+html.theme-win7 .wiki-rendered-content h3 {
+  color: #0c4a80 !important;
+  font-family: 'Segoe UI', 'Segoe UI Web', sans-serif !important;
+}
+
+html.theme-win7 .wiki-rendered-content h1 {
+  border-bottom: 1.5px solid #a3c7ed !important;
+}
+
+html.theme-win7 .wiki-rendered-content .wiki-link {
+  color: #0066cc !important;
+  text-decoration: underline !important;
+}
+
+html.theme-win7 .wiki-rendered-content .wiki-link:hover {
+  color: #004499 !important;
+}
+
+html.theme-win7 .wiki-rendered-content .wikitable {
+  border: 1px solid #a8c8ea !important;
+  background-color: #ffffff !important;
+}
+
+html.theme-win7 .wiki-rendered-content .wikitable th {
+  background: linear-gradient(180deg, #eef6ff 0%, #d4e8fd 100%) !important;
+  color: #0a3d6a !important;
+  border: 1px solid #b7d5f5 !important;
+  font-weight: 600 !important;
+}
+
+html.theme-win7 .wiki-rendered-content .wikitable td {
+  border: 1px solid #e1edfa !important;
+  background-color: #ffffff !important;
+  color: #111827 !important;
+}
+
+html.theme-win7 aside {
+  background: rgba(235, 244, 255, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  border-color: #b5d1ed !important;
+}
+
+html.theme-win7 footer {
+  background: rgba(225, 238, 252, 0.9) !important;
+  backdrop-filter: blur(16px) !important;
+  border-top: 1px solid #9dc5ee !important;
+  color: #1a3350 !important;
+}
+
+html.theme-win7 footer a {
+  color: #0066cc !important;
+}
+
+/* ========================================================================== */
 /* TEMA GENSHIN IMPACT (Teyvat Astral Night, Primogem & Celestial Gold)       */
 /* ========================================================================== */
 html.theme-genshin {
