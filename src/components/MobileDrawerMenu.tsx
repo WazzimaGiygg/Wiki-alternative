@@ -284,6 +284,27 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <span className="hidden xs:inline">REPO</span>
             </button>
 
+            {/* Quick Half-Life Toggle */}
+            <button
+              id="btn-drawer-quick-halflife-theme"
+              onClick={() => {
+                if (theme === 'halflife') {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('halflife');
+                }
+              }}
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 font-mono text-[10px] font-bold ${
+                theme === 'halflife'
+                  ? 'bg-[#181b18] border-[#ff9900] text-[#ff9900] ring-1 ring-[#ff9900]/60 shadow-[0_0_8px_rgba(255,153,0,0.3)]'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={theme === 'halflife' ? 'Desativar Tema Half-Life' : 'Ativar Tema Half-Life (Black Mesa)'}
+            >
+              <span className="w-3.5 h-3.5 rounded-full border border-[#ff9900] text-[#ff9900] flex items-center justify-center text-[9px] font-black">λ</span>
+              <span className="hidden xs:inline">H-Life</span>
+            </button>
+
             {/* Quick Nokia 3310 Toggle */}
             <button
               id="btn-drawer-quick-nokia-theme"

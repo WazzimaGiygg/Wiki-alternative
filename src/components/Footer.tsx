@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { playHalfLifeHEVBeep, playHalfLifeGeiger } from '../utils/halfLifeAudio';
 import { FooterBadges } from './FooterBadges';
 import { formatExternalUrl } from '../utils/linkUtils';
 
@@ -118,6 +119,40 @@ export const Footer: React.FC<FooterProps> = ({
               <span>BATERIA: [||||]</span>
               <span className="bg-[#1f281b] text-[#c2d6a4] px-1.5 py-0.5">SNAKE II PRONTO</span>
               <span>CONNECTING PEOPLE</span>
+            </div>
+          </div>
+        )}
+
+        {/* Half-Life Black Mesa Terminal Footer Strip */}
+        {theme === 'halflife' && (
+          <div className="p-3 bg-[#131613] border-2 border-[#ff9900]/70 rounded-lg text-xs font-mono text-[#ff9900] flex flex-wrap items-center justify-between gap-3 shadow-[0_0_16px_rgba(255,153,0,0.18)]">
+            <div className="flex items-center gap-2.5">
+              <span className="w-5 h-5 rounded-full border border-[#ff9900] bg-[#1a1f1a] flex items-center justify-center font-bold text-xs text-[#ff9900]">
+                λ
+              </span>
+              <span className="font-bold tracking-wide">
+                BLACK MESA RESEARCH FACILITY // TERMINAL ACCESS LEVEL 4 • SECTOR C
+              </span>
+            </div>
+            <div className="flex items-center gap-3 sm:gap-4 text-[11px]">
+              <span className="text-[#33ff33] font-bold">[+] 100 HEALTH</span>
+              <span className="text-[#ff9900] font-bold">⚡ 100 SUIT</span>
+              <button
+                type="button"
+                onClick={() => playHalfLifeHEVBeep(0.35)}
+                className="px-2 py-0.5 rounded bg-[#ff9900]/20 text-[#ffaa22] border border-[#ff9900]/50 hover:bg-[#ff9900] hover:text-black transition-colors font-bold cursor-pointer"
+                title="Tocar Alerta HEV Suit"
+              >
+                HEV Chime 🔊
+              </button>
+              <button
+                type="button"
+                onClick={() => playHalfLifeGeiger(5, 0.25)}
+                className="px-2 py-0.5 rounded bg-[#ff9900]/20 text-[#ffaa22] border border-[#ff9900]/50 hover:bg-[#ff9900] hover:text-black transition-colors font-bold cursor-pointer"
+                title="Tocar Contador Geiger"
+              >
+                Geiger ☢
+              </button>
             </div>
           </div>
         )}

@@ -102,6 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const isMinecraft = theme === 'minecraft';
   const isRoblox = theme === 'roblox';
   const isNokia = theme === 'nokia3310';
+  const isHalfLife = theme === 'halflife';
 
   const visibilityClass =
     deviceMode === 'mobile'
@@ -124,6 +125,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ? 'win7-window !rounded-lg !border-white/60 !bg-sky-50/80 text-slate-900'
           : isWikidiota
           ? 'wikidiota-sidebar !bg-[#f6f6f6] !border-r !border-[#a7d7f9] !rounded-none shadow-none font-sans text-[#202122]'
+          : isHalfLife
+          ? 'halflife-sidebar !bg-[#131613]/98 !border-2 !border-[#ff9900]/70 !rounded-lg shadow-[0_0_20px_rgba(255,153,0,0.2)] font-mono text-amber-200'
           : isNokia
           ? 'bg-[#b4c995] border-2 border-[#1f281b] !rounded-none shadow-[3px_3px_0px_#1f281b] font-mono text-[#1f281b]'
           : isRepo
@@ -146,8 +149,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar Header with Title & Collapse Action */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
         {!isCollapsed && (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-mono">
-            {t('sidebar.navigation')}
+          <span className={`text-[10px] font-bold uppercase tracking-wider font-mono ${isHalfLife ? 'text-[#ff9900] flex items-center gap-1' : 'text-slate-400 dark:text-slate-500'}`}>
+            {isHalfLife && <span className="text-[11px]">λ</span>}
+            {isHalfLife ? 'BLACK MESA NET' : t('sidebar.navigation')}
           </span>
         )}
         <button

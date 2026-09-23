@@ -2840,6 +2840,217 @@ html.theme-wikidiota button.bg-blue-600:hover {
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 }
 
+/* ========================================================================== */
+/* HALF-LIFE // BLACK MESA RESEARCH FACILITY & HEV SUIT THEME                */
+/* ========================================================================== */
+html.theme-halflife {
+  color-scheme: dark;
+}
+
+html.theme-halflife body {
+  background-color: #101310 !important;
+  background-image: radial-gradient(circle at 50% 0%, rgba(255, 153, 0, 0.08) 0%, transparent 60%), linear-gradient(rgba(18, 22, 18, 0.95), rgba(16, 19, 16, 0.98)) !important;
+  color: #e5c185 !important;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important;
+}
+
+html.theme-halflife ::selection {
+  background-color: #ff9900 !important;
+  color: #000000 !important;
+}
+
+/* Half-Life Header */
+html.theme-halflife header {
+  background-color: #141814 !important;
+  border-bottom: 2px solid #ff9900 !important;
+  box-shadow: 0 4px 20px rgba(255, 153, 0, 0.18) !important;
+}
+
+/* Hazard diagonal stripes */
+.halflife-hazard-bar {
+  height: 5px;
+  background: repeating-linear-gradient(45deg, #181b18, #181b18 10px, #ff9900 10px, #ff9900 20px);
+  border-bottom: 1px solid rgba(255, 153, 0, 0.4);
+}
+
+/* Half-Life Search Widget */
+html.theme-halflife .halflife-search-widget {
+  background-color: #181c18;
+  border: 1.5px solid #ff9900;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.85), 0 0 10px rgba(255, 153, 0, 0.2);
+  border-radius: 4px;
+}
+
+html.theme-halflife .halflife-search-widget:focus-within {
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 153, 0, 0.5);
+  border-color: #ffaa22;
+}
+
+html.theme-halflife .halflife-btn {
+  background-color: #1e241e;
+  border: 1px solid #ff9900;
+  color: #ff9900;
+  font-family: monospace;
+  font-weight: bold;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+html.theme-halflife .halflife-btn:hover {
+  background-color: #ff9900;
+  color: #000000;
+  box-shadow: 0 0 10px rgba(255, 153, 0, 0.6);
+}
+
+/* Content cards and panels in Black Mesa Industrial style */
+html.theme-halflife .bg-white,
+html.theme-halflife .dark\:bg-slate-900,
+html.theme-halflife .dark\:bg-\[\#0f172a\],
+html.theme-halflife .dark\:bg-slate-850 {
+  background-color: #151915 !important;
+  border-color: rgba(255, 153, 0, 0.3) !important;
+  color: #e5c185 !important;
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.65) !important;
+}
+
+html.theme-halflife .bg-slate-50,
+html.theme-halflife .dark\:bg-slate-800,
+html.theme-halflife .dark\:bg-\[\#1e293b\] {
+  background-color: #1c221c !important;
+  border-color: rgba(255, 153, 0, 0.38) !important;
+  color: #ffb84d !important;
+}
+
+/* Border overrides */
+html.theme-halflife .border-slate-100,
+html.theme-halflife .border-slate-200,
+html.theme-halflife .border-slate-300,
+html.theme-halflife .border-slate-700,
+html.theme-halflife .border-slate-800,
+html.theme-halflife .dark\:border-slate-800,
+html.theme-halflife .dark\:border-slate-700 {
+  border-color: rgba(255, 153, 0, 0.25) !important;
+}
+
+/* Typography and headings */
+html.theme-halflife .text-slate-900,
+html.theme-halflife .text-slate-800,
+html.theme-halflife .text-slate-700,
+html.theme-halflife .dark\:text-white,
+html.theme-halflife .dark\:text-slate-100,
+html.theme-halflife .dark\:text-slate-200 {
+  color: #ffaa22 !important;
+}
+
+html.theme-halflife .text-slate-600,
+html.theme-halflife .text-slate-500,
+html.theme-halflife .text-slate-400,
+html.theme-halflife .dark\:text-slate-400,
+html.theme-halflife .dark\:text-slate-500 {
+  color: #a39272 !important;
+}
+
+/* Rendered Wiki content */
+html.theme-halflife .wiki-rendered-content {
+  color: #e5c185 !important;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace !important;
+}
+
+html.theme-halflife .wiki-rendered-content h1 {
+  color: #ff9900 !important;
+  border-bottom: 2px solid #ff9900 !important;
+  text-shadow: 0 0 10px rgba(255, 153, 0, 0.4) !important;
+  font-family: ui-monospace, SFMono-Regular, monospace !important;
+  letter-spacing: 0.05em !important;
+}
+
+html.theme-halflife .wiki-rendered-content h2 {
+  color: #ffa500 !important;
+  border-bottom: 1px solid rgba(255, 153, 0, 0.4) !important;
+  font-family: ui-monospace, SFMono-Regular, monospace !important;
+}
+
+html.theme-halflife .wiki-rendered-content h3 {
+  color: #ffb84d !important;
+}
+
+html.theme-halflife .wiki-rendered-content .wiki-link,
+html.theme-halflife a {
+  color: #ff9900 !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgba(255, 153, 0, 0.4) !important;
+  font-weight: 600 !important;
+}
+
+html.theme-halflife .wiki-rendered-content .wiki-link:hover,
+html.theme-halflife a:hover {
+  color: #ffcc00 !important;
+  text-shadow: 0 0 8px rgba(255, 153, 0, 0.6) !important;
+}
+
+/* Tables */
+html.theme-halflife .wiki-rendered-content .wikitable {
+  background-color: #151915 !important;
+  border: 1px solid #ff9900 !important;
+}
+
+html.theme-halflife .wiki-rendered-content .wikitable th {
+  background-color: #212821 !important;
+  color: #ff9900 !important;
+  border: 1px solid #ff9900 !important;
+  font-family: monospace !important;
+  letter-spacing: 0.05em !important;
+}
+
+html.theme-halflife .wiki-rendered-content .wikitable td {
+  border: 1px solid rgba(255, 153, 0, 0.25) !important;
+  color: #e5c185 !important;
+}
+
+/* Sidebar */
+html.theme-halflife aside {
+  background-color: #131713 !important;
+  border-color: rgba(255, 153, 0, 0.45) !important;
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Footer */
+html.theme-halflife footer {
+  background-color: #0f120f !important;
+  border-top: 2px solid #ff9900 !important;
+  color: #a39272 !important;
+}
+
+html.theme-halflife footer a {
+  color: #ff9900 !important;
+}
+
+html.theme-halflife footer a:hover {
+  color: #ffcc00 !important;
+}
+
+/* Half-Life Scrollbar */
+html.theme-halflife ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html.theme-halflife ::-webkit-scrollbar-track {
+  background: #101310;
+}
+
+html.theme-halflife ::-webkit-scrollbar-thumb {
+  background: #ff9900;
+  border: 2px solid #101310;
+  border-radius: 2px;
+}
+
+html.theme-halflife ::-webkit-scrollbar-thumb:hover {
+  background: #ffb84d;
+  box-shadow: 0 0 8px rgba(255, 153, 0, 0.8);
+}
+
+
 
 
 

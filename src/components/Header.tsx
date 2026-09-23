@@ -114,6 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isMinecraft = theme === 'minecraft';
   const isRoblox = theme === 'roblox';
   const isNokia = theme === 'nokia3310';
+  const isHalfLife = theme === 'halflife';
   const unreadCount = (notifications || []).filter((n) => !n.read).length;
 
   useEffect(() => {
@@ -422,6 +423,44 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Roblox Accent Line */}
       {isRoblox && <div className="roblox-accent-bar w-full" />}
 
+      {/* Half-Life HEV Mark IV HUD Status Bar & Hazard Line */}
+      {isHalfLife && (
+        <div className="halflife-statusbar bg-[#121512] text-[#ff9900] text-[10px] font-mono flex items-center justify-between px-3 py-1 select-none border-b border-[#ff9900]/40">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="font-bold flex items-center gap-1.5 text-[#ff9900] tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-[#ff9900] animate-pulse" />
+              <span>BLACK MESA // SECTOR C</span>
+            </span>
+            <span className="text-[#ff9900]/40 hidden xs:inline">|</span>
+            <span className="text-[9px] uppercase px-1.5 py-0.2 bg-[#ff9900]/20 text-[#ffaa22] border border-[#ff9900]/40 font-bold hidden xs:inline">
+              ANOMALOUS MATERIALS
+            </span>
+            <span className="text-[#33ff33] font-bold hidden md:inline text-[9px]">
+              RAD HAZARD: ZERO
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 sm:gap-4 font-mono font-bold text-[10.5px]">
+            <div className="flex items-center gap-1 text-[#33ff33]" title="Health">
+              <span className="text-[11px] font-black">[+]</span>
+              <span>HEALTH 100</span>
+            </div>
+            <div className="flex items-center gap-1 text-[#ff9900]" title="HEV Suit Armor Power">
+              <span className="text-[11px]">⚡</span>
+              <span>SUIT 100</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-1 text-[#ffb034]" title="Ammo Capacity">
+              <span className="text-[9px] tracking-tighter">■■■■■</span>
+              <span>30 / 120</span>
+            </div>
+            <span className="hidden lg:inline text-[#ff9900]/70 text-[9px] uppercase">
+              HEV MARK IV [OK]
+            </span>
+          </div>
+        </div>
+      )}
+      {isHalfLife && <div className="halflife-hazard-bar w-full" />}
+
       {/* Nokia 3310 Graphic Monochrome LCD Status Bar & Accent Bar */}
       {isNokia && (
         <div className="nokia-statusbar bg-[#b4c995] text-[#1f281b] text-[10px] font-mono flex items-center justify-between px-3 py-1 select-none border-b-2 border-[#1f281b]">
@@ -574,7 +613,7 @@ export const Header: React.FC<HeaderProps> = ({
       )}
 
       {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isHalfLife ? 'bg-[#121512] text-[#ff9900] border-b border-[#ff9900]/40' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
         <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full">
           <div className="flex items-center gap-2">
             {isWin95 ? (
@@ -800,6 +839,29 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <p className="text-[10px] text-[#00a2ff] font-sans leading-none mt-0.5 hidden xs:block font-medium">
                   Roblox Metaverse Knowledge Base
+                </p>
+              </div>
+            </div>
+          ) : isHalfLife ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              title="WikiWorldWeb - Tema Half-Life (Black Mesa Research Facility / HEV Suit)"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#181c18] border-2 border-[#ff9900] flex items-center justify-center shadow-[0_0_12px_rgba(255,153,0,0.35)] group-hover:scale-105 transition font-mono font-black text-sm text-[#ff9900]">
+                λ
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-bold text-base sm:text-lg text-[#ff9900] tracking-wider font-mono">
+                    BLACK MESA <span className="text-xs font-black bg-[#ff9900] text-black px-1 py-0.2">λ</span>
+                  </h1>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-[#ff9900]/20 text-[#ffaa22] border border-[#ff9900]/50 px-1.5 py-0.2 font-mono">
+                    HEV SUIT
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#ff9900]/80 font-mono leading-none mt-0.5 hidden xs:block font-medium">
+                  Sector C Anomalous Materials • Datanet v1.0
                 </p>
               </div>
             </div>
@@ -1423,6 +1485,43 @@ export const Header: React.FC<HeaderProps> = ({
                   className="nokia-btn px-2 py-1 text-[11px] cursor-pointer"
                 >
                   [ SNAKE ]
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : isHalfLife ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div
+              onClick={handleSearchInputClick}
+              className="relative halflife-search-widget flex items-center px-3 py-1.5 transition-all cursor-pointer font-mono"
+            >
+              <div className="mr-2 flex items-center text-[#ff9900] shrink-0 text-xs font-bold" title="Terminal Black Mesa">
+                λ&gt;
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onClick={handleSearchInputClick}
+                onFocus={handleSearchInputClick}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="CONSULTAR BANCO DE DADOS BLACK MESA [λ]..."
+                className="w-full text-xs bg-transparent border-none outline-none text-[#ff9900] placeholder:text-[#ff9900]/50 font-mono cursor-text font-bold"
+              />
+              <div className="flex items-center gap-1.5 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={onSearchSubmit}
+                  className="halflife-btn px-2.5 py-1 text-[11px] cursor-pointer"
+                  title="Executar Consulta"
+                >
+                  [ CONSULTAR ]
+                </button>
+                <button
+                  onClick={onRandomPage}
+                  title="Teleporte para Artigo Aleatório"
+                  className="halflife-btn px-2 py-1 text-[11px] cursor-pointer"
+                >
+                  λ Teleporte
                 </button>
               </div>
             </div>

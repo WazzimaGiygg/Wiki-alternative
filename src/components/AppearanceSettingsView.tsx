@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { AppTheme, DeviceMode, ViewMode } from '../types';
 import { playPCSpeakerBeep, playWin95Tada } from '../utils/win95Audio';
+import { playHalfLifeHEVBeep, playHalfLifeGeiger } from '../utils/halfLifeAudio';
 
 interface AppearanceSettingsViewProps {
   currentTheme: AppTheme;
@@ -77,6 +78,8 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       setTimeout(() => playPCSpeakerBeep(1174, 0.14, 0.25), 130);
     } else if (newTheme === 'win95') {
       playWin95Tada(0.25);
+    } else if (newTheme === 'halflife') {
+      playHalfLifeHEVBeep(0.3);
     }
     setShowSavedFeedback(true);
     setTimeout(() => setShowSavedFeedback(false), 2200);
@@ -322,6 +325,21 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       badgeStyle: 'bg-[#1f281b] text-[#c2d6a4] font-mono font-bold tracking-wider',
       icon: <Smartphone size={18} className="text-[#1f281b]" />,
     },
+    {
+      id: 'halflife',
+      name: 'Half-Life (Black Mesa Research Facility)',
+      subtitle: 'Traje HEV Mark IV, HUD Âmbar, Complexo Lambda & Setor C',
+      description: 'A lendária estética industrial e futurista de Half-Life (1998 / Valve): HUD âmbar característico (#ff9900), medidores de energia e integridade do traje HEV, linhas de perigo (hazard stripes), indicador Lambda (λ), visual de terminal de pesquisa de Black Mesa e efeitos sonoros autênticos.',
+      tag: 'HEV Mark IV + Black Mesa',
+      accentColor: '#ff9900',
+      bgPreview: 'bg-[#141714] border-2 border-[#ff9900] text-[#ff9900] font-mono shadow-[0_0_15px_rgba(255,153,0,0.25)]',
+      badgeStyle: 'bg-[#ff9900]/20 text-[#ff9900] border border-[#ff9900]/70 font-mono font-bold tracking-wider',
+      icon: (
+        <div className="w-5 h-5 rounded-full border-2 border-[#ff9900] flex items-center justify-center font-mono font-black text-xs text-[#ff9900] bg-[#141714]">
+          λ
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -468,6 +486,34 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                     ID: {t.id}
                   </span>
                   <div className="flex items-center gap-2">
+                    {t.id === 'halflife' && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playHalfLifeHEVBeep(0.35);
+                          }}
+                          className="px-2 py-1 rounded text-[11px] font-bold border border-[#ff9900] bg-[#181b18] text-[#ff9900] hover:bg-[#ff9900] hover:text-black transition-colors flex items-center gap-1 font-mono"
+                          title="Tocar Bipe do Traje HEV"
+                        >
+                          <span>HEV</span>
+                          <span className="text-[10px]">🔊</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playHalfLifeGeiger(5, 0.25);
+                          }}
+                          className="px-2 py-1 rounded text-[11px] font-bold border border-[#ff9900]/60 bg-[#181b18] text-[#ffb034] hover:bg-[#ff9900] hover:text-black transition-colors flex items-center gap-1 font-mono"
+                          title="Tocar Contador Geiger"
+                        >
+                          <span>Geiger</span>
+                          <span className="text-[10px]">☢</span>
+                        </button>
+                      </div>
+                    )}
                     {t.id === 'win1' && (
                       <button
                         type="button"

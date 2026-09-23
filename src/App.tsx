@@ -193,12 +193,12 @@ export default function App() {
     return saved === 'win7';
   });
 
-  const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'genshin' || theme === 'android15' || theme === 'repo' || theme === 'minecraft' || theme === 'roblox';
+  const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'genshin' || theme === 'android15' || theme === 'repo' || theme === 'minecraft' || theme === 'roblox' || theme === 'halflife';
 
   // Apply appropriate theme classes to document root
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-win7', 'theme-wikidiota', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1');
+    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-win7', 'theme-wikidiota', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1', 'theme-halflife');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -230,6 +230,8 @@ export default function App() {
       root.classList.add('theme-nokia3310');
     } else if (theme === 'win1') {
       root.classList.add('theme-win1');
+    } else if (theme === 'halflife') {
+      root.classList.add('dark', 'theme-halflife');
     }
 
     localStorage.setItem('wikizero_theme_v3', theme);
