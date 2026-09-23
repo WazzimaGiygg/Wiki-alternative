@@ -205,6 +205,59 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
         )}
 
+        {/* Wikidiota / Wikiomite Foundation Native Wikipedia Vector Footer */}
+        {theme === 'wikidiota' && (
+          <div className="wikidiota-footer-box bg-[#f8f9fa] border border-[#a2a9b1] p-4 rounded-xs text-[#202122] text-xs font-sans select-none mb-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="space-y-1.5 max-w-3xl">
+                <p className="text-[11px] text-[#54595d] leading-relaxed">
+                  Esta página foi editada pela última vez às {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
+                  Este texto é disponibilizado nos termos da <strong>Licença Creative Commons Atribuição-CompartilhaIgual (CC BY-SA 4.0)</strong>;
+                  pode estar sujeito a termos adicionais e estatutos de idiotice da <strong>Wikiomite Foundation</strong>.
+                </p>
+                <p className="text-[10px] text-[#72777d]">
+                  A <strong>Wikiomite Foundation</strong> é uma organização sem fins de bom senso, mantenedora da Wikidiota, Wikidicionário Idiota, WikiQuotes Sem Sentido e outros projetos de enciclopédia paródica.
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#0645ad] pt-1">
+                  <span className="hover:underline cursor-pointer" onClick={() => onNavigate('privacy')}>Política de privacidade</span>
+                  <span>•</span>
+                  <span className="hover:underline cursor-pointer" onClick={() => onNavigate('terms')}>Sobre a Wikidiota</span>
+                  <span>•</span>
+                  <span className="hover:underline cursor-pointer" onClick={() => onNavigate('donation')}>Avisos gerais da Wikiomite</span>
+                  <span>•</span>
+                  <span className="hover:underline cursor-pointer" onClick={() => onNavigate('beta')}>Código de conduta</span>
+                  <span>•</span>
+                  <span className="hover:underline cursor-pointer" onClick={() => onNavigate('site-updates')}>Desenvolvedores</span>
+                  <span>•</span>
+                  <span className="hover:underline cursor-pointer" onClick={() => onNavigate('offline')}>Estatísticas de idiotice</span>
+                </div>
+              </div>
+
+              {/* MediaWiki / Wikiomite Badges */}
+              <div className="flex items-center gap-2 shrink-0 self-center md:self-auto">
+                <div className="border border-[#c8ccd1] bg-white p-1 rounded-xs flex items-center gap-1.5 shadow-2xs">
+                  <div className="w-6 h-6 rounded-full bg-[#3366cc] flex items-center justify-center text-white font-serif font-black text-xs">
+                    W
+                  </div>
+                  <div className="text-[9px] leading-tight font-sans text-left">
+                    <span className="text-[#54595d] block">A PROJECT OF</span>
+                    <strong className="text-[#0645ad] font-bold">WIKIOMITE</strong>
+                  </div>
+                </div>
+                <div className="border border-[#c8ccd1] bg-white p-1 rounded-xs flex items-center gap-1.5 shadow-2xs">
+                  <div className="w-6 h-6 bg-[#006699] text-white flex items-center justify-center font-mono font-bold text-[10px]">
+                    [MW]
+                  </div>
+                  <div className="text-[9px] leading-tight font-sans text-left">
+                    <span className="text-[#54595d] block">POWERED BY</span>
+                    <strong className="text-[#202122] font-bold">Wikiomite Engine</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Windows 1.0 (1985) MS-DOS Executive Bottom Icon Area */}
         {theme === 'win1' && (
           <div className="p-2 bg-[#008080] border-t-2 border-b-2 border-black font-mono text-xs flex flex-wrap items-center justify-between gap-3 select-none text-white">

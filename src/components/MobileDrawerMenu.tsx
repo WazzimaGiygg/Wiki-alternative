@@ -373,6 +373,27 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <span className="hidden xs:inline">7</span>
             </button>
 
+            {/* Quick Wikidiota Toggle */}
+            <button
+              id="btn-drawer-quick-wikidiota-theme"
+              onClick={() => {
+                if (theme === 'wikidiota') {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('wikidiota');
+                }
+              }}
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 font-serif text-[10px] font-bold ${
+                theme === 'wikidiota'
+                  ? 'bg-[#f8f9fa] border-[#3366cc] text-[#0645ad] ring-1 ring-[#3366cc]/40 shadow-xs'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={theme === 'wikidiota' ? 'Desativar Tema Wikidiota' : 'Ativar Tema Wikidiota (Paródia Wikipédia)'}
+            >
+              <span className="text-xs">🌐</span>
+              <span className="hidden xs:inline">Wikiomite</span>
+            </button>
+
             {/* Dark Mode Toggle */}
             <button
               onClick={onToggleTheme}

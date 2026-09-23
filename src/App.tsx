@@ -198,7 +198,7 @@ export default function App() {
   // Apply appropriate theme classes to document root
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-win7', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1');
+    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-win7', 'theme-wikidiota', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -212,6 +212,8 @@ export default function App() {
       root.classList.add('theme-winxp');
     } else if (theme === 'win7') {
       root.classList.add('theme-win7');
+    } else if (theme === 'wikidiota') {
+      root.classList.add('theme-wikidiota');
     } else if (theme === 'genshin') {
       root.classList.add('dark', 'theme-genshin');
     } else if (theme === 'android15') {
@@ -1185,6 +1187,104 @@ export default function App() {
 
         {/* Content Body Container */}
         <main className="flex-1 min-w-0">
+          {/* Wikidiota Native Wikipedia Vector Tabs & Wikiomite Foundation Notice */}
+          {theme === 'wikidiota' && (
+            <div className="wikidiota-vector-header mb-4 select-none">
+              {/* Vector Tabs Navigation Bar */}
+              <div className="flex items-end justify-between border-b border-[#a7d7f9] text-xs font-sans">
+                {/* Left Tabs (Namespaces) */}
+                <div className="flex items-center gap-1 -mb-px">
+                  <button
+                    onClick={() => {
+                      if (currentView !== 'article' && currentView !== 'hub') {
+                        handleNavigate('hub');
+                      }
+                    }}
+                    className={`px-3 py-1.5 border border-b-0 rounded-t-xs font-medium text-[13px] transition ${
+                      currentView === 'article' || currentView === 'hub' || currentView === 'page'
+                        ? 'bg-white border-[#a7d7f9] text-[#202122] font-semibold shadow-2xs'
+                        : 'bg-[#f6f6f6] border-transparent text-[#0645ad] hover:text-[#0b0080]'
+                    }`}
+                  >
+                    Artigo
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleNotify('Discussão arquivada pela Wikiomite Foundation. Nenhum consenso sensato alcançado.', 'info');
+                      alert('Discussão da Wikidiota: Nenhum consenso alcançado ainda pela Wikiomite Foundation!');
+                    }}
+                    className="px-3 py-1.5 border border-transparent border-b-0 text-[#0645ad] hover:text-[#0b0080] hover:bg-[#f0f0f0] rounded-t-xs transition text-[13px]"
+                  >
+                    Discussão
+                  </button>
+                </div>
+
+                {/* Right Tabs (Views & Actions) */}
+                <div className="flex items-center gap-1 -mb-px">
+                  <button
+                    onClick={() => {
+                      if (currentView === 'editor') {
+                        if (activeArticle) setCurrentView('article');
+                        else setCurrentView('hub');
+                      }
+                    }}
+                    className={`px-3 py-1.5 border border-b-0 rounded-t-xs text-[13px] transition ${
+                      currentView !== 'editor'
+                        ? 'bg-white border-[#a7d7f9] text-[#202122] font-semibold shadow-2xs'
+                        : 'bg-[#f6f6f6] border-transparent text-[#0645ad] hover:text-[#0b0080]'
+                    }`}
+                  >
+                    Ler
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (activeArticle) {
+                        handleOpenEditorForEdit(activeArticle);
+                      } else {
+                        handleOpenNewEditor();
+                      }
+                    }}
+                    className={`px-3 py-1.5 border border-b-0 rounded-t-xs text-[13px] transition ${
+                      currentView === 'editor'
+                        ? 'bg-white border-[#a7d7f9] text-[#202122] font-semibold shadow-2xs'
+                        : 'bg-[#f6f6f6] border-transparent text-[#0645ad] hover:text-[#0b0080]'
+                    }`}
+                  >
+                    Editar código-fonte
+                  </button>
+                  <button
+                    onClick={() => handleNavigate('recent-changes')}
+                    className="px-2.5 py-1.5 border border-transparent border-b-0 text-[#0645ad] hover:text-[#0b0080] rounded-t-xs transition text-[13px] hidden sm:inline"
+                  >
+                    Ver histórico
+                  </button>
+                  <span
+                    className="px-2 py-1.5 text-[#f59e0b] cursor-pointer hover:scale-110 transition text-sm"
+                    title="Vigiar esta página (Wikiomite Foundation)"
+                  >
+                    ★
+                  </span>
+                </div>
+              </div>
+
+              {/* Humorous Wikipedia / Wikiomite Foundation Notice Box */}
+              <div className="wikidiota-notice-box flex items-center justify-between gap-3 mt-2 rounded-xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">⚠️</span>
+                  <div className="text-xs text-[#202122]">
+                    <strong className="text-[#ba0000]">Wikidiota: Verificabilidade duvidosa.</strong>{' '}
+                    <span>
+                      Esta página é mantida pela <strong>Wikiomite Foundation</strong>. Qualquer idiota pode editar e melhorar o conteúdo sem necessidade de bom senso acadêmico.
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] text-[#72777d] font-mono shrink-0 hidden md:inline">
+                  [carece de fontes confiáveis]
+                </span>
+              </div>
+            </div>
+          )}
+
           {currentView === 'hub' && (
             <WikiHub
               pages={pages}

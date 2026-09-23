@@ -223,6 +223,25 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       ),
     },
     {
+      id: 'wikidiota',
+      name: 'Wikidiota (Paródia da Wikipédia)',
+      subtitle: 'Tema Nativo da Wikipédia & Wikiomite Foundation',
+      description: 'Paródia bem-humorada da interface clássica e nativa (Vector/Monobook) da Wikipédia, retratando a "Wikiomite Foundation", a enciclopédia que qualquer idiota pode editar, com fontes serifadas, abas de discussão, caixas de aviso cômicas e rodapé de licenciamento.',
+      tag: 'Vector Nativo + Wikiomite',
+      accentColor: '#3366cc',
+      bgPreview: 'bg-[#f6f6f6] border-[#a7d7f9] border text-[#202122] font-serif shadow-xs',
+      badgeStyle: 'bg-[#eaecf0] text-[#0645ad] font-bold border border-[#a2a9b1]',
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="46" fill="#f8f9fa" stroke="#54595d" strokeWidth="6" />
+          <path d="M 20 30 Q 35 25, 50 30 T 80 30" fill="none" stroke="#a2a9b1" strokeWidth="4" />
+          <path d="M 10 50 Q 30 45, 50 50 T 90 50" fill="none" stroke="#a2a9b1" strokeWidth="4" />
+          <text x="22" y="44" fontSize="22" fontFamily="serif" fill="#202122">W</text>
+          <text x="44" y="66" fontSize="26" fontFamily="serif">🤪</text>
+        </svg>
+      ),
+    },
+    {
       id: 'genshin',
       name: 'Genshin Impact Astral',
       subtitle: 'Teyvat Celestia & Primogem',

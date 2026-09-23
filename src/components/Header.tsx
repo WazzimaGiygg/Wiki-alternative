@@ -106,6 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isWin95 = theme === 'win95';
   const isWinXP = theme === 'winxp';
   const isWin7 = theme === 'win7';
+  const isWikidiota = theme === 'wikidiota';
   const isGenshin = theme === 'genshin';
   const isAndroid = theme === 'android15';
   const isStardew = theme === 'stardew';
@@ -326,6 +327,40 @@ export const Header: React.FC<HeaderProps> = ({
               title="Fechar / Sair do Modo Windows 7"
             >
               ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Wikidiota Vector / Wikiomite Foundation Top Utilities Bar */}
+      {isWikidiota && (
+        <div className="wikidiota-top-bar bg-[#f6f6f6] border-b border-[#a7d7f9] text-[#202122] text-[11px] font-sans px-3 py-1 flex items-center justify-between select-none">
+          <div className="flex items-center gap-2 truncate">
+            <span className="font-serif font-bold text-[#0645ad] flex items-center gap-1 shrink-0">
+              <span className="text-xs">🌐</span> Wikiomite Foundation
+            </span>
+            <span className="text-[#72777d] hidden sm:inline">•</span>
+            <span className="text-[#54595d] italic truncate hidden sm:inline">
+              "Um apelo da Wikiomite: Se cada leitor doasse 2 minutos para rir, a Wikidiota continuaria livre de noção para sempre."
+            </span>
+          </div>
+          <div className="flex items-center gap-2.5 text-[11px] text-[#0645ad] shrink-0 font-sans">
+            <span className="text-[#54595d] hidden md:inline">Não autenticado</span>
+            <span className="hover:underline cursor-pointer hidden md:inline">Discussão deste IP</span>
+            <span className="hover:underline cursor-pointer hidden sm:inline">Contribuições idiotas</span>
+            <button
+              onClick={() => onNavigate('donation')}
+              className="text-[#0645ad] hover:underline font-semibold bg-[#eaecf0] hover:bg-[#d8dde3] px-2 py-0.5 rounded-xs border border-[#a2a9b1] text-[11px]"
+              title="Apoiar a Wikiomite Foundation"
+            >
+              Doar à Wikiomite
+            </button>
+            <button
+              onClick={() => onSetTheme?.('light')}
+              className="text-[#ba0000] hover:underline text-[11px] font-medium"
+              title="Sair do tema Wikidiota"
+            >
+              [✕ Sair]
             </button>
           </div>
         </div>
@@ -603,6 +638,10 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
                 GOOGLE THEME v3.0
               </span>
+            ) : isWikidiota ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#eaecf0] text-[#202122] border border-[#a2a9b1] font-serif">
+                <span>🌐</span> WIKIDIOTA • WIKIOMITE FOUNDATION
+              </span>
             ) : (
               <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold">WIKIZERO v3.0</span>
             )}
@@ -874,6 +913,45 @@ export const Header: React.FC<HeaderProps> = ({
                 </p>
               </div>
             </div>
+          ) : isWikidiota ? (
+            <div
+              onClick={() => onNavigate('hub')}
+              className="flex items-center gap-2.5 cursor-pointer group flex-shrink-0 select-none"
+              title="Wikidiota - A Enciclopédia Paródica da Wikiomite Foundation"
+            >
+              {/* Parody Wikipedia Jigsaw Globe Icon */}
+              <div className="relative w-9 h-9 flex items-center justify-center shrink-0">
+                <svg className="w-9 h-9 drop-shadow-xs" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="46" fill="#f8f9fa" stroke="#54595d" strokeWidth="2.5" />
+                  <path d="M 20 30 Q 35 25, 50 30 T 80 30" fill="none" stroke="#a2a9b1" strokeWidth="1.5" />
+                  <path d="M 10 50 Q 30 45, 50 50 T 90 50" fill="none" stroke="#a2a9b1" strokeWidth="1.5" />
+                  <path d="M 18 70 Q 35 65, 50 70 T 82 70" fill="none" stroke="#a2a9b1" strokeWidth="1.5" />
+                  <path d="M 32 15 Q 30 35, 32 50 T 32 85" fill="none" stroke="#a2a9b1" strokeWidth="1.5" />
+                  <path d="M 50 10 Q 52 35, 50 50 T 50 90" fill="none" stroke="#a2a9b1" strokeWidth="1.5" />
+                  <path d="M 68 15 Q 70 35, 68 50 T 68 85" fill="none" stroke="#a2a9b1" strokeWidth="1.5" />
+                  <text x="22" y="42" fontSize="13" fontFamily="serif" fill="#202122">W</text>
+                  <text x="42" y="38" fontSize="11" fontFamily="serif" fill="#72777d">?</text>
+                  <text x="60" y="42" fontSize="12" fontFamily="serif" fill="#202122">Ω</text>
+                  <text x="20" y="62" fontSize="12" fontFamily="serif" fill="#202122">И</text>
+                  <text x="40" y="64" fontSize="15" fontFamily="serif" fontWeight="bold">🤪</text>
+                  <text x="65" y="62" fontSize="12" fontFamily="serif" fill="#202122">祖</text>
+                  <path d="M 40 10 L 60 10 L 55 22 L 45 22 Z" fill="#ffffff" stroke="#a2a9b1" strokeWidth="1" />
+                </svg>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <h1 className="font-serif font-bold text-lg sm:text-xl text-[#000000] dark:text-[#202122] tracking-normal">
+                    WIKIDIOTA
+                  </h1>
+                  <span className="text-[9px] font-sans font-bold uppercase tracking-wider bg-[#eaecf0] text-[#54595d] border border-[#a2a9b1] px-1 py-0.2 rounded-xs">
+                    Paródia
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#54595d] font-serif italic leading-none mt-0.5 hidden xs:block">
+                  A enciclopédia livre de bom senso • Wikiomite Foundation
+                </p>
+              </div>
+            </div>
           ) : (
             <div
               onClick={() => onNavigate('hub')}
@@ -1041,6 +1119,42 @@ export const Header: React.FC<HeaderProps> = ({
                 className="win7-button text-xs px-2.5 py-1"
               >
                 {t('header.random_page')}
+              </button>
+            </div>
+          </div>
+        ) : isWikidiota ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div className="flex items-center gap-1.5">
+              <div
+                onClick={handleSearchInputClick}
+                className="flex-1 flex items-center px-3 py-1.5 bg-white border border-[#a2a9b1] rounded-xs shadow-inner focus-within:border-[#3366cc] focus-within:ring-1 focus-within:ring-[#3366cc] cursor-pointer"
+              >
+                <Search className="w-4 h-4 text-[#72777d] mr-2 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onClick={handleSearchInputClick}
+                  onFocus={handleSearchInputClick}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Pesquisar na Wikidiota..."
+                  className="w-full text-xs bg-transparent border-none outline-none text-[#202122] font-sans placeholder:text-[#72777d] cursor-text"
+                />
+              </div>
+              <button
+                onClick={onSearchSubmit}
+                className="bg-[#f8f9fa] hover:bg-[#eaecf0] active:bg-[#c8ccd1] text-[#202122] border border-[#a2a9b1] px-3 py-1.5 rounded-xs text-xs font-sans font-medium flex items-center gap-1.5 shadow-xs transition"
+                title="Pesquisar na Wikidiota (MediaWiki/Wikiomite Engine)"
+              >
+                <Search size={13} className="text-[#54595d]" />
+                <span>Pesquisar</span>
+              </button>
+              <button
+                onClick={onRandomPage}
+                title="Artigo Aleatório da Wikidiota"
+                className="bg-[#f8f9fa] hover:bg-[#eaecf0] active:bg-[#c8ccd1] text-[#0645ad] hover:underline border border-[#a2a9b1] px-2.5 py-1.5 rounded-xs text-xs font-sans font-medium transition"
+              >
+                Página aleatória
               </button>
             </div>
           </div>
