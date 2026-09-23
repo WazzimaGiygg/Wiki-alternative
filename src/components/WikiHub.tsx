@@ -25,6 +25,7 @@ import { getCleanExcerpt } from '../utils/wikitextParser';
 import { ModerationLockModal } from './ModerationLockModal';
 import { StorageService } from '../services/storageService';
 import { WikiStatisticsPanel } from './WikiStatisticsPanel';
+import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
 
 interface WikiHubProps {
   pages: WikiPage[];
@@ -566,6 +567,15 @@ export const WikiHub: React.FC<WikiHubProps> = ({
           </button>
         </div>
       )}
+
+      {/* Google Reader Revenue Manager Donation CTA Section */}
+      <div className="pt-1">
+        <GoogleReaderRevenueDonation
+          variant="card"
+          title="Apoie a WikiWorldWeb via Google Reader Revenue Manager"
+          description="Sua doação garante a continuidade da enciclopédia livre, sem censura e sem anúncios comerciais. Clique no botão de chamada para ação para abrir o botão de doação oficial do Google."
+        />
+      </div>
 
       {/* Moderation Lock Modal for Collections */}
       {lockModalPage && (

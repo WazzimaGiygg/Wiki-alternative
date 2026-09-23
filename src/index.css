@@ -3050,6 +3050,26 @@ html.theme-halflife ::-webkit-scrollbar-thumb:hover {
   box-shadow: 0 0 8px rgba(255, 153, 0, 0.8);
 }
 
+/* ========================================================================== */
+/* GOOGLE READER REVENUE MANAGER (SUBSCRIBE WITH GOOGLE - SWG) BUTTON STYLES  */
+/* ========================================================================== */
+[swg-standard-button="contribution"],
+.swg-standard-button-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+[swg-standard-button="contribution"]:active,
+.swg-standard-button-btn:active {
+  transform: scale(0.98);
+}
+
+
 
 
 

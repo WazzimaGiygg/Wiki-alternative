@@ -31,6 +31,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { playHalfLifeHEVBeep, playHalfLifeGeiger } from '../utils/halfLifeAudio';
 import { FooterBadges } from './FooterBadges';
 import { formatExternalUrl } from '../utils/linkUtils';
+import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
 
 interface FooterProps {
   onNavigate: (view: ViewMode) => void;
@@ -652,6 +653,15 @@ export const Footer: React.FC<FooterProps> = ({
           <p className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-0.5">
             <strong className="text-blue-700 dark:text-blue-400">Frase Principal da Wiki</strong> • "Não, o Tempo não é o senhor do conhecimento!"
           </p>
+        </div>
+
+        {/* Google Reader Revenue Manager Donation CTA Banner */}
+        <div className="pt-1">
+          <GoogleReaderRevenueDonation
+            variant="banner"
+            title="Apoie o Conhecimento Livre (Google Reader Revenue Manager)"
+            description="Mantenha a enciclopédia no ar, rápida e sem anúncios. Clique para abrir o botão de doação oficial do Google."
+          />
         </div>
 
         {/* Bottom Legal & MediaWiki-Style Badges Row */}

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle } from '../types';
 import { formatExternalUrl } from '../utils/linkUtils';
+import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 
 interface InformativeViewsProps {
@@ -169,10 +170,19 @@ export const DonationView: React.FC<InformativeViewsProps> = () => {
           </div>
         </div>
 
-        <div className="space-y-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
+        <div className="space-y-4 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
           <p>
             A <strong>WikiWorldWeb</strong> é uma iniciativa independente dedicada a fornecer infraestrutura gratuita para o conhecimento livre. Seus donativos ajudam a cobrir custos de servidores, domínio, tráfego de dados e desenvolvimento contínuo de novas funcionalidades.
           </p>
+
+          {/* Google Reader Revenue Manager (Subscribe with Google) CTA Doação */}
+          <div className="py-1">
+            <GoogleReaderRevenueDonation
+              variant="card"
+              title="Doação com Google Reader Revenue Manager"
+              description="Apoie o projeto com apenas 1 clique utilizando a plataforma segura de contribuições do Google. Clique no botão de chamada para ação abaixo para abrir o botão de doação oficial."
+            />
+          </div>
 
           {/* PIX Box */}
           <div className="p-4 rounded bg-rose-50/60 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 space-y-2">
