@@ -24,6 +24,7 @@ import { ALL_LANGUAGES, getLanguageByCode } from '../utils/languages';
 import { getCleanExcerpt } from '../utils/wikitextParser';
 import { ModerationLockModal } from './ModerationLockModal';
 import { StorageService } from '../services/storageService';
+import { WikiStatisticsPanel } from './WikiStatisticsPanel';
 
 interface WikiHubProps {
   pages: WikiPage[];
@@ -193,6 +194,15 @@ export const WikiHub: React.FC<WikiHubProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Painel Interativo de Estatísticas com Gráfico Recharts */}
+      <WikiStatisticsPanel
+        pages={pages}
+        articles={articles}
+        currentUser={user}
+        onNavigate={onNavigate}
+        onCreateArticleClick={() => onCreateArticleClick()}
+      />
 
       {/* Matching Search Articles results (if searching) */}
       {searchQuery && (
