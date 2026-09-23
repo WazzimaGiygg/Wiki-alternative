@@ -86,7 +86,7 @@ const SEED_PAGES: Page[] = [
     id: 'main:pagina_principal',
     namespace: 'main',
     title: 'Página Principal',
-    content: `== Bem-vindo ao WikiZero ==\nA enciclopédia livre, comunitária e multilíngue com suporte a Namespaces, Categorias e Predefinições.\n\n[[Categoria:Enciclopédia]] [[Categoria:Wiki]]`,
+    content: `== Bem-vindo ao WikiZero ==\n''«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»''\n\nA enciclopédia livre, comunitária e multilíngue com suporte a Namespaces, Categorias e Predefinições.\n\n[[Categoria:Enciclopédia]] [[Categoria:Wiki]]`,
     categories: ['Enciclopédia', 'Wiki', 'Destaque'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

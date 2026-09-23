@@ -926,6 +926,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="pt-1.5 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 text-center">
             GNU GPL v3.0 • LGPD
           </div>
+          <div
+            className="pt-1.5 border-t border-slate-200 dark:border-slate-800 text-[10px] text-blue-700 dark:text-blue-300 font-serif italic text-center leading-tight tracking-wide"
+            title="Frase Principal da Wiki: 'Não, o Tempo não é o senhor do conhecimento!'"
+          >
+            «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
+          </div>
         </div>
       )}
     </aside>

@@ -609,6 +609,16 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
         </div>
 
+        {/* Frase Principal da Wiki (Lema Oficial) */}
+        <div className="py-2.5 px-4 rounded-lg bg-blue-50/80 dark:bg-slate-900/90 border border-blue-200/80 dark:border-slate-800 text-center shadow-2xs">
+          <p className="font-serif italic text-xs sm:text-sm font-bold text-blue-950 dark:text-blue-200">
+            «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
+          </p>
+          <p className="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-0.5">
+            <strong className="text-blue-700 dark:text-blue-400">Frase Principal da Wiki</strong> • "Não, o Tempo não é o senhor do conhecimento!"
+          </p>
+        </div>
+
         {/* Bottom Legal & MediaWiki-Style Badges Row */}
         <div className="pt-3 border-t border-slate-200 dark:border-slate-800/80 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="space-y-1 text-center md:text-left text-[10px] text-slate-400 font-mono">

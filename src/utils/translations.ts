@@ -1,4 +1,8 @@
 export type TranslationKey =
+  // Wiki Motto
+  | 'wiki.main_motto'
+  | 'wiki.main_motto_translation'
+
   // Header
   | 'header.tagline'
   | 'header.search_placeholder'
@@ -187,6 +191,8 @@ export type TranslationKey =
 export const TRANSLATIONS: Record<string, Partial<Record<TranslationKey, string>>> = {
   // 1. Português (pt / pt-BR / pt-PT)
   pt: {
+    'wiki.main_motto': 'Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!',
+    'wiki.main_motto_translation': 'Não, o Tempo não é o senhor do conhecimento!',
     'header.tagline': 'Enciclopédia Aberta & Colaborativa',
     'header.search_placeholder': 'Pesquisar artigos, tópicos, wikitexto...',
     'header.search_btn': 'Buscar',

@@ -62,6 +62,16 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
             WazzimaGiygg
           </h1>
 
+          {/* Frase Principal da Wiki */}
+          <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white shadow-inner">
+            <p className="font-serif italic font-bold text-sm sm:text-base text-cyan-200 tracking-wide">
+              «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
+            </p>
+            <p className="text-xs text-blue-200/80 mt-0.5 font-sans">
+              <strong className="text-white font-medium">Frase Principal da Wiki</strong> • "Não, o Tempo não é o senhor do conhecimento!"
+            </p>
+          </div>
+
           <p className="text-base sm:text-lg text-blue-100/90 leading-relaxed">
             Desenvolvedor independente de software livre, idealizador da <strong>WikiWorldWeb</strong> e autor do dossiê 
             <strong> "A Verdade"</strong>. Defensor da descentralização do conhecimento, da transparência editorial contra

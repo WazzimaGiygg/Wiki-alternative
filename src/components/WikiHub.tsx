@@ -136,6 +136,19 @@ export const WikiHub: React.FC<WikiHubProps> = ({
               {t('hub.welcome_title')}
             </h1>
 
+            {/* Frase Principal da Wiki (Lema Oficial) */}
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 shadow-2xs">
+              <span className="text-xl select-none" role="img" aria-label="Conhecimento">🏛️</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-serif italic font-bold text-sm sm:text-base text-blue-950 dark:text-blue-200 tracking-wide">
+                  «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
+                </p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-0.5">
+                  <strong className="text-blue-700 dark:text-blue-400 font-semibold">Frase Principal da Wiki</strong> • "Não, o Tempo não é o senhor do conhecimento!"
+                </p>
+              </div>
+            </div>
+
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
               {t('hub.welcome_desc')}
             </p>

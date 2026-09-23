@@ -113,7 +113,12 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <div className="w-7 h-7 rounded bg-white text-blue-800 flex items-center justify-center font-serif-heading font-bold text-base shadow-xs">
                 W
               </div>
-              <span className="font-serif-heading font-bold text-base tracking-tight">WazzimaGiygg</span>
+              <div>
+                <span className="font-serif-heading font-bold text-base tracking-tight block leading-tight">WazzimaGiygg</span>
+                <span className="text-[10px] text-blue-100 font-serif italic block leading-tight" title="Frase Principal da Wiki">
+                  «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
+                </span>
+              </div>
             </div>
             <button
               onClick={onClose}

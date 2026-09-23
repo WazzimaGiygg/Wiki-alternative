@@ -969,8 +969,11 @@ export const Header: React.FC<HeaderProps> = ({
                     Wiki
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans leading-none mt-0.5 hidden xs:block">
-                  {t('header.tagline')}
+                <p
+                  className="text-[10.5px] text-blue-700 dark:text-blue-300 font-serif italic font-medium leading-none mt-0.5 hidden xs:block tracking-wide"
+                  title="Frase Principal da Wiki: 'Não, o Tempo não é o senhor do conhecimento!'"
+                >
+                  «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
                 </p>
               </div>
             </div>
