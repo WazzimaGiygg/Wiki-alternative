@@ -29,6 +29,7 @@ import {
   Plus,
   X,
   Database,
+  Activity,
 } from 'lucide-react';
 import {
   FirebaseConsoleConfig,
@@ -42,13 +43,14 @@ import {
   FirebaseConsoleSettingsService,
   DEFAULT_FIREBASE_CONSOLE_CONFIG,
 } from '../services/firebaseConsoleSettingsService';
+import { FirebaseUsageTelemetryCard } from './FirebaseUsageTelemetryCard';
 import baseAppletConfig from '../../firebase-applet-config.json';
 
 interface FirebaseConsoleManagerProps {
   currentUser: UserProfile | null;
   pages: WikiPage[];
   articles: WikiArticle[];
-  initialSubTab?: 'backup' | 'billing' | 'firestore' | 'auth' | 'storage' | 'appcheck' | 'functions' | 'logs';
+  initialSubTab?: 'backup' | 'billing' | 'firestore' | 'auth' | 'storage' | 'appcheck' | 'functions' | 'logs' | 'telemetry';
 }
 
 export const FirebaseConsoleManager: React.FC<FirebaseConsoleManagerProps> = ({
@@ -57,7 +59,7 @@ export const FirebaseConsoleManager: React.FC<FirebaseConsoleManagerProps> = ({
   articles,
   initialSubTab = 'backup',
 }) => {
-  const [subTab, setSubTab] = useState<'backup' | 'billing' | 'firestore' | 'auth' | 'storage' | 'appcheck' | 'functions' | 'logs'>(initialSubTab);
+  const [subTab, setSubTab] = useState<'backup' | 'billing' | 'firestore' | 'auth' | 'storage' | 'appcheck' | 'functions' | 'logs' | 'telemetry'>(initialSubTab);
   const [config, setConfig] = useState<FirebaseConsoleConfig>(DEFAULT_FIREBASE_CONSOLE_CONFIG);
   const [backupRecords, setBackupRecords] = useState<FirebaseBackupRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -330,6 +332,7 @@ export const FirebaseConsoleManager: React.FC<FirebaseConsoleManagerProps> = ({
       <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-0.5">
         {[
           { id: 'backup', label: 'Backups Automáticos & PITR', icon: HardDrive, badge: isBlazeActive ? 'BLAZE' : 'REQUER BLAZE' },
+          { id: 'telemetry', label: 'Leituras, Gravações & Memória', icon: Activity, badge: 'TELEMETRIA' },
           { id: 'billing', label: 'Plano, Cotas & Orçamento', icon: DollarSign },
           { id: 'firestore', label: 'Cloud Firestore DB', icon: Database },
           { id: 'auth', label: 'Autenticação & Domínios', icon: Lock },
@@ -843,10 +846,31 @@ export const FirebaseConsoleManager: React.FC<FirebaseConsoleManagerProps> = ({
       )}
 
       {/* ======================================================== */}
+      {/* SUBTAB TELEMETRIA: LEITURAS, GRAVAÇÕES E MEMÓRIA USADA */}
+      {/* ======================================================== */}
+      {subTab === 'telemetry' && (
+        <FirebaseUsageTelemetryCard
+          articles={articles}
+          pages={pages}
+          currentUser={currentUser}
+          onRefresh={loadData}
+        />
+      )}
+
+      {/* ======================================================== */}
       {/* SUBTAB 2: PLANO, COTAS & ORÇAMENTO */}
       {/* ======================================================== */}
       {subTab === 'billing' && (
         <div className="space-y-6">
+          {/* Card Dinâmico de Telemetria de Leituras, Gravações e Memória */}
+          <FirebaseUsageTelemetryCard
+            compact={true}
+            articles={articles}
+            pages={pages}
+            currentUser={currentUser}
+            onRefresh={loadData}
+          />
+
           <div className="p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-6">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -856,42 +880,6 @@ export const FirebaseConsoleManager: React.FC<FirebaseConsoleManagerProps> = ({
               <p className="text-xs text-slate-500 mt-0.5">
                 Defina tetos de gastos para o projeto Firebase e cadastre notificações automáticas para prevenir cobranças surpresa.
               </p>
-            </div>
-
-            {/* Quota vs Usage Breakdown */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Leituras Diárias do Firestore</span>
-                  <span className="font-mono font-bold">12.450 / 50.000</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                  <div className="bg-blue-600 h-full rounded-full" style={{ width: '24.9%' }} />
-                </div>
-                <span className="text-[10px] text-slate-400">24.9% da cota gratuita consumida hoje.</span>
-              </div>
-
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Gravações Diárias no Firestore</span>
-                  <span className="font-mono font-bold">3.120 / 20.000</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-600 h-full rounded-full" style={{ width: '15.6%' }} />
-                </div>
-                <span className="text-[10px] text-slate-400">15.6% da cota gratuita consumida hoje.</span>
-              </div>
-
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Armazenamento Total do Banco</span>
-                  <span className="font-mono font-bold">18.4 MB / 1.000 MB</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                  <div className="bg-purple-600 h-full rounded-full" style={{ width: '1.84%' }} />
-                </div>
-                <span className="text-[10px] text-slate-400">1.84% do GiB gratuito utilizado.</span>
-              </div>
             </div>
 
             {/* Budget Cap & Alert Configuration */}
@@ -965,6 +953,15 @@ export const FirebaseConsoleManager: React.FC<FirebaseConsoleManagerProps> = ({
       {/* ======================================================== */}
       {subTab === 'firestore' && (
         <div className="space-y-6">
+          {/* Card Dinâmico de Telemetria de Leituras, Gravações e Memória */}
+          <FirebaseUsageTelemetryCard
+            compact={true}
+            articles={articles}
+            pages={pages}
+            currentUser={currentUser}
+            onRefresh={loadData}
+          />
+
           <div className="p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-6">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">

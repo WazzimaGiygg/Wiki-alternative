@@ -33,6 +33,7 @@ import { StorageService } from '../services/storageService';
 import { GeminiChatbotService, DEFAULT_GEMINI_CHATBOT_CONFIG } from '../services/geminiChatbotService';
 import { FirebaseConsoleManager } from './FirebaseConsoleManager';
 import { VpnSecurityChecker } from './VpnSecurityChecker';
+import { FirebaseUsageTelemetryCard } from './FirebaseUsageTelemetryCard';
 
 interface FirebaseAdminDashboardProps {
   currentUser: UserProfile | null;
@@ -57,6 +58,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<
     | 'overview'
+    | 'telemetry'
     | 'firebase-backup'
     | 'firebase-console'
     | 'vpn-security'
@@ -292,6 +294,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
       <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 mb-6 overflow-x-auto pb-0.5">
         {[
           { id: 'overview', label: 'Visão Geral & Parâmetros', icon: Server },
+          { id: 'telemetry', label: 'Leituras, Gravações & Memória', icon: Activity },
           { id: 'firebase-backup', label: 'Backups Automáticos & PITR (Blaze)', icon: Flame },
           { id: 'firebase-console', label: 'Console Firebase (Configurações)', icon: Settings },
           { id: 'vpn-security', label: 'Segurança de Rede & VPN', icon: ShieldAlert },
@@ -378,6 +381,14 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
             </div>
           </div>
 
+          {/* Monitor de Consumo: Leituras, Gravações e Memória Usada do Firebase */}
+          <FirebaseUsageTelemetryCard
+            articles={articles}
+            pages={pages}
+            currentUser={currentUser}
+            onRefresh={loadAuxData}
+          />
+
           {/* Configuration Parameters Panel */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
@@ -445,6 +456,16 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* TAB: LEITURAS, GRAVAÇÕES E MEMÓRIA USADA (TELEMETRIA DO FIREBASE) */}
+      {activeTab === 'telemetry' && (
+        <FirebaseUsageTelemetryCard
+          articles={articles}
+          pages={pages}
+          currentUser={currentUser}
+          onRefresh={loadAuxData}
+        />
       )}
 
       {/* TAB: FIREBASE AUTOMATED BACKUP & PITR (PLANO BLAZE) */}

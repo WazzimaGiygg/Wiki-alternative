@@ -1184,6 +1184,80 @@ export interface FirebaseConsoleConfig {
   };
 }
 
+export interface FirebaseUsageMetrics {
+  timestamp: string;
+  dailyDate: string;
+  plan: FirebasePlanTier;
+  reads: {
+    today: number;
+    dailyLimit: number;
+    totalCumulative: number;
+    percentUsed: number;
+    status: 'healthy' | 'warning' | 'critical';
+    byCollection: {
+      articles: number;
+      documentos: number;
+      users: number;
+      audit_logs: number;
+      system_updates: number;
+      other: number;
+    };
+    readsPerMinute: number;
+    estimatedCostUsd: number;
+  };
+  writes: {
+    today: number;
+    dailyLimit: number;
+    totalCumulative: number;
+    percentUsed: number;
+    status: 'healthy' | 'warning' | 'critical';
+    byCollection: {
+      articles: number;
+      documentos: number;
+      users: number;
+      audit_logs: number;
+      system_updates: number;
+      other: number;
+    };
+    writesPerMinute: number;
+    estimatedCostUsd: number;
+  };
+  memory: {
+    totalBytes: number;
+    totalFormatted: string;
+    limitBytes: number;
+    limitFormatted: string;
+    percentUsed: number;
+    status: 'healthy' | 'warning' | 'critical';
+    totalDocuments: number;
+    averageBytesPerDoc: number;
+    breakdown: {
+      articlesBytes: number;
+      articlesFormatted: string;
+      articlesCount: number;
+      documentsBytes: number;
+      documentsFormatted: string;
+      documentsCount: number;
+      usersBytes: number;
+      usersFormatted: string;
+      usersCount: number;
+      auditLogsBytes: number;
+      auditLogsFormatted: string;
+      auditLogsCount: number;
+      backupsBytes: number;
+      backupsFormatted: string;
+      backupsCount: number;
+      indexedDbCacheBytes: number;
+      indexedDbCacheFormatted: string;
+    };
+  };
+  deletes: {
+    today: number;
+    dailyLimit: number;
+    totalCumulative: number;
+  };
+}
+
 // ============================================================================
 // WIKI DOS LIVROS & PERIÓDICOS (ACERVO BIBLIOGRÁFICO DE BIBLIOTECA FÍSICA E DIGITAL)
 // ============================================================================
