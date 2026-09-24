@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getDb, getAuthSafe } from './firebase';
+import { getDb, getAuthSafe, handleFirestoreError, OperationType } from './firebase';
 import {
   getFirestore,
   collection,
@@ -4316,6 +4316,298 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         message: `Falha na conexão com Firestore: ${err?.message || err}`,
       };
     }
+  },
+
+  /**
+   * Obtém estatísticas reais e dados completos diretamente do Firestore em tempo real
+   */
+  async getFirebaseRealStatistics(): Promise<{
+    connected: boolean;
+    databaseId: string;
+    projectId: string;
+    totalArticles: number;
+    totalCollections: number;
+    totalUsers: number;
+    totalEdits: number;
+    latencyMs: number;
+    articles: WikiArticle[];
+    users: UserProfile[];
+    collections: WikiPage[];
+    auditLogs: any[];
+    lastSyncTimestamp: string;
+  }> {
+    const start = Date.now();
+    const activeCfg = getActiveFirebaseConfig();
+    const databaseId = activeCfg.firestoreDatabaseId || ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId;
+    const projectId = activeCfg.projectId || ACTIVE_FIREBASE_CONFIG.firebaseConfig?.projectId || '';
+
+    if (!firebaseActive || !db) {
+      const localArticles = safeGetArray<WikiArticle>(STORAGE_KEYS.ARTICLES, []);
+      const localPages = safeGetArray<WikiPage>(STORAGE_KEYS.PAGES, []);
+      const localUsers = safeGetArray<UserProfile>(STORAGE_KEYS.COMMUNITY_USERS, []);
+      let totalEdits = 0;
+      localArticles.forEach((a) => {
+        totalEdits += (a.historico && a.historico.length > 0) ? a.historico.length : 1;
+      });
+      return {
+        connected: false,
+        databaseId,
+        projectId,
+        totalArticles: localArticles.length,
+        totalCollections: localPages.length,
+        totalUsers: Math.max(localUsers.length, 1),
+        totalEdits: Math.max(totalEdits, localArticles.length),
+        latencyMs: 0,
+        articles: localArticles,
+        users: localUsers,
+        collections: localPages,
+        auditLogs: [],
+        lastSyncTimestamp: new Date().toISOString(),
+      };
+    }
+
+    try {
+      await ensureFirebaseAuth();
+
+      // Consultar coleções reais do Firestore
+      const [artSnap, userSnap, usersCollSnap, docSnap, auditSnap] = await Promise.all([
+        getDocs(collection(db, 'articles')),
+        getDocs(collection(db, 'userpage')),
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'documentos')),
+        getDocs(collection(db, 'audit_logs')).catch(() => ({ size: 0, forEach: () => {} })),
+      ]);
+
+      const latencyMs = Date.now() - start;
+
+      // Mapear artigos
+      const articles: WikiArticle[] = [];
+      artSnap.forEach((d) => {
+        const data = d.data();
+        articles.push({
+          id: data.id || d.id,
+          pageUid: data.pageUid || 'geral',
+          titulo: data.titulo || 'Sem título',
+          descricao: data.descricao || '',
+          resumo: data.resumo || (data.descricao ? data.descricao.slice(0, 140) + '...' : ''),
+          categoria: data.categoria || 'Geral',
+          idioma: data.idioma || 'Português',
+          autor: data.autor || 'Colaborador WikiWorldWeb',
+          autorEmail: data.autorEmail || undefined,
+          autorUid: data.autorUid || undefined,
+          dataCriacao: data.dataCriacao || new Date().toISOString(),
+          dataEdicao: data.dataEdicao || data.dataCriacao || new Date().toISOString(),
+          visualizacoes: typeof data.visualizacoes === 'number' ? data.visualizacoes : 1,
+          versao: typeof data.versao === 'number' ? data.versao : 1,
+          tags: Array.isArray(data.tags) ? data.tags : [],
+          historico: Array.isArray(data.historico) ? data.historico : [],
+        });
+      });
+
+      // Mapear usuários únicos entre userpage e users
+      const userMap = new Map<string, UserProfile>();
+      userSnap.forEach((d) => {
+        const u = d.data() as UserProfile;
+        userMap.set(u.uid || d.id, { ...u, uid: u.uid || d.id });
+      });
+      usersCollSnap.forEach((d) => {
+        if (!userMap.has(d.id)) {
+          const data = d.data();
+          userMap.set(d.id, {
+            uid: d.id,
+            username: data.username || data.displayName || d.id,
+            displayName: data.displayName || data.username || d.id,
+            email: data.email || '',
+            role: data.role || 'leitor',
+            createdAt: data.createdAt || new Date().toISOString(),
+            isBanned: data.isBanned || false,
+            isGuest: false,
+          });
+        }
+      });
+      const users = Array.from(userMap.values());
+
+      // Mapear coleções
+      const collections: WikiPage[] = [];
+      docSnap.forEach((d) => {
+        const data = d.data();
+        collections.push({
+          uid: data.uid || d.id,
+          titulo: data.titulo || d.id,
+          descricao: data.descricao || '',
+          categoria: data.categoria || 'Geral',
+          articleCount: typeof data.articleCount === 'number' ? data.articleCount : 0,
+          criadoEm: data.criadoEm || new Date().toISOString(),
+          status: data.status || 'ativo',
+          tags: Array.isArray(data.tags) ? data.tags : [],
+        });
+      });
+
+      // Mapear audit logs
+      const auditLogs: any[] = [];
+      (auditSnap as any).forEach((d: any) => {
+        auditLogs.push({ id: d.id, ...d.data() });
+      });
+
+      // Contagem real de edições somando histórico de cada artigo + audit logs de edição
+      let totalEdits = 0;
+      articles.forEach((art) => {
+        if (art.historico && art.historico.length > 0) {
+          totalEdits += art.historico.length;
+        } else {
+          totalEdits += 1;
+        }
+      });
+      if (auditLogs.length > 0) {
+        const editActions = auditLogs.filter(
+          (a) => a.action === 'article_edited' || a.action === 'article_created'
+        ).length;
+        totalEdits = Math.max(totalEdits, editActions);
+      }
+
+      return {
+        connected: true,
+        databaseId,
+        projectId,
+        totalArticles: articles.length,
+        totalCollections: collections.length,
+        totalUsers: users.length,
+        totalEdits,
+        latencyMs,
+        articles,
+        users,
+        collections,
+        auditLogs,
+        lastSyncTimestamp: new Date().toISOString(),
+      };
+    } catch (err: any) {
+      console.warn('[StorageService] Erro ao sincronizar estatísticas do Firestore:', err);
+      handleFirestoreError(err, OperationType.GET, 'articles');
+    }
+  },
+
+  /**
+   * Inscreve-se em atualizações em tempo real das coleções do Firestore para o painel de estatísticas
+   */
+  subscribeToFirebaseStatistics(
+    onUpdate: (stats: {
+      articles: WikiArticle[];
+      users: UserProfile[];
+      collections: WikiPage[];
+      timestamp: string;
+    }) => void
+  ): () => void {
+    if (!firebaseActive || !db) {
+      return () => {};
+    }
+
+    let currentArticles: WikiArticle[] = [];
+    let currentUsers: UserProfile[] = [];
+    let currentCollections: WikiPage[] = [];
+
+    const notify = () => {
+      onUpdate({
+        articles: currentArticles,
+        users: currentUsers,
+        collections: currentCollections,
+        timestamp: new Date().toISOString(),
+      });
+    };
+
+    let unsubArticles: () => void = () => {};
+    let unsubUsers: () => void = () => {};
+    let unsubDocs: () => void = () => {};
+
+    try {
+      unsubArticles = onSnapshot(
+        collection(db, 'articles'),
+        (snap) => {
+          const list: WikiArticle[] = [];
+          snap.forEach((d) => {
+            const data = d.data();
+            list.push({
+              id: data.id || d.id,
+              pageUid: data.pageUid || 'geral',
+              titulo: data.titulo || 'Sem título',
+              descricao: data.descricao || '',
+              resumo: data.resumo || (data.descricao ? data.descricao.slice(0, 140) + '...' : ''),
+              categoria: data.categoria || 'Geral',
+              idioma: data.idioma || 'Português',
+              autor: data.autor || 'Colaborador WikiWorldWeb',
+              autorEmail: data.autorEmail || undefined,
+              autorUid: data.autorUid || undefined,
+              dataCriacao: data.dataCriacao || new Date().toISOString(),
+              dataEdicao: data.dataEdicao || data.dataCriacao || new Date().toISOString(),
+              visualizacoes: typeof data.visualizacoes === 'number' ? data.visualizacoes : 1,
+              versao: typeof data.versao === 'number' ? data.versao : 1,
+              tags: Array.isArray(data.tags) ? data.tags : [],
+              historico: Array.isArray(data.historico) ? data.historico : [],
+            });
+          });
+          currentArticles = list;
+          notify();
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.GET, 'articles');
+        }
+      );
+    } catch (e) {
+      console.warn('Erro ao criar listener articles:', e);
+    }
+
+    try {
+      unsubUsers = onSnapshot(
+        collection(db, 'userpage'),
+        (snap) => {
+          const list: UserProfile[] = [];
+          snap.forEach((d) => {
+            list.push(d.data() as UserProfile);
+          });
+          currentUsers = list;
+          notify();
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.GET, 'userpage');
+        }
+      );
+    } catch (e) {
+      console.warn('Erro ao criar listener userpage:', e);
+    }
+
+    try {
+      unsubDocs = onSnapshot(
+        collection(db, 'documentos'),
+        (snap) => {
+          const list: WikiPage[] = [];
+          snap.forEach((d) => {
+            const data = d.data();
+            list.push({
+              uid: data.uid || d.id,
+              titulo: data.titulo || d.id,
+              descricao: data.descricao || '',
+              categoria: data.categoria || 'Geral',
+              articleCount: typeof data.articleCount === 'number' ? data.articleCount : 0,
+              criadoEm: data.criadoEm || new Date().toISOString(),
+              status: data.status || 'ativo',
+              tags: Array.isArray(data.tags) ? data.tags : [],
+            });
+          });
+          currentCollections = list;
+          notify();
+        },
+        (error) => {
+          handleFirestoreError(error, OperationType.GET, 'documentos');
+        }
+      );
+    } catch (e) {
+      console.warn('Erro ao criar listener documentos:', e);
+    }
+
+    return () => {
+      unsubArticles();
+      unsubUsers();
+      unsubDocs();
+    };
   },
 
   async syncAllToFirebase(): Promise<{ syncedPages: number; syncedArticles: number; syncedUsers: number }> {
