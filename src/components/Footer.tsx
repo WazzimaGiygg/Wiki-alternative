@@ -594,6 +594,15 @@ export const Footer: React.FC<FooterProps> = ({
               <Scale size={12} className="text-blue-600 dark:text-blue-400" />
               <span>Regras de Ética & Privacidade</span>
             </button>
+            <a
+              href="/Irregularidades%20da%20Wikip%C3%A9dia%20e%20Wikimedia%20Foundation.pdf"
+              download="Irregularidades da Wikipédia e Wikimedia Foundation.pdf"
+              title="Dossiê Oficial em PDF sobre as violações da LGPD, GDPR e Marco Civil da Internet pela Wikipédia e Wikimedia Foundation"
+              className="hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800/60 transition"
+            >
+              <FileText size={12} className="text-rose-600 dark:text-rose-400" />
+              <span>Dossiê Violações (PDF)</span>
+            </a>
             {onOpenChromeRecommendation && (
               <button
                 id="btn-footer-chrome-recommendation"

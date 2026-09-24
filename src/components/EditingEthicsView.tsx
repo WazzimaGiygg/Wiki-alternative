@@ -29,9 +29,11 @@ import {
   ChevronRight,
   FileWarning,
   Flame,
+  Download,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { formatExternalUrl } from '../utils/linkUtils';
+import { IrregularidadesDossierModal } from './IrregularidadesDossierModal';
 
 interface EditingEthicsViewProps {
   user: UserProfile | null;
@@ -49,6 +51,7 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
   const [activeTab, setActiveTab] = useState<TabKey>('principles');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
 
   // Interactive Checklist State
   const [checklistAnswers, setChecklistAnswers] = useState<{ [key: string]: boolean | null }>({
@@ -323,6 +326,53 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
               A Lei Geral de Proteção de Dados Pessoais (LGPD) protege os direitos fundamentais de liberdade, privacidade e o livre desenvolvimento da personalidade da pessoa natural. Todo colaborador que adiciona informações sobre cidadãos ou figuras públicas na enciclopédia está sujeito às seguintes obrigações intransponíveis:
             </p>
 
+            {/* Dossiê Oficial em PDF de Violações */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-rose-50 via-slate-50 to-amber-50 dark:from-rose-950/40 dark:via-slate-900 dark:to-amber-950/40 border border-rose-300 dark:border-rose-800 space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono font-bold uppercase bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200 px-1.5 py-0.2 rounded">
+                        Documento Oficial
+                      </span>
+                      <span className="text-[10px] font-mono font-bold uppercase bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 px-1.5 py-0.2 rounded">
+                        LGPD • GDPR • Marco Civil
+                      </span>
+                    </div>
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-serif-heading mt-0.5">
+                      Dossiê: Irregularidades da Wikipédia e Wikimedia Foundation
+                    </h4>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setIsDossierModalOpen(true)}
+                    className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1 cursor-pointer shadow-xs"
+                  >
+                    <BookOpen size={12} />
+                    <span>Ler Dossiê</span>
+                  </button>
+
+                  <a
+                    href="/Irregularidades%20da%20Wikip%C3%A9dia%20e%20Wikimedia%20Foundation.pdf"
+                    download="Irregularidades da Wikipédia e Wikimedia Foundation.pdf"
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
+                  >
+                    <Download size={12} />
+                    <span>Baixar PDF (23 KB)</span>
+                  </a>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                Relatório técnico detalhado com as irregularidades materiais cometidas pela Wikimedia Foundation: desrespeito ao sigilo de conexão do Marco Civil (Arts. 10 e 15), descumprimento do Art. 18 da LGPD (votações vexatórias e Efeito Streisand) e recusa de atendimento a ordens judiciais brasileiras.
+              </p>
+            </div>
+
             <div className="space-y-3">
               {/* Art. 5: Proibição de Doxxing */}
               <div className="p-4 rounded-lg bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 space-y-1.5">
@@ -491,6 +541,38 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
               <p>
                 A WikiWorldWeb não utiliza cookies invasivos de rastreamento publicitário de terceiros. As preferências locais de interface e sessão são preservadas sob estrita conformidade com as diretivas da União Europeia.
               </p>
+            </div>
+
+            {/* Dossiê de Violações ao GDPR pela Wikipédia */}
+            <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-indigo-300 dark:border-indigo-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-start gap-2.5">
+                <FileText size={18} className="text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-slate-900 dark:text-white">
+                    Estudo de Caso & Dossiê: Violações da Wikipédia ao GDPR e Marco Civil
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+                    Consulte o relatório oficial sobre a recusa do direito ao esquecimento e a transferência internacional ilícita de dados praticada pela Wikimedia Foundation.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setIsDossierModalOpen(true)}
+                  className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition flex items-center gap-1 shadow-xs cursor-pointer"
+                >
+                  <BookOpen size={12} />
+                  <span>Ver Dossiê</span>
+                </button>
+                <a
+                  href="/Irregularidades%20da%20Wikip%C3%A9dia%20e%20Wikimedia%20Foundation.pdf"
+                  download="Irregularidades da Wikipédia e Wikimedia Foundation.pdf"
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-xs transition flex items-center gap-1 shadow-xs"
+                >
+                  <Download size={12} />
+                  <span>Baixar PDF</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -967,6 +1049,12 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
           <ExternalLink size={12} />
         </a>
       </div>
+
+      {/* Modal de Leitura Integral do Dossiê e Visualização do PDF */}
+      <IrregularidadesDossierModal
+        isOpen={isDossierModalOpen}
+        onClose={() => setIsDossierModalOpen(false)}
+      />
     </div>
   );
 };

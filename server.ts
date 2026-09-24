@@ -6,6 +6,7 @@ try {
 }
 import express, { Request, Response } from 'express';
 import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
@@ -254,6 +255,28 @@ app.all('/api/auth/check-wikimedia-ip', async (req: Request, res: Response) => {
       ? 'O login foi bloqueado para este endereço de IP por pertencer à infraestrutura oficial da Wikimedia Foundation (AS14907).'
       : null,
   });
+});
+
+// -------------------------------------------------------------
+// Rota de serviço do documento oficial em PDF:
+// "Irregularidades da Wikipédia e Wikimedia Foundation"
+// -------------------------------------------------------------
+app.get([
+  '/api/documents/irregularidades-wikipedia.pdf',
+  '/api/documents/irregularidades-wikipedia',
+  '/api/documents/irregularidades-pdf',
+  '/documents/Irregularidades da Wikipédia e Wikimedia Foundation.pdf',
+  '/documents/irregularidades-wikipedia-wikimedia-foundation.pdf',
+  '/Irregularidades da Wikipédia e Wikimedia Foundation.pdf',
+  '/irregularidades-wikipedia-wikimedia-foundation.pdf'
+], (req: Request, res: Response) => {
+  const filePath = path.join(process.cwd(), 'public', 'Irregularidades da Wikipédia e Wikimedia Foundation.pdf');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="Irregularidades da Wikipédia e Wikimedia Foundation.pdf"');
+    return res.sendFile(filePath);
+  }
+  res.status(404).json({ error: 'Documento PDF não encontrado.' });
 });
 
 // -------------------------------------------------------------

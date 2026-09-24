@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Check,
   X,
@@ -25,9 +25,11 @@ import {
   Smartphone,
   Monitor,
   Lock,
+  Download,
 } from 'lucide-react';
 import { ViewMode } from '../types';
 import { updateSEO } from '../utils/seoManager';
+import { IrregularidadesDossierModal } from './IrregularidadesDossierModal';
 
 interface WikiCompetitorComparisonViewProps {
   onNavigate: (view: ViewMode) => void;
@@ -221,6 +223,8 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
   onOpenGeminiChatbot,
   onOpenGeminiNotebook,
 }) => {
+  const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
+
   useEffect(() => {
     updateSEO({
       view: 'comparison',
@@ -846,6 +850,53 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
               ✓ Inexistente ou excessivamente rígido em outras wikis
             </span>
           </div>
+
+          {/* Dossiê Oficial em PDF sobre as Violações */}
+          <div className="p-4 rounded-xl bg-gradient-to-r from-rose-50 via-slate-50 to-amber-50 dark:from-rose-950/40 dark:via-slate-900 dark:to-amber-950/40 border border-rose-300 dark:border-rose-800 space-y-2 mt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                  <FileText size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-mono font-bold uppercase bg-rose-100 dark:bg-rose-900/70 text-rose-700 dark:text-rose-300 px-1.5 py-0.2 rounded">
+                      Dossiê Documental
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.2 rounded">
+                      PDF Oficial (23 KB)
+                    </span>
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-serif-heading mt-0.5">
+                    Irregularidades da Wikipédia e Wikimedia Foundation (LGPD, GDPR e Marco Civil)
+                  </h4>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setIsDossierModalOpen(true)}
+                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1 cursor-pointer shadow-xs"
+                >
+                  <BookOpen size={12} />
+                  <span>Ler Dossiê</span>
+                </button>
+
+                <a
+                  href="/Irregularidades%20da%20Wikip%C3%A9dia%20e%20Wikimedia%20Foundation.pdf"
+                  download="Irregularidades da Wikipédia e Wikimedia Foundation.pdf"
+                  className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
+                >
+                  <Download size={12} />
+                  <span>Baixar PDF</span>
+                </a>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              Consulte a auditoria que detalha como a Wikipédia expõe publicamente endereços IP de usuários (infringindo os Arts. 10 e 15 do Marco Civil), descumpre o Art. 18 da LGPD através de votações vexatórias (Efeito Streisand) e recusa o direito ao esquecimento e a conformidade com o GDPR europeu.
+            </p>
+          </div>
         </div>
 
         {/* 8. WikiWorldWeb vs Outros: Portal Unificado de Artigos Universitários (SciELO e Google Acadêmico) */}
@@ -1317,6 +1368,12 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
           </button>
         </div>
       </footer>
+
+      {/* Modal de Leitura Integral do Dossiê e Visualização do PDF */}
+      <IrregularidadesDossierModal
+        isOpen={isDossierModalOpen}
+        onClose={() => setIsDossierModalOpen(false)}
+      />
     </article>
   );
 };

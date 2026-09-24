@@ -407,6 +407,30 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
           </button>
         )}
 
+        <a
+          href="/Irregularidades%20da%20Wikip%C3%A9dia%20e%20Wikimedia%20Foundation.pdf"
+          download="Irregularidades da Wikipédia e Wikimedia Foundation.pdf"
+          className="p-3 rounded-lg border border-rose-200 dark:border-rose-800/60 bg-rose-50/50 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          title="Dossiê Oficial em PDF sobre as violações da LGPD, GDPR e Marco Civil da Internet pela Wikipédia"
+        >
+          <div className="p-2 rounded-md bg-rose-600 text-white shrink-0">
+            <FileText size={16} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-rose-900 dark:text-rose-200 truncate group-hover:underline">
+                Special:DossieIrregularidades
+              </span>
+              <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-rose-600 text-white">
+                PDF
+              </span>
+            </div>
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+              Dossiê: Violações da Wikipédia (LGPD & Marco Civil)
+            </div>
+          </div>
+        </a>
+
         {onNavigateToPromotionRequests && (
           <button
             onClick={onNavigateToPromotionRequests}

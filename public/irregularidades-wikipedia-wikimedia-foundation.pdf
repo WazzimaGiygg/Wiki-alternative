@@ -1,0 +1,906 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 6851
+>>
+stream
+0.5670000000000001 w
+0 G
+0.12 0.16 0.23 rg
+51.0236220472441033 790.8663779527558972 493.2327559055117376 -90.708661417322844 re
+f
+BT
+/F2 16 Tf
+18.3999999999999986 TL
+1. g
+68.031496062992133 756.8506299212598378 Td
+(DOSSIÊ DE IRREGULARIDADES) Tj
+ET
+BT
+/F2 11 Tf
+12.6499999999999986 TL
+0.886 0.91 0.941 rg
+68.031496062992133 734.1734645669291695 Td
+(WIKIPÉDIA & WIKIMEDIA FOUNDATION INC.) Tj
+ET
+BT
+/F1 8.5 Tf
+9.7749999999999986 TL
+0.58 0.639 0.722 rg
+68.031496062992133 717.1655905511811397 Td
+(Violações Sistemáticas à LGPD \(Brasil\), GDPR \(União Europeia\) e Marco Civil da Internet) Tj
+ET
+0.97 0.98 0.99 rg
+0.8 0.84 0.88 RG
+1.1338582677165356 w
+56.6929133858267775 683.1498425196849666 m
+538.5870866141731312 683.1498425196849666 l
+541.7181497628201896 683.1498425196849666 544.2563779527558836 680.6116143297492727 544.2563779527558836 677.480551181102328 c
+544.2563779527558836 620.7876377952754865 l
+544.2563779527558836 617.6565746466285418 541.1253148041088252 615.1183464566928478 538.5870866141731312 615.1183464566928478 c
+56.6929133858267775 615.1183464566928478 l
+53.5618502371797618 615.1183464566928478 51.0236220472441033 618.2494096053399062 51.0236220472441033 620.7876377952754865 c
+51.0236220472441033 677.480551181102328 l
+51.0236220472441033 680.6116143297492727 54.1546851958911191 683.1498425196849666 56.6929133858267775 683.1498425196849666 c
+h
+B
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+0.2 0.255 0.333 rg
+65.1968503937007995 666.1419685039369369 Td
+(DOCUMENTO OFICIAL DE AUDITORIA E COMPLIANCE) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.2 0.255 0.333 rg
+65.1968503937007995 651.9687401574802834 Td
+(• Órgão Emissor: Comitê de Governança & Auditoria Jurídica WikiWorldWeb) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.2 0.255 0.333 rg
+65.1968503937007995 637.7955118110235162 Td
+(• Encarregado de Dados \(DPO\): Pedro Henrique Cardona Peres \(pedrohenriquecardonaperes@gmail.com\)) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.2 0.255 0.333 rg
+65.1968503937007995 623.6222834645668627 Td
+(• Normas Auditadas: Lei nº 13.709/2018 \(LGPD\), Lei nº 12.965/2014 \(Marco Civil\) e Reg. UE 2016/679 \(GDPR\)) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0.059 0.09 0.165 rg
+51.0236220472441033 598.1104724409448181 Td
+(1. SUMÁRIO EXECUTIVO) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.2 0.255 0.333 rg
+51.0236220472441033 581.1025984251967884 Td
+(O presente relatório documental consolida um exame aprofundado acerca das irregularidades jurídicas e operacionais) Tj
+T* (perpetradas pela Wikimedia Foundation Inc. \(entidade gestora da Wikipédia\) no tratamento de dados de cidadãos) Tj
+T* (brasileiros e estrangeiros. Enquanto plataforma de alcance massivo no território nacional, a Wikipédia recusa) Tj
+T* (deliberadamente a adequação às salvaguardas da Lei Geral de Proteção de Dados Pessoais \(LGPD - Lei nº 13.709/2018\) e) Tj
+T* (ao Marco Civil da Internet \(Lei nº 12.965/2014\), além de desrespeitar os cânones de privacidade vigentes na União) Tj
+T* (Europeia através do GDPR \(Regulamento UE 2016/679\).) Tj
+T* () Tj
+T* (A prática de expor publicamente endereços IP de usuários, a ausência de canal efetivo de DPO no Brasil, a recusa a) Tj
+T* (ordens judiciais brasileiras invocando extraterritorialidade e a exposição humilhante de cidadãos que solicitam a retificação) Tj
+T* (ou exclusão de dados em votações comunitárias abertas \(Efeito Streisand\) caracterizam ilícitos civis e administrativos de) Tj
+T* (extrema gravidade.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0.059 0.09 0.165 rg
+51.0236220472441033 433.1340944881889641 Td
+(2. VIOLAÇÕES AO MARCO CIVIL DA INTERNET \(LEI Nº 12.965/2014\)) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+51.0236220472441033 416.1262204724409344 Td
+(2.1. Exposição Pública Arbitrária de Endereços IP \(Art. 10 e Art. 15\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.2 0.255 0.333 rg
+51.0236220472441033 401.952992125984224 Td
+(Na Wikipédia, qualquer usuário que realiza uma edição sem ter criado uma conta tem o seu endereço de Protocolo de) Tj
+T* (Internet \(IP\) completo, seja IPv4 ou IPv6, gravado no histórico de edições da página e tornado público e acessível a) Tj
+T* (qualquer internauta ou bot de raspagem de dados no mundo.) Tj
+T* () Tj
+T* (O Art. 10 e o Art. 15 do Marco Civil da Internet estipulam categoricamente que os registros de conexão e de acesso a) Tj
+T* (aplicações devem ser guardados sob sigilo estrito, em ambiente controlado e seguro, pelo prazo legal, e fornecidos) Tj
+T* (exclusivamente sob ordem judicial formal. Ao publicar os endereços IP de forma perene no banco de dados da) Tj
+T* (enciclopédia, a Wikimedia Foundation incorre em violação direta da lei, ensejando geolocalização indevida, identificação do) Tj
+T* (provedor de acesso e perseguição cibernética \(doxxing\) contra os colaboradores.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+51.0236220472441033 280.6301574803148924 Td
+(2.2. Negativa de Submissão à Legislação Brasileira \(Art. 11\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.2 0.255 0.333 rg
+51.0236220472441033 266.4569291338582389 Td
+(O Art. 11 do Marco Civil estabelece expressamente: "Em qualquer operação de coleta, armazenamento, guarda e) Tj
+T* (tratamento de registros, de dados pessoais ou de comunicações por provedores de conexão e de aplicações de internet em) Tj
+T* (que pelo menos um desses atos ocorra em território nacional, deverão ser obrigatoriamente respeitados a legislação) Tj
+T* (brasileira e os direitos à privacidade".) Tj
+T* () Tj
+T* (A Wikimedia Foundation, sediada na Califórnia \(EUA\), habitualmente recusa notificações judiciais e extrajudiciais expedidas) Tj
+T* (por tribunais estaduais e federais do Brasil, alegando falta de representação legal e demandando expedição de cartas) Tj
+T* (rogatórias internacionais. Essa postura anula a efetividade das decisões dos magistrados brasileiros e desampara os) Tj
+T* (cidadãos ofendidos.) Tj
+ET
+0.89 0.91 0.94 RG
+0.8503937007874016 w
+51.0236220472441033 34.0157480314960665 m
+544.2563779527558836 34.0157480314960665 l
+S
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.58 0.639 0.722 rg
+51.0236220472441033 22.6771653543306684 Td
+(WikiWorldWeb Enciclopédia • Auditoria de Privacidade LGPD, GDPR e Marco Civil • DPO: pedrohenriquecardonaperes@gmail.com) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.58 0.639 0.722 rg
+512.9763779527557972 22.6771653543306684 Td
+(Página 1) Tj
+ET
+0.89 0.91 0.94 RG
+0.8503937007874016 w
+51.0236220472441033 34.0157480314960665 m
+544.2563779527558836 34.0157480314960665 l
+S
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.58 0.639 0.722 rg
+51.0236220472441033 22.6771653543306684 Td
+(WikiWorldWeb Enciclopédia • Auditoria de Privacidade LGPD, GDPR e Marco Civil • DPO: pedrohenriquecardonaperes@gmail.com) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.58 0.639 0.722 rg
+495.2963779527558472 22.6771653543306684 Td
+(Página 1 de 3) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 8886
+>>
+stream
+0.8503937007874016 w
+0.89 0.91 0.94 RG
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+51.0236220472441033 807.8742519685039269 Td
+(DOSSIÊ TÉCNICO-JURÍDICO | IRREGULARIDADES DA WIKIPÉDIA E WIKIMEDIA FOUNDATION) Tj
+ET
+0.8 0.84 0.88 RG
+0.8503937007874016 w
+51.0236220472441033 802.2049606299211746 m
+544.2563779527558836 802.2049606299211746 l
+S
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0.059 0.09 0.165 rg
+51.0236220472441033 756.8506299212598378 Td
+(3. VIOLAÇÕES À LEI GERAL DE PROTEÇÃO DE DADOS \(LGPD - LEI Nº 13.709/2018\)) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+51.0236220472441033 739.8427559055118081 Td
+(3.1. Inobservância dos Princípios Fundamentais \(Art. 6º\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.2 0.255 0.333 rg
+51.0236220472441033 725.6695275590550409 Td
+(A Wikimedia Foundation descumpre reiteradamente os princípios do Art. 6º da LGPD:) Tj
+T* (a\) Princípio da Necessidade e Minimização \(Inciso III\): Manter históricos públicos perpétuos com dados pessoais é) Tj
+T* (desproporcional à finalidade enciclopédica;) Tj
+T* (b\) Princípio da Segurança e Prevenção \(Incisos VII e VIII\): Não adota medidas técnicas eficazes para salvaguardar a) Tj
+T* (identidade civil dos editores e pessoas biografadas;) Tj
+T* (c\) Princípio da Não Discriminação \(Inciso IX\): Permite a propagação de difamação em páginas biográficas sem mecanismos) Tj
+T* (imediatos de resposta e contenção.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+51.0236220472441033 628.1577165354329964 Td
+(3.2. Supressão dos Direitos dos Titulares e o "Efeito Streisand" \(Art. 18\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.2 0.255 0.333 rg
+51.0236220472441033 613.9844881889763428 Td
+(O Art. 18 da LGPD assegura ao titular o direito de obter do controlador a retificação de dados incompletos ou inexatos, a) Tj
+T* (anonimização, o bloqueio ou a eliminação de dados desnecessários ou tratados em desconformidade.) Tj
+T* () Tj
+T* (Na Wikipédia, cidadãos que solicitam a remoção de informações falsas, íntimas ou vexatórias são confrontados com a) Tj
+T* (abertura de "Páginas para Eliminar" ou fóruns públicos onde moderadores voluntários debatem abertamente a vida privada) Tj
+T* (do requerente. Esse procedimento humilhante produz o nefasto Efeito Streisand, ampliando o dano à honra da vítima nos) Tj
+T* (buscadores globais, em aberta infração aos direitos da personalidade.) Tj
+ET
+BT
+/F2 9.5 Tf
+10.9249999999999989 TL
+0.118 0.161 0.231 rg
+51.0236220472441033 516.4726771653542983 Td
+(3.3. Violação no Tratamento de Menores e Dados Sensíveis \(Arts. 11 e 14\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.2 0.255 0.333 rg
+51.0236220472441033 502.2994488188975311 Td
+(O Art. 14 da LGPD exige que o tratamento de dados de crianças e adolescentes ocorra sempre no seu melhor interesse. A) Tj
+T* (Wikipédia expõe com frequência nomes de filhos menores de figuras públicas, fotografias sem autorização tutelar e) Tj
+T* (menções desnecessárias, descumprindo os preceitos do Estatuto da Criança e do Adolescente \(ECA\). Ademais, dados) Tj
+T* (sensíveis \(saúde, orientação e convicções\) são lançados em verbetes sem o devido rigor de verificação de fontes) Tj
+T* (fidedignas primárias.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0.059 0.09 0.165 rg
+51.0236220472441033 420.0947244094487019 Td
+(4. VIOLAÇÕES AO REGULAMENTO EUROPEU \(GDPR - REG. UE 2016/679\)) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.2 0.255 0.333 rg
+51.0236220472441033 403.0868503937006722 Td
+(No plano comunitário europeu, a conduta da Wikimedia Foundation também colide frontalmente com o GDPR:) Tj
+T* () Tj
+T* (• Artigo 17 \(Direito ao Apagamento / "Direito ao Esquecimento"\): A Wikimedia Foundation historicamente contesta o direito) Tj
+T* (ao esquecimento nos tribunais da Europa, alegando que o registro histórico da wiki deve prevalecer de forma absoluta,) Tj
+T* (impedindo cidadãos absolvidos de processos ou alvos de fake news de expurgar registros do passado.) Tj
+T* () Tj
+T* (• Artigo 25 \(Privacy by Design e Privacy by Default\): O MediaWiki foi programado para arquivar e expor versões de páginas) Tj
+T* (sem qualquer filtro automatizado para proteger a identidade civil de participantes.) Tj
+T* () Tj
+T* (• Artigos 44 a 49 \(Transferência Internacional Ilícita de Dados\): Os dados de cidadãos europeus e brasileiros são) Tj
+T* (transferidos e armazenados em datacenters nos Estados Unidos sem as salvaguardas contratuais equivalentes exigidas) Tj
+T* (pelo Tribunal de Justiça da União Europeia no julgamento Schrems II.) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0.059 0.09 0.165 rg
+51.0236220472441033 237.5435433070864519 Td
+(5. QUADRO COMPARATIVO: WIKIPÉDIA VS. WIKIWORLDWEB) Tj
+ET
+0.12 0.16 0.23 rg
+51.0236220472441033 220.5356692913384506 493.2327559055117376 -19.8425196850393704 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+59.5275590551181182 206.9293700787400212 Td
+(REQUISITO LEGAL / NORMA) Tj
+ET
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+221.102362204724443 206.9293700787400212 Td
+(WIKIPÉDIA \(WIKIMEDIA FOUNDATION\)) Tj
+ET
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+391.1811023622047401 206.9293700787400212 Td
+(WIKIWORLDWEB \(CONFORME\)) Tj
+ET
+0.97 g
+51.0236220472441033 200.6931496062990732 493.2327559055117376 -22.677165354330711 re
+f
+0.89 0.91 0.94 RG
+0.5669291338582678 w
+51.0236220472441033 178.015984251968348 m
+544.2563779527558836 178.015984251968348 l
+S
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+56.6929133858267775 186.5199212598423628 Td
+(Exposição de Endereço IP \(Marco Civil Art. 10/15\)) Tj
+ET
+BT
+/F1 7.5 Tf
+8.625 TL
+0.725 0.11 0.11 rg
+221.102362204724443 186.5199212598423628 Td
+(Expõe publicamente no histórico de edições) Tj
+ET
+BT
+/F2 7.5 Tf
+8.625 TL
+0.063 0.584 0.416 rg
+391.1811023622047401 186.5199212598423628 Td
+(Criptografado e em sigilo estrito) Tj
+ET
+1. g
+51.0236220472441033 178.015984251968348 493.2327559055117376 -22.677165354330711 re
+f
+0.89 0.91 0.94 RG
+0.5669291338582678 w
+51.0236220472441033 155.3388188976376512 m
+544.2563779527558836 155.3388188976376512 l
+S
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+56.6929133858267775 163.8427559055116944 Td
+(Submissão à LGPD e ANPD \(Art. 3º\)) Tj
+ET
+BT
+/F1 7.5 Tf
+8.625 TL
+0.725 0.11 0.11 rg
+221.102362204724443 163.8427559055116944 Td
+(Alega extraterritorialidade e recusa) Tj
+ET
+BT
+/F2 7.5 Tf
+8.625 TL
+0.063 0.584 0.416 rg
+391.1811023622047401 163.8427559055116944 Td
+(Total submissão e conformidade) Tj
+ET
+0.97 g
+51.0236220472441033 155.3388188976376512 493.2327559055117376 -22.677165354330711 re
+f
+0.89 0.91 0.94 RG
+0.5669291338582678 w
+51.0236220472441033 132.6616535433069259 m
+544.2563779527558836 132.6616535433069259 l
+S
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+56.6929133858267775 141.1655905511809124 Td
+(Encarregado de Proteção de Dados \(Art. 41\)) Tj
+ET
+BT
+/F1 7.5 Tf
+8.625 TL
+0.725 0.11 0.11 rg
+221.102362204724443 141.1655905511809124 Td
+(Inexistente no Brasil) Tj
+ET
+BT
+/F2 7.5 Tf
+8.625 TL
+0.063 0.584 0.416 rg
+391.1811023622047401 141.1655905511809124 Td
+(DPO nomeado e canal direto ativo) Tj
+ET
+1. g
+51.0236220472441033 132.6616535433069259 493.2327559055117376 -22.677165354330711 re
+f
+0.89 0.91 0.94 RG
+0.5669291338582678 w
+51.0236220472441033 109.9844881889761439 m
+544.2563779527558836 109.9844881889761439 l
+S
+BT
+/F2 7.5 Tf
+8.625 TL
+0.118 0.161 0.231 rg
+56.6929133858267775 118.488425196850244 Td
+(Direitos do Titular \(Art. 18 LGPD\)) Tj
+ET
+BT
+/F1 7.5 Tf
+8.625 TL
+0.725 0.11 0.11 rg
+221.102362204724443 118.488425196850244 Td
+(Debates públicos humilhantes \(Streisand\)) Tj
+ET
+BT
+/F2 7.5 Tf
+8.625 TL
+0.063 0.584 0.416 rg
+391.1811023622047401 118.488425196850244 Td
+(Painel Meus Dados e canal sigiloso) Tj
+ET
+0.89 0.91 0.94 RG
+0.8503937007874016 w
+51.0236220472441033 34.0157480314960665 m
+544.2563779527558836 34.0157480314960665 l
+S
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.58 0.639 0.722 rg
+51.0236220472441033 22.6771653543306684 Td
+(WikiWorldWeb Enciclopédia • Auditoria de Privacidade LGPD, GDPR e Marco Civil • DPO: pedrohenriquecardonaperes@gmail.com) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.58 0.639 0.722 rg
+512.9763779527557972 22.6771653543306684 Td
+(Página 2) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+51.0236220472441033 807.8742519685039269 Td
+(DOSSIÊ TÉCNICO-JURÍDICO | IRREGULARIDADES DA WIKIPÉDIA E WIKIMEDIA FOUNDATION) Tj
+ET
+0.8 0.84 0.88 RG
+0.8503937007874016 w
+51.0236220472441033 802.2049606299211746 m
+544.2563779527558836 802.2049606299211746 l
+S
+0.89 0.91 0.94 RG
+0.8503937007874016 w
+51.0236220472441033 34.0157480314960665 m
+544.2563779527558836 34.0157480314960665 l
+S
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.58 0.639 0.722 rg
+51.0236220472441033 22.6771653543306684 Td
+(WikiWorldWeb Enciclopédia • Auditoria de Privacidade LGPD, GDPR e Marco Civil • DPO: pedrohenriquecardonaperes@gmail.com) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.58 0.639 0.722 rg
+495.2963779527558472 22.6771653543306684 Td
+(Página 2 de 3) Tj
+ET
+endstream
+endobj
+7 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 8 0 R
+>>
+endobj
+8 0 obj
+<<
+/Length 4156
+>>
+stream
+0.8503937007874016 w
+0.89 0.91 0.94 RG
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+51.0236220472441033 807.8742519685039269 Td
+(DOSSIÊ TÉCNICO-JURÍDICO | IRREGULARIDADES DA WIKIPÉDIA E WIKIMEDIA FOUNDATION) Tj
+ET
+0.8 0.84 0.88 RG
+0.8503937007874016 w
+51.0236220472441033 802.2049606299211746 m
+544.2563779527558836 802.2049606299211746 l
+S
+0.97 g
+51.0236220472441033 756.8506299212598378 493.2327559055117376 -22.677165354330711 re
+f
+0.89 0.91 0.94 RG
+0.5669291338582678 w
+51.0236220472441033 734.1734645669290558 m
+544.2563779527558836 734.1734645669290558 l
+S
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+0.118 0.161 0.231 rg
+56.6929133858267775 742.6774015748030706 Td
+(Direito ao Esquecimento \(Art. 17 GDPR\)) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.725 0.11 0.11 rg
+221.102362204724443 742.6774015748030706 Td
+(Recusa e contesta na Justiça da Europa) Tj
+ET
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+0.063 0.584 0.416 rg
+391.1811023622047401 742.6774015748030706 Td
+(Supressão definitiva via Oversight) Tj
+ET
+1. g
+51.0236220472441033 734.1734645669290558 493.2327559055117376 -22.677165354330711 re
+f
+0.89 0.91 0.94 RG
+0.5669291338582678 w
+51.0236220472441033 711.4962992125983874 m
+544.2563779527558836 711.4962992125983874 l
+S
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+0.118 0.161 0.231 rg
+56.6929133858267775 720.0002362204724022 Td
+(Proteção a Menores \(Art. 14 LGPD e ECA\)) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.725 0.11 0.11 rg
+221.102362204724443 720.0002362204724022 Td
+(Exposição guiada por reportagens soltas) Tj
+ET
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+0.063 0.584 0.416 rg
+391.1811023622047401 720.0002362204724022 Td
+(Vedação estrita a dados de menores) Tj
+ET
+BT
+/F2 12 Tf
+13.7999999999999989 TL
+0.059 0.09 0.165 rg
+51.0236220472441033 694.4884251968503577 Td
+(6. CONCLUSÕES E ENCAMINHAMENTOS) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.2 0.255 0.333 rg
+51.0236220472441033 677.480551181102328 Td
+(Diante das constatações materiais elencadas neste dossiê, a WikiWorldWeb reitera o compromisso inabalável com a) Tj
+T* (legalidade digital, submetendo sua arquitetura ao respeito intransigente dos direitos dos titulares e da soberania jurídica do) Tj
+T* (Brasil.) Tj
+T* () Tj
+T* (Recomenda-se aos titulares de dados cujos direitos tenham sido violados nos projetos da Wikimedia Foundation a) Tj
+T* (formalização de peticionamento perante a Autoridade Nacional de Proteção de Dados \(ANPD\) e aos órgãos do Ministério) Tj
+T* (Público Federal, demandando a aplicação das sanções administrativas previstas no Art. 52 da LGPD, incluindo multas) Tj
+T* (diárias e bloqueio de operação por tratamento ilícito.) Tj
+ET
+0.8 0.84 0.88 RG
+51.0236220472441033 553.8899999999999864 m
+277.7952755905512277 553.8899999999999864 l
+S
+306.1417322834645915 553.8899999999999864 m
+532.9133858267716732 553.8899999999999864 l
+S
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+0.118 0.161 0.231 rg
+51.0236220472441033 542.5514173228345953 Td
+(Pedro Henrique Cardona Peres) Tj
+ET
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+0.118 0.161 0.231 rg
+306.1417322834645915 542.5514173228345953 Td
+(Comitê Editorial & Governança) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+51.0236220472441033 532.6301574803148924 Td
+(Encarregado pelo Tratamento de Dados \(DPO\)) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+306.1417322834645915 532.6301574803148924 Td
+(WikiWorldWeb \(WazzimaGiygg\)) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 0.455 0.545 rg
+51.0236220472441033 807.8742519685039269 Td
+(DOSSIÊ TÉCNICO-JURÍDICO | IRREGULARIDADES DA WIKIPÉDIA E WIKIMEDIA FOUNDATION) Tj
+ET
+0.8 0.84 0.88 RG
+0.8503937007874016 w
+51.0236220472441033 802.2049606299211746 m
+544.2563779527558836 802.2049606299211746 l
+S
+0.89 0.91 0.94 RG
+0.8503937007874016 w
+51.0236220472441033 34.0157480314960665 m
+544.2563779527558836 34.0157480314960665 l
+S
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.58 0.639 0.722 rg
+51.0236220472441033 22.6771653543306684 Td
+(WikiWorldWeb Enciclopédia • Auditoria de Privacidade LGPD, GDPR e Marco Civil • DPO: pedrohenriquecardonaperes@gmail.com) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.58 0.639 0.722 rg
+495.2963779527558472 22.6771653543306684 Td
+(Página 3 de 3) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R 7 0 R ]
+/Count 3
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+19 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+20 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+21 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+22 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 9 0 R
+/F2 10 0 R
+/F3 11 0 R
+/F4 12 0 R
+/F5 13 0 R
+/F6 14 0 R
+/F7 15 0 R
+/F8 16 0 R
+/F9 17 0 R
+/F10 18 0 R
+/F11 19 0 R
+/F12 20 0 R
+/F13 21 0 R
+/F14 22 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+23 0 obj
+<<
+/Producer (jsPDF 4.2.1)
+/CreationDate (D:20260924160018-00'00')
+>>
+endobj
+24 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 25
+0000000000 65535 f 
+0000020475 00000 n 
+0000022308 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000007055 00000 n 
+0000007192 00000 n 
+0000016130 00000 n 
+0000016267 00000 n 
+0000020544 00000 n 
+0000020669 00000 n 
+0000020800 00000 n 
+0000020934 00000 n 
+0000021072 00000 n 
+0000021196 00000 n 
+0000021325 00000 n 
+0000021457 00000 n 
+0000021593 00000 n 
+0000021721 00000 n 
+0000021848 00000 n 
+0000021977 00000 n 
+0000022110 00000 n 
+0000022212 00000 n 
+0000022560 00000 n 
+0000022646 00000 n 
+trailer
+<<
+/Size 25
+/Root 24 0 R
+/Info 23 0 R
+/ID [ <9DBC3C8FDC25CBF4B410A9F63CA4707F> <9DBC3C8FDC25CBF4B410A9F63CA4707F> ]
+>>
+startxref
+22750
+%%EOF

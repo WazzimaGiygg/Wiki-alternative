@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ExternalLink,
   ShieldCheck,
@@ -17,10 +17,12 @@ import {
   Users,
   Terminal,
   Newspaper,
+  Download,
 } from 'lucide-react';
 import { ViewMode } from '../types';
 import { updateSEO } from '../utils/seoManager';
 import { formatExternalUrl } from '../utils/linkUtils';
+import { IrregularidadesDossierModal } from './IrregularidadesDossierModal';
 
 interface WazzimaGiyggProfileViewProps {
   onNavigate: (view: ViewMode) => void;
@@ -31,6 +33,8 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
   onNavigate,
   onOpenEditor,
 }) => {
+  const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
+
   useEffect(() => {
     updateSEO({
       view: 'wazzimagiygg',
@@ -394,6 +398,43 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
               </a>
             </div>
           </div>
+
+          {/* Project 6: Dossiê Irregularidades da Wikipédia (PDF) */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-rose-300 dark:border-rose-800 shadow-xs flex flex-col justify-between space-y-3">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
+                  <FileText size={18} />
+                </span>
+                <span className="text-[10px] font-mono font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800">
+                  PDF Oficial (LGPD & Marco Civil)
+                </span>
+              </div>
+              <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                Dossiê: Irregularidades da Wikipédia e Wikimedia Foundation
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Documento técnico-jurídico que analisa as violações da LGPD (Lei 13.709/2018), Marco Civil da Internet (Lei 12.965/2014) e GDPR europeu cometidas pela Wikipédia e Wikimedia Foundation.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setIsDossierModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <BookOpen size={12} />
+                <span>Ler Dossiê</span>
+              </button>
+              <a
+                href="/Irregularidades%20da%20Wikip%C3%A9dia%20e%20Wikimedia%20Foundation.pdf"
+                download="Irregularidades da Wikipédia e Wikimedia Foundation.pdf"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition"
+              >
+                <Download size={12} />
+                <span>Baixar PDF (23 KB)</span>
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -468,6 +509,12 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
           )}
         </div>
       </footer>
+
+      {/* Modal de Leitura Integral do Dossiê e Visualização do PDF */}
+      <IrregularidadesDossierModal
+        isOpen={isDossierModalOpen}
+        onClose={() => setIsDossierModalOpen(false)}
+      />
     </article>
   );
 };

@@ -28,11 +28,14 @@ import {
   ShieldCheck,
   ShieldAlert,
   UserCheck,
+  Download,
+  BookOpen,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle } from '../types';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
+import { IrregularidadesDossierModal } from './IrregularidadesDossierModal';
 
 interface InformativeViewsProps {
   user: UserProfile | null;
@@ -254,6 +257,8 @@ export const DonationView: React.FC<InformativeViewsProps> = () => {
 
 // === 3. PRIVACY POLICY VIEW (LGPD) ===
 export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate }) => {
+  const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
+
   return (
     <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in select-none">
       <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-6 shadow-xs">
@@ -301,6 +306,53 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate 
             </h3>
             <p>
               Você pode exercer a qualquer momento seus direitos de confirmação de tratamento, acesso, retificação, portabilidade, anonimização, bloqueio ou eliminação através do botão <strong>"Meus Dados"</strong> no menu de navegação ou abrindo um chamado formal com a equipe de privacidade na <a href={formatExternalUrl("https://support.wazzimagiygg.com/")} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 font-bold underline">Central de Tickets WazzimaGiygg</a>.
+            </p>
+          </div>
+
+          {/* Dossiê Oficial em PDF sobre as Violações */}
+          <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-rose-50 via-amber-50 to-orange-50 dark:from-rose-950/40 dark:via-slate-900 dark:to-amber-950/40 border-2 border-rose-300 dark:border-rose-800 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <div className="w-10 h-10 rounded-lg bg-rose-600 text-white flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                    <span className="text-[10px] font-mono font-bold uppercase bg-rose-200 dark:bg-rose-900 text-rose-800 dark:text-rose-200 px-1.5 py-0.5 rounded">
+                      Documento Oficial em PDF
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded">
+                      LGPD • GDPR • Marco Civil
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">
+                    Irregularidades da Wikipédia e Wikimedia Foundation
+                  </h4>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setIsDossierModalOpen(true)}
+                  className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <BookOpen size={13} />
+                  <span>Ler Dossiê</span>
+                </button>
+
+                <a
+                  href="/Irregularidades%20da%20Wikip%C3%A9dia%20e%20Wikimedia%20Foundation.pdf"
+                  download="Irregularidades da Wikipédia e Wikimedia Foundation.pdf"
+                  className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <Download size={13} />
+                  <span>Baixar PDF (23 KB)</span>
+                </a>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Consulte a íntegra do documento técnico-jurídico que demonstra as infrações continuadas praticadas pela Wikipédia e Wikimedia Foundation: exposição ilícita de endereços IP de internautas (Art. 10/15 do Marco Civil), recusa de submissão à jurisdição brasileira e à ANPD (Art. 3º e 11), inobservância dos direitos dos titulares e criação do humilhante Efeito Streisand (Art. 18 da LGPD), além de afronta ao direito ao esquecimento e normas de transferência internacional do GDPR europeu.
             </p>
           </div>
 
@@ -514,6 +566,12 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate 
           </div>
         </div>
       </div>
+
+      {/* Modal de Leitura Integral do Dossiê e Visualização do PDF */}
+      <IrregularidadesDossierModal
+        isOpen={isDossierModalOpen}
+        onClose={() => setIsDossierModalOpen(false)}
+      />
     </div>
   );
 };

@@ -778,6 +778,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </button>
 
+            <a
+              href="/Irregularidades%20da%20Wikip%C3%A9dia%20e%20Wikimedia%20Foundation.pdf"
+              download="Irregularidades da Wikipédia e Wikimedia Foundation.pdf"
+              title="Dossiê Oficial em PDF: Irregularidades da Wikipédia e Wikimedia Foundation (Violações da LGPD, GDPR e Marco Civil)"
+              className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+            >
+              <FileText size={15} className="text-rose-600 dark:text-rose-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Dossiê Violações</span>
+                  <span className="text-[8px] bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-mono font-bold px-1 rounded-xs">
+                    PDF
+                  </span>
+                </div>
+              )}
+            </a>
+
             <button
               onClick={() => onNavigate('terms')}
               title={t('sidebar.terms')}
