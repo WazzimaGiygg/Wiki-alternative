@@ -258,6 +258,7 @@ export const DonationView: React.FC<InformativeViewsProps> = () => {
 // === 3. PRIVACY POLICY VIEW (LGPD) ===
 export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate }) => {
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
+  const [dossierDoc, setDossierDoc] = useState<'irregularidades' | 'chronus'>('irregularidades');
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in select-none">
@@ -333,7 +334,10 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate 
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => setIsDossierModalOpen(true)}
+                  onClick={() => {
+                    setDossierDoc('irregularidades');
+                    setIsDossierModalOpen(true);
+                  }}
                   className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <BookOpen size={13} />
@@ -353,6 +357,56 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate 
 
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               Consulte a íntegra do documento técnico-jurídico que demonstra as infrações continuadas praticadas pela Wikipédia e Wikimedia Foundation: exposição ilícita de endereços IP de internautas (Art. 10/15 do Marco Civil), recusa de submissão à jurisdição brasileira e à ANPD (Art. 3º e 11), inobservância dos direitos dos titulares e criação do humilhante Efeito Streisand (Art. 18 da LGPD), além de afronta ao direito ao esquecimento e normas de transferência internacional do GDPR europeu.
+            </p>
+          </div>
+
+          {/* Dossiê Especial: Calúnia por parte de Chronus V2 */}
+          <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-red-50 via-rose-50 to-orange-50 dark:from-red-950/40 dark:via-slate-900 dark:to-orange-950/40 border-2 border-red-300 dark:border-red-800 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-tr from-rose-700 to-red-600 text-white flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                  <Scale size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                    <span className="text-[10px] font-mono font-bold uppercase bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200 px-1.5 py-0.5 rounded">
+                      Dossiê 47 Páginas (V2)
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded">
+                      Arts. 138-140 & 147-A CP • UCOC
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">
+                    Calúnia por parte de Chronus V2: Dossiê de Violações Penais, Stalking e Moderação Abusiva
+                  </h4>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setDossierDoc('chronus');
+                    setIsDossierModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <BookOpen size={13} />
+                  <span>Ler Dossiê V2</span>
+                </button>
+
+                <a
+                  href="/Cal%C3%BAnia%20por%20parte%20de%20Chronus%20V2.pdf"
+                  download="Calúnia por parte de Chronus V2.pdf"
+                  className="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <Download size={13} />
+                  <span>Baixar PDF (V2)</span>
+                </a>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Auditoria técnico-jurídica pormenorizada de 47 páginas que detalha a prática de crimes contra a honra (calúnia com falsa imputação de crimes informáticos, difamação e injúria com majorante de alcance na internet), perseguição/stalking (Art. 147-A CP), quebra de sigilo telemático, bloqueios geográficos de ASNs e violações graves ao Código Universal de Conduta (UCOC) da Wikimedia Foundation cometidas pelo moderador Chronus contra o titular Pedro Henrique Cardona Peres (WazzimaGiygg).
             </p>
           </div>
 
@@ -571,6 +625,7 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate 
       <IrregularidadesDossierModal
         isOpen={isDossierModalOpen}
         onClose={() => setIsDossierModalOpen(false)}
+        initialDocument={dossierDoc}
       />
     </div>
   );

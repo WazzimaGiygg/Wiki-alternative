@@ -26,6 +26,7 @@ import {
   Monitor,
   Lock,
   Download,
+  Scale,
 } from 'lucide-react';
 import { ViewMode } from '../types';
 import { updateSEO } from '../utils/seoManager';
@@ -224,6 +225,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
   onOpenGeminiNotebook,
 }) => {
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
+  const [dossierDoc, setDossierDoc] = useState<'irregularidades' | 'chronus'>('irregularidades');
 
   useEffect(() => {
     updateSEO({
@@ -875,7 +877,10 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => setIsDossierModalOpen(true)}
+                  onClick={() => {
+                    setDossierDoc('irregularidades');
+                    setIsDossierModalOpen(true);
+                  }}
                   className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1 cursor-pointer shadow-xs"
                 >
                   <BookOpen size={12} />
@@ -895,6 +900,59 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
 
             <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
               Consulte a auditoria que detalha como a Wikipédia expõe publicamente endereços IP de usuários (infringindo os Arts. 10 e 15 do Marco Civil), descumpre o Art. 18 da LGPD através de votações vexatórias (Efeito Streisand) e recusa o direito ao esquecimento e a conformidade com o GDPR europeu.
+            </p>
+          </div>
+
+          {/* Dossiê Especial: Calúnia por parte de Chronus V2 */}
+          <div className="p-4 rounded-xl bg-gradient-to-r from-red-50 via-rose-50 to-orange-50 dark:from-red-950/40 dark:via-rose-950/30 dark:to-orange-950/40 border border-red-300 dark:border-red-800 space-y-2 mt-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-rose-700 to-red-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                  <Scale size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-mono font-bold uppercase bg-red-100 dark:bg-red-900/70 text-red-700 dark:text-red-300 px-1.5 py-0.2 rounded">
+                      Dossiê Especial 47 Págs
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.2 rounded">
+                      Código Penal Arts. 138-140 & 147-A
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 px-1.5 py-0.2 rounded">
+                      UCOC Wikimedia
+                    </span>
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-serif-heading mt-0.5">
+                    Calúnia por parte de Chronus V2: Dossiê Jurídico de Violações e Moderação Abusiva na Wikipédia
+                  </h4>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setDossierDoc('chronus');
+                    setIsDossierModalOpen(true);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1 cursor-pointer shadow-xs"
+                >
+                  <BookOpen size={12} />
+                  <span>Ler Dossiê V2</span>
+                </button>
+
+                <a
+                  href="/Cal%C3%BAnia%20por%20parte%20de%20Chronus%20V2.pdf"
+                  download="Calúnia por parte de Chronus V2.pdf"
+                  className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
+                >
+                  <Download size={12} />
+                  <span>Baixar PDF (V2)</span>
+                </a>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              Dossiê completo de 47 páginas que fundamenta crimes contra a honra (calúnia, difamação e injúria qualificada), perseguição/stalking (Art. 147-A do Código Penal), quebra de sigilo telemático, manipulação de CheckUser e violação sistemática do Código Universal de Conduta (UCOC) da Wikimedia Foundation pelo moderador Chronus.
             </p>
           </div>
         </div>
@@ -1373,6 +1431,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
       <IrregularidadesDossierModal
         isOpen={isDossierModalOpen}
         onClose={() => setIsDossierModalOpen(false)}
+        initialDocument={dossierDoc}
       />
     </article>
   );

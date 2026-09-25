@@ -431,6 +431,30 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
           </div>
         </a>
 
+        <a
+          href="/Cal%C3%BAnia%20por%20parte%20de%20Chronus%20V2.pdf"
+          download="Calúnia por parte de Chronus V2.pdf"
+          className="p-3 rounded-lg border border-red-200 dark:border-red-800/60 bg-red-50/50 dark:bg-red-950/30 hover:bg-red-100/70 dark:hover:bg-red-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          title="Dossiê Jurídico em PDF: Calúnia por parte de Chronus V2 (Crimes contra a Honra, Stalking e Violações do UCOC)"
+        >
+          <div className="p-2 rounded-md bg-gradient-to-tr from-rose-700 to-red-600 text-white shrink-0 shadow-xs">
+            <Scale size={16} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-red-900 dark:text-red-200 truncate group-hover:underline">
+                Special:DossieCaluniaChronus
+              </span>
+              <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-red-700 text-white">
+                V2 PDF
+              </span>
+            </div>
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+              Dossiê: Calúnia por parte de Chronus (Arts. 138-140 CP)
+            </div>
+          </div>
+        </a>
+
         {onNavigateToPromotionRequests && (
           <button
             onClick={onNavigateToPromotionRequests}

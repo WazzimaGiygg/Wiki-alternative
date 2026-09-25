@@ -34,6 +34,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
   onOpenEditor,
 }) => {
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
+  const [dossierDoc, setDossierDoc] = useState<'irregularidades' | 'chronus'>('irregularidades');
 
   useEffect(() => {
     updateSEO({
@@ -419,7 +420,10 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
             </div>
             <div className="pt-2 flex flex-wrap items-center gap-2">
               <button
-                onClick={() => setIsDossierModalOpen(true)}
+                onClick={() => {
+                  setDossierDoc('irregularidades');
+                  setIsDossierModalOpen(true);
+                }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition cursor-pointer"
               >
                 <BookOpen size={12} />
@@ -432,6 +436,46 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
               >
                 <Download size={12} />
                 <span>Baixar PDF (23 KB)</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Project 7: Dossiê Especial - Calúnia por parte de Chronus V2 (PDF) */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-red-300 dark:border-red-800 shadow-xs flex flex-col justify-between space-y-3">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 flex items-center justify-center font-bold">
+                  <Scale size={18} />
+                </span>
+                <span className="text-[10px] font-mono font-bold bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 px-2 py-0.5 rounded border border-red-200 dark:border-red-800">
+                  Dossiê 47 Págs (V2)
+                </span>
+              </div>
+              <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                Dossiê: Calúnia por parte de Chronus (Violações na Wikipédia)
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Dossiê jurídico detalhado de 47 páginas que comprova crimes contra a honra (Arts. 138-140 CP), perseguição/stalking (Art. 147-A CP), quebra de sigilo de IP e violações graves ao Código Universal de Conduta da Wikimedia (UCOC) cometidas pelo moderador Chronus.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => {
+                  setDossierDoc('chronus');
+                  setIsDossierModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <BookOpen size={12} />
+                <span>Ler Dossiê V2</span>
+              </button>
+              <a
+                href="/Cal%C3%BAnia%20por%20parte%20de%20Chronus%20V2.pdf"
+                download="Calúnia por parte de Chronus V2.pdf"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition"
+              >
+                <Download size={12} />
+                <span>Baixar PDF (V2)</span>
               </a>
             </div>
           </div>
@@ -514,6 +558,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
       <IrregularidadesDossierModal
         isOpen={isDossierModalOpen}
         onClose={() => setIsDossierModalOpen(false)}
+        initialDocument={dossierDoc}
       />
     </article>
   );

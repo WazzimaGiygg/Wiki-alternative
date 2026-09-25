@@ -798,6 +798,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </a>
 
+            <a
+              href="/Cal%C3%BAnia%20por%20parte%20de%20Chronus%20V2.pdf"
+              download="Calúnia por parte de Chronus V2.pdf"
+              title="Dossiê Jurídico Oficial em PDF: Calúnia por parte de Chronus V2 (Arts. 138-140 CP, Stalking e Violações do UCOC da Wikipédia)"
+              className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40"
+            >
+              <Scale size={15} className="text-red-600 dark:text-red-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Dossiê Chronus V2</span>
+                  <span className="text-[8px] bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 font-mono font-bold px-1 rounded-xs">
+                    47P
+                  </span>
+                </div>
+              )}
+            </a>
+
             <button
               onClick={() => onNavigate('terms')}
               title={t('sidebar.terms')}

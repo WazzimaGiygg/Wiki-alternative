@@ -603,6 +603,15 @@ export const Footer: React.FC<FooterProps> = ({
               <FileText size={12} className="text-rose-600 dark:text-rose-400" />
               <span>Dossiê Violações (PDF)</span>
             </a>
+            <a
+              href="/Cal%C3%BAnia%20por%20parte%20de%20Chronus%20V2.pdf"
+              download="Calúnia por parte de Chronus V2.pdf"
+              title="Dossiê Jurídico Oficial em PDF: Calúnia por parte de Chronus V2 (Crimes contra a Honra, Stalking e Violações do UCOC)"
+              className="hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1 font-semibold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded border border-red-200 dark:border-red-800/60 transition"
+            >
+              <Scale size={12} className="text-red-600 dark:text-red-400" />
+              <span>Dossiê Chronus V2 (PDF)</span>
+            </a>
             {onOpenChromeRecommendation && (
               <button
                 id="btn-footer-chrome-recommendation"
