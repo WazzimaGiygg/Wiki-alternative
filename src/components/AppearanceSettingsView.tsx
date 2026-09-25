@@ -26,6 +26,7 @@ import {
 import { AppTheme, DeviceMode, ViewMode } from '../types';
 import { playPCSpeakerBeep, playWin95Tada } from '../utils/win95Audio';
 import { playHalfLifeHEVBeep, playHalfLifeGeiger } from '../utils/halfLifeAudio';
+import { playWin31StartupSound, playWin31Ding } from '../utils/win31Audio';
 
 interface AppearanceSettingsViewProps {
   currentTheme: AppTheme;
@@ -76,6 +77,8 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
     if (newTheme === 'win1') {
       playPCSpeakerBeep(880, 0.12, 0.25);
       setTimeout(() => playPCSpeakerBeep(1174, 0.14, 0.25), 130);
+    } else if (newTheme === 'win31') {
+      playWin31StartupSound(0.35);
     } else if (newTheme === 'win95') {
       playWin95Tada(0.25);
     } else if (newTheme === 'halflife') {
@@ -175,6 +178,21 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       icon: (
         <div className="w-4 h-4 bg-[#0000aa] border border-black flex items-center justify-center text-[9px] font-mono font-bold text-white">
           W1
+        </div>
+      ),
+    },
+    {
+      id: 'win31',
+      name: 'Windows 3.1 (1992)',
+      subtitle: 'Program Manager, Janelas 3D Chanfradas & Paleta VGA 16 Cores',
+      description: 'A histórica interface gráfica do Windows 3.1 lançada pela Microsoft em abril de 1992: animação de boot completa com logotipo da bandeira voadora (flying flag) e fanfarra triunfante TADA.WAV, Program Manager (PROGMAN.EXE), fundo teal (#008080), barras de título azul marinho (#000080) com botão de controle [-] e setas [▲] [▼], botões 3D chanfrados e menus clássicos.',
+      tag: 'VGA 1992 + TADA.WAV',
+      accentColor: '#000080',
+      bgPreview: 'bg-[#008080] border-2 border-black text-black font-sans shadow-md',
+      badgeStyle: 'bg-[#000080] text-white font-bold border border-black',
+      icon: (
+        <div className="w-4 h-4 bg-[#c0c0c0] border border-black flex items-center justify-center text-[8px] font-bold text-[#000080]">
+          3.1
         </div>
       ),
     },
@@ -528,6 +546,34 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                         <span>Beep 8086</span>
                         <span className="text-[10px]">🔊</span>
                       </button>
+                    )}
+                    {t.id === 'win31' && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectTheme('win31');
+                          }}
+                          className="px-2.5 py-1 rounded-none text-[11px] font-bold border-t border-l border-white border-r border-b border-black bg-[#c0c0c0] text-black hover:bg-[#d4d0c8] transition flex items-center gap-1 font-sans shadow-xs"
+                          title="Executar animação clássica de inicialização do Windows 3.1"
+                        >
+                          <span>Boot 3.1</span>
+                          <span className="text-[10px]">↺</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playWin31StartupSound(0.35);
+                          }}
+                          className="px-2 py-1 rounded-none text-[11px] font-bold border-t border-l border-white border-r border-b border-black bg-[#c0c0c0] text-[#000080] hover:bg-[#d4d0c8] transition flex items-center gap-0.5 font-sans"
+                          title="Tocar TADA.WAV clássico"
+                        >
+                          <span>TADA</span>
+                          <span className="text-[10px]">🎺</span>
+                        </button>
+                      </div>
                     )}
                     {t.id === 'win95' && (
                       <button

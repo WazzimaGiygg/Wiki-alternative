@@ -497,6 +497,259 @@ html.theme-win95 .wiki-rendered-content .wikitable td {
 }
 
 /* ========================================================================== */
+/* TEMA WINDOWS 3.1 (Program Manager, Janelas 3D Chanfradas & VGA - 1992)    */
+/* ========================================================================== */
+
+html.theme-win31 {
+  color-scheme: light;
+}
+
+html.theme-win31 body {
+  background-color: #008080;
+  color: #000000;
+  font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, Arial, sans-serif;
+  image-rendering: auto;
+}
+
+/* Windows 3.1 window frames: 0 radius, sharp 3D beveled borders */
+html.theme-win31 * {
+  border-radius: 0 !important;
+}
+
+/* High contrast selection in Windows 3.1 */
+html.theme-win31 ::selection {
+  background-color: #000080;
+  color: #ffffff;
+}
+
+/* Top Program Manager / App Title Bar */
+.win31-titlebar {
+  background-color: #000080 !important;
+  color: #ffffff !important;
+  font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif !important;
+  font-weight: bold !important;
+  font-size: 12px !important;
+  padding: 3px 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  user-select: none !important;
+  border-bottom: 1px solid #000000 !important;
+}
+
+/* Windows 3.1 Control-Menu Box [-] */
+.win31-btn-sysmenu {
+  width: 18px !important;
+  height: 18px !important;
+  background-color: #c0c0c0 !important;
+  border-top: 1px solid #ffffff !important;
+  border-left: 1px solid #ffffff !important;
+  border-right: 1px solid #000000 !important;
+  border-bottom: 1px solid #000000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: inset 1px 1px 0px #dfdfdf !important;
+}
+.win31-btn-sysmenu::after {
+  content: "" !important;
+  display: block !important;
+  width: 10px !important;
+  height: 3px !important;
+  background-color: #000000 !important;
+  box-shadow: 0 1px 0 #ffffff !important;
+}
+.win31-btn-sysmenu:active {
+  border-top: 1px solid #000000 !important;
+  border-left: 1px solid #000000 !important;
+  border-right: 1px solid #ffffff !important;
+  border-bottom: 1px solid #ffffff !important;
+  background-color: #a0a0a0 !important;
+}
+
+/* Windows 3.1 Minimize and Maximize Arrow Buttons [▼] [▲] */
+.win31-btn-min,
+.win31-btn-max,
+.win31-btn-close {
+  width: 18px !important;
+  height: 18px !important;
+  background-color: #c0c0c0 !important;
+  border-top: 1px solid #ffffff !important;
+  border-left: 1px solid #ffffff !important;
+  border-right: 1px solid #000000 !important;
+  border-bottom: 1px solid #000000 !important;
+  color: #000000 !important;
+  font-family: monospace !important;
+  font-weight: bold !important;
+  font-size: 11px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+}
+.win31-btn-min:active,
+.win31-btn-max:active,
+.win31-btn-close:active {
+  border-top: 1px solid #000000 !important;
+  border-left: 1px solid #000000 !important;
+  border-right: 1px solid #ffffff !important;
+  border-bottom: 1px solid #ffffff !important;
+  background-color: #a0a0a0 !important;
+}
+
+/* Windows 3.1 Menu Bar */
+.win31-menubar {
+  background-color: #c0c0c0 !important;
+  border-bottom: 1px solid #808080 !important;
+  padding: 3px 8px !important;
+  font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif !important;
+  font-size: 11px !important;
+  color: #000000 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  user-select: none !important;
+}
+.win31-menubar-item {
+  cursor: pointer !important;
+  padding: 1px 4px !important;
+}
+.win31-menubar-item:hover {
+  background-color: #000080 !important;
+  color: #ffffff !important;
+}
+
+/* Windows 3.1 Window Outer and Inner Bevels */
+.win31-window {
+  background-color: #c0c0c0 !important;
+  border: 1px solid #000000 !important;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4) !important;
+  outline: 2px solid #c0c0c0 !important;
+}
+
+/* Windows 3.1 Group Box / Recessed Frame */
+.win31-groupbox {
+  border-top: 1px solid #808080 !important;
+  border-left: 1px solid #808080 !important;
+  border-right: 1px solid #ffffff !important;
+  border-bottom: 1px solid #ffffff !important;
+  padding: 8px !important;
+  margin-top: 6px !important;
+  position: relative !important;
+}
+
+/* Windows 3.1 Buttons */
+html.theme-win31 button:not([class*="win31-btn"]):not([class*="bg-transparent"]),
+.win31-button {
+  background-color: #c0c0c0 !important;
+  border-top: 2px solid #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  color: #000000 !important;
+  font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif !important;
+  font-weight: bold !important;
+  box-shadow: inset 1px 1px 0px #dfdfdf, 1px 1px 0px #000000 !important;
+  transition: none !important;
+}
+html.theme-win31 button:not([class*="win31-btn"]):not([class*="bg-transparent"]):active,
+.win31-button:active {
+  border-top: 2px solid #000000 !important;
+  border-left: 2px solid #000000 !important;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  background-color: #b0b0b0 !important;
+  box-shadow: inset 1px 1px 0px #808080 !important;
+}
+
+/* Windows 3.1 Inputs & Textareas: Sunken 3D boxes */
+html.theme-win31 input[type="text"],
+html.theme-win31 input[type="search"],
+html.theme-win31 input[type="email"],
+html.theme-win31 input[type="password"],
+html.theme-win31 textarea,
+html.theme-win31 select {
+  background-color: #ffffff !important;
+  border-top: 2px solid #808080 !important;
+  border-left: 2px solid #808080 !important;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  color: #000000 !important;
+  box-shadow: inset 1px 1px 0px #000000 !important;
+}
+
+/* General containers in Windows 3.1 */
+html.theme-win31 header {
+  background-color: #c0c0c0 !important;
+  border-bottom: 2px solid #000000 !important;
+}
+
+html.theme-win31 main,
+html.theme-win31 .bg-white,
+html.theme-win31 .dark\:bg-slate-900,
+html.theme-win31 .dark\:bg-\[\#0f172a\],
+html.theme-win31 .dark\:bg-slate-850 {
+  background-color: #c0c0c0 !important;
+  color: #000000 !important;
+  border-color: #808080 !important;
+}
+
+html.theme-win31 article,
+html.theme-win31 .wiki-rendered-content {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 2px solid #808080 !important;
+  box-shadow: inset 1px 1px 0px #000000 !important;
+  padding: 16px !important;
+}
+
+html.theme-win31 .wiki-rendered-content h1 {
+  color: #000080 !important;
+  border-bottom: 2px solid #000080 !important;
+}
+
+html.theme-win31 .wiki-rendered-content h2 {
+  color: #000080 !important;
+  border-bottom: 1px solid #808080 !important;
+}
+
+html.theme-win31 .wiki-rendered-content a,
+html.theme-win31 a {
+  color: #000080 !important;
+  text-decoration: underline !important;
+}
+html.theme-win31 .wiki-rendered-content a:hover,
+html.theme-win31 a:hover {
+  color: #ff0000 !important;
+}
+
+/* Scrollbars in Windows 3.1 */
+html.theme-win31 ::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+html.theme-win31 ::-webkit-scrollbar-track {
+  background: #c0c0c0;
+  border-left: 1px solid #808080;
+}
+html.theme-win31 ::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+}
+html.theme-win31 ::-webkit-scrollbar-thumb:active {
+  background: #a0a0a0;
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+}
+
+/* ========================================================================== */
 /* TEMA WINDOWS XP (Luna Blue, Bliss & Iniciar 2001)                          */
 /* ========================================================================== */
 

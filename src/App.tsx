@@ -54,6 +54,7 @@ import { AppearanceSettingsView } from './components/AppearanceSettingsView';
 import { WindowsXPBootScreen } from './components/WindowsXPBootScreen';
 import { Windows7BootScreen } from './components/Windows7BootScreen';
 import { Windows95BootScreen } from './components/Windows95BootScreen';
+import { Windows31BootScreen } from './components/Windows31BootScreen';
 import { Windows95Bot } from './components/Windows95Bot';
 import { AdvancedSearchView } from './components/AdvancedSearchView';
 import { WikiCompetitorComparisonView } from './components/WikiCompetitorComparisonView';
@@ -166,13 +167,19 @@ export default function App() {
     };
   }, []);
 
-  // Multi-theme state supporting light, dark, google, google-dark, win95, winxp, genshin, android15, stardew, repo, minecraft, roblox, nokia3310, win1
+  // Multi-theme state supporting light, dark, google, google-dark, win95, winxp, win7, win31, genshin, android15, stardew, repo, minecraft, roblox, nokia3310, win1, halflife
   const [theme, setTheme] = useState<AppTheme>(() => {
     const saved = localStorage.getItem('wikizero_theme_v3') as AppTheme | null;
-    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'winxp' || saved === 'genshin' || saved === 'android15' || saved === 'stardew' || saved === 'repo' || saved === 'minecraft' || saved === 'roblox' || saved === 'nokia3310' || saved === 'win1')) {
+    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'winxp' || saved === 'win7' || saved === 'win31' || saved === 'wikidiota' || saved === 'genshin' || saved === 'android15' || saved === 'stardew' || saved === 'repo' || saved === 'minecraft' || saved === 'roblox' || saved === 'nokia3310' || saved === 'win1' || saved === 'halflife')) {
       return saved;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  // Controls classic Windows 3.1 boot startup animation
+  const [showWin31Boot, setShowWin31Boot] = useState<boolean>(() => {
+    const saved = localStorage.getItem('wikizero_theme_v3');
+    return saved === 'win31';
   });
 
   // Controls classic Windows 95 boot startup animation
@@ -198,7 +205,7 @@ export default function App() {
   // Apply appropriate theme classes to document root
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-win7', 'theme-wikidiota', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1', 'theme-halflife');
+    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-win7', 'theme-win31', 'theme-wikidiota', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1', 'theme-halflife');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -212,6 +219,8 @@ export default function App() {
       root.classList.add('theme-winxp');
     } else if (theme === 'win7') {
       root.classList.add('theme-win7');
+    } else if (theme === 'win31') {
+      root.classList.add('theme-win31');
     } else if (theme === 'wikidiota') {
       root.classList.add('theme-wikidiota');
     } else if (theme === 'genshin') {
@@ -585,7 +594,9 @@ export default function App() {
 
   // === HANDLERS ===
   const handleSetTheme = (newTheme: AppTheme) => {
-    if (newTheme === 'win95') {
+    if (newTheme === 'win31') {
+      setShowWin31Boot(true);
+    } else if (newTheme === 'win95') {
       setShowWin95Boot(true);
     } else if (newTheme === 'winxp') {
       setShowWinXPBoot(true);
@@ -1162,6 +1173,7 @@ export default function App() {
         onRebootWin7={() => setShowWin7Boot(true)}
         onRebootWinXP={() => setShowWinXPBoot(true)}
         onRebootWin95={() => setShowWin95Boot(true)}
+        onRebootWin31={() => setShowWin31Boot(true)}
       />
 
       {/* 2. Main Workspace Layout */}
@@ -2183,7 +2195,13 @@ export default function App() {
         onTools={handleContextMenuTools}
       />
 
-      {/* 9. Animação de Inicialização Clássica Windows 95 e Windows XP (Boot Loader) */}
+      {/* 9. Animação de Inicialização Clássica Windows 3.1, Windows 95 e Windows XP (Boot Loader) */}
+      {showWin31Boot && (
+        <Windows31BootScreen
+          onComplete={() => setShowWin31Boot(false)}
+        />
+      )}
+
       {showWin95Boot && (
         <Windows95BootScreen
           onComplete={() => setShowWin95Boot(false)}

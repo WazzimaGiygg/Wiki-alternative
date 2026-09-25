@@ -91,6 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
   const isWin1 = theme === 'win1';
+  const isWin31 = theme === 'win31';
   const isWin95 = theme === 'win95';
   const isWinXP = theme === 'winxp';
   const isWin7 = theme === 'win7';
@@ -117,6 +118,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       className={`relative flex-col transition-all duration-200 z-20 select-none shrink-0 sticky top-16 self-start max-h-[calc(100vh-5rem)] overflow-hidden flex ${
         isWin1
           ? 'bg-white border-2 border-black !rounded-none shadow-none font-mono text-black'
+          : isWin31
+          ? 'win31-window !border-2 !border-black !rounded-none !bg-[#c0c0c0] font-sans text-black shadow-md'
           : isWin95
           ? 'win95-window !border-2 !rounded-none !bg-[#c0c0c0]'
           : isWinXP

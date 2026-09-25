@@ -59,6 +59,7 @@ interface HeaderProps {
   onRebootWin7?: () => void;
   onRebootWinXP?: () => void;
   onRebootWin95?: () => void;
+  onRebootWin31?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -88,6 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
   onRebootWin7,
   onRebootWinXP,
   onRebootWin95,
+  onRebootWin31,
 }) => {
   const { currentLanguage, setLanguage, t, allLanguages } = useLanguage();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -103,6 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
   const isWin1 = theme === 'win1';
+  const isWin31 = theme === 'win31';
   const isWin95 = theme === 'win95';
   const isWinXP = theme === 'winxp';
   const isWin7 = theme === 'win7';
@@ -210,6 +213,67 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="bg-[#0000aa] text-white px-1.5 py-0.2">B:</span>
               <span className="bg-black text-white px-1.5 py-0.2 font-black">C:</span>
               <span className="font-bold">C:\WIKIZERO\*.*</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Windows 3.1 (1992) Program Manager Window Title Bar & Menu Bar */}
+      {isWin31 && (
+        <div className="bg-[#c0c0c0] border-b-2 border-black font-sans text-xs select-none">
+          {/* Title Bar with [-] Control Menu, Navy Blue Header, and [▼] [▲] [✕] buttons */}
+          <div className="win31-titlebar">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={() => onSetTheme?.('light')}
+                className="win31-btn-sysmenu shrink-0"
+                title="Menu de Controle do Sistema (Clique para sair do Windows 3.1)"
+              />
+              <span className="truncate tracking-wide">
+                Gerenciador de Programas - [WikiZero Enciclopédia Multimídia 3.1]
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1 shrink-0 ml-2">
+              {onRebootWin31 && (
+                <button
+                  type="button"
+                  onClick={onRebootWin31}
+                  className="px-1.5 h-4 bg-[#c0c0c0] text-black font-sans text-[10px] font-bold flex items-center gap-0.5 border-t border-l border-white border-r border-b border-black active:border-black leading-none cursor-pointer"
+                  title="Reiniciar e rever a tela de inicialização clássica do Windows 3.1"
+                >
+                  <span>Boot 3.1</span>
+                  <span>↺</span>
+                </button>
+              )}
+              <button className="win31-btn-min" title="Minimizar">▼</button>
+              <button className="win31-btn-max" title="Maximizar">▲</button>
+              <button
+                type="button"
+                onClick={() => onSetTheme?.('light')}
+                className="win31-btn-close hover:bg-red-700 hover:text-white"
+                title="Fechar / Sair do Modo Windows 3.1"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* Windows 3.1 Authentic Menu Bar: Arquivo, Opções, Janela, Ajuda */}
+          <div className="win31-menubar">
+            <div className="flex items-center gap-3 font-bold text-[11px]">
+              <span className="win31-menubar-item"><u>A</u>rquivo</span>
+              <span className="win31-menubar-item"><u>O</u>pções</span>
+              <span className="win31-menubar-item"><u>J</u>anela</span>
+              <span className="win31-menubar-item"><u>A</u>juda</span>
+              <span className="win31-menubar-item cursor-pointer text-[#000080]" onClick={onRandomPage}>
+                Artigo <u>A</u>leatório
+              </span>
+            </div>
+            <div className="hidden md:flex items-center gap-1.5 text-[10px] text-slate-700 font-mono">
+              <span className="px-1 bg-white border border-[#808080]">PROGMAN.EXE</span>
+              <span>16-Bit VGA 640×480</span>
             </div>
           </div>
         </div>
