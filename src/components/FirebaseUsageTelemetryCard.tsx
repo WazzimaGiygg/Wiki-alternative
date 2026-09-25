@@ -26,6 +26,7 @@ import { collection, doc, getDocs, setDoc, query, limit } from 'firebase/firesto
 import { getDbSafe } from '../services/firebase';
 import { FirebaseUsageMetrics, WikiArticle, WikiPage, UserProfile } from '../types';
 import { FirebaseUsageMetricsService } from '../services/firebaseUsageMetricsService';
+import { FirebaseUsagePdfExportModal } from './FirebaseUsagePdfExportModal';
 
 interface FirebaseUsageTelemetryCardProps {
   articles: WikiArticle[];
@@ -48,6 +49,7 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
   const [activeBreakdownTab, setActiveBreakdownTab] = useState<'all' | 'reads' | 'writes' | 'memory'>('all');
   const [isSimulating, setIsSimulating] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>(new Date().toLocaleTimeString('pt-BR'));
+  const [showPdfExportModal, setShowPdfExportModal] = useState<boolean>(false);
 
   const loadMetrics = async () => {
     try {
@@ -212,6 +214,16 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
             >
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               <span>Atualizar</span>
+            </button>
+
+            {/* Botão de Exportar Relatório PDF */}
+            <button
+              onClick={() => setShowPdfExportModal(true)}
+              className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs shadow-amber-500/20 transition active:scale-95 cursor-pointer"
+              title="Exportar relatório consolidado de leituras, gravações e memória usada para PDF (escolha por dia, mês ou ano)"
+            >
+              <FileText size={14} />
+              <span>Exportar Relatório PDF</span>
             </button>
 
             <button
@@ -490,26 +502,37 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
               </p>
             </div>
 
-            {/* Abas de Filtro */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg text-xs">
-              {[
-                { id: 'all', label: 'Visão Completa' },
-                { id: 'reads', label: 'Leituras' },
-                { id: 'writes', label: 'Gravações' },
-                { id: 'memory', label: 'Memória' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveBreakdownTab(tab.id as any)}
-                  className={`px-3 py-1 rounded font-medium transition ${
-                    activeBreakdownTab === tab.id
-                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            {/* Abas de Filtro e Exportação */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setShowPdfExportModal(true)}
+                className="px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                title="Exportar relatório detalhado em PDF (dia, mês ou ano)"
+              >
+                <FileText size={13} className="text-amber-600 dark:text-amber-400" />
+                <span>Exportar PDF</span>
+              </button>
+
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg text-xs">
+                {[
+                  { id: 'all', label: 'Visão Completa' },
+                  { id: 'reads', label: 'Leituras' },
+                  { id: 'writes', label: 'Gravações' },
+                  { id: 'memory', label: 'Memória' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveBreakdownTab(tab.id as any)}
+                    className={`px-3 py-1 rounded font-medium transition ${
+                      activeBreakdownTab === tab.id
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -720,6 +743,16 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Exportação do Relatório do Firebase para PDF (por Dia, Mês e Ano) */}
+      {showPdfExportModal && metrics && (
+        <FirebaseUsagePdfExportModal
+          isOpen={showPdfExportModal}
+          onClose={() => setShowPdfExportModal(false)}
+          metrics={metrics}
+          currentUser={currentUser}
+        />
       )}
     </div>
   );
