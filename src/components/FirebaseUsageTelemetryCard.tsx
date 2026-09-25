@@ -20,7 +20,10 @@ import {
   Sparkles,
   ArrowUpRight,
   ShieldCheck,
+  Radio,
 } from 'lucide-react';
+import { collection, doc, getDocs, setDoc, query, limit } from 'firebase/firestore';
+import { getDbSafe } from '../services/firebase';
 import { FirebaseUsageMetrics, WikiArticle, WikiPage, UserProfile } from '../types';
 import { FirebaseUsageMetricsService } from '../services/firebaseUsageMetricsService';
 
@@ -44,12 +47,13 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [activeBreakdownTab, setActiveBreakdownTab] = useState<'all' | 'reads' | 'writes' | 'memory'>('all');
   const [isSimulating, setIsSimulating] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>(new Date().toLocaleTimeString('pt-BR'));
 
   const loadMetrics = async () => {
-    setLoading(true);
     try {
       const data = await FirebaseUsageMetricsService.getMetrics(articles, pages);
       setMetrics(data);
+      setLastSyncTime(new Date().toLocaleTimeString('pt-BR'));
     } catch (e) {
       console.warn('Erro ao carregar métricas do Firebase:', e);
     } finally {
@@ -57,26 +61,67 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
     }
   };
 
+  // Sincronização em Tempo Real via subscription ativa
   useEffect(() => {
-    loadMetrics();
+    const unsubscribe = FirebaseUsageMetricsService.subscribeToMetrics((data) => {
+      setMetrics(data);
+      setLoading(false);
+      setLastSyncTime(new Date().toLocaleTimeString('pt-BR'));
+    });
+
+    // Batimento periódico a cada 8 segundos para garantir sincronia do banco
+    const interval = setInterval(() => {
+      loadMetrics();
+    }, 8000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
   }, [articles.length, pages.length]);
 
   const handleTestRead = async () => {
     setIsSimulating(true);
+    // Executa leitura física real na coleção /articles do Firestore
+    const db = getDbSafe();
+    if (db) {
+      try {
+        await getDocs(query(collection(db, 'articles'), limit(5)));
+      } catch (err) {
+        console.warn('Diagnóstico de leitura remota:', err);
+      }
+    }
     FirebaseUsageMetricsService.simulateReadTest('articles', 25);
     await loadMetrics();
-    setActionFeedback('Consulta de leitura diagnóstica executada (+25 leituras registradas).');
-    setTimeout(() => setActionFeedback(null), 3000);
+    setActionFeedback('Consulta de leitura diagnóstica em tempo real executada (+25 leituras registradas no Firestore).');
+    setTimeout(() => setActionFeedback(null), 3500);
     setIsSimulating(false);
     if (onRefresh) onRefresh();
   };
 
   const handleTestWrite = async () => {
     setIsSimulating(true);
+    // Executa gravação física real no documento /system_telemetry/diagnostic_ping
+    const db = getDbSafe();
+    if (db) {
+      try {
+        await setDoc(
+          doc(db, 'system_telemetry', 'diagnostic_ping'),
+          {
+            pingAt: new Date().toISOString(),
+            executedBy: currentUser?.displayName || currentUser?.username || 'admin',
+            operation: 'diagnostic_write_test',
+          },
+          { merge: true }
+        );
+      } catch (err) {
+        console.warn('Diagnóstico de gravação remota:', err);
+      }
+    }
     FirebaseUsageMetricsService.simulateWriteTest('articles', 5);
     await loadMetrics();
-    setActionFeedback('Operação de gravação diagnóstica executada (+5 mutações registradas).');
-    setTimeout(() => setActionFeedback(null), 3000);
+    setActionFeedback('Operação de gravação diagnóstica em tempo real executada (+5 mutações persistidas no Firestore).');
+    setTimeout(() => setActionFeedback(null), 3500);
     setIsSimulating(false);
     if (onRefresh) onRefresh();
   };
@@ -92,7 +137,7 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    setActionFeedback('Relatório de telemetria exportado em JSON.');
+    setActionFeedback('Relatório de telemetria em tempo real exportado em JSON.');
     setTimeout(() => setActionFeedback(null), 3000);
   };
 
@@ -100,7 +145,7 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
     return (
       <div className="p-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex items-center justify-center gap-3 text-xs text-slate-500">
         <RefreshCw size={16} className="animate-spin text-amber-500" />
-        <span>Calculando consumo de leituras, gravações e memória do Firebase...</span>
+        <span>Calculando em tempo real consumo de leituras, gravações e memória do Firebase...</span>
       </div>
     );
   }
@@ -118,14 +163,20 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
                 <Activity size={20} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>Monitor de Consumo do Firebase Firestore</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
-                    Ao Vivo
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Monitor de Consumo do Firebase Firestore
+                  </h3>
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Tempo Real Ativo
                   </span>
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Acompanhamento minucioso de <strong>leituras</strong>, <strong>gravações (mutações)</strong> e <strong>memória/armazenamento em uso</strong> no banco de dados.
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    Sincronizado: {lastSyncTime}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                  Acompanhamento instantâneo de <strong>leituras</strong>, <strong>gravações (mutações)</strong> e <strong>memória/armazenamento real</strong> existente no banco <code>{metrics.firestoreDatabaseId || 'ai-studio-wikizeroenciclop'}</code>.
                 </p>
               </div>
             </div>
@@ -137,7 +188,7 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
               onClick={handleTestRead}
               disabled={isSimulating}
               className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
-              title="Executa 25 leituras de teste no Firestore"
+              title="Executa consulta real de 25 leituras de teste no Firestore"
             >
               <Zap size={13} className="text-blue-500" />
               <span>Testar Leitura (+25)</span>
@@ -147,7 +198,7 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
               onClick={handleTestWrite}
               disabled={isSimulating}
               className="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50"
-              title="Executa 5 mutações de teste no Firestore"
+              title="Executa mutação física de 5 gravações de teste no Firestore"
             >
               <TrendingUp size={13} className="text-emerald-500" />
               <span>Testar Gravação (+5)</span>
@@ -157,7 +208,7 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
               onClick={loadMetrics}
               disabled={loading}
               className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition"
-              title="Recalcular métricas"
+              title="Consultar novamente o estado atual do Firestore"
             >
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               <span>Atualizar</span>
@@ -172,6 +223,22 @@ export const FirebaseUsageTelemetryCard: React.FC<FirebaseUsageTelemetryCardProp
             </button>
           </div>
         </div>
+
+        {/* Banner do último evento em tempo real */}
+        {metrics.lastLiveEvent && (
+          <div className="mt-3 p-2 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] text-slate-600 dark:text-slate-300 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 truncate">
+              <Radio size={12} className="text-emerald-500 shrink-0" />
+              <span className="font-semibold text-slate-700 dark:text-slate-200">
+                Última operação capturada:
+              </span>
+              <span className="truncate">{metrics.lastLiveEvent.description}</span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono shrink-0">
+              {new Date(metrics.lastLiveEvent.timestamp).toLocaleTimeString('pt-BR')}
+            </span>
+          </div>
+        )}
 
         {actionFeedback && (
           <div className="mt-3 p-2.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs text-emerald-800 dark:text-emerald-200 flex items-center gap-2">

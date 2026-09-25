@@ -1256,6 +1256,15 @@ export interface FirebaseUsageMetrics {
     dailyLimit: number;
     totalCumulative: number;
   };
+  isRealTimeActive?: boolean;
+  firestoreDatabaseId?: string;
+  projectId?: string;
+  lastLiveEvent?: {
+    type: 'read' | 'write' | 'delete' | 'sync';
+    collection: string;
+    timestamp: string;
+    description: string;
+  };
 }
 
 // ============================================================================

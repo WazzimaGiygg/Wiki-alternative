@@ -299,6 +299,12 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && (resource.data.reviewerUid == request.auth.uid || isAdmin());
     }
 
+    // ✅ Telemetria e métricas de uso do Firestore em tempo real
+    match /system_telemetry/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
     // ✅ Regra fallback - leitura pública, escrita apenas para registrados
     match /{document=**} {
       allow read: if true;  // ✅ QUALQUER UM PODE LER TUDO

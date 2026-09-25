@@ -84,6 +84,7 @@ import { verifyClientIpForLogin } from '../utils/wikimediaIpChecker';
 import { checkClientVpnConnection, logVpnBlockAttempt } from '../utils/vpnChecker';
 import { validateUserIdentifiersAgainstWikimediaAdmins, checkIfWikimediaAdmin } from '../utils/wikimediaAdminChecker';
 import { ACTIVE_FIREBASE_CONFIG, getActiveFirebaseConfig } from '../config/firebaseCustomConfig';
+import { FirebaseUsageMetricsService } from './firebaseUsageMetricsService';
 
 // Configuração ativa do Firebase derivada do arquivo de configuração do desenvolvedor (src/config/firebaseCustomConfig.ts)
 export const firebaseConfig = {
@@ -465,6 +466,9 @@ export const StorageService = {
           return timeB - timeA;
         });
 
+        // Registrar leituras do Firestore na telemetria em tempo real
+        FirebaseUsageMetricsService.recordRead('articles', remoteArticles.length, `Carregamento de ${remoteArticles.length} artigo(s) do Firestore`);
+
         // Apenas dados reais do Firestore são mantidos e salvos no cache
         localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(remoteArticles));
         return remoteArticles;
@@ -485,6 +489,7 @@ export const StorageService = {
       const unsubscribe = onSnapshot(
         q,
         (snap) => {
+          FirebaseUsageMetricsService.recordRead('articles', snap.docChanges().length || 1, 'Snapshot em tempo real de artigos do Firestore');
           const list: WikiArticle[] = [];
           snap.forEach((d) => {
             const data = d.data();
@@ -927,6 +932,9 @@ export const StorageService = {
         // 1. Coleção principal /articles/{id} para leitura rápida global
         await setDoc(doc(db, 'articles', article.id), firestorePayload);
 
+        // Registrar gravação na telemetria em tempo real
+        FirebaseUsageMetricsService.recordWrite('articles', 1, `Gravação do artigo "${article.titulo}" no Firestore`);
+
         // 2. Coleção estruturada por tópico /documentos/{pageUid}/inevitavel/{id}
         await setDoc(doc(db, 'documentos', article.pageUid, 'inevitavel', article.id), {
           ...firestorePayload,
@@ -1027,6 +1035,7 @@ export const StorageService = {
         await deleteDoc(doc(db, 'articles', article.id));
         await deleteDoc(doc(db, 'documentos', article.pageUid, 'inevitavel', article.id));
         await deleteDoc(doc(db, 'pages', `main:${article.id}`));
+        FirebaseUsageMetricsService.recordDelete('articles', 1, `Exclusão do artigo "${article.titulo}" no Firestore`);
       } catch (e) {
         console.warn('Firestore delete sync error:', e);
       }
