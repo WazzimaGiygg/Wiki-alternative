@@ -30,12 +30,13 @@ import {
   UserCheck,
   Download,
   BookOpen,
+  Presentation,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle } from '../types';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
-import { IrregularidadesDossierModal } from './IrregularidadesDossierModal';
+import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
 
 interface InformativeViewsProps {
   user: UserProfile | null;
@@ -258,7 +259,7 @@ export const DonationView: React.FC<InformativeViewsProps> = () => {
 // === 3. PRIVACY POLICY VIEW (LGPD) ===
 export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate }) => {
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
-  const [dossierDoc, setDossierDoc] = useState<'irregularidades' | 'chronus'>('irregularidades');
+  const [dossierDoc, setDossierDoc] = useState<DossierDocType>('irregularidades');
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in select-none">
@@ -407,6 +408,56 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate 
 
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               Auditoria técnico-jurídica pormenorizada de 47 páginas que detalha a prática de crimes contra a honra (calúnia com falsa imputação de crimes informáticos, difamação e injúria com majorante de alcance na internet), perseguição/stalking (Art. 147-A CP), quebra de sigilo telemático, bloqueios geográficos de ASNs e violações graves ao Código Universal de Conduta (UCOC) da Wikimedia Foundation cometidas pelo moderador Chronus contra o titular Pedro Henrique Cardona Peres (WazzimaGiygg).
+            </p>
+          </div>
+
+          {/* Dossiê Especial 3: Apresentação Institucional (Accountability) */}
+          <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-purple-50 via-indigo-50 to-pink-50 dark:from-purple-950/40 dark:via-slate-900 dark:to-pink-950/40 border-2 border-purple-300 dark:border-purple-800 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-tr from-purple-700 to-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                  <Presentation size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                    <span className="text-[10px] font-mono font-bold uppercase bg-purple-200 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-1.5 py-0.5 rounded">
+                      Dossiê de Apresentação Oficial
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded">
+                      15 Slides Executivos • WMF
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">
+                    Wikimedia Institutional Accountability Dossier: O Caso Chronus
+                  </h4>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setDossierDoc('apresentacao');
+                    setIsDossierModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <BookOpen size={13} />
+                  <span>Ler Apresentação</span>
+                </button>
+
+                <a
+                  href="/Wikimedia_Institutional_Accountability_Dossier.pdf"
+                  download="Wikimedia_Institutional_Accountability_Dossier.pdf"
+                  className="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <Download size={13} />
+                  <span>Baixar PDF (15 Slides)</span>
+                </a>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Apresentação executiva em 15 lâminas estruturadas detalhando as falhas sistêmicas na moderação da Wikipédia Lusófona, quebra de sigilo de denúncias confidenciais (whistleblower), violações da LGPD e Marco Civil da Internet, além das exigências mandatórias de due process sob o Digital Services Act (DSA - Regulamento UE 2022/2065).
             </p>
           </div>
 

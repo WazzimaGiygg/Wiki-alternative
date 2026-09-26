@@ -30,10 +30,11 @@ import {
   FileWarning,
   Flame,
   Download,
+  Presentation,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { formatExternalUrl } from '../utils/linkUtils';
-import { IrregularidadesDossierModal } from './IrregularidadesDossierModal';
+import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
 
 interface EditingEthicsViewProps {
   user: UserProfile | null;
@@ -52,7 +53,7 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
-  const [dossierDoc, setDossierDoc] = useState<'irregularidades' | 'chronus'>('irregularidades');
+  const [dossierDoc, setDossierDoc] = useState<DossierDocType>('irregularidades');
 
   // Interactive Checklist State
   const [checklistAnswers, setChecklistAnswers] = useState<{ [key: string]: boolean | null }>({
@@ -424,6 +425,59 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
 
               <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
                 Estudo de caso e representação jurídica documental de 47 páginas que demonstra calúnia consumada (Art. 138 CP), difamação, stalking/perseguição cibernética (Art. 147-A CP), quebra de sigilo telemático e violação cabal do Código Universal de Conduta da Wikimedia Foundation (UCOC) pelo administrador Chronus.
+              </p>
+            </div>
+
+            {/* Dossiê Especial 3: Apresentação Institucional (Accountability) */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 via-indigo-50 to-pink-50 dark:from-purple-950/40 dark:via-indigo-950/30 dark:to-pink-950/40 border border-purple-300 dark:border-purple-800 space-y-2 mt-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-700 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                    <Presentation size={16} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono font-bold uppercase bg-purple-100 dark:bg-purple-900/70 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded">
+                        Dossiê de Apresentação
+                      </span>
+                      <span className="text-[10px] font-mono font-bold uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.2 rounded">
+                        15 Slides Executivos
+                      </span>
+                      <span className="text-[10px] font-mono font-bold uppercase bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.2 rounded">
+                        Responsabilidade WMF
+                      </span>
+                    </div>
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-serif-heading mt-0.5">
+                      Wikimedia Institutional Accountability Dossier: O Caso Chronus (15 Slides)
+                    </h4>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => {
+                      setDossierDoc('apresentacao');
+                      setIsDossierModalOpen(true);
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1 cursor-pointer shadow-xs"
+                  >
+                    <BookOpen size={12} />
+                    <span>Ler Apresentação</span>
+                  </button>
+
+                  <a
+                    href="/Wikimedia_Institutional_Accountability_Dossier.pdf"
+                    download="Wikimedia_Institutional_Accountability_Dossier.pdf"
+                    className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
+                  >
+                    <Download size={12} />
+                    <span>Baixar PDF (15 Slides)</span>
+                  </a>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                Apresentação oficial de prestação de contas institucional abordando o caso do moderador Chronus, instrumentalização técnica, vazamento de correspondências confidenciais com a WMF e obrigações mandatórias do Digital Services Act europeu (DSA) e da LGPD brasileira.
               </p>
             </div>
 

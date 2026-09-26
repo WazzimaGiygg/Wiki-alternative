@@ -27,10 +27,11 @@ import {
   Lock,
   Download,
   Scale,
+  Presentation,
 } from 'lucide-react';
 import { ViewMode } from '../types';
 import { updateSEO } from '../utils/seoManager';
-import { IrregularidadesDossierModal } from './IrregularidadesDossierModal';
+import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
 
 interface WikiCompetitorComparisonViewProps {
   onNavigate: (view: ViewMode) => void;
@@ -225,7 +226,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
   onOpenGeminiNotebook,
 }) => {
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
-  const [dossierDoc, setDossierDoc] = useState<'irregularidades' | 'chronus'>('irregularidades');
+  const [dossierDoc, setDossierDoc] = useState<DossierDocType>('irregularidades');
 
   useEffect(() => {
     updateSEO({
@@ -953,6 +954,59 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
 
             <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
               Dossiê completo de 47 páginas que fundamenta crimes contra a honra (calúnia, difamação e injúria qualificada), perseguição/stalking (Art. 147-A do Código Penal), quebra de sigilo telemático, manipulação de CheckUser e violação sistemática do Código Universal de Conduta (UCOC) da Wikimedia Foundation pelo moderador Chronus.
+            </p>
+          </div>
+
+          {/* Dossiê Especial 3: Apresentação Institucional (Accountability) */}
+          <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 via-indigo-50 to-pink-50 dark:from-purple-950/40 dark:via-indigo-950/30 dark:to-pink-950/40 border border-purple-300 dark:border-purple-800 space-y-2 mt-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-700 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                  <Presentation size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-mono font-bold uppercase bg-purple-100 dark:bg-purple-900/70 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded">
+                      Dossiê de Apresentação Oficial
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.2 rounded">
+                      15 Slides Executivos
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.2 rounded">
+                      Responsabilidade Institucional WMF
+                    </span>
+                  </div>
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-serif-heading mt-0.5">
+                    Wikimedia Institutional Accountability Dossier: O Caso Chronus (15 Slides)
+                  </h4>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setDossierDoc('apresentacao');
+                    setIsDossierModalOpen(true);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-1 cursor-pointer shadow-xs"
+                >
+                  <BookOpen size={12} />
+                  <span>Ler Apresentação</span>
+                </button>
+
+                <a
+                  href="/Wikimedia_Institutional_Accountability_Dossier.pdf"
+                  download="Wikimedia_Institutional_Accountability_Dossier.pdf"
+                  className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
+                >
+                  <Download size={12} />
+                  <span>Baixar PDF (15 Slides)</span>
+                </a>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+              Apresentação executiva em 15 lâminas com fundamentação técnico-jurídica sobre violações ao Código Universal de Conduta (UCoC), instrumentalização autoritária de ferramentas, quebra de sigilo e vazamento de correspondência confidencial (whistleblower), responsabilização civil e internacional da Wikimedia Foundation (DSA e Marco Civil).
             </p>
           </div>
         </div>

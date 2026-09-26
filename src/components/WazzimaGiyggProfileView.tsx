@@ -18,11 +18,12 @@ import {
   Terminal,
   Newspaper,
   Download,
+  Presentation,
 } from 'lucide-react';
 import { ViewMode } from '../types';
 import { updateSEO } from '../utils/seoManager';
 import { formatExternalUrl } from '../utils/linkUtils';
-import { IrregularidadesDossierModal } from './IrregularidadesDossierModal';
+import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
 
 interface WazzimaGiyggProfileViewProps {
   onNavigate: (view: ViewMode) => void;
@@ -34,7 +35,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
   onOpenEditor,
 }) => {
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
-  const [dossierDoc, setDossierDoc] = useState<'irregularidades' | 'chronus'>('irregularidades');
+  const [dossierDoc, setDossierDoc] = useState<DossierDocType>('irregularidades');
 
   useEffect(() => {
     updateSEO({
@@ -476,6 +477,46 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
               >
                 <Download size={12} />
                 <span>Baixar PDF (V2)</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Project 8: Dossiê de Apresentação Oficial (15 Slides) */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-purple-300 dark:border-purple-800 shadow-xs flex flex-col justify-between space-y-3">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
+                  <Presentation size={18} />
+                </span>
+                <span className="text-[10px] font-mono font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
+                  Apresentação 15 Slides
+                </span>
+              </div>
+              <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                Dossiê de Apresentação: Wikimedia Institutional Accountability
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Apresentação executiva em 15 lâminas analisando a responsabilidade institucional da Wikimedia Foundation perante o Caso Chronus, demonstrando instrumentalização de ferramentas, quebra de sigilo de denúncias e infrações ao Marco Civil e DSA europeu.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => {
+                  setDossierDoc('apresentacao');
+                  setIsDossierModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <BookOpen size={12} />
+                <span>Ler Apresentação</span>
+              </button>
+              <a
+                href="/Wikimedia_Institutional_Accountability_Dossier.pdf"
+                download="Wikimedia_Institutional_Accountability_Dossier.pdf"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition"
+              >
+                <Download size={12} />
+                <span>Baixar PDF (15 Slides)</span>
               </a>
             </div>
           </div>
