@@ -26,6 +26,7 @@ import { ModerationLockModal } from './ModerationLockModal';
 import { StorageService } from '../services/storageService';
 import { WikiStatisticsPanel } from './WikiStatisticsPanel';
 import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
+import { WikiFeaturedArticle } from './WikiFeaturedArticle';
 
 interface WikiHubProps {
   pages: WikiPage[];
@@ -195,6 +196,15 @@ export const WikiHub: React.FC<WikiHubProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Componente de Artigo em Destaque do Dia (Alta Qualidade com Rotação Diária) */}
+      <WikiFeaturedArticle
+        articles={safeArticles}
+        pages={safePages}
+        onSelectArticle={onSelectArticle}
+        onSelectPage={onSelectPage}
+        onCreateArticleClick={onCreateArticleClick}
+      />
 
       {/* Painel Interativo de Estatísticas com Gráfico Recharts */}
       <WikiStatisticsPanel
