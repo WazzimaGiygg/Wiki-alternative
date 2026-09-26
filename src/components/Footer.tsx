@@ -655,11 +655,11 @@ export const Footer: React.FC<FooterProps> = ({
             </button>
             <button
               onClick={() => onNavigate('editing-ethics')}
-              title="Regras de Ética de Edição, Adição e Contribuição (LGPD & GDPR)"
+              title="Regras de Ética de Edição, LGPD, Leis Europeias de Dados (GDPR/DSA/DMA) e Liberdade de Expressão Internacional"
               className="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800/60 transition"
             >
               <Scale size={12} className="text-blue-600 dark:text-blue-400" />
-              <span>Regras de Ética & Privacidade</span>
+              <span>Ética, Leis Europeias & Liberdade de Expressão</span>
             </button>
             <a
               href="/Irregularidades%20da%20Wikip%C3%A9dia%20e%20Wikimedia%20Foundation.pdf"

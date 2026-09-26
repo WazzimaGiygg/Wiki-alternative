@@ -31,6 +31,10 @@ import {
   Flame,
   Download,
   Presentation,
+  Globe,
+  Building2,
+  Cpu,
+  Layers,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { formatExternalUrl } from '../utils/linkUtils';
@@ -40,20 +44,29 @@ interface EditingEthicsViewProps {
   user: UserProfile | null;
   onNavigate: (view: any) => void;
   onOpenEditor: () => void;
+  initialTab?: TabKey;
 }
 
-type TabKey = 'principles' | 'lgpd' | 'gdpr' | 'bpv' | 'enforcement' | 'checklist';
+type TabKey = 'principles' | 'lgpd' | 'gdpr' | 'free_expression' | 'bpv' | 'enforcement' | 'checklist';
 
 export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
   user,
   onNavigate,
   onOpenEditor,
+  initialTab,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabKey>('principles');
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab || 'principles');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
   const [dossierDoc, setDossierDoc] = useState<DossierDocType>('irregularidades');
+
+  // Sync activeTab when initialTab changes from parent
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Interactive Checklist State
   const [checklistAnswers, setChecklistAnswers] = useState<{ [key: string]: boolean | null }>({
@@ -201,7 +214,19 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
           }`}
         >
           <Lock size={14} />
-          <span>3. Leis Européias (GDPR)</span>
+          <span>3. Leis Européias de Dados (GDPR, DSA, DMA, AI Act)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('free_expression')}
+          className={`px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+            activeTab === 'free_expression'
+              ? 'bg-blue-600 text-white shadow-xs font-bold'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Globe size={14} />
+          <span>4. Liberdade de Expressão Internacional (DUDH & PIDCP)</span>
         </button>
 
         <button
@@ -213,7 +238,7 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
           }`}
         >
           <UserCheck size={14} />
-          <span>4. Biografias de Pessoas Vivas</span>
+          <span>5. Biografias de Pessoas Vivas</span>
         </button>
 
         <button
@@ -225,7 +250,7 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
           }`}
         >
           <Gavel size={14} />
-          <span>5. Sanções & Moderação</span>
+          <span>6. Sanções & Moderação</span>
         </button>
 
         <button
@@ -237,7 +262,7 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
           }`}
         >
           <Award size={14} />
-          <span>6. Checklist do Editor</span>
+          <span>7. Checklist do Editor</span>
         </button>
       </div>
 
@@ -580,75 +605,152 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
         </div>
       )}
 
-      {/* TAB 3: LEIS EUROPÉIAS DE PRIVACIDADE (GDPR) */}
+      {/* TAB 3: LEIS EUROPÉIAS DE DADOS E SUA IMPORTÂNCIA GLOBAL */}
       {activeTab === 'gdpr' && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
               <Lock size={18} className="text-indigo-600 dark:text-indigo-400" />
               <h2 className="text-base sm:text-lg font-bold font-serif-heading text-slate-900 dark:text-white">
-                3. Padrões Europeus de Privacidade: GDPR (Regulamento UE 2016/679)
+                3. O Marco Regulatório Europeu de Dados e Sua Importância Global
               </h2>
             </div>
 
             <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              O Regulamento Geral sobre a Proteção de Dados da União Europeia (GDPR) impõe salvaguardas avançadas para o processamento de dados de cidadãos europeus. As contribuições à WikiWorldWeb devem observar os seguintes princípios consolidados:
+              A União Europeia estabeleceu-se como a principal vanguarda regulatória do ambiente digital contemporâneo. Através do arcabouço formado pelo <strong>GDPR (Regulamento UE 2016/679)</strong>, <strong>Digital Services Act (DSA - Reg. UE 2022/2065)</strong>, <strong>Digital Markets Act (DMA - Reg. UE 2022/1925)</strong> e o histórico <strong>Regulamento de Inteligência Artificial (EU AI Act - Reg. UE 2024/1689)</strong>, a Europa concebeu um modelo centrado na dignidade da pessoa humana, na soberania dos dados e na contenção dos abusos do capitalismo de vigilância.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
-              {/* Art 5(1)(c): Minimização */}
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
-                <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300 font-bold text-xs">
-                  <Shield size={16} />
-                  <span>Art. 5(1)(c): Princípio da Minimização de Dados</span>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Os dados biográficos devem ser adequados, pertinentes e limitados ao que é estritamente necessário em relação às finalidades enciclopédicas (<em>"data minimisation"</em>). Detalhes supérfluos sobre a vida cotidiana, familiares ou hábitos privados de uma pessoa não devem ser adicionados.
-                </p>
+            {/* O EFEITO BRUXELAS */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-blue-200 dark:border-blue-800 space-y-2">
+              <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 font-bold text-xs uppercase tracking-wider font-mono">
+                <Globe size={15} className="text-blue-600 dark:text-blue-400" />
+                <span>O "Efeito Bruxelas" (The Brussels Effect) e a Importância Mundial das Leis da UE</span>
               </div>
-
-              {/* Art 5(1)(d): Exatidão e Veracidade */}
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
-                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-bold text-xs">
-                  <CheckCircle2 size={16} />
-                  <span>Art. 5(1)(d): Princípio da Exatidão (Accuracy)</span>
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                Formulado pela jurista Anu Bradford (Columbia Law School), o <em>Efeito Bruxelas</em> demonstra como a União Europeia é capaz de unilateralmente regular os mercados globais sem recorrer a coerção militar ou tratados coercitivos. Devido ao poder de compra unificado de 450 milhões de cidadãos de alto poder aquisitivo e à exigência de que qualquer serviço oferecido a residentes europeus cumpra a legislação do bloco, as maiores empresas de tecnologia do mundo (Google, Apple, Microsoft, Meta, Amazon) adaptam sua arquitetura técnica de forma global para operar sob o padrão europeu, evitando custos operacionais decorrentes da fragmentação de produtos.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px]">
+                <div className="p-2.5 rounded bg-white/80 dark:bg-slate-900/80 border border-blue-100 dark:border-blue-900">
+                  <strong className="block text-blue-800 dark:text-blue-300 font-mono">Padrão Ouro Mundial</strong>
+                  <span className="text-slate-600 dark:text-slate-400">Inspirou a LGPD no Brasil, a CCPA na Califórnia, a POPIA na África do Sul e a APPI no Japão.</span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Todos os dados devem ser exatos e atualizados. Informações imprecisas ou comprovadamente falsas sobre qualquer indivíduo devem ser retificadas ou excluídas sem demora injustificada. Contribuições baseadas em boatos de redes sociais são passíveis de reversão imediata.
-                </p>
-              </div>
-
-              {/* Art 17: Direito ao Esquecimento */}
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
-                <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-bold text-xs">
-                  <EyeOff size={16} />
-                  <span>Art. 17: Direito ao Apagamento / "Direito ao Esquecimento"</span>
+                <div className="p-2.5 rounded bg-white/80 dark:bg-slate-900/80 border border-blue-100 dark:border-blue-900">
+                  <strong className="block text-indigo-800 dark:text-indigo-300 font-mono">Proteção à Autonomia</strong>
+                  <span className="text-slate-600 dark:text-slate-400">Transfere o controle dos dados dos conglomerados privados de volta para as pessoas.</span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  O titular tem o direito de obter a eliminação dos seus dados quando estes deixarem de ser necessários ou quando não existir interesse público legítimo predominante. Processos criminais com absolvição transitada em julgado ou incidentes menores passados que não impactam a carreira pública não devem ser eternizados como estigma.
-                </p>
-              </div>
-
-              {/* Art 85: Equilíbrio com a Liberdade de Expressão */}
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5">
-                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-bold text-xs">
-                  <Scale size={16} />
-                  <span>Art. 85: Ponderação com Liberdade de Expressão e Informação</span>
+                <div className="p-2.5 rounded bg-white/80 dark:bg-slate-900/80 border border-blue-100 dark:border-blue-900">
+                  <strong className="block text-purple-800 dark:text-purple-300 font-mono">Segurança Jurídica</strong>
+                  <span className="text-slate-600 dark:text-slate-400">Garante ambiente de confiança e proíbe a arbitrariedade na moderação algorítmica.</span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  O GDPR reconcilia a proteção de dados com a liberdade de expressão para fins jornalísticos, acadêmicos e artísticos. Figuras com histórico político, governamental ou histórico notório estão sujeitas a escrutínio público razoável, desde que respeitados os limites da dignidade humana.
-                </p>
               </div>
             </div>
 
-            {/* Directive ePrivacy & Storage */}
-            <div className="p-3.5 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-slate-700 dark:text-slate-300 space-y-1">
-              <div className="font-bold text-indigo-900 dark:text-indigo-200">
-                Diretiva de Privacidade Eletrônica (ePrivacy Directive):
+            {/* QUADRO DE LEIS EUROPEIAS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+              {/* 1. GDPR */}
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300 font-bold text-xs">
+                    <Shield size={16} />
+                    <span>GDPR (Regulamento UE 2016/679)</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/70 text-indigo-800 dark:text-indigo-200 font-bold">
+                    DADOS PESSOAIS
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  O pilar fundamental da privacidade que elevou a proteção de dados a direito fundamental irrenunciável (Art. 8º da Carta de Direitos Fundamentais da UE):
+                </p>
+                <ul className="list-disc pl-4 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+                  <li><strong>Princípios Nucleares (Art. 5º):</strong> Licitude, finalidade, minimização, exatidão, limitação da conservação, integridade/confidencialidade e prestação de contas (<em>accountability</em>).</li>
+                  <li><strong>Direitos Invioláveis dos Titulares (Arts. 15-22):</strong> Acesso, retificação, apagamento (<em>direito ao esquecimento</em>), portabilidade e oposição a decisões automatizadas (<em>profiling</em>).</li>
+                  <li><strong>Transferência Internacional (Capítulo V):</strong> Veda o envio de dados a países terceiros que não garantam nível adequado de proteção equivalente.</li>
+                </ul>
               </div>
-              <p>
-                A WikiWorldWeb não utiliza cookies invasivos de rastreamento publicitário de terceiros. As preferências locais de interface e sessão são preservadas sob estrita conformidade com as diretivas da União Europeia.
-              </p>
+
+              {/* 2. DIGITAL SERVICES ACT (DSA) */}
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-bold text-xs">
+                    <Building2 size={16} />
+                    <span>Digital Services Act (DSA - Reg. UE 2022/2065)</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/70 text-blue-800 dark:text-blue-200 font-bold">
+                    PLATAFORMAS & RISCO
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Regula os intermediários de internet e impõe obrigações severas às Plataformas Online Muito Grandes (VLOPs, com &gt; 45 milhões de usuários na UE):
+                </p>
+                <ul className="list-disc pl-4 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+                  <li><strong>Proibição de "Dark Patterns":</strong> Veda interfaces enganosas que manipulam ou coagem o usuário a fornecer consentimento indesejado.</li>
+                  <li><strong>Proteção a Crianças e Categorias Sensíveis:</strong> Banimento total de anúncios direcionados com base em dados sensíveis (religião, sexualidade, saúde) ou direcionados a menores de 18 anos.</li>
+                  <li><strong>Transparência Algorítmica e Due Process:</strong> Exige que plataformas expliquem os parâmetros de recomendação de feeds e concedam direito de apelação e fundamentação formal ao moderar publicações.</li>
+                </ul>
+              </div>
+
+              {/* 3. DIGITAL MARKETS ACT (DMA) */}
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-bold text-xs">
+                    <Scale size={16} />
+                    <span>Digital Markets Act (DMA - Reg. UE 2022/1925)</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/70 text-emerald-800 dark:text-emerald-200 font-bold">
+                    ANTITRUSTE & GATEKEEPERS
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Combate monopólios e práticas anticoncorrenciais dos grandes guardiões de acesso digital (<em>Gatekeepers</em>):
+                </p>
+                <ul className="list-disc pl-4 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+                  <li><strong>Veto ao Cruzamento Ilícito de Dados:</strong> Big Techs estão proibidas de fundir ou cruzar dados de usuários entre diferentes serviços (ex: WhatsApp, Instagram e Facebook) sem autorização autônoma e explícita.</li>
+                  <li><strong>Fim do Autofavorecimento (Self-Preferencing):</strong> Plataformas não podem favorecer seus próprios aplicativos e serviços nos resultados de busca ou sistemas operacionais.</li>
+                  <li><strong>Interoperabilidade Obrigatória:</strong> Assegura que serviços de mensageria concorrentes possam se comunicar entre si e garante portabilidade de dados em tempo real.</li>
+                </ul>
+              </div>
+
+              {/* 4. EU AI ACT */}
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-bold text-xs">
+                    <Cpu size={16} />
+                    <span>EU AI Act (Regulamento UE 2024/1689)</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/70 text-purple-800 dark:text-purple-200 font-bold">
+                    INTELIGÊNCIA ARTIFICIAL
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  O primeiro regulamento abrangente de IA do mundo, estruturado sobre quatro níveis proporcionais de risco:
+                </p>
+                <ul className="list-disc pl-4 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+                  <li><strong>Risco Inaceitável (Banido):</strong> Pontuação social (social scoring), manipulação cognitiva de comportamento e reconhecimento biométrico remoto indiscriminado em tempo real.</li>
+                  <li><strong>Alto Risco:</strong> IAs usadas em infraestruturas críticas, saúde, seleção de emprego e educação requerem auditorias severas, dados de treino sem viés e supervisão humana obrigatória.</li>
+                  <li><strong>Transparência Obrigatória:</strong> Modelos generativos devem rotular <em>deepfakes</em>, incluir marcas d'água digitais e publicar resumos de obras protegidas por direitos autorais usadas no treino.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Directive ePrivacy & Data Act */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="p-3.5 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                <div className="font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5 font-mono text-[11px]">
+                  <Lock size={13} /> Diretiva ePrivacy (2002/58/CE & Atualizações)
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  Regula o sigilo estrito de comunicações eletrônicas, metadados de conexão e o consentimento prévio para cookies e rastreadores. A WikiWorldWeb adota o princípio de rastreamento zero, sem cookies de vigilância publicitária.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                <div className="font-bold text-teal-900 dark:text-teal-200 flex items-center gap-1.5 font-mono text-[11px]">
+                  <Layers size={13} /> Data Act (Regulamento UE 2023/2854)
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  Estabelece o compartilhamento justo de dados gerados por dispositivos conectados (IoT), proíbe cláusulas abusivas e facilita a troca entre provedores de nuvem para evitar o aprisionamento tecnológico (<em>vendor lock-in</em>).
+                </p>
+              </div>
             </div>
 
             {/* Dossiê de Violações ao GDPR pela Wikipédia */}
@@ -680,6 +782,167 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
                   <Download size={12} />
                   <span>Baixar PDF</span>
                 </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: LIBERDADE DE EXPRESSÃO NO DIREITO INTERNACIONAL */}
+      {activeTab === 'free_expression' && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <Globe size={18} className="text-blue-600 dark:text-blue-400" />
+              <h2 className="text-base sm:text-lg font-bold font-serif-heading text-slate-900 dark:text-white">
+                4. Tratados Internacionais e a Salvaguarda da Liberdade de Expressão
+              </h2>
+            </div>
+
+            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              A liberdade de expressão e de informação é o alicerce fundamental de toda sociedade aberta, democrática e plural. Consagrada no Direito Internacional dos Direitos Humanos, ela protege tanto o direito individual de emitir ideias e críticas quanto o direito coletivo da sociedade de receber informações verdadeiras sem censura de governos ou monopólios privados.
+            </p>
+
+            {/* ARTIGO 19 DUDH - O PRINCÍPIO MATRIZ */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 dark:from-blue-950/40 dark:via-sky-950/30 dark:to-indigo-950/40 border border-blue-300 dark:border-blue-800 space-y-2">
+              <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 font-bold text-xs uppercase tracking-wider font-mono">
+                <BookOpen size={15} className="text-blue-600 dark:text-blue-400" />
+                <span>Declaração Universal dos Direitos Humanos (DUDH / ONU 1948) — Artigo 19</span>
+              </div>
+              <blockquote className="p-3 rounded-lg bg-white/90 dark:bg-slate-900/90 border-l-4 border-blue-600 text-xs text-slate-800 dark:text-slate-200 font-serif italic leading-relaxed">
+                "Todo ser humano tem direito à liberdade de opinião e expressão; este direito inclui a liberdade de, sem interferência, ter opiniões e de procurar, receber e transmitir informações e ideias por quaisquer meios e independentemente de fronteiras."
+              </blockquote>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600 dark:text-slate-300">
+                <div>
+                  <strong className="text-slate-900 dark:text-white block font-mono">1. Sem Interferência</strong>
+                  O foro íntimo, moral e intelectual do ser humano é intangível. Ninguém pode sofrer discriminação por suas convicções.
+                </div>
+                <div>
+                  <strong className="text-slate-900 dark:text-white block font-mono">2. Tríplice Alcance</strong>
+                  Compreende procurar (pesquisar), receber (aprender) e transmitir (publicar) informações de qualquer natureza.
+                </div>
+                <div>
+                  <strong className="text-slate-900 dark:text-white block font-mono">3. Além de Fronteiras</strong>
+                  O conhecimento humano é patrimônio universal da humanidade, superando barreiras geográficas ou bloqueios telemáticos.
+                </div>
+              </div>
+            </div>
+
+            {/* PIDCP E O TESTE TRIPARTITE */}
+            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xs">
+                  <Scale size={16} className="text-blue-600 dark:text-blue-400" />
+                  <span>Pacto Internacional sobre os Direitos Civis e Políticos (PIDCP / ONU 1966) — Art. 19</span>
+                </div>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-bold">
+                  TRATADO VINCULANTE
+                </span>
+              </div>
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                Ratificado pelo Brasil e por mais de 170 países, o Artigo 19 do PIDCP estabelece que a livre expressão acarreta deveres especiais. Para impedir que governos ou entidades privadas restrinjam arbitrariamente o debate público, o <strong>Parágrafo 3</strong> do Artigo 19 instituiu o mandatório <strong>Teste Tripartite de Restrições Legítimas</strong>:
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+                <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 font-mono">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 flex items-center justify-center text-[10px]">1</span>
+                    Legalidade Estrita
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                    A restrição deve estar prevista de forma expressa, prévia e inequívoca em <strong>lei formal</strong>, clara e acessível, sendo vedadas regras vagas ou censura por interpretação subjetiva de moderadores.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">
+                    <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 flex items-center justify-center text-[10px]">2</span>
+                    Finalidade Legítima
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                    A medida só pode ter por objetivo exclusivo proteger: (a) o respeito aos direitos ou à reputação de outras pessoas; ou (b) a salvaguarda da segurança nacional, da ordem pública, da saúde ou moral públicas.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 font-mono">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 flex items-center justify-center text-[10px]">3</span>
+                    Necessidade & Proporcionalidade
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                    A limitação deve ser estritamente indispensável em uma sociedade democrática e constituir o meio <strong>menos gravoso possível</strong>, não podendo inviabilizar o próprio núcleo do direito de livre manifestação.
+                  </p>
+                </div>
+              </div>
+
+              {/* Comentário Geral 34 e Art 20 */}
+              <div className="p-3 rounded bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-[11px] text-slate-700 dark:text-slate-300 space-y-1 mt-2">
+                <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5 font-mono">
+                  <AlertTriangle size={13} />
+                  <span>Comentário Geral nº 34 do Comitê de Direitos Humanos da ONU (CCPR/C/GC/34) & Artigo 20:</span>
+                </div>
+                <p>
+                  O Comitê da ONU declarou expressamente que o Artigo 19 se aplica à internet e proíbe bloqueios genéricos a provedores ou plataformas de enciclopédia. Paralelamente, o <strong>Artigo 20 do PIDCP</strong> impõe a proibição categórica de apologia à guerra e de qualquer manifestação de ódio nacional, racial ou religioso que configure <strong>incitação à discriminação, à hostilidade ou à violência</strong>.
+                </p>
+              </div>
+            </div>
+
+            {/* SISTEMA INTERAMERICANO & EUROPEU */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+              {/* Pacto de San José */}
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-bold text-xs">
+                  <ShieldCheck size={16} />
+                  <span>Convenção Americana (Pacto de San José da Costa Rica) — Art. 13</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  O tratado regional mais rigoroso do mundo quanto à proibição da censura:
+                </p>
+                <ul className="list-disc pl-4 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+                  <li><strong>Vedação Absoluta à Censura Prévia (Art. 13.2):</strong> O pensamento não pode ser submetido a filtros prévios de censura governamental ou privada. Eventuais excessos respondem apenas por responsabilidade civil ou penal ulterior fixada em lei.</li>
+                  <li><strong>Proibição de Meios Indiretos (Art. 13.3):</strong> É nulo qualquer estratagema que limite a difusão de ideias pelo abuso de controles estatais ou corporativos sobre equipamentos, frequências ou plataformas de rede.</li>
+                  <li><strong>Dimensão Social:</strong> A jurisprudência da Corte IDH reconhece que a sociedade inteira tem o direito de receber informações verídicas e plurais para formar sua consciência democrática.</li>
+                </ul>
+              </div>
+
+              {/* Convenção Europeia */}
+              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300 font-bold text-xs">
+                  <Globe size={16} />
+                  <span>Convenção Europeia dos Direitos Humanos (CEDH) — Art. 10</span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  A salvaguarda da liberdade de expressão na jurisprudência do Tribunal Europeu dos Direitos Humanos (TEDH):
+                </p>
+                <ul className="list-disc pl-4 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
+                  <li><strong>Proteção a Ideias Provocativas (Caso Handyside):</strong> A livre expressão não protege apenas informações inofensivas, mas abrange expressamente aquelas que <em>"inquietam, chocam ou perturbam"</em> o Estado ou qualquer parcela da sociedade, pois tais são as exigências do pluralismo e da tolerância.</li>
+                  <li><strong>Proteção Reforçada ao Jornalismo e Pesquisa:</strong> Discursos de interesse público e investigações históricas desfrutam da mais alta proteção jurídica contra ordens de silenciamento.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* HARMONIA ENTRE PRIVACIDADE E LIBERDADE DE EXPRESSÃO */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-cyan-950/40 border border-emerald-300 dark:border-emerald-800 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 font-bold text-xs uppercase tracking-wider font-mono">
+                <Scale size={15} className="text-emerald-600 dark:text-emerald-400" />
+                <span>A Harmonia Indispensável: A Privacidade como Alicerce da Liberdade de Expressão</span>
+              </div>
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                Ao contrário de uma falsa oposição frequentemente propagada, a <strong>privacidade (proteção de dados)</strong> e a <strong>liberdade de expressão</strong> não são direitos inimigos, mas pilares indissociáveis e complementares:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-[11px]">
+                <div className="p-3 rounded-lg bg-white/90 dark:bg-slate-900/90 border border-emerald-200 dark:border-emerald-900 space-y-1">
+                  <strong className="block text-emerald-800 dark:text-emerald-300 font-mono">A Privacidade Protege a Livre Expressão</strong>
+                  <span className="text-slate-600 dark:text-slate-300">
+                    Sem a proteção da intimidade, o sigilo de metadados e o anonimato de conexão contra a vigilância em massa ou perseguições (<em>doxxing</em>), editores, jornalistas, dissidentes e informantes (<em>whistleblowers</em>) sucumbem à autocensura. Garantir a privacidade técnica é a única forma de viabilizar a expressão corajosa e autêntica.
+                  </span>
+                </div>
+                <div className="p-3 rounded-lg bg-white/90 dark:bg-slate-900/90 border border-emerald-200 dark:border-emerald-900 space-y-1">
+                  <strong className="block text-teal-800 dark:text-teal-300 font-mono">O Limite contra a Difamação e o Arbítrio</strong>
+                  <span className="text-slate-600 dark:text-slate-300">
+                    A liberdade de expressão não confere salvo-conduto para divulgar calúnias, falsas acusações de crimes ou dados pessoais sensíveis fora de contexto legítimo. O escrutínio de figuras públicas é salutar e indispensável, mas deve preservar a dignidade humana fundamental e o devido processo legal.
+                  </span>
+                </div>
               </div>
             </div>
           </div>

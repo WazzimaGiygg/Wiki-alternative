@@ -66,6 +66,7 @@ import { LibraryCatalogView } from './components/LibraryCatalogView';
 import { AcademicCatalogView } from './components/AcademicCatalogView';
 import { JornalNewsView } from './components/JornalNewsView';
 import { CustomContextMenu } from './components/CustomContextMenu';
+import { CURATED_FEATURED_ARTICLES } from './components/WikiFeaturedArticle';
 import { updateSEO } from './utils/seoManager';
 import { StorageService } from './services/storageService';
 import {
@@ -120,6 +121,7 @@ export default function App() {
   const [ucocInitialTab, setUcocInitialTab] = useState<'principles' | 'new-report' | 'track' | 'cases'>('principles');
   const [ucocInitialProtocol, setUcocInitialProtocol] = useState<string>('');
   const [toolsInitialTab, setToolsInitialTab] = useState<'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app'>('weather');
+  const [editingEthicsInitialTab, setEditingEthicsInitialTab] = useState<'principles' | 'lgpd' | 'gdpr' | 'free_expression' | 'bpv' | 'enforcement' | 'checklist'>('principles');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [notFoundQuery, setNotFoundQuery] = useState<string>('');
@@ -304,6 +306,9 @@ export default function App() {
         if (target.view === 'tools' && target.initialTab) {
           setToolsInitialTab(target.initialTab as any);
         }
+        if (target.view === 'editing-ethics' && target.initialTab) {
+          setEditingEthicsInitialTab(target.initialTab as any);
+        }
         handleNavigate(target.view);
         break;
 
@@ -445,6 +450,9 @@ export default function App() {
             }
             if (target.view === 'tools' && target.initialTab) {
               setToolsInitialTab(target.initialTab as any);
+            }
+            if (target.view === 'editing-ethics' && target.initialTab) {
+              setEditingEthicsInitialTab(target.initialTab as any);
             }
             setCurrentView(target.view);
             break;
@@ -787,7 +795,17 @@ export default function App() {
 
   const handleSelectArticle = (articleId: string) => {
     confirmNavigationIfDirty(() => {
-      const art = articles.find((a) => a.id.toLowerCase() === articleId.toLowerCase());
+      let art = articles.find((a) => a.id.toLowerCase() === articleId.toLowerCase());
+      if (!art) {
+        const curated = CURATED_FEATURED_ARTICLES.find(
+          (c) => c.id.toLowerCase() === articleId.toLowerCase()
+        );
+        if (curated) {
+          art = curated;
+          StorageService.saveArticle(curated);
+          setArticles((prev) => [curated, ...prev.filter((p) => p.id !== curated.id)]);
+        }
+      }
       if (!art) {
         handleShowNotFound(articleId, 'article');
         return;
@@ -801,7 +819,18 @@ export default function App() {
 
   const handleNavigateToArticleByTitle = async (title: string) => {
     confirmNavigationIfDirty(async () => {
-      const art = await StorageService.getArticleByTitle(title);
+      let art = await StorageService.getArticleByTitle(title);
+      if (!art) {
+        const cleanTitle = title.trim().toLowerCase();
+        const curated = CURATED_FEATURED_ARTICLES.find(
+          (c) => c.titulo.toLowerCase() === cleanTitle || c.id.toLowerCase() === cleanTitle
+        );
+        if (curated) {
+          art = curated;
+          StorageService.saveArticle(curated);
+          setArticles((prev) => [curated, ...prev.filter((p) => p.id !== curated.id)]);
+        }
+      }
       if (art) {
         setSelectedArticleId(art.id);
         StorageService.incrementArticleViews(art.id);
@@ -1415,7 +1444,10 @@ export default function App() {
               onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
               onNavigateToEmergencyContact={() => handleNavigate('emergency-contact')}
               onNavigateToUcoc={() => handleNavigate('ucoc')}
-              onNavigateToEditingEthics={() => handleNavigate('editing-ethics')}
+              onNavigateToEditingEthics={(tab) => {
+                if (tab) setEditingEthicsInitialTab(tab);
+                handleNavigate('editing-ethics');
+              }}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
@@ -1445,7 +1477,10 @@ export default function App() {
               onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
               onNavigateToEmergencyContact={() => handleNavigate('emergency-contact')}
               onNavigateToUcoc={() => handleNavigate('ucoc')}
-              onNavigateToEditingEthics={() => handleNavigate('editing-ethics')}
+              onNavigateToEditingEthics={(tab) => {
+                if (tab) setEditingEthicsInitialTab(tab);
+                handleNavigate('editing-ethics');
+              }}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
@@ -1685,6 +1720,7 @@ export default function App() {
               user={user}
               onNavigate={handleNavigate}
               onOpenEditor={() => handleOpenNewEditor()}
+              initialTab={editingEthicsInitialTab}
             />
           )}
 

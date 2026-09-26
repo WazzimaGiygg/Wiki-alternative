@@ -28,7 +28,7 @@ import { getCleanExcerpt } from '../utils/wikitextParser';
 import { getLanguageByCode } from '../utils/languages';
 
 // Curated high quality articles used when database has few or no articles
-const CURATED_FEATURED_ARTICLES: Array<WikiArticle & { highlights: string[] }> = [
+export const CURATED_FEATURED_ARTICLES: Array<WikiArticle & { highlights: string[] }> = [
   {
     id: 'curated-wikiworldweb-philosophy',
     pageUid: 'geral',
@@ -145,6 +145,112 @@ O futuro da enciclopédia livre reside na cooperação: a máquina como amplific
       'Modelos de linguagem como copilotos de pesquisa, nunca como árbitros finais da verdade.',
       'Exigência de rastreabilidade integral para referências bibliográficas.',
       'Defesa intransigente do pensamento crítico e da pluralidade de perspectivas.',
+    ],
+  },
+  {
+    id: 'curated-european-data-laws',
+    pageUid: 'direito-europeu',
+    titulo: 'Leis Europeias de Dados: Do GDPR ao AI Act e o Impacto do Efeito Bruxelas',
+    categoria: 'Direito & Governança Digital',
+    idioma: 'pt',
+    autor: 'Cátedra de Direito Digital e Regulação Europeia',
+    dataCriacao: '2026-05-18T10:00:00Z',
+    dataEdicao: '2026-09-22T17:40:00Z',
+    visualizacoes: 5240,
+    versao: 9,
+    tags: ['GDPR', 'DSA', 'DMA', 'AI Act', 'União Europeia', 'Privacidade', 'Efeito Bruxelas'],
+    resumo:
+      'Uma análise sistemática sobre a vanguarda regulatória da União Europeia: os princípios do GDPR, a transparência algorítmica do DSA, a contenção de monopólios pelo DMA e o pioneiro Regulamento de Inteligência Artificial (EU AI Act).',
+    descricao: `== O Paradigma Regulatório da União Europeia e o Efeito Bruxelas ==
+A União Europeia consolidou-se como a principal potência regulatória do ecossistema digital global. Através do fenômeno conhecido na ciência jurídica e nas relações internacionais como o '''Efeito Bruxelas''' (''Brussels Effect''), formulado pela jurista Anu Bradford, as normas concebidas pela Comissão Europeia e pelo Parlamento Europeu transbordam as fronteiras do bloco e tornam-se, na prática, o padrão ouro mandatório mundial. Empresas multinacionais e desenvolvedores preferem unificar suas arquiteturas de software no nível mais elevado de proteção e conformidade a criar sistemas fragmentados para cada jurisdição.
+
+== 1. O Regulamento Geral de Proteção de Dados (GDPR - Reg. UE 2016/679) ==
+Em vigor desde maio de 2018, o GDPR substituiu a antiga Diretiva 95/46/CE e erigiu a proteção de dados pessoais à condição de direito fundamental subjetivo (Artigo 8º da Carta dos Direitos Fundamentais da UE).
+* '''Princípios Basilares (Art. 5º):''' Licitude, lealdade e transparência; limitação das finalidades; minimização de dados; exatidão; limitação da conservação; integridade e confidencialidade; e responsabilidade demonstrada (''accountability'').
+* '''Catálogo de Direitos dos Titulares:''' Acesso (Art. 15), retificação (Art. 16), apagamento ou "direito ao esquecimento" (Art. 17), limitação do tratamento (Art. 18), portabilidade de dados (Art. 20) e garantia de não submissão a decisões exclusivamente automatizadas ou profiling (Art. 22).
+* '''Transferência Internacional e Sanções:''' Exigência de cláusulas contratuais-padrão (SCCs) e salvaguardas robustas para saídas de dados do bloco, sob pena de multas de até 20 milhões de euros ou 4% do faturamento global da corporação infratora. Inspirou diretamente a LGPD brasileira (Lei nº 13.709/2018).
+
+== 2. O Digital Services Act (DSA - Regulamento UE 2022/2065) ==
+O Regulamento dos Serviços Digitais modernizou a governança de intermediários e plataformas de internet, focando na integridade informacional e na proteção do usuário contra abusos corporativos.
+* '''Due Process e Fim dos "Dark Patterns":''' Proibição terminante de interfaces manipulativas (dark patterns) projetadas para enganar o usuário ou viciar seu consentimento.
+* '''Responsabilidade das VLOPs:''' Plataformas online muito grandes (VLOPs, com mais de 45 milhões de usuários na UE) devem submeter seus algoritmos a auditorias independentes anuais e avaliar riscos sistêmicos à saúde mental, processos eleitorais e segurança de crianças.
+* '''Proteção a Crianças e Categorias Sensíveis:''' Banimento total de publicidade direcionada com base em dados sensíveis (crença religiosa, saúde, orientação sexual) e proibição absoluta de perfis publicitários rastreados direcionados a menores de idade.
+* '''Notice and Action Equilibrado:''' Notificação formal com dever de resposta fundamentada e direito irrestrito de apelação quando conteúdos de usuários sofrem moderação ou bloqueio.
+
+== 3. O Digital Markets Act (DMA - Regulamento UE 2022/1925) ==
+Focado na dimensão econômica e concorrencial, o Regulamento dos Mercados Digitais coíbe condutas predatórias dos chamados '''"Gatekeepers"''' (guardiões de acesso econômico).
+* Proibição de autofavorecimento (''self-preferencing'') de produtos e serviços próprios das Big Techs em seus sistemas operacionais e motores de busca.
+* Veto ao cruzamento ou combinação de dados pessoais entre serviços distintos pertencentes ao mesmo ecossistema sem consentimento expresso e autônomo do usuário.
+* Interoperabilidade obrigatória para mensageria instantânea e portabilidade contínua de dados em tempo real.
+
+== 4. O EU AI Act (Regulamento de Inteligência Artificial - Reg. UE 2024/1689) ==
+A primeira legislação abrangente para Inteligência Artificial no planeta, adotando uma abordagem baseada em pirâmide de risco:
+# '''Risco Inaceitável (Proibido):''' Pontuação social governamental (social scoring), manipulação cognitiva de populações vulneráveis e vigilância biométrica em massa em tempo real em espaços públicos.
+# '''Alto Risco:''' Sistemas de IA aplicados a infraestruturas críticas, recrutamento e RH, educação e avaliação de crédito. Exigem governança estrita de datasets de treino, mitigação de viés discriminatório, rastreabilidade técnica e supervisão humana obrigatória.
+# '''Risco Específico de Transparência:''' Modelos generativos (LLMs, geradores de imagem/áudio) devem aplicar marcas d'água digitais indeléveis contra deepfakes e publicar resumos pormenorizados de obras protegidas por direitos autorais utilizadas no treinamento.
+# '''Risco Mínimo:''' Aplicações corriqueiras como filtros de spam, sem restrições regulatórias pesadas.
+
+== 5. A Importância Civilizatória das Leis Europeias ==
+Em um mundo dominado pela extração desregulada de dados pessoais ("capitalismo de vigilância"), a legislação europeia redefine a tecnologia como instrumento a serviço da dignidade humana, da autodeterminação informacional e do Estado Democrático de Direito.`,
+    highlights: [
+      'O "Efeito Bruxelas" estabelece o padrão regulatório que orienta legislações pelo mundo inteiro.',
+      'O GDPR tutela a privacidade como direito humano fundamental e não mera mercadoria transacional.',
+      'O DSA e o EU AI Act impõem transparência algorítmica, due process e salvaguardas a crianças.',
+    ],
+  },
+  {
+    id: 'curated-international-free-expression',
+    pageUid: 'direitos-humanos',
+    titulo: 'Direito Internacional e a Salvaguarda da Liberdade de Expressão',
+    categoria: 'Direito Internacional & Direitos Humanos',
+    idioma: 'pt',
+    autor: 'Núcleo Internacional de Direitos Humanos e Liberdades Fundamentais',
+    dataCriacao: '2026-06-01T09:00:00Z',
+    dataEdicao: '2026-09-24T12:00:00Z',
+    visualizacoes: 4780,
+    versao: 7,
+    tags: ['Liberdade de Expressão', 'DUDH', 'PIDCP', 'Pacto de San José', 'Artigo 19', 'Direitos Humanos', 'Censura'],
+    resumo:
+      'Uma exploração profunda dos marcos jurídicos universais que consagram a livre manifestação do pensamento: a Declaração Universal dos Direitos Humanos, o Pacto Internacional sobre os Direitos Civis e Políticos e a Convenção Americana, além da harmonia essencial com a proteção de dados.',
+    descricao: `== A Liberdade de Expressão como Pilar da Dignidade Humana ==
+A liberdade de pensamento, consciência e expressão não é uma concessão do Estado, mas um direito inato e inalienável de toda a humanidade. No pós-Segunda Guerra Mundial, a comunidade internacional erigiu tratados multilaterais para assegurar que nenhum poder político pudesse suprimir o direito das pessoas de pensar, debater, criar e receber informações de forma livre e plural.
+
+== 1. A Declaração Universal dos Direitos Humanos (DUDH - 1948): Artigo 19 ==
+Adotada pela Assembleia Geral da ONU em Paris, a DUDH consagrou no Artigo 19 o princípio norteador das liberdades civis modernas:
+<blockquote>"Todo ser humano tem direito à liberdade de opinião e expressão; este direito inclui a liberdade de, sem interferência, ter opiniões e de procurar, receber e transmitir informações e ideias por quaisquer meios e independentemente de fronteiras."</blockquote>
+* '''Sem interferência:''' O foro íntimo da convicção pessoal é inviolável. Ninguém pode ser punido por suas opiniões íntimas.
+* '''Independentemente de fronteiras:''' A circulação de informações e do saber científico transcende barreiras geográficas, sendo o fundamento moral de toda rede hipertextual livre.
+
+== 2. O Pacto Internacional sobre os Direitos Civis e Políticos (PIDCP / ONU 1966) ==
+Tratado vinculante de direito internacional ratificado por mais de 170 nações, o PIDCP detalhou em seu Artigo 19 os contornos operativos da liberdade comunicacional:
+* '''Parágrafo 1:''' Direito inegociável de sustentar opiniões sem discriminação.
+* '''Parágrafo 2:''' Liberdade abrangente de procurar, receber e difundir informações e ideias de qualquer espécie, seja por palavra falada, escrita, impressa, sob forma artística ou por qualquer outro processo de sua escolha.
+* '''Parágrafo 3 - O Teste Tripartite de Restrições Legítimas:''' Qualquer limitação imposta por um Estado deve cumprir rigorosa e cumulativamente:
+#* '''Legalidade Estrita:''' Prevista expressamente em lei formal prévia, clara, precisa e acessível a todos os cidadãos (vedadas ordens discricionárias obscuras).
+#* '''Finalidade Legítima:''' Vocacionada exclusivamente a salvaguardar o respeito aos direitos e à reputação de outrem, ou à defesa da segurança nacional, da ordem pública, da saúde ou moral públicas.
+#* '''Necessidade e Proporcionalidade:''' Demonstrar ser estritamente indispensável em uma sociedade democrática e consistir no instrumento menos gravoso possível.
+
+== 3. Comentário Geral nº 34 do Comitê de Direitos Humanos da ONU ==
+O documento autoritativo CCPR/C/GC/34 estabeleceu a aplicação plena do Artigo 19 ao ambiente digital:
+* Veda o bloqueio genérico de websites, redes sociais ou enciclopédias digitais.
+* Protege jornalistas investigativos, ativistas, whistleblowers e cidadãos editores contra perseguições judiciais abusivas (SLAPPs).
+* Reforça que a discussão de figuras públicas e governantes deve ser mais tolerante ao escrutínio e à crítica contundente.
+
+== 4. O Pacto de San José da Costa Rica (CADH - 1969): Artigo 13 ==
+No âmbito do Sistema Interamericano de Direitos Humanos, a Convenção Americana é reconhecida por sua proteção inflexível:
+* '''Vedação Absoluta à Censura Prévia (Art. 13.2):''' Nenhuma autoridade pública ou órgão de moderação pode instituir filtros prévios autoritários. A manifestação é livre; eventuais abusos comprovados respondem exclusivamente por responsabilidades ulteriores delimitadas pela lei penal e civil.
+* '''Proibição de Meios Indiretos de Cerceamento (Art. 13.3):''' Veda o abuso de monopólios estatais ou corporativos para restringir a comunicação.
+* '''Dimensão Dupla:''' A Corte Interamericana (Corte IDH) firmou que a liberdade de expressão possui dimensão individual (expressar-se) e social (o direito de toda a sociedade de ser informada por fontes diversas).
+
+== 5. A Convivência Harmoniosa entre Liberdade de Expressão e Proteção de Dados ==
+Existe uma relação de profunda simbiose entre privacidade e liberdade de expressão:
+* A privacidade, a criptografia e o sigilo de metadados são o '''escudo indispensável''' da própria liberdade de expressão. Sem a certeza de que não está sendo monitorado ou vigiado em massa, o cidadão pratica a autocensura.
+* Por outro lado, a proteção de dados não pode ser instrumentalizada por fraudadores ou figuras corruptas como artifício para censurar reportagens históricas e verbetes enciclopédicos verídicos de manifesto interesse coletivo.
+* Essa ponderação equilibrada é o compromisso ético central da WikiWorldWeb.`,
+    highlights: [
+      'O Artigo 19 da DUDH e do PIDCP garante o direito universal de buscar e difundir conhecimento.',
+      'O Teste Tripartite da ONU proíbe que governos e monopólios imponham censuras discricionárias.',
+      'A privacidade é o escudo que viabiliza a livre expressão sem temor à perseguição política.',
     ],
   },
 ];

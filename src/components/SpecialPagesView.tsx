@@ -38,6 +38,8 @@ import {
   Laptop,
   GraduationCap,
   Newspaper,
+  Lock,
+  Globe,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -61,7 +63,7 @@ interface SpecialPagesViewProps {
   onNavigateToFilesList?: () => void;
   onNavigateToArbitration?: () => void;
   onNavigateToUcoc?: () => void;
-  onNavigateToEditingEthics?: () => void;
+  onNavigateToEditingEthics?: (tab?: any) => void;
   onNavigateToAppearance?: () => void;
   onNavigateToAdminFirebase?: () => void;
   onNavigateToNotFound?: () => void;
@@ -385,7 +387,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
         {onNavigateToEditingEthics && (
           <button
             id="btn-specialpages-editing-ethics"
-            onClick={onNavigateToEditingEthics}
+            onClick={() => onNavigateToEditingEthics?.('principles')}
             className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
           >
             <div className="p-2 rounded-md bg-emerald-600 text-white shrink-0">
@@ -397,11 +399,61 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
                   Special:EditingEthics
                 </span>
                 <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-emerald-600 text-white">
-                  LGPD/GDPR
+                  ÉTICA/LGPD
                 </span>
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Regras de Ética de Edição, Adição e Privacidade
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToEditingEthics && (
+          <button
+            id="btn-specialpages-european-laws"
+            onClick={() => onNavigateToEditingEthics('gdpr')}
+            className="p-3 rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-indigo-600 text-white shrink-0">
+              <Lock size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 truncate group-hover:underline">
+                  Special:EuropeanDataLaws
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-600 text-white">
+                  GDPR/DSA/DMA
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Leis Europeias de Dados (GDPR, DSA, DMA, AI Act & Efeito Bruxelas)
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToEditingEthics && (
+          <button
+            id="btn-specialpages-free-expression"
+            onClick={() => onNavigateToEditingEthics('free_expression')}
+            className="p-3 rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-blue-600 text-white shrink-0">
+              <Globe size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-blue-900 dark:text-blue-200 truncate group-hover:underline">
+                  Special:FreeExpression
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-blue-600 text-white">
+                  DUDH/PIDCP
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Direito Internacional de Liberdade de Expressão (Art. 19 DUDH/PIDCP & San José)
               </div>
             </div>
           </button>
@@ -723,6 +775,8 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
           {[
             { label: 'Páginas Especiais', uid: 'Special:SpecialPages' },
             { label: 'Ética de Edição (LGPD)', uid: 'Special:EditingEthics' },
+            { label: 'Leis Europeias de Dados', uid: 'Special:EuropeanDataLaws' },
+            { label: 'Liberdade de Expressão', uid: 'Special:FreeExpression' },
             { label: 'App Chrome / PC', uid: 'Special:ChromeApp' },
             { label: 'Previsão do Tempo', uid: 'Special:Weather' },
             { label: 'Google Acadêmico', uid: 'Special:Scholar' },
