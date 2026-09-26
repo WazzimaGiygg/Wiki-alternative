@@ -244,6 +244,24 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       ),
     },
     {
+      id: 'win10',
+      name: 'Windows 10 Pro (Fluent)',
+      subtitle: 'Fluent Design, Hero Wallpaper & Boot Circular Dots',
+      description: 'O consagrado visual do Windows 10 com estética Fluent Design, iluminação volumétrica Hero Wallpaper, barra de tarefas escura acrílica com Cortana, janelas minimalistas e a clássica tela de boot com o logotipo angulado azul e o spinner circular de pontos giratórios.',
+      tag: 'Boot Win 10 + Fluent',
+      accentColor: '#0078d7',
+      bgPreview: 'bg-gradient-to-b from-[#001026] to-[#001b3a] border-[#0078d7] border-2 text-white font-sans shadow-md',
+      badgeStyle: 'bg-gradient-to-r from-[#0078d7] to-[#00adef] text-white font-bold border border-[#005a9e]',
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 115 119" fill="none">
+          <path d="M0 16.5L45.4 10.3V56.4H0V16.5Z" fill="#00adef" />
+          <path d="M50.6 9.6L114.7 0V55.7H50.6V9.6Z" fill="#00adef" />
+          <path d="M0 62.4H45.4V108.5L0 102.3V62.4Z" fill="#00adef" />
+          <path d="M50.6 62.4H114.7V118.1L50.6 108.5V62.4Z" fill="#00adef" />
+        </svg>
+      ),
+    },
+    {
       id: 'wikidiota',
       name: 'Wikidiota (Paródia da Wikipédia)',
       subtitle: 'Tema Nativo da Wikipédia & Wikiomite Foundation',
@@ -614,6 +632,20 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                         title="Executar animação de inicialização do Windows 7"
                       >
                         <span>Boot 7</span>
+                        <span className="text-[10px]">↺</span>
+                      </button>
+                    )}
+                    {t.id === 'win10' && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectTheme('win10');
+                        }}
+                        className="px-2.5 py-1 rounded-md text-[11px] font-medium border border-blue-400 dark:border-blue-600 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition flex items-center gap-1"
+                        title="Executar animação de inicialização do Windows 10"
+                      >
+                        <span>Boot 10</span>
                         <span className="text-[10px]">↺</span>
                       </button>
                     )}

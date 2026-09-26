@@ -57,6 +57,7 @@ interface HeaderProps {
   onOpenLanguagesModal?: () => void;
   onOpenSmartTVModal?: () => void;
   onRebootWin7?: () => void;
+  onRebootWin10?: () => void;
   onRebootWinXP?: () => void;
   onRebootWin95?: () => void;
   onRebootWin31?: () => void;
@@ -87,6 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLanguagesModal,
   onOpenSmartTVModal,
   onRebootWin7,
+  onRebootWin10,
   onRebootWinXP,
   onRebootWin95,
   onRebootWin31,
@@ -109,6 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isWin95 = theme === 'win95';
   const isWinXP = theme === 'winxp';
   const isWin7 = theme === 'win7';
+  const isWin10 = theme === 'win10';
   const isWikidiota = theme === 'wikidiota';
   const isGenshin = theme === 'genshin';
   const isAndroid = theme === 'android15';
@@ -390,6 +393,47 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onSetTheme?.('light')}
               className="win7-btn-close flex items-center justify-center font-bold text-xs"
               title="Fechar / Sair do Modo Windows 7"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Windows 10 Fluent Top Window Title Bar */}
+      {isWin10 && (
+        <div className="win10-titlebar font-sans text-xs flex items-center justify-between px-2 select-none shadow-sm">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-4 h-4 flex items-center justify-center shrink-0">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 115 119" fill="none">
+                <path d="M0 16.5L45.4 10.3V56.4H0V16.5Z" fill="#00adef" />
+                <path d="M50.6 9.6L114.7 0V55.7H50.6V9.6Z" fill="#00adef" />
+                <path d="M0 62.4H45.4V108.5L0 102.3V62.4Z" fill="#00adef" />
+                <path d="M50.6 62.4H114.7V118.1L50.6 108.5V62.4Z" fill="#00adef" />
+              </svg>
+            </div>
+            <span className="font-medium text-slate-100 text-xs truncate tracking-wide">
+              WikiWorldWeb 10 Pro - Enciclopédia Multimídia [Fluent Design]
+            </span>
+          </div>
+          <div className="flex items-center shrink-0">
+            {onRebootWin10 && (
+              <button
+                type="button"
+                onClick={onRebootWin10}
+                className="win10-button mr-2 px-2 h-6 flex items-center gap-1 text-white font-sans text-[11px]"
+                title="Reiniciar e rever a animação de inicialização do Windows 10"
+              >
+                <span>Boot 10</span>
+                <span className="text-[10px]">↺</span>
+              </button>
+            )}
+            <button className="win10-btn-min" title="Minimizar">―</button>
+            <button className="win10-btn-max" title="Maximizar">▢</button>
+            <button
+              onClick={() => onSetTheme?.('light')}
+              className="win10-btn-close"
+              title="Fechar / Sair do Modo Windows 10"
             >
               ✕
             </button>
@@ -1246,6 +1290,42 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={onRandomPage}
                 title="Artigo Aleatório no Windows 7"
                 className="win7-button text-xs px-2.5 py-1"
+              >
+                {t('header.random_page')}
+              </button>
+            </div>
+          </div>
+        ) : isWin10 ? (
+          <div className="flex-1 max-w-xl mx-2 hidden md:block">
+            <div className="flex items-center gap-2">
+              <div
+                onClick={handleSearchInputClick}
+                className="flex-1 flex items-center px-3 py-1.5 bg-[#121620] border border-[#2b3b55] rounded-none focus-within:border-[#0078d7] focus-within:ring-1 focus-within:ring-[#0078d7] cursor-pointer"
+              >
+                <Search className="w-4 h-4 text-[#00adef] mr-2 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onClick={handleSearchInputClick}
+                  onFocus={handleSearchInputClick}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Digite aqui para pesquisar na WikiWorldWeb 10..."
+                  className="w-full text-xs bg-transparent border-none outline-none text-slate-100 font-sans placeholder:text-slate-500 cursor-text"
+                />
+              </div>
+              <button
+                onClick={onSearchSubmit}
+                className="win10-button flex items-center gap-1.5 px-3 py-1.5 text-xs shadow-xs"
+                title="Pesquisar no Windows 10"
+              >
+                <Search size={13} className="text-[#00adef]" />
+                <span>Buscar</span>
+              </button>
+              <button
+                onClick={onRandomPage}
+                title="Artigo Aleatório no Windows 10"
+                className="win10-button text-xs px-2.5 py-1"
               >
                 {t('header.random_page')}
               </button>

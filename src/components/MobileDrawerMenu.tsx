@@ -399,6 +399,32 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <span className="hidden xs:inline">7</span>
             </button>
 
+            {/* Quick Windows 10 Toggle */}
+            <button
+              id="btn-drawer-quick-win10-theme"
+              onClick={() => {
+                if (theme === 'win10') {
+                  onSetTheme?.('light');
+                } else {
+                  onSetTheme?.('win10');
+                }
+              }}
+              className={`p-1.5 rounded-lg border transition flex items-center gap-1 font-sans text-[10px] font-bold ${
+                theme === 'win10'
+                  ? 'bg-[#0078d7] border-[#00adef] text-white ring-1 ring-sky-400/50 shadow-[0_0_8px_rgba(0,120,215,0.6)]'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title={theme === 'win10' ? 'Desativar Tema Windows 10' : 'Ativar Tema Windows 10 Fluent'}
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 115 119" fill="none">
+                <path d="M0 16.5L45.4 10.3V56.4H0V16.5Z" fill="#00adef" />
+                <path d="M50.6 9.6L114.7 0V55.7H50.6V9.6Z" fill="#00adef" />
+                <path d="M0 62.4H45.4V108.5L0 102.3V62.4Z" fill="#00adef" />
+                <path d="M50.6 62.4H114.7V118.1L50.6 108.5V62.4Z" fill="#00adef" />
+              </svg>
+              <span className="hidden xs:inline">10</span>
+            </button>
+
             {/* Quick Wikidiota Toggle */}
             <button
               id="btn-drawer-quick-wikidiota-theme"

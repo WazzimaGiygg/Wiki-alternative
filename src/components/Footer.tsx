@@ -41,6 +41,7 @@ interface FooterProps {
   onOpenLanguagesModal?: () => void;
   onSetTheme?: (theme: AppTheme) => void;
   onRebootWin7?: () => void;
+  onRebootWin10?: () => void;
   onRebootWinXP?: () => void;
   onRebootWin95?: () => void;
   onOpenChromeRecommendation?: () => void;
@@ -54,6 +55,7 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenLanguagesModal,
   onSetTheme,
   onRebootWin7,
+  onRebootWin10,
   onRebootWinXP,
   onRebootWin95,
   onOpenChromeRecommendation,
@@ -236,6 +238,71 @@ export const Footer: React.FC<FooterProps> = ({
                 className="win7-aero-peek"
                 title="Mostrar Área de Trabalho (Aero Peek)"
                 onClick={() => onRebootWin7?.()}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Windows 10 Fluent Dark Taskbar */}
+        {theme === 'win10' && (
+          <div className="win10-taskbar px-2 py-1 text-xs font-sans text-white flex flex-wrap items-center justify-between gap-2 select-none">
+            <div className="flex items-center gap-2">
+              {/* Windows 10 Start Button */}
+              <button
+                type="button"
+                onClick={() => onRebootWin10?.()}
+                className="win10-start-btn p-1.5 hover:bg-white/10 transition rounded-none cursor-pointer"
+                title="Iniciar - Clique para reiniciar e rever o Boot do Windows 10"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 115 119" fill="none">
+                  <path d="M0 16.5L45.4 10.3V56.4H0V16.5Z" fill="#00adef" />
+                  <path d="M50.6 9.6L114.7 0V55.7H50.6V9.6Z" fill="#00adef" />
+                  <path d="M0 62.4H45.4V108.5L0 102.3V62.4Z" fill="#00adef" />
+                  <path d="M50.6 62.4H114.7V118.1L50.6 108.5V62.4Z" fill="#00adef" />
+                </svg>
+              </button>
+
+              {/* Cortana / Taskbar Search Box */}
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/10 hover:bg-white/15 border border-transparent hover:border-white/20 text-slate-300 text-xs w-48 transition cursor-text">
+                <span className="w-2 h-2 rounded-full border border-sky-400"></span>
+                <span className="text-[11px] text-slate-400">Digite aqui para pesquisar</span>
+              </div>
+
+              {/* Active Pinned App with bottom accent line */}
+              <div className="relative px-3 py-1.5 bg-white/15 border border-white/10 text-white font-medium text-xs flex items-center gap-1.5 cursor-pointer">
+                <span className="w-2 h-2 rounded-full bg-[#00adef]"></span>
+                <span>WikiWorldWeb 10 Pro</span>
+                {/* Windows 10 Active App Underline */}
+                <div className="absolute bottom-0 left-1 right-1 h-[2px] bg-[#00adef]"></div>
+              </div>
+            </div>
+
+            {/* System Tray */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 px-2 py-1 text-[11px] text-slate-300">
+                <span className="hidden md:inline text-emerald-400 text-[10px]">● Conectado</span>
+                <div className="flex flex-col text-right leading-tight font-mono text-[11px] text-slate-200">
+                  <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  <span className="text-[9px] text-slate-400">{new Date().toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                </div>
+              </div>
+
+              {/* Windows 10 Action Center Icon */}
+              <div
+                onClick={() => onRebootWin10?.()}
+                className="w-7 h-7 flex items-center justify-center hover:bg-white/10 transition cursor-pointer text-slate-400 hover:text-white"
+                title="Central de Ações / Reiniciar Boot Win 10"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </div>
+
+              {/* Windows 10 Peek Desktop Line */}
+              <div
+                className="win10-peek-line"
+                title="Mostrar Área de Trabalho"
+                onClick={() => onRebootWin10?.()}
               />
             </div>
           </div>

@@ -1113,6 +1113,79 @@ html.theme-winxp footer a {
   animation: win7-logo-pulse 2s ease-in-out infinite;
 }
 
+/* Windows 10 Circular Orbiting Dots Boot Spinner (ProgressRing) */
+.win10-progress-ring {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.win10-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 48px;
+  height: 48px;
+  opacity: 0;
+  transform: rotate(225deg);
+  animation: win10-spinner 5.2s infinite cubic-bezier(0.15, 0.85, 0.35, 1.2);
+}
+
+.win10-dot::after {
+  content: '';
+  position: absolute;
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  top: 0;
+  left: calc(50% - 2.25px);
+}
+
+.win10-dot-1 { animation-delay: 0.12s; }
+.win10-dot-2 { animation-delay: 0.32s; }
+.win10-dot-3 { animation-delay: 0.52s; }
+.win10-dot-4 { animation-delay: 0.72s; }
+.win10-dot-5 { animation-delay: 0.92s; }
+
+@keyframes win10-spinner {
+  0% {
+    transform: rotate(225deg);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.1, 0.7, 0.1, 1);
+  }
+  7% {
+    transform: rotate(345deg);
+    animation-timing-function: linear;
+  }
+  30% {
+    transform: rotate(455deg);
+    animation-timing-function: cubic-bezier(0.4, 0.1, 0.8, 1);
+  }
+  40% {
+    transform: rotate(690deg);
+    animation-timing-function: linear;
+  }
+  60% {
+    transform: rotate(815deg);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.1, 0.8, 0.2, 1);
+  }
+  75% {
+    transform: rotate(945deg);
+    animation-timing-function: cubic-bezier(0.6, 0.1, 0.8, 1);
+  }
+  76% {
+    opacity: 0;
+    transform: rotate(945deg);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(945deg);
+  }
+}
+
 /* Windows 7 Aero Glass Theme */
 html.theme-win7 {
   color-scheme: light;
@@ -1355,6 +1428,246 @@ html.theme-win7 footer {
 
 html.theme-win7 footer a {
   color: #0066cc !important;
+}
+
+/* ========================================================================== */
+/* TEMA WINDOWS 10 PRO (Fluent Design, Hero Wallpaper & Acrylic Aesthetic)     */
+/* ========================================================================== */
+html.theme-win10 {
+  color-scheme: dark;
+}
+
+html.theme-win10 body {
+  font-family: 'Segoe UI', 'Segoe UI Web', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
+  background-color: #000c1e;
+  background-image:
+    radial-gradient(ellipse at 50% 25%, rgba(0, 120, 215, 0.45) 0%, rgba(0, 48, 105, 0.6) 35%, #000c1e 80%),
+    linear-gradient(180deg, #001026 0%, #001b3a 40%, #000b1a 100%);
+  background-attachment: fixed;
+  color: #f1f5f9;
+}
+
+/* Windows 10 Fluent Window */
+.win10-window {
+  background: rgba(22, 26, 35, 0.94) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1px solid rgba(0, 120, 215, 0.45) !important;
+  border-radius: 3px !important;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Windows 10 Flat Title Bar */
+.win10-titlebar {
+  background: #191c24 !important;
+  border-bottom: 1px solid #283040 !important;
+  padding: 0 0 0 10px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+/* Windows 10 Titlebar Buttons */
+.win10-btn-min,
+.win10-btn-max {
+  width: 44px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #cccccc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.win10-btn-min:hover,
+.win10-btn-max:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.win10-btn-close {
+  width: 44px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #cccccc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.win10-btn-close:hover {
+  background: #e81123 !important;
+  color: #ffffff !important;
+}
+
+/* Windows 10 Modern Fluent Buttons */
+.win10-button {
+  background: #2b3240;
+  border: 1px solid #3d475a;
+  border-radius: 2px;
+  color: #ffffff;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.win10-button:hover {
+  background: #364053;
+  border-color: #0078d7;
+  color: #ffffff;
+}
+
+.win10-button:active {
+  background: #0078d7;
+  border-color: #005a9e;
+}
+
+/* Windows 10 Taskbar (Bottom Superbar) */
+.win10-taskbar {
+  background: rgba(16, 19, 26, 0.92) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Windows 10 Start Button */
+.win10-start-btn {
+  width: 44px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.win10-start-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.win10-start-btn:active {
+  background: rgba(0, 120, 215, 0.35);
+}
+
+/* Windows 10 Taskbar Peek Line */
+.win10-peek-line {
+  width: 6px;
+  height: 100%;
+  min-height: 36px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.win10-peek-line:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Windows 10 Layout Overrides */
+html.theme-win10 header {
+  background: rgba(20, 24, 34, 0.92) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border-bottom: 1px solid rgba(0, 120, 215, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.theme-win10 main {
+  background-color: transparent !important;
+}
+
+html.theme-win10 .bg-white,
+html.theme-win10 .dark\:bg-slate-900,
+html.theme-win10 .dark\:bg-\[\#0f172a\] {
+  background: rgba(24, 28, 38, 0.92) !important;
+  backdrop-filter: blur(12px) !important;
+  border-color: #2b3648 !important;
+  color: #f1f5f9 !important;
+}
+
+html.theme-win10 .bg-slate-50,
+html.theme-win10 .dark\:bg-slate-800,
+html.theme-win10 .dark\:bg-\[\#1e293b\] {
+  background: rgba(18, 22, 30, 0.88) !important;
+  border-color: #2b3648 !important;
+  color: #f1f5f9 !important;
+}
+
+html.theme-win10 article,
+html.theme-win10 .wiki-rendered-content {
+  background: rgba(22, 26, 36, 0.96) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #2a3a52 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+  padding: 22px !important;
+}
+
+html.theme-win10 .wiki-rendered-content h1,
+html.theme-win10 .wiki-rendered-content h2,
+html.theme-win10 .wiki-rendered-content h3 {
+  color: #4cc2ff !important;
+  font-family: 'Segoe UI', -apple-system, sans-serif !important;
+}
+
+html.theme-win10 .wiki-rendered-content h1 {
+  border-bottom: 2px solid #0078d7 !important;
+}
+
+html.theme-win10 .wiki-rendered-content .wiki-link {
+  color: #00adef !important;
+  text-decoration: underline !important;
+}
+
+html.theme-win10 .wiki-rendered-content .wiki-link:hover {
+  color: #60cdff !important;
+}
+
+html.theme-win10 .wiki-rendered-content .wikitable {
+  border: 1px solid #2b3b55 !important;
+  background-color: #161b26 !important;
+}
+
+html.theme-win10 .wiki-rendered-content .wikitable th {
+  background: #1c2436 !important;
+  color: #00adef !important;
+  border: 1px solid #2b3b55 !important;
+  font-weight: 600 !important;
+}
+
+html.theme-win10 .wiki-rendered-content .wikitable td {
+  border: 1px solid #242f44 !important;
+  background-color: #131722 !important;
+  color: #e2e8f0 !important;
+}
+
+html.theme-win10 aside {
+  background: rgba(20, 24, 34, 0.92) !important;
+  backdrop-filter: blur(16px) !important;
+  border-color: #2b3b55 !important;
+}
+
+html.theme-win10 footer {
+  background: rgba(16, 18, 25, 0.94) !important;
+  backdrop-filter: blur(20px) !important;
+  border-top: 1px solid #233044 !important;
+  color: #94a3b8 !important;
+}
+
+html.theme-win10 footer a {
+  color: #00adef !important;
 }
 
 /* ========================================================================== */
