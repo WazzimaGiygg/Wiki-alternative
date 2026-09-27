@@ -28,11 +28,13 @@ import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDo
 interface WazzimaGiyggProfileViewProps {
   onNavigate: (view: ViewMode) => void;
   onOpenEditor?: () => void;
+  onSelectArticle?: (articleId: string) => void;
 }
 
 export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = ({
   onNavigate,
   onOpenEditor,
+  onSelectArticle,
 }) => {
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
   const [dossierDoc, setDossierDoc] = useState<DossierDocType>('irregularidades');
@@ -129,6 +131,17 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
               <span>GitHub (Wiki-alternative)</span>
               <ExternalLink size={11} className="opacity-70" />
             </a>
+
+            {onSelectArticle && (
+              <button
+                onClick={() => onSelectArticle('curated-wazzimagiygg-biography')}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold text-xs flex items-center gap-2 transition shadow-md cursor-pointer"
+              >
+                <BookOpen size={14} />
+                <span>Ler Artigo Enciclopédico Completo sobre WazzimaGiygg</span>
+                <ArrowRight size={13} />
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -583,6 +596,15 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
             <BookOpen size={15} />
             <span>Página Principal da WikiWorldWeb</span>
           </button>
+          {onSelectArticle && (
+            <button
+              onClick={() => onSelectArticle('curated-wazzimagiygg-biography')}
+              className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-extrabold text-xs sm:text-sm transition shadow-xs flex items-center gap-2 cursor-pointer"
+            >
+              <BookOpen size={15} />
+              <span>Ler Artigo Completo na Enciclopédia</span>
+            </button>
+          )}
           {onOpenEditor && (
             <button
               onClick={() => onOpenEditor()}

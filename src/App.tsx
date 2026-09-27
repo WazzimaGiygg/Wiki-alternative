@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Sparkles } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -91,6 +91,18 @@ export default function App() {
   // === STATE MANAGEMENT ===
   const [pages, setPages] = useState<WikiPage[]>([]);
   const [articles, setArticles] = useState<WikiArticle[]>([]);
+
+  // Acervo enciclopédico consolidado (combina artigos persistidos e artigos editoriais de referência)
+  const allEncyclopediaArticles = useMemo(() => {
+    const list: WikiArticle[] = [...articles];
+    for (const c of CURATED_FEATURED_ARTICLES) {
+      if (!list.some((a) => a.id.toLowerCase() === c.id.toLowerCase())) {
+        list.push(c);
+      }
+    }
+    return list;
+  }, [articles]);
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [cookieConsent, setCookieConsent] = useState<CookieConsent | null>(null);
@@ -557,9 +569,9 @@ export default function App() {
 
   // Keep browser URL query string ?uid= synchronized with current application view and state
   useEffect(() => {
-    if (pages.length === 0 && articles.length === 0) return;
+    if (pages.length === 0 && allEncyclopediaArticles.length === 0) return;
     const currentActiveArticle = currentView === 'article'
-      ? (articles.find((a) => a.id === selectedArticleId) || articles[0])
+      ? (allEncyclopediaArticles.find((a) => a.id === selectedArticleId) || allEncyclopediaArticles[0])
       : null;
 
     const canonicalUid = getCanonicalUid(currentView, {
@@ -580,7 +592,7 @@ export default function App() {
     selectedFileName,
     uploadInitialTargetName,
     notFoundQuery,
-    articles,
+    allEncyclopediaArticles,
     pages,
   ]);
 
@@ -588,7 +600,7 @@ export default function App() {
   useEffect(() => {
     const currentActiveArticle =
       currentView === 'article'
-        ? articles.find((a) => a.id === selectedArticleId) || null
+        ? allEncyclopediaArticles.find((a) => a.id === selectedArticleId) || null
         : null;
 
     const currentActivePage = selectedPageUid
@@ -607,7 +619,7 @@ export default function App() {
           ]
         : undefined,
     });
-  }, [currentView, selectedArticleId, selectedPageUid, articles, pages]);
+  }, [currentView, selectedArticleId, selectedPageUid, allEncyclopediaArticles, pages]);
 
   // === HANDLERS ===
   const handleSetTheme = (newTheme: AppTheme) => {
@@ -870,8 +882,8 @@ export default function App() {
       return;
     }
 
-    // Direct match on article ID (e.g. art-1, art-wiki-001)
-    const matchById = articles.find((a) => a.id.toLowerCase() === query.toLowerCase());
+    // Direct match on article ID (e.g. art-1, art-wiki-001, curated-wazzimagiygg-biography)
+    const matchById = allEncyclopediaArticles.find((a) => a.id.toLowerCase() === query.toLowerCase());
     if (matchById) {
       handleSelectArticle(matchById.id);
       return;
@@ -887,7 +899,7 @@ export default function App() {
     }
 
     // Direct match on exact article title (case-insensitive)
-    const matchExactTitle = articles.find(
+    const matchExactTitle = allEncyclopediaArticles.find(
       (a) => a.titulo.toLowerCase() === query.toLowerCase()
     );
     if (matchExactTitle) {
@@ -905,7 +917,7 @@ export default function App() {
 
     // Check if any articles or pages match the query in title or description
     const cleanQ = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const hasArticleMatches = articles.some((a) => {
+    const hasArticleMatches = allEncyclopediaArticles.some((a) => {
       const t = (a.titulo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const d = (a.descricao || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const c = (a.categoria || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -1180,7 +1192,10 @@ export default function App() {
   };
 
   // Find active article and page
-  const activeArticle = articles.find((a) => a.id === selectedArticleId) || articles[0];
+  const activeArticle =
+    allEncyclopediaArticles.find((a) => a.id === selectedArticleId) ||
+    allEncyclopediaArticles[0] ||
+    articles[0];
   const activePage = pages.find((p) => p.uid === (activeArticle?.pageUid || selectedPageUid)) || pages[0];
 
   return (
@@ -1343,7 +1358,7 @@ export default function App() {
           {currentView === 'hub' && (
             <WikiHub
               pages={pages}
-              articles={articles}
+              articles={allEncyclopediaArticles}
               user={user}
               searchQuery={searchQuery}
               onSelectPage={handleSelectPage}
@@ -1375,7 +1390,7 @@ export default function App() {
                 article={activeArticle}
                 page={activePage}
                 user={user}
-                allArticles={articles}
+                allArticles={allEncyclopediaArticles}
                 allPages={pages}
                 onEdit={handleOpenEditorForEdit}
                 onDelete={handleDeleteArticle}
@@ -1765,7 +1780,7 @@ export default function App() {
 
           {currentView === 'search' && (
             <AdvancedSearchView
-              articles={articles}
+              articles={allEncyclopediaArticles}
               pages={pages}
               user={user}
               initialQuery={searchQuery}
@@ -1783,13 +1798,13 @@ export default function App() {
             <NotFoundView
               query={notFoundQuery}
               notFoundType={notFoundType}
-              articles={articles}
+              articles={allEncyclopediaArticles}
               pages={pages}
               theme={theme}
               onSearch={(newQuery) => {
                 setSearchQuery(newQuery);
                 const norm = newQuery.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-                const found = articles.some((a) => {
+                const found = allEncyclopediaArticles.some((a) => {
                   const t = (a.titulo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                   const d = (a.descricao || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                   return t.includes(norm) || d.includes(norm);
@@ -1835,6 +1850,7 @@ export default function App() {
             <WazzimaGiyggProfileView
               onNavigate={handleNavigate}
               onOpenEditor={() => handleOpenNewEditor()}
+              onSelectArticle={handleSelectArticle}
             />
           )}
 
