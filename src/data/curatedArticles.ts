@@ -250,9 +250,11 @@ Existe uma relação de profunda simbiose entre privacidade e liberdade de expre
       'Marco Civil',
       'UCoC',
       'Dossiê A Verdade',
+      'Linha do Tempo',
+      'Fatos Cronológicos',
     ],
     resumo:
-      'Biografia e legado de Pedro Henrique Cardona Peres (WazzimaGiygg), desenvolvedor de software, pesquisador e idealizador da WikiWorldWeb. Suas contribuições tecnológicas para a internet aberta e a documentação factual das perseguições e calúnias praticadas pelo administrador Chronus na Wikipédia.',
+      'Biografia e legado de Pedro Henrique Cardona Peres (WazzimaGiygg), desenvolvedor de software, pesquisador e idealizador da WikiWorldWeb. Suas contribuições tecnológicas para a internet aberta, a documentação factual das perseguições e calúnias praticadas pelo administrador Chronus na Wikipédia e a linha do tempo cronológica do dossiê A Verdade.',
     descricao: `'''WazzimaGiygg''' (nome civil: '''Pedro Henrique Cardona Peres''') é um desenvolvedor de software brasileiro, pesquisador independente, ativista dos direitos digitais e idealizador da '''WikiWorldWeb''' (projeto ''Wiki-alternative''). Ficou amplamente reconhecido no ecossistema lusófono pela defesa intransigente da descentralização do conhecimento enciclopédico, pelo desenvolvimento de interfaces modernas de código aberto e pela denúncia documentada das falhas estruturais, perseguições e crimes contra a honra praticados por administradores da Wikipédia em língua portuguesa, em especial o moderador conhecido pela alcunha '''Chronus'''.
 
 É também o autor do histórico dossiê documental ''"A Verdade"'' (<nowiki>wazzimagiygg.com/averdade/</nowiki>), da representação técnico-jurídica de 47 páginas ''"Calúnia por parte de Chronus V2"'' e da apresentação executiva institucional ''"Wikimedia Institutional Accountability Dossier"''.
@@ -315,6 +317,9 @@ Em vez de sucumbir à intimidação, Pedro Henrique Cardona Peres aplicou o rigo
 # '''Dossiê Técnico-Jurídico: Calúnia por parte de Chronus V2 (47 Páginas):''' Peça técnico-jurídica pormenorizada com a tipificação dos ilícitos civis e criminais perante a legislação brasileira (Código Penal, Marco Civil e LGPD).
 # '''Wikimedia Institutional Accountability Dossier (15 Slides):''' Apresentação institucional executiva demonstrando as falhas sistêmicas de governança da Wikimedia Foundation Inc. e a cumplicidade corporativa na manutenção de moderadores abusivos.
 
+=== Cronologia dos Fatos do Dossiê "A Verdade" ===
+A reconstituição dos 9 marcos factuais — desde a divergência acadêmica inicial ao nascimento da WikiWorldWeb e ao lema em grego clássico — pode ser explorada interativamente no componente de '''Linha do Tempo Visual''' integrado diretamente a esta biografia enciclopédica, com filtragem por temas e acesso imediato aos autos dos dossiês.
+
 A tentativa de Chronus e da panela administrativa de censurar WazzimaGiygg culminou no clássico '''Efeito Streisand''': amplificou exponencialmente a visibilidade das infrações da Wikipédia e acelerou o desenvolvimento da WikiWorldWeb como projeto alternativo internacional.
 
 == 4. Legado e Significado para a Cultura Livre ==
@@ -323,6 +328,7 @@ WazzimaGiygg provou que o modelo da Wikipédia tradicional — fundado na concen
       'Criador e arquiteto da WikiWorldWeb, com tecnologia SPA ultrarrápida, 17 temas e modo offline.',
       'Fundador do ecossistema wazzimagiygg.com, com suporte técnico profissional e canal de DPO sob a LGPD.',
       'Autor dos dossiês de auditoria que desmascararam as calúnias e abusos praticados por Chronus na Wikipédia.',
+      'Disponibilização da Linha do Tempo Visual interativa com os 9 marcos cronológicos do dossiê A Verdade.',
     ],
   },
 ];

@@ -35,6 +35,7 @@ import {
   Unlock,
   ShieldAlert,
   ShieldCheck,
+  Scale,
 } from 'lucide-react';
 import {
   WikiArticle,
@@ -52,6 +53,8 @@ import { WhatLinksHereView } from './WhatLinksHereView';
 import { MobileArticleTOC } from './MobileArticleTOC';
 import { PdfExportModal } from './PdfExportModal';
 import { ModerationLockModal } from './ModerationLockModal';
+import { WazzimaGiyggTimeline } from './WazzimaGiyggTimeline';
+import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
 import { StorageService } from '../services/storageService';
 
 interface ArticleViewerProps {
@@ -93,7 +96,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const [copiedUid, setCopiedUid] = useState(false);
   const [showToc, setShowToc] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'article' | 'talk' | 'source' | 'history' | 'what-links-here' | 'info'
+    'article' | 'talk' | 'source' | 'history' | 'what-links-here' | 'info' | 'timeline'
   >('article');
   const [sourceCopied, setSourceCopied] = useState(false);
   const [isWatched, setIsWatched] = useState(() => StorageService.isWatched(article.id));
@@ -105,7 +108,15 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const [hasRated, setHasRated] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
+  const [showDossierModal, setShowDossierModal] = useState(false);
+  const [dossierInitialDoc, setDossierInitialDoc] = useState<DossierDocType>('chronus');
+  const [dossierInitialTab, setDossierInitialTab] = useState<'text' | 'pdf' | 'table'>('text');
   const [localArticle, setLocalArticle] = useState<WikiArticle>(article);
+
+  const isWazzimaGiyggArticle =
+    localArticle.id === 'curated-wazzimagiygg-biography' ||
+    /wazzimagiygg/i.test(localArticle.titulo) ||
+    /wazzimagiygg/i.test(localArticle.id);
 
   const isModeratorOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
   const isArticleLocked = !!localArticle.isLocked;
@@ -548,6 +559,23 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         >
           Informações da Página
         </button>
+
+        {isWazzimaGiyggArticle && (
+          <button
+            onClick={() => setActiveTab('timeline')}
+            className={`px-3 py-1.5 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === 'timeline'
+                ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50/70 dark:bg-amber-950/40 font-bold'
+                : 'border-transparent text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 bg-amber-500/10'
+            }`}
+          >
+            <Calendar size={13} className="text-amber-500" />
+            <span>Linha do Tempo (Dossiê A Verdade)</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-slate-950 font-bold font-mono">
+              9 Marcos
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Tab: Talk Page */}
@@ -712,6 +740,19 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         </div>
       )}
 
+      {/* Tab: Timeline (Dossiê A Verdade) */}
+      {activeTab === 'timeline' && isWazzimaGiyggArticle && (
+        <div className="space-y-4">
+          <WazzimaGiyggTimeline
+            onOpenDossier={(doc, tab) => {
+              setDossierInitialDoc(doc || 'chronus');
+              setDossierInitialTab(tab || 'text');
+              setShowDossierModal(true);
+            }}
+          />
+        </div>
+      )}
+
       {/* Main Tab: Article View */}
       {activeTab === 'article' && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
@@ -842,6 +883,47 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </div>
             </header>
 
+            {/* WazzimaGiygg Dossier Timeline Spotlight Banner */}
+            {isWazzimaGiyggArticle && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-600/10 to-indigo-900/15 border-2 border-amber-400/80 dark:border-amber-600/60 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 not-prose">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-bold font-mono text-[10px] uppercase">
+                      Componente Especial Interativo
+                    </span>
+                    <span className="text-xs font-bold text-amber-900 dark:text-amber-300">
+                      Linha do Tempo dos Fatos & Dossiê "A Verdade"
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 dark:text-slate-300">
+                    Acompanhe cronologicamente todos os 9 marcos dos fatos, perseguições de Chronus, crimes contra a honra, quebra da LGPD e a criação da WikiWorldWeb.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('timeline')}
+                    className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                  >
+                    <Calendar size={14} />
+                    <span>Ver Linha do Tempo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDossierInitialDoc('chronus');
+                      setDossierInitialTab('text');
+                      setShowDossierModal(true);
+                    }}
+                    className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Scale size={13} className="text-rose-600" />
+                    <span>Dossiê 47 Págs</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Rendered HTML Content */}
             <div
               ref={contentRef}
@@ -849,6 +931,35 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               className="wiki-rendered-content font-wiki-body"
               dangerouslySetInnerHTML={{ __html: html }}
             />
+
+            {/* Embedded Visual Timeline inside Article */}
+            {isWazzimaGiyggArticle && (
+              <div className="pt-6 border-t-2 border-amber-300/60 dark:border-amber-700/60 space-y-4 not-prose">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold">
+                      <Scale size={18} />
+                    </span>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold font-serif-heading text-slate-900 dark:text-white">
+                        Linha do Tempo Visual: Fatos Cronológicos e Eventos do Dossiê "A Verdade"
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Navegue interativamente pelos 9 marcos factuais catalogados na biografia e nos dossiês oficiais de WazzimaGiygg.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <WazzimaGiyggTimeline
+                  onOpenDossier={(doc, tab) => {
+                    setDossierInitialDoc(doc || 'chronus');
+                    setDossierInitialTab(tab || 'text');
+                    setShowDossierModal(true);
+                  }}
+                />
+              </div>
+            )}
 
             {/* Wikidot / Fandom Categories Footer Bar */}
             {allCategories.length > 0 && (
@@ -1117,6 +1228,16 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           currentReason={localArticle.lockReason}
           lockedBy={localArticle.lockedBy}
           onConfirm={handleToggleLockArticle}
+        />
+      )}
+
+      {/* Irregularidades & Chronus Dossier Modal */}
+      {showDossierModal && (
+        <IrregularidadesDossierModal
+          isOpen={showDossierModal}
+          onClose={() => setShowDossierModal(false)}
+          initialDocument={dossierInitialDoc}
+          initialTab={dossierInitialTab}
         />
       )}
     </div>

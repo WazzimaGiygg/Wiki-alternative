@@ -24,6 +24,7 @@ import { ViewMode } from '../types';
 import { updateSEO } from '../utils/seoManager';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
+import { WazzimaGiyggTimeline } from './WazzimaGiyggTimeline';
 
 interface WazzimaGiyggProfileViewProps {
   onNavigate: (view: ViewMode) => void;
@@ -38,6 +39,13 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
 }) => {
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
   const [dossierDoc, setDossierDoc] = useState<DossierDocType>('irregularidades');
+  const [dossierTab, setDossierTab] = useState<'text' | 'pdf' | 'table'>('text');
+
+  const handleOpenDossier = (doc?: DossierDocType, tab?: 'text' | 'pdf' | 'table') => {
+    if (doc) setDossierDoc(doc);
+    if (tab) setDossierTab(tab);
+    setIsDossierModalOpen(true);
+  };
 
   useEffect(() => {
     updateSEO({
@@ -235,6 +243,9 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
           </div>
         </div>
       </section>
+
+      {/* Visual Timeline Component for Dossier A Verdade */}
+      <WazzimaGiyggTimeline onOpenDossier={handleOpenDossier} />
 
       {/* Official Projects Showcase */}
       <section className="space-y-4">
@@ -622,6 +633,7 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
         isOpen={isDossierModalOpen}
         onClose={() => setIsDossierModalOpen(false)}
         initialDocument={dossierDoc}
+        initialTab={dossierTab}
       />
     </article>
   );
