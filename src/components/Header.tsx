@@ -26,6 +26,8 @@ import {
   Smartphone,
   ShieldAlert,
   ShieldCheck,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -801,6 +803,21 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Globe2 size={11} className={isWin95 ? 'text-[#000080]' : isGenshin ? 'text-[#72e2db]' : 'text-blue-400'} />
               <span>{currentLanguage.flag} {currentLanguage.nativeName} ({currentLanguage.code})</span>
+            </button>
+            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
+            <button
+              type="button"
+              onClick={onToggleTheme}
+              className="hover:text-amber-300 text-slate-300 flex items-center gap-1 transition cursor-pointer select-none"
+              title={isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
+              aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+            >
+              {isDark ? (
+                <Sun size={11} className="text-amber-400 animate-pulse" />
+              ) : (
+                <Moon size={11} className="text-slate-300" />
+              )}
+              <span className="hidden sm:inline font-sans">{isDark ? 'Tema Claro' : 'Tema Escuro'}</span>
             </button>
             <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
             <span className="hidden sm:inline">GNU GPL v3.0</span>
@@ -1796,6 +1813,29 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </nav>
 
+          {/* Light / Dark Mode Toggle Button */}
+          <button
+            id="btn-header-theme-toggle"
+            type="button"
+            onClick={onToggleTheme}
+            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 ${
+              isDark
+                ? 'bg-slate-800/90 hover:bg-slate-700/90 text-amber-300 border-slate-700 ring-1 ring-amber-400/30'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+            }`}
+            title={isDark ? 'Mudar para tema claro (Light Mode)' : 'Mudar para tema escuro (Dark Mode)'}
+            aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
+          >
+            {isDark ? (
+              <Sun size={14} className="text-amber-400 transition-transform duration-300 hover:rotate-45" />
+            ) : (
+              <Moon size={14} className="text-slate-600 transition-transform duration-300 hover:-rotate-12" />
+            )}
+            <span className="hidden xl:inline text-[11px] font-sans">
+              {isDark ? 'Modo Claro' : 'Modo Escuro'}
+            </span>
+          </button>
+
           {/* Language Switcher Dropdown */}
           <div className="relative" ref={langMenuRef}>
             <button
@@ -2185,6 +2225,21 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
                     >
                       <Shield size={13} /> {t('header.security')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onToggleTheme();
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+                      title={isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+                    >
+                      <div className="flex items-center gap-2">
+                        {isDark ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-slate-500" />}
+                        <span>{isDark ? 'Tema Claro' : 'Tema Escuro'}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono uppercase">{isDark ? 'Claro' : 'Escuro'}</span>
                     </button>
                     <button
                       onClick={() => {

@@ -4,6 +4,7 @@ import App from './App.tsx';
 import { LanguageProvider } from './context/LanguageContext';
 import { ExtensionManager } from './core/ExtensionManager';
 import './index.css';
+import './print.css';
 
 // Inicializa o carregamento dinâmico das extensões do WikiZero
 ExtensionManager.getInstance().loadExtensionsFromGlob().catch((err) => {

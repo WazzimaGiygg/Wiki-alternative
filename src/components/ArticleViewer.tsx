@@ -36,6 +36,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Scale,
+  Clock,
 } from 'lucide-react';
 import {
   WikiArticle,
@@ -55,6 +56,7 @@ import { PdfExportModal } from './PdfExportModal';
 import { ModerationLockModal } from './ModerationLockModal';
 import { WazzimaGiyggTimeline } from './WazzimaGiyggTimeline';
 import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
+import { ReadingProgressBar } from './ReadingProgressBar';
 import { StorageService } from '../services/storageService';
 
 interface ArticleViewerProps {
@@ -123,6 +125,8 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const isPageLocked = !!page?.isLocked;
 
   const contentRef = useRef<HTMLDivElement>(null);
+  const articleRootRef = useRef<HTMLDivElement>(null);
+  const articlePaneRef = useRef<HTMLElement>(null);
 
   // Sync article when prop changes
   useEffect(() => {
@@ -134,6 +138,28 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     () => parseWikitext(localArticle.descricao),
     [localArticle.descricao]
   );
+
+  // Calculate reading time estimate based on article text length
+  const { readingTimeMinutes, wordCount, characterCount } = useMemo(() => {
+    const rawContent = localArticle.descricao || '';
+    // Strip wikitext templates, links, headers, markup to get accurate textual word count
+    const cleanText = rawContent
+      .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, '$1')
+      .replace(/==+[^=]+==+/g, ' ')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\{\{[^}]*\}\}/g, ' ')
+      .replace(/https?:\/\/\S+/g, ' ')
+      .replace(/['*#_~`]/g, ' ');
+    const words = cleanText.trim().split(/\s+/).filter(Boolean).length;
+    const chars = rawContent.length;
+    // Calculate minutes based on words (standard 200 wpm) or length fallback (approx 1000 chars/min)
+    const minutes = Math.max(1, Math.ceil(words > 0 ? words / 200 : chars / 1000));
+    return {
+      readingTimeMinutes: minutes,
+      wordCount: words,
+      characterCount: chars,
+    };
+  }, [localArticle.descricao]);
 
   const handleToggleLockArticle = async (reason: string) => {
     if (!user) return;
@@ -316,31 +342,57 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   };
 
   return (
-    <div className="w-full space-y-4 animate-in fade-in select-none">
+    <div ref={articleRootRef} className="w-full space-y-4 animate-in fade-in select-none">
+      {/* Reading Progress Bar (Visual tracking of how far the user has scrolled through the article) */}
+      <div className="no-print print:hidden">
+        <ReadingProgressBar
+          contentRef={contentRef}
+          containerRef={articlePaneRef}
+          article={localArticle}
+          activeTab={activeTab}
+          isPlayingAudio={isPlayingAudio}
+          onToggleSpeech={toggleSpeech}
+        />
+      </div>
+
       {/* High Density Breadcrumb & Action Bar */}
-      <div className="flex items-center justify-between flex-wrap gap-2 text-xs border-b border-slate-200 dark:border-slate-800 pb-2">
-        <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 flex-wrap">
-          <button
-            onClick={onBack}
-            className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold"
+      <div className="flex items-center justify-between flex-wrap gap-2 text-xs border-b border-slate-200 dark:border-slate-800 pb-2 no-print print:hidden article-top-toolbar">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 flex-wrap">
+            <button
+              onClick={onBack}
+              className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold"
+            >
+              <ArrowLeft size={13} /> Principal
+            </button>
+            <ChevronRight size={11} className="text-slate-300 dark:text-slate-600" />
+            {page && (
+              <>
+                <button
+                  onClick={() => onNavigateToPage(page.uid)}
+                  className="hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                >
+                  {page.titulo}
+                </button>
+                <ChevronRight size={11} className="text-slate-300 dark:text-slate-600" />
+              </>
+            )}
+            <span className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-xs">
+              {article.titulo}
+            </span>
+          </div>
+
+          {/* Reading Time Estimate Label at the Top of ArticleViewer */}
+          <div
+            title={`Tempo estimado de leitura: ~${readingTimeMinutes} min (${wordCount.toLocaleString()} palavras, ${characterCount.toLocaleString()} caracteres)`}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50/90 dark:bg-blue-950/70 border border-blue-200/90 dark:border-blue-800 text-blue-800 dark:text-blue-300 font-mono text-[11px] font-semibold shadow-2xs"
           >
-            <ArrowLeft size={13} /> Principal
-          </button>
-          <ChevronRight size={11} className="text-slate-300 dark:text-slate-600" />
-          {page && (
-            <>
-              <button
-                onClick={() => onNavigateToPage(page.uid)}
-                className="hover:text-blue-600 dark:hover:text-blue-400 font-medium"
-              >
-                {page.titulo}
-              </button>
-              <ChevronRight size={11} className="text-slate-300 dark:text-slate-600" />
-            </>
-          )}
-          <span className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-xs">
-            {article.titulo}
-          </span>
+            <Clock size={12} className="text-blue-600 dark:text-blue-400 shrink-0" />
+            <span>~{readingTimeMinutes} min de leitura</span>
+            <span className="text-[10px] text-blue-500/80 dark:text-blue-400/70 hidden sm:inline">
+              ({wordCount.toLocaleString()} palavras)
+            </span>
+          </div>
         </div>
 
         {/* High Density Toolbar Controls */}
@@ -481,7 +533,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       </div>
 
       {/* MediaWiki / Fandom High-Density Tab Bar */}
-      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold overflow-x-auto">
+      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold overflow-x-auto no-print print:hidden article-tabs-nav">
         <button
           onClick={() => setActiveTab('article')}
           className={`px-3 py-1.5 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
@@ -718,6 +770,12 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               <span className="font-mono text-slate-800 dark:text-slate-200">{article.descricao.length} bytes</span>
             </div>
             <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+              <span className="text-[10px] text-slate-400 uppercase font-mono block">Tempo Estimado de Leitura</span>
+              <span className="font-bold text-blue-600 dark:text-blue-400">
+                ~{readingTimeMinutes} min ({wordCount.toLocaleString()} palavras)
+              </span>
+            </div>
+            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
               <span className="text-[10px] text-slate-400 uppercase font-mono block">Licença de Publicação</span>
               <span className="font-bold text-emerald-600 dark:text-emerald-400">GNU General Public License v3.0</span>
             </div>
@@ -757,7 +815,21 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       {activeTab === 'article' && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
           {/* Article Content Pane (3 columns) */}
-          <article ref={contentRef} className="lg:col-span-3 bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-7 shadow-xs space-y-6">
+          <article ref={articlePaneRef} className="lg:col-span-3 bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-7 shadow-xs space-y-6">
+            {/* Dedicated Print & PDF Export Document Header */}
+            <div className="hidden print:block mb-6 pb-4 border-b-2 border-slate-900 text-black not-prose">
+              <div className="flex items-center justify-between text-[11px] text-slate-700 mb-1.5 font-mono">
+                <span className="font-bold tracking-wider uppercase text-slate-900 text-xs">
+                  WikiWorldWeb • A Enciclopédia Livre e Aberta
+                </span>
+                <span>https://wikiworldweb.org/?uid={localArticle.id}</span>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                <span>Categoria: {localArticle.categoria || 'Geral'} • Versão {localArticle.versao || 1}.0 • {wordCount.toLocaleString()} palavras</span>
+                <span>Data de Impressão: {new Date().toLocaleDateString('pt-BR')}</span>
+              </div>
+            </div>
+
             {/* Wikipedia-style Moderation Protection Banner */}
             {isArticleLocked && (
               <div className="p-3 sm:p-3.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/80 text-amber-950 dark:text-amber-200 text-xs space-y-1.5 shadow-xs">
@@ -821,6 +893,13 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-mono font-bold bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.2 rounded border border-amber-200 dark:border-amber-800">
                   <Star size={10} fill="currentColor" /> {ratingData.averageScore.toFixed(1)}/5 ({ratingData.totalVotes} votos)
                 </div>
+                <div
+                  title={`Tempo estimado de leitura: ~${readingTimeMinutes} min (${wordCount.toLocaleString()} palavras baseadas no tamanho do texto)`}
+                  className="flex items-center gap-1 text-[10px] text-blue-700 dark:text-blue-300 font-mono font-bold bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800 shadow-2xs"
+                >
+                  <Clock size={10} className="text-blue-600 dark:text-blue-400" />
+                  <span>~{readingTimeMinutes} min de leitura</span>
+                </div>
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-normal font-serif-heading text-slate-900 dark:text-white leading-tight">
@@ -858,10 +937,17 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                   <Eye size={11} />
                   <span>{article.visualizacoes || 1} visualizações</span>
                 </div>
+                <div
+                  title={`Tempo de leitura estimado a ~200 palavras por minuto (${wordCount.toLocaleString()} palavras)`}
+                  className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold"
+                >
+                  <Clock size={11} />
+                  <span>~{readingTimeMinutes} min de leitura</span>
+                </div>
               </div>
 
               {/* Reading font adjuster */}
-              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 no-print print:hidden article-font-adjuster">
                 <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
                   <Type size={11} /> TAMANHO:
                 </span>
@@ -885,7 +971,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
             {/* WazzimaGiygg Dossier Timeline Spotlight Banner */}
             {isWazzimaGiyggArticle && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-600/10 to-indigo-900/15 border-2 border-amber-400/80 dark:border-amber-600/60 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 not-prose">
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-600/10 to-indigo-900/15 border-2 border-amber-400/80 dark:border-amber-600/60 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 not-prose no-print print:hidden">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-bold font-mono text-[10px] uppercase">
