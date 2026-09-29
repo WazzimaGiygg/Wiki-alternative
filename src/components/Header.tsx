@@ -168,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
   const popularLanguages = allLanguages.slice(0, 8);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#ffffff] dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 transition-colors select-none">
+    <header className="sticky top-0 z-40 bg-[#ffffff] dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 transition-colors select-none no-print print:hidden">
       {/* Windows 1.0 (1985) MS-DOS Executive Window Title Bar */}
       {isWin1 && (
         <div className="bg-[#0000aa] text-white border-b-2 border-black font-mono text-xs select-none">

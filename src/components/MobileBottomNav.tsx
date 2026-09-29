@@ -33,7 +33,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     <nav
       id="mobile-bottom-nav"
       aria-label="Navegação móvel principal"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/90 dark:border-slate-800/90 px-1.5 py-1.5 flex items-center justify-around shadow-lg transition-transform md:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/90 dark:border-slate-800/90 px-1.5 py-1.5 flex items-center justify-around shadow-lg transition-transform md:hidden pb-[max(0.5rem,env(safe-area-inset-bottom))] no-print print:hidden"
     >
       {/* 1. Início / Hub */}
       <button

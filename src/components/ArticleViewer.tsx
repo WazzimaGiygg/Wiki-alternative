@@ -37,6 +37,11 @@ import {
   ShieldCheck,
   Scale,
   Clock,
+  ArrowUp,
+  Sliders,
+  Minus,
+  Plus,
+  AlignLeft,
 } from 'lucide-react';
 import {
   WikiArticle,
@@ -127,6 +132,116 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const articleRootRef = useRef<HTMLDivElement>(null);
   const articlePaneRef = useRef<HTMLElement>(null);
+
+  // Modo de Leitura Imersivo (Distraction-free Reader Mode)
+  const [isReaderMode, setIsReaderMode] = useState<boolean>(() => {
+    return localStorage.getItem('wikizero_reader_mode') === 'true';
+  });
+  const [readerFontFamily, setReaderFontFamily] = useState<'serif' | 'sans' | 'mono'>(() => {
+    return (localStorage.getItem('wikizero_reader_font') as 'serif' | 'sans' | 'mono') || 'serif';
+  });
+  const [readerFontSize, setReaderFontSize] = useState<number>(() => {
+    const saved = localStorage.getItem('wikizero_reader_size');
+    return saved ? parseInt(saved, 10) : 18;
+  });
+  const [readerTheme, setReaderTheme] = useState<'sepia' | 'light' | 'dark' | 'black'>(() => {
+    return (localStorage.getItem('wikizero_reader_theme') as any) || 'sepia';
+  });
+  const [readerWidth, setReaderWidth] = useState<'narrow' | 'medium' | 'wide'>(() => {
+    return (localStorage.getItem('wikizero_reader_width') as any) || 'medium';
+  });
+  const [showReaderToc, setShowReaderToc] = useState<boolean>(false);
+  const [showReaderSettings, setShowReaderSettings] = useState<boolean>(false);
+  const [readerProgress, setReaderProgress] = useState<number>(0);
+
+  const readerScrollRef = useRef<HTMLDivElement>(null);
+  const readerContentRef = useRef<HTMLDivElement>(null);
+
+  const handleToggleReaderMode = (val?: boolean) => {
+    setIsReaderMode((prev) => {
+      const next = typeof val === 'boolean' ? val : !prev;
+      localStorage.setItem('wikizero_reader_mode', String(next));
+      return next;
+    });
+  };
+
+  const handleSetReaderTheme = (theme: 'sepia' | 'light' | 'dark' | 'black') => {
+    setReaderTheme(theme);
+    localStorage.setItem('wikizero_reader_theme', theme);
+  };
+
+  const handleSetReaderFontFamily = (font: 'serif' | 'sans' | 'mono') => {
+    setReaderFontFamily(font);
+    localStorage.setItem('wikizero_reader_font', font);
+  };
+
+  const handleSetReaderFontSize = (deltaOrVal: number, isDelta = false) => {
+    setReaderFontSize((prev) => {
+      const next = isDelta ? Math.min(26, Math.max(14, prev + deltaOrVal)) : deltaOrVal;
+      localStorage.setItem('wikizero_reader_size', String(next));
+      return next;
+    });
+  };
+
+  const handleSetReaderWidth = (w: 'narrow' | 'medium' | 'wide') => {
+    setReaderWidth(w);
+    localStorage.setItem('wikizero_reader_width', w);
+  };
+
+  const handleReaderScroll = () => {
+    const el = readerScrollRef.current;
+    if (!el) return;
+    const max = el.scrollHeight - el.clientHeight;
+    if (max <= 0) {
+      setReaderProgress(100);
+      return;
+    }
+    const current = Math.min(100, Math.max(0, Math.round((el.scrollTop / max) * 100)));
+    setReaderProgress(current);
+  };
+
+  // Keyboard shortcut listener: Esc para sair do Modo Leitura, 'r' para alternar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (
+        activeTag === 'input' ||
+        activeTag === 'textarea' ||
+        (document.activeElement as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.key === 'Escape' && isReaderMode) {
+        handleToggleReaderMode(false);
+      } else if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        handleToggleReaderMode();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isReaderMode]);
+
+  // Intercept wiki links inside reader mode
+  useEffect(() => {
+    const el = readerContentRef.current;
+    if (!el || !isReaderMode) return;
+
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('[data-wiki-target]');
+      if (target) {
+        e.preventDefault();
+        const wikiTarget = target.getAttribute('data-wiki-target');
+        if (wikiTarget) {
+          onNavigateToArticleByTitle(wikiTarget);
+        }
+      }
+    };
+
+    el.addEventListener('click', handleLinkClick);
+    return () => el.removeEventListener('click', handleLinkClick);
+  }, [onNavigateToArticleByTitle, isReaderMode]);
 
   // Sync article when prop changes
   useEffect(() => {
@@ -341,6 +456,365 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     }
   };
 
+  // Render Immersive Reader Mode when active
+  if (isReaderMode) {
+    return (
+      <div
+        ref={readerScrollRef}
+        onScroll={handleReaderScroll}
+        className={`fixed inset-0 z-50 overflow-y-auto selection:bg-amber-200 selection:text-amber-950 transition-colors duration-200 animate-in fade-in ${
+          readerTheme === 'sepia'
+            ? 'theme-reader-sepia'
+            : readerTheme === 'light'
+            ? 'theme-reader-light'
+            : readerTheme === 'dark'
+            ? 'theme-reader-dark'
+            : 'theme-reader-black'
+        }`}
+      >
+        {/* Top Slim Scroll Progress Line */}
+        <div className="fixed top-0 left-0 right-0 h-1 z-50 bg-black/10 dark:bg-white/10 no-print pointer-events-none">
+          <div
+            className={`h-full transition-all duration-150 ease-out ${
+              readerTheme === 'sepia'
+                ? 'bg-[#8c531b]'
+                : readerTheme === 'dark' || readerTheme === 'black'
+                ? 'bg-blue-500'
+                : 'bg-blue-600'
+            }`}
+            style={{ width: `${readerProgress}%` }}
+          />
+        </div>
+
+        {/* Minimalist Sticky Reader Toolbar */}
+        <header className="sticky top-0 z-40 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 sm:gap-3 shadow-2xs no-print transition-colors border-current/15 select-none bg-inherit/90">
+          {/* Left Controls: Exit Button & Article Title / Reading Progress */}
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <button
+              onClick={() => handleToggleReaderMode(false)}
+              className="px-2.5 py-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition shadow-2xs shrink-0"
+              title="Sair do Modo de Leitura [Pressione Esc]"
+            >
+              <ArrowLeft size={14} />
+              <span className="hidden sm:inline">Sair do Modo Leitura</span>
+              <kbd className="hidden md:inline px-1.5 py-0.2 rounded text-[10px] opacity-70 border border-current/30 font-mono">
+                ESC
+              </kbd>
+            </button>
+
+            <div className="hidden md:flex items-center gap-2 min-w-0 text-xs truncate">
+              <span className="font-bold truncate max-w-xs">{localArticle.titulo}</span>
+              <span className="opacity-30">•</span>
+              <span className="opacity-80 font-mono text-[11px] shrink-0">{readerProgress}% lido</span>
+              <span className="opacity-30">•</span>
+              <span className="opacity-80 text-[11px] shrink-0">~{readingTimeMinutes} min de leitura</span>
+            </div>
+          </div>
+
+          {/* Right Controls: Readability Settings & Quick Tools */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* Font Family Picker */}
+            <div className="flex items-center bg-black/5 dark:bg-white/5 p-0.5 rounded-lg border border-current/20 text-xs font-medium">
+              <button
+                onClick={() => handleSetReaderFontFamily('serif')}
+                title="Fonte Serifada (Merriweather / Georgia) - Tradicional para livros e conforto prolongado"
+                className={`px-2 py-1 rounded text-[11px] font-serif transition cursor-pointer ${
+                  readerFontFamily === 'serif'
+                    ? 'bg-black/10 dark:bg-white/20 font-bold shadow-2xs'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                Serif
+              </button>
+              <button
+                onClick={() => handleSetReaderFontFamily('sans')}
+                title="Fonte Sem Serifa (Inter / Sans) - Limpa e moderna"
+                className={`px-2 py-1 rounded text-[11px] font-sans transition cursor-pointer ${
+                  readerFontFamily === 'sans'
+                    ? 'bg-black/10 dark:bg-white/20 font-bold shadow-2xs'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                Sans
+              </button>
+              <button
+                onClick={() => handleSetReaderFontFamily('mono')}
+                title="Fonte Monospaçada (Consolas / Código)"
+                className={`px-2 py-1 rounded text-[11px] font-mono transition cursor-pointer hidden sm:block ${
+                  readerFontFamily === 'mono'
+                    ? 'bg-black/10 dark:bg-white/20 font-bold shadow-2xs'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                Mono
+              </button>
+            </div>
+
+            {/* Font Size Adjuster */}
+            <div className="flex items-center bg-black/5 dark:bg-white/5 p-0.5 rounded-lg border border-current/20 text-xs">
+              <button
+                onClick={() => handleSetReaderFontSize(-2, true)}
+                title="Diminuir tamanho da fonte"
+                className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition cursor-pointer"
+              >
+                <Minus size={13} />
+              </button>
+              <span className="px-1.5 font-mono text-[11px] font-bold min-w-[28px] text-center">
+                {readerFontSize}
+              </span>
+              <button
+                onClick={() => handleSetReaderFontSize(2, true)}
+                title="Aumentar tamanho da fonte"
+                className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition cursor-pointer"
+              >
+                <Plus size={13} />
+              </button>
+            </div>
+
+            {/* Reading Width Controls */}
+            <div className="hidden lg:flex items-center bg-black/5 dark:bg-white/5 p-0.5 rounded-lg border border-current/20 text-xs">
+              <button
+                onClick={() => handleSetReaderWidth('narrow')}
+                title="Coluna Estreita (680px) - Foco concentrado"
+                className={`px-2 py-1 rounded text-[10px] font-bold transition cursor-pointer ${
+                  readerWidth === 'narrow' ? 'bg-black/10 dark:bg-white/20' : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                680
+              </button>
+              <button
+                onClick={() => handleSetReaderWidth('medium')}
+                title="Coluna Média Equilibrada (800px) - Padrão editorial"
+                className={`px-2 py-1 rounded text-[10px] font-bold transition cursor-pointer ${
+                  readerWidth === 'medium' ? 'bg-black/10 dark:bg-white/20' : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                800
+              </button>
+              <button
+                onClick={() => handleSetReaderWidth('wide')}
+                title="Coluna Larga (960px) - Leitura expandida"
+                className={`px-2 py-1 rounded text-[10px] font-bold transition cursor-pointer ${
+                  readerWidth === 'wide' ? 'bg-black/10 dark:bg-white/20' : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                960
+              </button>
+            </div>
+
+            {/* Reading Themes (Sepia, Light, Dark, OLED Black) */}
+            <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-lg border border-current/20">
+              <button
+                onClick={() => handleSetReaderTheme('sepia')}
+                title="Tema Sépia / Livro (Tons quentes de papel, reduz cansaço visual)"
+                className={`w-5 h-5 rounded-full border transition cursor-pointer ${
+                  readerTheme === 'sepia' ? 'ring-2 ring-[#8c531b] scale-110' : 'opacity-80 hover:opacity-100'
+                }`}
+                style={{ backgroundColor: '#fbf0d9', borderColor: '#c4a572' }}
+              />
+              <button
+                onClick={() => handleSetReaderTheme('light')}
+                title="Tema Claro (Branco clássico)"
+                className={`w-5 h-5 rounded-full border transition cursor-pointer ${
+                  readerTheme === 'light' ? 'ring-2 ring-blue-600 scale-110' : 'opacity-80 hover:opacity-100'
+                }`}
+                style={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1' }}
+              />
+              <button
+                onClick={() => handleSetReaderTheme('dark')}
+                title="Tema Escuro (Grafite suave para baixa luminosidade)"
+                className={`w-5 h-5 rounded-full border transition cursor-pointer ${
+                  readerTheme === 'dark' ? 'ring-2 ring-blue-400 scale-110' : 'opacity-80 hover:opacity-100'
+                }`}
+                style={{ backgroundColor: '#181b20', borderColor: '#334155' }}
+              />
+              <button
+                onClick={() => handleSetReaderTheme('black')}
+                title="Tema OLED Preto Puro (Contraste máximo, economia de energia)"
+                className={`w-5 h-5 rounded-full border transition cursor-pointer ${
+                  readerTheme === 'black' ? 'ring-2 ring-blue-400 scale-110' : 'opacity-80 hover:opacity-100'
+                }`}
+                style={{ backgroundColor: '#000000', borderColor: '#27272a' }}
+              />
+            </div>
+
+            {/* Table of Contents Popover Toggle */}
+            {toc.length > 0 && (
+              <button
+                onClick={() => setShowReaderToc(!showReaderToc)}
+                title="Ver Índice do Artigo"
+                className={`p-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer ${
+                  showReaderToc ? 'bg-black/10 dark:bg-white/20' : ''
+                }`}
+              >
+                <List size={15} />
+              </button>
+            )}
+
+            {/* Speech Audio Reader */}
+            <button
+              onClick={toggleSpeech}
+              title={isPlayingAudio ? 'Parar leitura por voz' : 'Ouvir artigo por voz'}
+              className={`p-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer ${
+                isPlayingAudio ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' : ''
+              }`}
+            >
+              {isPlayingAudio ? <VolumeX size={15} /> : <Volume2 size={15} />}
+            </button>
+
+            {/* Clean Print / PDF Export */}
+            <button
+              onClick={handlePrint}
+              title="Imprimir ou Salvar PDF (Aplica folha de estilos limpa dedicada)"
+              className="p-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer hidden sm:block"
+            >
+              <Printer size={15} />
+            </button>
+          </div>
+        </header>
+
+        {/* Floating Table of Contents Popover (if opened) */}
+        {showReaderToc && toc.length > 0 && (
+          <div className="fixed top-14 right-4 sm:right-6 z-40 w-80 max-h-[75vh] overflow-y-auto rounded-xl border border-current/20 shadow-2xl p-4 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 no-print bg-inherit">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-current/15">
+              <h3 className="font-bold text-xs flex items-center gap-1.5 uppercase tracking-wide">
+                <List size={13} />
+                <span>Índice do Artigo</span>
+              </h3>
+              <button
+                onClick={() => setShowReaderToc(false)}
+                className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition"
+              >
+                <X size={13} />
+              </button>
+            </div>
+            <nav className="space-y-1 text-xs">
+              {toc.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    const el = document.getElementById(item.id);
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      setShowReaderToc(false);
+                    }
+                  }}
+                  style={{ paddingLeft: `${(item.level - 1) * 12 + 6}px` }}
+                  className="w-full text-left py-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition truncate block text-[12px] opacity-80 hover:opacity-100 cursor-pointer"
+                >
+                  <span className="opacity-50 mr-1">{item.level === 1 ? '▪' : '–'}</span>
+                  <span>{item.text}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
+        )}
+
+        {/* Central Article Canvas */}
+        <main
+          className={`mx-auto px-5 sm:px-10 py-10 sm:py-16 transition-all duration-150 ${
+            readerWidth === 'narrow'
+              ? 'max-w-2xl'
+              : readerWidth === 'wide'
+              ? 'max-w-4xl'
+              : 'max-w-3xl'
+          }`}
+        >
+          {/* Article Title & Metadata Banner */}
+          <header className="mb-10 pb-6 border-b border-current/15 text-center sm:text-left">
+            <div className="flex items-center justify-center sm:justify-start gap-2 mb-3 flex-wrap">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider border border-current/25 bg-black/5 dark:bg-white/5">
+                {localArticle.categoria || 'Geral'}
+              </span>
+              <span className="text-xs opacity-75 font-mono">
+                ~{readingTimeMinutes} min de leitura • {wordCount.toLocaleString()} palavras
+              </span>
+            </div>
+
+            <h1
+              className={`text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight ${
+                readerFontFamily === 'serif'
+                  ? 'font-serif'
+                  : readerFontFamily === 'mono'
+                  ? 'font-mono'
+                  : 'font-sans'
+              }`}
+            >
+              {localArticle.titulo}
+            </h1>
+
+            <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs opacity-70 flex-wrap">
+              <span>Por <strong>{localArticle.autor || 'Comunidade WikiWorldWeb'}</strong></span>
+              <span>•</span>
+              <span>Atualizado em {new Date(localArticle.dataEdicao || localArticle.dataCriacao).toLocaleDateString('pt-BR')}</span>
+              <span>•</span>
+              <span className="font-mono">Versão {localArticle.versao || 1}.0</span>
+            </div>
+          </header>
+
+          {/* Cleaned Immersive Wikitext Rendered Content */}
+          <div
+            ref={readerContentRef}
+            style={{
+              fontSize: `${readerFontSize}px`,
+              lineHeight: 1.82,
+            }}
+            className={`reader-mode-content wiki-rendered-content ${
+              readerFontFamily === 'serif'
+                ? 'font-serif font-reader-serif'
+                : readerFontFamily === 'mono'
+                ? 'font-mono font-reader-mono'
+                : 'font-sans font-reader-sans'
+            }`}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+
+          {/* End-of-article Navigation & Licensing Footer */}
+          <footer className="mt-16 pt-8 border-t border-current/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-70">
+            <div>
+              <p className="font-bold">WikiWorldWeb — Enciclopédia Livre e Aberta</p>
+              <p className="text-[11px]">
+                Conteúdo sob licença Creative Commons Atribuição-CompartilhaIgual (CC-BY-SA 4.0).
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  readerScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="px-3 py-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 flex items-center gap-1.5 transition cursor-pointer text-xs font-semibold"
+              >
+                <ArrowUp size={13} />
+                <span>Voltar ao topo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleToggleReaderMode(false)}
+                className="px-3.5 py-1.5 rounded-lg border border-current/30 hover:border-current/50 bg-black/5 dark:bg-white/10 font-bold transition cursor-pointer text-xs"
+              >
+                <span>Sair do Modo Leitura</span>
+              </button>
+            </div>
+          </footer>
+        </main>
+
+        {/* Modals if opened while in Reader Mode */}
+        {showPdfModal && (
+          <PdfExportModal
+            article={localArticle}
+            pageName={page?.titulo || 'WikiWorldWeb'}
+            articleContentRef={readerContentRef}
+            isOpen={showPdfModal}
+            onClose={() => setShowPdfModal(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div ref={articleRootRef} className="w-full space-y-4 animate-in fade-in select-none">
       {/* Reading Progress Bar (Visual tracking of how far the user has scrolled through the article) */}
@@ -352,6 +826,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           activeTab={activeTab}
           isPlayingAudio={isPlayingAudio}
           onToggleSpeech={toggleSpeech}
+          onOpenReaderMode={() => handleToggleReaderMode(true)}
         />
       </div>
 
@@ -481,6 +956,16 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             }`}
           >
             {isPlayingAudio ? <VolumeX size={13} /> : <Volume2 size={13} />}
+          </button>
+
+          {/* Reader Mode Button */}
+          <button
+            onClick={() => handleToggleReaderMode(true)}
+            title="Ativar Modo de Leitura Imersivo (Sem distrações, texto centralizado e alta legibilidade) [Atalho: R]"
+            className="px-2.5 py-1 rounded bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/70 dark:hover:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-semibold text-xs transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+          >
+            <BookOpen size={13} className="text-indigo-600 dark:text-indigo-400" />
+            <span className="hidden sm:inline">Modo Leitura</span>
           </button>
 
           <button
@@ -1068,7 +1553,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             )}
 
             {/* Fandom-Style Community Rating & Feedback Box */}
-            <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 not-prose">
+            <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 not-prose no-print print:hidden article-rating-container">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                 <div className="flex items-center gap-2">
                   <Star size={16} className="text-amber-500" fill="currentColor" />
@@ -1145,7 +1630,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             </div>
 
             {/* Article Footer */}
-            <footer className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 font-mono">
+            <footer className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 font-mono no-print print:hidden article-interactive-footer">
               <div>
                 Doc ID: <code className="font-mono text-slate-600 dark:text-slate-300">{article.id}</code> (Coleção: <code className="font-mono text-slate-600 dark:text-slate-300">{article.pageUid}</code>)
               </div>
@@ -1179,10 +1664,23 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 </button>
               </div>
             </footer>
+
+            {/* Dedicated Print & PDF Export Document Footer */}
+            <div className="hidden print:block mt-8 pt-4 border-t border-slate-400 text-[10px] text-slate-600 font-sans not-prose">
+              <p className="font-semibold text-slate-800">
+                WikiWorldWeb — Enciclopédia Livre, Rápida e Sem Anúncios.
+              </p>
+              <p className="mt-0.5">
+                Conteúdo disponibilizado sob licença Creative Commons Atribuição-CompartilhaIgual 4.0 Internacional (CC-BY-SA 4.0).
+              </p>
+              <p className="text-[9px] text-slate-500 mt-0.5 font-mono">
+                Identificador Permanente (UID): {localArticle.id} • Coleção: {localArticle.pageUid}
+              </p>
+            </div>
           </article>
 
           {/* Table of Contents & Sidebar info (1 column) */}
-          <aside className="space-y-4 sticky top-16">
+          <aside className="space-y-4 sticky top-16 no-print print:hidden article-tools-sidebar">
             {/* Table of contents */}
             {toc.length > 0 && (
               <div className="bg-[#f8f9fa] dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-3.5 shadow-xs">
@@ -1255,6 +1753,14 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                   </button>
                 </li>
                 <li className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    onClick={() => handleToggleReaderMode(true)}
+                    className="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 w-full text-left font-semibold"
+                  >
+                    <BookOpen size={11} /> Modo de Leitura Imersivo
+                  </button>
+                </li>
+                <li>
                   <button
                     onClick={() => setShowPdfModal(true)}
                     className="text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 w-full text-left font-semibold"

@@ -3630,10 +3630,257 @@ html.theme-halflife ::-webkit-scrollbar-thumb:hover {
   letter-spacing: 0.01em;
 }
 
-[swg-standard-button="contribution"]:active,
-.swg-standard-button-btn:active {
-  transform: scale(0.98);
+/* ========================================================================== */
+/* IMMERSIVE READER MODE (DISTRACTION-FREE TYPOGRAPHY & THEMES)               */
+/* ========================================================================== */
+.theme-reader-sepia {
+  background-color: #fbf0d9 !important;
+  color: #2e2215 !important;
 }
+
+.theme-reader-sepia .reader-paper {
+  background-color: #fbf0d9 !important;
+  color: #2e2215 !important;
+}
+
+.theme-reader-sepia .wiki-rendered-content {
+  color: #2e2215 !important;
+}
+
+.theme-reader-sepia .wiki-rendered-content h1,
+.theme-reader-sepia .wiki-rendered-content h2,
+.theme-reader-sepia .wiki-rendered-content h3 {
+  color: #1a1208 !important;
+  border-bottom-color: #e5d4b5 !important;
+}
+
+.theme-reader-sepia .wiki-rendered-content a,
+.theme-reader-sepia .wiki-rendered-content .wiki-link {
+  color: #8c531b !important;
+  text-decoration-color: #d4b58e !important;
+}
+
+.theme-reader-sepia .wiki-rendered-content blockquote {
+  background-color: #f3e5c8 !important;
+  border-left-color: #8c531b !important;
+  color: #4a3824 !important;
+}
+
+.theme-reader-sepia .wiki-rendered-content code {
+  background-color: #f0e1c2 !important;
+  color: #3b2816 !important;
+  border-color: #d8c59f !important;
+}
+
+.theme-reader-sepia .wiki-rendered-content pre {
+  background-color: #2b2014 !important;
+  color: #fbf0d9 !important;
+  border-color: #443220 !important;
+}
+
+.theme-reader-sepia .wiki-rendered-content .wikitable {
+  background-color: #fff8eb !important;
+  border-color: #dfcdad !important;
+}
+
+.theme-reader-sepia .wiki-rendered-content .wikitable th {
+  background-color: #f3e5c8 !important;
+  color: #1a1208 !important;
+  border-color: #dfcdad !important;
+}
+
+.theme-reader-sepia .wiki-rendered-content .wikitable td {
+  border-color: #dfcdad !important;
+  color: #2e2215 !important;
+}
+
+.theme-reader-sepia .wiki-rendered-content .wiki-infobox {
+  background-color: #f5e8cd !important;
+  border-color: #dfcdad !important;
+  color: #2e2215 !important;
+}
+
+/* Light Reader Theme */
+.theme-reader-light {
+  background-color: #ffffff !important;
+  color: #1a202c !important;
+}
+
+.theme-reader-light .reader-paper {
+  background-color: #ffffff !important;
+  color: #1a202c !important;
+}
+
+/* Dark Reader Theme */
+.theme-reader-dark {
+  background-color: #161a22 !important;
+  color: #e2e8f0 !important;
+}
+
+.theme-reader-dark .reader-paper {
+  background-color: #161a22 !important;
+  color: #e2e8f0 !important;
+}
+
+.theme-reader-dark .wiki-rendered-content {
+  color: #e2e8f0 !important;
+}
+
+.theme-reader-dark .wiki-rendered-content h1,
+.theme-reader-dark .wiki-rendered-content h2,
+.theme-reader-dark .wiki-rendered-content h3 {
+  color: #ffffff !important;
+  border-bottom-color: #2d333b !important;
+}
+
+.theme-reader-dark .wiki-rendered-content a,
+.theme-reader-dark .wiki-rendered-content .wiki-link {
+  color: #60a5fa !important;
+  text-decoration-color: #3b82f6 !important;
+}
+
+.theme-reader-dark .wiki-rendered-content blockquote {
+  background-color: #1e2430 !important;
+  border-left-color: #3b82f6 !important;
+  color: #cbd5e1 !important;
+}
+
+.theme-reader-dark .wiki-rendered-content code {
+  background-color: #1f242e !important;
+  color: #93c5fd !important;
+  border-color: #333d4d !important;
+}
+
+.theme-reader-dark .wiki-rendered-content pre {
+  background-color: #0d1117 !important;
+  color: #e6edf3 !important;
+  border-color: #30363d !important;
+}
+
+.theme-reader-dark .wiki-rendered-content .wikitable {
+  background-color: #161b22 !important;
+  border-color: #30363d !important;
+}
+
+.theme-reader-dark .wiki-rendered-content .wikitable th {
+  background-color: #21262d !important;
+  color: #f0f6fc !important;
+  border-color: #30363d !important;
+}
+
+.theme-reader-dark .wiki-rendered-content .wikitable td {
+  border-color: #30363d !important;
+  color: #c9d1d9 !important;
+}
+
+.theme-reader-dark .wiki-rendered-content .wiki-infobox {
+  background-color: #1b2029 !important;
+  border-color: #30363d !important;
+  color: #e2e8f0 !important;
+}
+
+/* Black OLED Reader Theme */
+.theme-reader-black {
+  background-color: #000000 !important;
+  color: #f1f5f9 !important;
+}
+
+.theme-reader-black .reader-paper {
+  background-color: #000000 !important;
+  color: #f1f5f9 !important;
+}
+
+.theme-reader-black .wiki-rendered-content {
+  color: #f1f5f9 !important;
+}
+
+.theme-reader-black .wiki-rendered-content h1,
+.theme-reader-black .wiki-rendered-content h2,
+.theme-reader-black .wiki-rendered-content h3 {
+  color: #ffffff !important;
+  border-bottom-color: #27272a !important;
+}
+
+.theme-reader-black .wiki-rendered-content a,
+.theme-reader-black .wiki-rendered-content .wiki-link {
+  color: #93c5fd !important;
+}
+
+.theme-reader-black .wiki-rendered-content blockquote {
+  background-color: #121214 !important;
+  border-left-color: #60a5fa !important;
+  color: #d4d4d8 !important;
+}
+
+.theme-reader-black .wiki-rendered-content code {
+  background-color: #18181b !important;
+  color: #e4e4e7 !important;
+  border-color: #27272a !important;
+}
+
+.theme-reader-black .wiki-rendered-content pre {
+  background-color: #09090b !important;
+  border-color: #27272a !important;
+}
+
+.theme-reader-black .wiki-rendered-content .wikitable {
+  background-color: #09090b !important;
+  border-color: #27272a !important;
+}
+
+.theme-reader-black .wiki-rendered-content .wikitable th {
+  background-color: #18181b !important;
+  color: #ffffff !important;
+  border-color: #27272a !important;
+}
+
+.theme-reader-black .wiki-rendered-content .wikitable td {
+  border-color: #27272a !important;
+  color: #e4e4e7 !important;
+}
+
+.theme-reader-black .wiki-rendered-content .wiki-infobox {
+  background-color: #101012 !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+/* Reader Mode Content Typography Enhancement */
+.reader-mode-content {
+  letter-spacing: 0.005em;
+  word-break: break-word;
+}
+
+.reader-mode-content p {
+  margin-bottom: 1.5em !important;
+}
+
+.reader-mode-content h1,
+.reader-mode-content h2,
+.reader-mode-content h3 {
+  line-height: 1.3 !important;
+  margin-top: 1.75em !important;
+  margin-bottom: 0.6em !important;
+}
+
+.reader-mode-content ul,
+.reader-mode-content ol {
+  margin-bottom: 1.5em !important;
+  padding-left: 1.75em !important;
+}
+
+.reader-mode-content li {
+  margin-bottom: 0.4em !important;
+}
+
+.reader-mode-content .wiki-infobox {
+  margin: 1.5em auto !important;
+  float: none !important;
+  width: 100% !important;
+  max-width: 500px !important;
+  border-radius: 8px !important;
+}
+
 
 
 

@@ -20,6 +20,7 @@ interface ReadingProgressBarProps {
   activeTab?: string;
   isPlayingAudio?: boolean;
   onToggleSpeech?: () => void;
+  onOpenReaderMode?: () => void;
 }
 
 export const ReadingProgressBar: React.FC<ReadingProgressBarProps> = ({
@@ -29,6 +30,7 @@ export const ReadingProgressBar: React.FC<ReadingProgressBarProps> = ({
   activeTab = 'article',
   isPlayingAudio = false,
   onToggleSpeech,
+  onOpenReaderMode,
 }) => {
   const [progress, setProgress] = useState(0);
   const [isScrolledDown, setIsScrolledDown] = useState(false);
@@ -251,6 +253,18 @@ export const ReadingProgressBar: React.FC<ReadingProgressBarProps> = ({
 
           {/* Right: Quick Controls (Scroll to Top & Speech Audio) */}
           <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+            {onOpenReaderMode && (
+              <button
+                type="button"
+                onClick={onOpenReaderMode}
+                title="Entrar no Modo de Leitura Imersivo (Sem distrações) [Atalho: R]"
+                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition flex items-center gap-1 cursor-pointer"
+              >
+                <BookOpen size={12} className="text-indigo-600 dark:text-indigo-400" />
+                <span className="hidden sm:inline">Modo Leitura</span>
+              </button>
+            )}
+
             {onToggleSpeech && (
               <button
                 type="button"

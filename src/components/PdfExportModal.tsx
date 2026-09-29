@@ -11,6 +11,7 @@ import {
   Sparkles,
   BookOpen,
   Link2,
+  Printer,
 } from 'lucide-react';
 import { WikiArticle } from '../types';
 import {
@@ -325,6 +326,20 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                setTimeout(() => window.print(), 250);
+              }}
+              disabled={isGenerating}
+              className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              title="Abre a impressão do navegador com a folha de estilos limpa dedicada (sem barras de navegação ou imagens de fundo)"
+            >
+              <Printer size={13} className="text-slate-600 dark:text-slate-300" />
+              <span className="hidden sm:inline">Imprimir /</span> Salvar PDF
+            </button>
+
             <button
               type="button"
               onClick={onClose}
