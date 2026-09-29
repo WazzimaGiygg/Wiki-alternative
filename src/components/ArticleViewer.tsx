@@ -62,6 +62,7 @@ import { ModerationLockModal } from './ModerationLockModal';
 import { WazzimaGiyggTimeline } from './WazzimaGiyggTimeline';
 import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
 import { ReadingProgressBar } from './ReadingProgressBar';
+import { ArticleTopTableOfContents } from './ArticleTopTableOfContents';
 import { StorageService } from '../services/storageService';
 
 interface ArticleViewerProps {
@@ -153,6 +154,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const [showReaderToc, setShowReaderToc] = useState<boolean>(false);
   const [showReaderSettings, setShowReaderSettings] = useState<boolean>(false);
   const [readerProgress, setReaderProgress] = useState<number>(0);
+  const [activeSectionId, setActiveSectionId] = useState<string | undefined>(undefined);
 
   const readerScrollRef = useRef<HTMLDivElement>(null);
   const readerContentRef = useRef<HTMLDivElement>(null);
@@ -301,6 +303,52 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     setHasRated(false);
   }, [article.id]);
 
+  // ScrollSpy to track active heading as user scrolls
+  useEffect(() => {
+    if (!toc || toc.length === 0) return;
+
+    const headingElements = toc
+      .map((item) => document.getElementById(item.id))
+      .filter((el): el is HTMLElement => el !== null);
+
+    if (headingElements.length === 0) return;
+
+    const handleScrollSpy = () => {
+      const scrollY = window.scrollY || window.pageYOffset;
+      let currentActive: string | undefined = undefined;
+      for (const el of headingElements) {
+        const top = el.getBoundingClientRect().top + scrollY;
+        if (scrollY >= top - 130) {
+          currentActive = el.id;
+        } else {
+          break;
+        }
+      }
+      if (currentActive) {
+        setActiveSectionId(currentActive);
+      }
+    };
+
+    window.addEventListener('scroll', handleScrollSpy, { passive: true });
+    handleScrollSpy();
+
+    return () => {
+      window.removeEventListener('scroll', handleScrollSpy);
+    };
+  }, [toc, html]);
+
+  // Handle direct hash navigation
+  useEffect(() => {
+    if (window.location.hash) {
+      const targetId = window.location.hash.replace('#', '');
+      if (targetId) {
+        setTimeout(() => {
+          scrollToSection(targetId);
+        }, 400);
+      }
+    }
+  }, [article.id]);
+
   // Intercept internal wiki links
   useEffect(() => {
     const el = contentRef.current;
@@ -428,7 +476,25 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const scrollToSection = (id: string) => {
     const target = document.getElementById(id);
     if (target) {
-      target.scrollIntoView({ behavior: 'smooth' });
+      const headerOffset = 90;
+      const elementPosition = target.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({
+        top: Math.max(0, offsetPosition),
+        behavior: 'smooth',
+      });
+      setActiveSectionId(id);
+      target.classList.remove('heading-target-highlight');
+      void target.offsetWidth;
+      target.classList.add('heading-target-highlight');
+      setTimeout(() => {
+        target.classList.remove('heading-target-highlight');
+      }, 2500);
+      try {
+        window.history.replaceState(null, '', `#${id}`);
+      } catch {
+        // ignore iframe restrictions if any
+      }
     }
   };
 
@@ -751,6 +817,37 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               <span className="font-mono">Versão {localArticle.versao || 1}.0</span>
             </div>
           </header>
+
+          {/* Gerador de Índice Automático no Topo do Modo de Leitura */}
+          <ArticleTopTableOfContents
+            toc={toc}
+            wordCount={wordCount}
+            onNavigateToSection={(id) => {
+              const target = document.getElementById(id);
+              if (target && readerScrollRef.current) {
+                const headerOffset = 70;
+                const containerTop = readerScrollRef.current.getBoundingClientRect().top;
+                const targetTop = target.getBoundingClientRect().top;
+                const scrollPos = readerScrollRef.current.scrollTop + (targetTop - containerTop) - headerOffset;
+                readerScrollRef.current.scrollTo({
+                  top: Math.max(0, scrollPos),
+                  behavior: 'smooth',
+                });
+                setActiveSectionId(id);
+                target.classList.remove('heading-target-highlight');
+                void target.offsetWidth;
+                target.classList.add('heading-target-highlight');
+                setTimeout(() => {
+                  target.classList.remove('heading-target-highlight');
+                }, 2500);
+              } else {
+                scrollToSection(id);
+              }
+            }}
+            activeSectionId={activeSectionId}
+            themeMode="reader"
+            readerTheme={readerTheme}
+          />
 
           {/* Cleaned Immersive Wikitext Rendered Content */}
           <div
@@ -1495,6 +1592,14 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </div>
             )}
 
+            {/* Gerador de Índice Automático no Topo dos Artigos Longos (baseado em cabeçalhos H2 e H3) */}
+            <ArticleTopTableOfContents
+              toc={toc}
+              wordCount={wordCount}
+              onNavigateToSection={scrollToSection}
+              activeSectionId={activeSectionId}
+            />
+
             {/* Rendered HTML Content */}
             <div
               ref={contentRef}
@@ -1703,7 +1808,11 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                         key={item.id}
                         onClick={() => scrollToSection(item.id)}
                         style={{ paddingLeft: `${(item.level - 1) * 8 + 4}px` }}
-                        className="w-full text-left py-0.5 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded transition truncate block text-[11px]"
+                        className={`w-full text-left py-0.5 rounded transition truncate block text-[11px] cursor-pointer ${
+                          activeSectionId === item.id
+                            ? 'text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-950/50'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200/50 dark:hover:bg-slate-800'
+                        }`}
                       >
                         {item.level === 1 ? '▪ ' : '– '}
                         {item.text}

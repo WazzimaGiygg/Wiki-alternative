@@ -3881,6 +3881,38 @@ html.theme-halflife ::-webkit-scrollbar-thumb:hover {
   border-radius: 8px !important;
 }
 
+/* ========================================================================== */
+/* ARTICLE INTERNAL NAVIGATION & HEADING HIGHLIGHT                            */
+/* ========================================================================== */
+@keyframes headingPulse {
+  0% {
+    background-color: rgba(59, 130, 246, 0.25);
+    border-color: rgba(59, 130, 246, 0.8);
+    transform: translateX(4px);
+  }
+  60% {
+    background-color: rgba(59, 130, 246, 0.15);
+  }
+  100% {
+    background-color: transparent;
+    border-color: inherit;
+    transform: translateX(0);
+  }
+}
+
+.heading-target-highlight {
+  animation: headingPulse 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  border-radius: 4px;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  transition: all 0.3s ease;
+}
+
+.article-top-toc {
+  scroll-margin-top: 5rem;
+}
+
+
 
 
 

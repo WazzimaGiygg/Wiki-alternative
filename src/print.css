@@ -362,6 +362,38 @@
     background-color: #ffffff !important;
   }
 
+  /* In-Article Top Table of Contents (Clean Print Layout) */
+  .article-top-toc {
+    background: #f8fafc !important;
+    background-color: #f8fafc !important;
+    border: 1pt solid #cbd5e1 !important;
+    border-radius: 4pt !important;
+    padding: 8pt 12pt !important;
+    margin: 10pt 0 14pt 0 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    color: #111827 !important;
+  }
+
+  .article-top-toc button,
+  .article-top-toc input {
+    display: none !important;
+  }
+
+  .article-top-toc ol {
+    margin: 4pt 0 0 0 !important;
+    padding-left: 0 !important;
+  }
+
+  .article-top-toc li {
+    margin-bottom: 2pt !important;
+  }
+
+  .article-top-toc a {
+    color: #1e293b !important;
+    text-decoration: none !important;
+  }
+
   table th,
   table td,
   .wikitable th,

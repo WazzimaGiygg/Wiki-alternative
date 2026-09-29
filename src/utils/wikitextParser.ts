@@ -271,15 +271,25 @@ export function parseWikitext(
       continue;
     }
 
-    // Headers (= H1 =, == H2 ==, === H3 ===, ==== H4 ====, etc. and Markdown #, ##, ###)
+    // Headers (= H1 =, == H2 ==, === H3 ===, ==== H4 ====, etc., Markdown #, ##, ###, and HTML <h2>...</h2>)
     const wikiHeaderMatch = line.match(/^(={1,6})\s*(.*?)\s*\1$/);
     const mdHeaderMatch = !wikiHeaderMatch ? line.match(/^(#{2,6})\s+(.*)$/) : null;
-    const headerMatch = wikiHeaderMatch || mdHeaderMatch;
+    const htmlHeaderMatch = !wikiHeaderMatch && !mdHeaderMatch ? line.match(/^<h([1-6])(?:\s+[^>]*)?>(.*?)<\/h\1>$/i) : null;
+    const headerMatch = wikiHeaderMatch || mdHeaderMatch || htmlHeaderMatch;
 
     if (headerMatch) {
       flushLists();
-      const level = wikiHeaderMatch ? wikiHeaderMatch[1].length : mdHeaderMatch![1].length;
-      const headerText = (wikiHeaderMatch ? wikiHeaderMatch[2] : mdHeaderMatch![2]).trim();
+      const level = wikiHeaderMatch
+        ? wikiHeaderMatch[1].length
+        : mdHeaderMatch
+        ? mdHeaderMatch[1].length
+        : parseInt(htmlHeaderMatch![1], 10);
+      const rawText = wikiHeaderMatch
+        ? wikiHeaderMatch[2]
+        : mdHeaderMatch
+        ? mdHeaderMatch[2]
+        : htmlHeaderMatch![2].replace(/<[^>]+>/g, '');
+      const headerText = rawText.trim();
 
       // Compute hierarchical numbering
       sectionCounters[level - 1]++;
