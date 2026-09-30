@@ -63,6 +63,7 @@ import { WazzimaGiyggTimeline } from './WazzimaGiyggTimeline';
 import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
 import { ReadingProgressBar } from './ReadingProgressBar';
 import { ArticleTopTableOfContents } from './ArticleTopTableOfContents';
+import { TableOfContents } from './TableOfContents';
 import { ResearchEthicsBadge } from './ResearchEthicsBadge';
 import { StorageService } from '../services/storageService';
 
@@ -740,9 +741,9 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           </div>
         </header>
 
-        {/* Floating Table of Contents Popover (if opened) */}
-        {showReaderToc && toc.length > 0 && (
-          <div className="fixed top-14 right-4 sm:right-6 z-40 w-80 max-h-[75vh] overflow-y-auto rounded-xl border border-current/20 shadow-2xl p-4 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 no-print bg-inherit">
+        {/* Floating TableOfContents Popover in Reader Mode */}
+        {showReaderToc && (
+          <div className="fixed top-14 right-4 sm:right-6 z-40 w-80 max-h-[75vh] overflow-y-auto rounded-xl border border-current/20 shadow-2xl p-3 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 no-print bg-inherit">
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-current/15">
               <h3 className="font-bold text-xs flex items-center gap-1.5 uppercase tracking-wide">
                 <List size={13} />
@@ -750,30 +751,29 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </h3>
               <button
                 onClick={() => setShowReaderToc(false)}
-                className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition"
+                className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer"
               >
                 <X size={13} />
               </button>
             </div>
-            <nav className="space-y-1 text-xs">
-              {toc.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    const el = document.getElementById(item.id);
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      setShowReaderToc(false);
-                    }
-                  }}
-                  style={{ paddingLeft: `${(item.level - 1) * 12 + 6}px` }}
-                  className="w-full text-left py-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition truncate block text-[12px] opacity-80 hover:opacity-100 cursor-pointer"
-                >
-                  <span className="opacity-50 mr-1">{item.level === 1 ? '▪' : '–'}</span>
-                  <span>{item.text}</span>
-                </button>
-              ))}
-            </nav>
+            <TableOfContents
+              containerRef={readerContentRef}
+              containerSelector=".wiki-rendered-content"
+              articleId={localArticle.id}
+              articleTitle={localArticle.titulo}
+              htmlContent={html}
+              initialToc={toc}
+              onNavigateToSection={(id) => {
+                scrollToSection(id);
+                setShowReaderToc(false);
+              }}
+              activeSectionId={activeSectionId}
+              variant="sidebar"
+              collapsible={false}
+              showProgress={false}
+              themeMode="reader"
+              readerTheme={readerTheme}
+            />
           </div>
         )}
 
@@ -1600,12 +1600,18 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </div>
             )}
 
-            {/* Gerador de Índice Automático no Topo dos Artigos Longos (baseado em cabeçalhos H2 e H3) */}
-            <ArticleTopTableOfContents
-              toc={toc}
-              wordCount={wordCount}
+            {/* Gerador de Índice Automático (Table of Contents) no Topo do Artigo */}
+            <TableOfContents
+              containerRef={contentRef}
+              containerSelector=".wiki-rendered-content"
+              articleId={localArticle.id}
+              articleTitle={localArticle.titulo}
+              htmlContent={html}
+              initialToc={toc}
               onNavigateToSection={scrollToSection}
               activeSectionId={activeSectionId}
+              variant="top"
+              wordCount={wordCount}
             />
 
             {/* Rendered HTML Content */}
@@ -1794,42 +1800,19 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
           {/* Table of Contents & Sidebar info (1 column) */}
           <aside className="space-y-4 sticky top-16 no-print print:hidden article-tools-sidebar">
-            {/* Table of contents */}
-            {toc.length > 0 && (
-              <div className="bg-[#f8f9fa] dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-3.5 shadow-xs">
-                <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-200 dark:border-slate-800">
-                  <h3 className="font-bold text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1 font-mono">
-                    <List size={12} /> Índice
-                  </h3>
-                  <button
-                    onClick={() => setShowToc(!showToc)}
-                    className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold"
-                  >
-                    {showToc ? 'Ocultar' : 'Mostrar'}
-                  </button>
-                </div>
-
-                {showToc && (
-                  <nav className="space-y-1 text-xs max-h-72 overflow-y-auto pr-1">
-                    {toc.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => scrollToSection(item.id)}
-                        style={{ paddingLeft: `${(item.level - 1) * 8 + 4}px` }}
-                        className={`w-full text-left py-0.5 rounded transition truncate block text-[11px] cursor-pointer ${
-                          activeSectionId === item.id
-                            ? 'text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-950/50'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200/50 dark:hover:bg-slate-800'
-                        }`}
-                      >
-                        {item.level === 1 ? '▪ ' : '– '}
-                        {item.text}
-                      </button>
-                    ))}
-                  </nav>
-                )}
-              </div>
-            )}
+            {/* Automatic Table of Contents Component (parses h1, h2, h3 in active article and provides jump navigation) */}
+            <TableOfContents
+              containerRef={contentRef}
+              containerSelector=".wiki-rendered-content"
+              articleId={localArticle.id}
+              articleTitle={localArticle.titulo}
+              htmlContent={html}
+              initialToc={toc}
+              onNavigateToSection={scrollToSection}
+              activeSectionId={activeSectionId}
+              variant="sidebar"
+              wordCount={wordCount}
+            />
 
             {/* Quick Special Links Navigation */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-3 text-xs space-y-2">

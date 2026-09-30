@@ -42,11 +42,13 @@ import {
   Calculator,
   GraduationCap,
   Newspaper,
+  Clock,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
+import { RecentlyReadService, RecentlyReadItem } from '../utils/recentlyReadService';
 
 interface SidebarProps {
   currentView: ViewMode;
@@ -66,6 +68,7 @@ interface SidebarProps {
   onOpenGeminiChatbot?: () => void;
   onOpenGeminiNotebook?: () => void;
   onOpenGeminiPremium?: () => void;
+  onSelectArticle?: (articleId: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -86,8 +89,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenGeminiChatbot,
   onOpenGeminiNotebook,
   onOpenGeminiPremium,
+  onSelectArticle,
 }) => {
   const { currentLanguage, t } = useLanguage();
+
+  const [recentlyRead, setRecentlyRead] = React.useState<RecentlyReadItem[]>(() =>
+    RecentlyReadService.getRecentlyRead()
+  );
+
+  React.useEffect(() => {
+    const handleUpdate = () => {
+      setRecentlyRead(RecentlyReadService.getRecentlyRead());
+    };
+
+    window.addEventListener('wikizero_recently_read_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('wikizero_recently_read_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
 
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
   const isWin1 = theme === 'win1';
@@ -421,6 +443,100 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {!isCollapsed && <span className="truncate">Páginas Vigiadas</span>}
             </button>
           </nav>
+        </div>
+
+        {/* Section: Recently Read (Lidos Recentemente - Últimos 5 artigos via localStorage) */}
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between px-2 mb-1.5">
+            {!isCollapsed ? (
+              <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5 font-mono">
+                <Clock size={12} className="text-blue-500 shrink-0" />
+                <span>Lidos Recentemente</span>
+                {recentlyRead.length > 0 && (
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold font-mono">
+                    {recentlyRead.length}
+                  </span>
+                )}
+              </h3>
+            ) : (
+              <div
+                title={`Lidos Recentemente (${recentlyRead.length} artigos)`}
+                className="mx-auto text-slate-400 dark:text-slate-500 p-1"
+              >
+                <Clock size={15} className="text-blue-500" />
+              </div>
+            )}
+
+            {!isCollapsed && recentlyRead.length > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  RecentlyReadService.clear();
+                }}
+                title="Limpar histórico de artigos lidos recentemente"
+                className="text-[9px] text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 font-mono transition cursor-pointer"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
+
+          {!isCollapsed ? (
+            recentlyRead.length === 0 ? (
+              <div className="px-2 py-1 text-[11px] text-slate-400 dark:text-slate-500 italic">
+                Nenhum artigo lido ainda
+              </div>
+            ) : (
+              <nav className="space-y-0.5" aria-label="Artigos lidos recentemente">
+                {recentlyRead.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      if (onSelectArticle) {
+                        onSelectArticle(item.id);
+                      } else {
+                        onNavigate('article');
+                      }
+                    }}
+                    title={`Ler artigo: ${item.title}`}
+                    className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400 transition group cursor-pointer"
+                  >
+                    <FileText
+                      size={13}
+                      className="text-slate-400 group-hover:text-blue-500 shrink-0 transition-colors"
+                    />
+                    <span className="truncate flex-1 text-[11px] font-medium leading-tight">
+                      {item.title}
+                    </span>
+                  </button>
+                ))}
+              </nav>
+            )
+          ) : (
+            recentlyRead.length > 0 && (
+              <div className="flex flex-col items-center gap-1 py-1">
+                {recentlyRead.map((item, idx) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      if (onSelectArticle) {
+                        onSelectArticle(item.id);
+                      } else {
+                        onNavigate('article');
+                      }
+                    }}
+                    title={`#${idx + 1} Recente: ${item.title}`}
+                    className="p-1.5 rounded hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                  >
+                    <FileText size={14} className="text-slate-400 hover:text-blue-500" />
+                  </button>
+                ))}
+              </div>
+            )
+          )}
         </div>
 
         {/* Section: Ficheiros & Mídias */}

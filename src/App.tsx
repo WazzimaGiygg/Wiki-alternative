@@ -68,6 +68,7 @@ import { JornalNewsView } from './components/JornalNewsView';
 import { CustomContextMenu } from './components/CustomContextMenu';
 import { CURATED_FEATURED_ARTICLES } from './components/WikiFeaturedArticle';
 import { updateSEO } from './utils/seoManager';
+import { RecentlyReadService } from './utils/recentlyReadService';
 import { StorageService } from './services/storageService';
 import {
   WikiPage,
@@ -1198,6 +1199,17 @@ export default function App() {
     articles[0];
   const activePage = pages.find((p) => p.uid === (activeArticle?.pageUid || selectedPageUid)) || pages[0];
 
+  // Automatically track last visited articles in RecentlyReadService (localStorage)
+  useEffect(() => {
+    if (currentView === 'article' && activeArticle && activeArticle.id) {
+      RecentlyReadService.addArticle({
+        id: activeArticle.id,
+        title: activeArticle.titulo,
+        category: activeArticle.categoria,
+      });
+    }
+  }, [currentView, activeArticle?.id, activeArticle?.titulo]);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors w-full max-w-full overflow-x-clip">
       {/* 1. Top Header */}
@@ -1253,6 +1265,7 @@ export default function App() {
           onOpenGeminiChatbot={() => setShowGeminiChatbot(true)}
           onOpenGeminiNotebook={handleOpenNotebookModal}
           onOpenGeminiPremium={() => handleOpenPremiumModal()}
+          onSelectArticle={handleSelectArticle}
         />
 
         {/* Content Body Container */}

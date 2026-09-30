@@ -73,6 +73,7 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
   }, [showSearch]);
 
   // Heading counts
+  const h1Count = useMemo(() => toc.filter((item) => item.level === 1).length, [toc]);
   const h2Count = useMemo(() => toc.filter((item) => item.level === 2).length, [toc]);
   const h3Count = useMemo(() => toc.filter((item) => item.level === 3).length, [toc]);
   const h4Count = useMemo(() => toc.filter((item) => item.level >= 4).length, [toc]);
@@ -81,7 +82,7 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
   const filteredToc = useMemo(() => {
     let items = toc;
     if (filterLevel === 'h2-only') {
-      items = items.filter((item) => item.level === 2);
+      items = items.filter((item) => item.level <= 2);
     }
     if (searchFilter.trim()) {
       const query = searchFilter.toLowerCase().trim();
@@ -144,6 +145,7 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
               Índice
             </h2>
             <span className="text-[11px] font-mono opacity-70 hidden sm:inline truncate">
+              {h1Count > 0 && `${h1Count} ${h1Count === 1 ? 'título' : 'títulos'} • `}
               {h2Count} {h2Count === 1 ? 'seção' : 'seções'}
               {h3Count > 0 && ` • ${h3Count} subseções`}
               {h4Count > 0 && ` • ${h4Count} tópicos`}
@@ -250,15 +252,18 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
           <ol className="space-y-1 text-xs list-none m-0 p-0">
             {filteredToc.map((item) => {
               const isActive = activeSectionId === item.id;
+              const isH1 = item.level === 1;
               const isH2 = item.level === 2;
               const isH3 = item.level === 3;
               const isH4 = item.level >= 4;
 
               // Indentation level
-              const indentClass = isH2
-                ? 'pl-1'
+              const indentClass = isH1
+                ? 'pl-1 font-bold'
+                : isH2
+                ? 'pl-3 sm:pl-4 font-semibold'
                 : isH3
-                ? 'pl-5 sm:pl-6'
+                ? 'pl-6 sm:pl-8'
                 : 'pl-9 sm:pl-10';
 
               return (

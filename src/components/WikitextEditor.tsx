@@ -51,6 +51,7 @@ import { htmlToWikitext } from '../utils/wikitextConverters';
 import { GeminiChatbotDrawer } from './GeminiChatbotDrawer';
 import { ResearchEthicsFormSection } from './ResearchEthicsFormSection';
 import { ResearchEthicsCommitteeInfo } from '../types/ethics';
+import { CitationModal, ExistingNamedRef } from './CitationModal';
 
 interface WikitextEditorProps {
   initialArticle?: WikiArticle | null;
@@ -129,6 +130,11 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
   const findInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
+
+  // Citation Tool state
+  const [showCitationModal, setShowCitationModal] = useState(false);
+  const [citationSelectedText, setCitationSelectedText] = useState('');
+  const [citationFeedback, setCitationFeedback] = useState<string | null>(null);
 
   // Estado de controle de alterações não salvas e modal de confirmação de saída
   const isNewArticle = !initialArticle;
@@ -372,6 +378,106 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       el.focus();
       el.setSelectionRange(start + before.length, start + before.length + selected.length);
     }, 50);
+  };
+
+  // Detects if the article already contains a references section
+  const hasReferencesSection = useMemo(() => {
+    return /(?:==\s*Refer[êe]ncias\s*==|<references\s*\/>|\{\{reflist\}\}|\{\{Reflist\}\})/i.test(descricao);
+  }, [descricao]);
+
+  // Extract all existing named references in the article (e.g. <ref name="xyz">)
+  const existingNamedRefs = useMemo<ExistingNamedRef[]>(() => {
+    const list: ExistingNamedRef[] = [];
+    const seen = new Set<string>();
+    const regex = /<ref\s+name=["']([^"']+)["'](?:>([\s\S]*?)<\/ref>|\s*\/>)/gi;
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(descricao)) !== null) {
+      const name = m[1].trim();
+      if (!seen.has(name)) {
+        seen.add(name);
+        const rawContent = (m[2] || '').replace(/<[^>]*>/g, '').trim();
+        list.push({
+          name,
+          preview: rawContent ? (rawContent.length > 60 ? rawContent.substring(0, 60) + '...' : rawContent) : `Referência "${name}"`,
+        });
+      }
+    }
+    return list;
+  }, [descricao]);
+
+  // Opens citation modal and captures any currently selected text
+  const handleOpenCitationModal = () => {
+    let selText = '';
+    if (viewMode === 'visual') {
+      const sel = window.getSelection();
+      if (sel && sel.toString().trim()) {
+        selText = sel.toString().trim();
+      }
+    } else if (textareaRef.current) {
+      const el = textareaRef.current;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      if (start !== end) {
+        selText = descricao.substring(start, end).trim();
+      }
+    }
+    setCitationSelectedText(selText);
+    setShowCitationModal(true);
+  };
+
+  // Handles citation insertion and automatic references section generation
+  const handleInsertCitation = (citationWikitext: string, autoGenerateSection: boolean) => {
+    if (!citationWikitext) return;
+
+    let updatedContent = descricao;
+    let sectionGenerated = false;
+
+    if (viewMode === 'visual') {
+      insertFormattedWikitextSnippet(citationWikitext);
+      if (autoGenerateSection) {
+        const currentHtml = visualEditorRef.current?.innerHTML || '';
+        const currentWikitext = htmlToWikitext(currentHtml);
+        const alreadyHasSection = /(?:==\s*Refer[êe]ncias\s*==|<references\s*\/>|\{\{reflist\}\}|\{\{Reflist\}\})/i.test(currentWikitext);
+        if (!alreadyHasSection) {
+          insertFormattedWikitextSnippet('\n\n== Referências ==\n{{reflist}}');
+          sectionGenerated = true;
+        }
+      }
+    } else {
+      const el = textareaRef.current;
+      if (el) {
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        const selected = descricao.substring(start, end);
+        // If text was highlighted, place reference immediately after it
+        const replacement = selected ? `${selected}${citationWikitext}` : citationWikitext;
+        updatedContent =
+          descricao.substring(0, start) +
+          replacement +
+          descricao.substring(end);
+      } else {
+        updatedContent = `${descricao} ${citationWikitext}`;
+      }
+
+      if (autoGenerateSection) {
+        const alreadyHasSection = /(?:==\s*Refer[êe]ncias\s*==|<references\s*\/>|\{\{reflist\}\}|\{\{Reflist\}\})/i.test(updatedContent);
+        if (!alreadyHasSection) {
+          updatedContent = `${updatedContent.trimEnd()}\n\n== Referências ==\n{{reflist}}`;
+          sectionGenerated = true;
+        }
+      }
+
+      setDescricao(updatedContent);
+      setTimeout(() => {
+        el?.focus();
+      }, 60);
+    }
+
+    const msg = sectionGenerated
+      ? 'Citação inserida com sucesso! A seção "== Referências ==" foi gerada automaticamente no final do artigo.'
+      : 'Citação inserida com sucesso no texto!';
+    setCitationFeedback(msg);
+    setTimeout(() => setCitationFeedback(null), 5000);
   };
 
   // Intercept paste in visual editor to format wikitext
@@ -1251,6 +1357,19 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
           <span className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-0.5" />
 
+          {/* Citation Tool Button */}
+          <button
+            type="button"
+            onClick={handleOpenCitationModal}
+            title="Inserir Citação / Referência (gera automaticamente a seção de Referências)"
+            className="px-2.5 py-0.5 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-200 rounded text-xs font-semibold flex items-center gap-1.5 border border-amber-300 dark:border-amber-700 transition cursor-pointer shadow-2xs"
+          >
+            <Quote size={13} className="text-amber-600 dark:text-amber-400" />
+            <span>Citar</span>
+          </button>
+
+          <span className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-0.5" />
+
           {/* Infobox & Table Templates */}
           <button
             type="button"
@@ -1484,6 +1603,23 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Feedback de inserção de citação */}
+        {citationFeedback && (
+          <div className="bg-emerald-50 dark:bg-emerald-950/60 border-b border-emerald-200 dark:border-emerald-800/80 px-3.5 py-2 text-xs text-emerald-900 dark:text-emerald-200 flex items-center justify-between animate-in fade-in">
+            <span className="flex items-center gap-2 font-medium">
+              <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+              <span>{citationFeedback}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setCitationFeedback(null)}
+              className="text-emerald-600 hover:text-emerald-800 p-0.5 cursor-pointer"
+            >
+              <X size={13} />
+            </button>
           </div>
         )}
 
@@ -1891,6 +2027,16 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           setShowDiscardModal(false);
           handleOpenSaveModal();
         }}
+      />
+
+      {/* Ferramenta de Citação e Inserção de Referências */}
+      <CitationModal
+        isOpen={showCitationModal}
+        onClose={() => setShowCitationModal(false)}
+        onInsert={handleInsertCitation}
+        hasReferencesSection={hasReferencesSection}
+        existingNamedRefs={existingNamedRefs}
+        initialSelectedText={citationSelectedText}
       />
     </div>
   );

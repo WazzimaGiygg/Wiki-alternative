@@ -152,7 +152,7 @@ export const MobileArticleTOC: React.FC<MobileArticleTOCProps> = ({
                     <span className="font-mono text-[10px] text-blue-600 dark:text-blue-400 font-bold">
                       {item.number}
                     </span>
-                    <span className="truncate">{item.title}</span>
+                    <span className="truncate">{item.text || (item as any).title}</span>
                   </div>
                   <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
                 </button>

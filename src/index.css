@@ -3944,15 +3944,17 @@ html.theme-halflife ::-webkit-scrollbar-thumb:hover {
   }
 }
 
-.heading-target-highlight {
+.heading-target-highlight,
+.wiki-heading-highlight {
   animation: headingPulse 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  border-radius: 4px;
-  padding-left: 6px !important;
-  padding-right: 6px !important;
+  border-radius: 6px;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
   transition: all 0.3s ease;
 }
 
-.article-top-toc {
+.article-top-toc,
+.table-of-contents {
   scroll-margin-top: 5rem;
 }
 

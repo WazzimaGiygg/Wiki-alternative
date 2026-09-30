@@ -301,8 +301,8 @@ export function parseWikitext(
       headerGlobalIndex++;
       const id = `section-${headerGlobalIndex}-${slugify(headerText)}`;
 
-      // Exclude H1 (article main title) from Table of Contents if desired or include it cleanly
-      if (level > 1) {
+      // Include H1, H2, H3 and subheaders in Table of Contents
+      if (level >= 1) {
         toc.push({
           id,
           text: headerText,
@@ -1118,7 +1118,7 @@ function renderDisambig(content?: string): string {
 }
 
 function renderCitationTemplate(content: string): string {
-  // Parses {{Citar web|url=...|titulo=...|autor=...|data=...|acessodata=...}}
+  // Parses {{Citar web|...}}, {{Citar livro|...}}, {{Citar jornal|...}}
   const params: Record<string, string> = {};
   const parts = content.split('|');
 
@@ -1133,16 +1133,27 @@ function renderCitationTemplate(content: string): string {
   const titulo = params.titulo || params.title || 'Referência';
   const url = params.url || '';
   const data = params.data || params.date || '';
+  const ano = params.ano || params.year || '';
   const acessodata = params.acessodata || params.access_date || '';
+  const editora = params.editora || params.publisher || '';
+  const site = params.site || params.website || params.obra || params.work || '';
+  const jornal = params.jornal || params.journal || params.revista || '';
+  const paginas = params.paginas || params.pages || params.pagina || params.page || '';
+  const isbn = params.isbn || '';
 
   const authorPart = autor ? `<strong>${escapeHtml(autor)}</strong>. ` : '';
   const titlePart = url
     ? `<a href="${formatExternalUrl(url)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 font-semibold hover:underline">“${escapeHtml(titulo)}”</a>. `
     : `“${escapeHtml(titulo)}”. `;
-  const datePart = data ? `Publicado em ${escapeHtml(data)}. ` : '';
+  const venue = jornal || site || editora;
+  const venuePart = venue ? `<em>${escapeHtml(venue)}</em>. ` : '';
+  const pagesPart = paginas ? `p. ${escapeHtml(paginas)}. ` : '';
+  const dateVal = data || ano;
+  const datePart = dateVal ? `Publicado em ${escapeHtml(dateVal)}. ` : '';
+  const isbnPart = isbn ? `<span class="text-slate-500 font-mono text-[10px]">ISBN ${escapeHtml(isbn)}. </span>` : '';
   const accessPart = acessodata ? `<span class="text-slate-400 text-[10px]">Acesso em ${escapeHtml(acessodata)}.</span>` : '';
 
-  return `<span class="wiki-citation font-sans text-xs">${authorPart}${titlePart}${datePart}${accessPart}</span>`;
+  return `<span class="wiki-citation font-sans text-xs">${authorPart}${titlePart}${venuePart}${pagesPart}${datePart}${isbnPart}${accessPart}</span>`;
 }
 
 function renderCollapsibleTemplate(content: string, inlineMap?: Map<string, string>): string {
