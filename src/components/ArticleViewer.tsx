@@ -914,7 +914,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   }
 
   return (
-    <div ref={articleRootRef} className="w-full space-y-4 animate-in fade-in select-none">
+    <div ref={articleRootRef} className="w-full max-w-full min-w-0 space-y-4 animate-in fade-in select-none overflow-x-clip">
       {/* Reading Progress Bar (Visual tracking of how far the user has scrolled through the article) */}
       <div className="no-print print:hidden">
         <ReadingProgressBar
@@ -929,7 +929,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       </div>
 
       {/* High Density Breadcrumb & Action Bar */}
-      <div className="flex items-center justify-between flex-wrap gap-2 text-xs border-b border-slate-200 dark:border-slate-800 pb-2 no-print print:hidden article-top-toolbar">
+      <div className="flex items-center justify-between flex-wrap gap-2 text-xs border-b border-slate-200 dark:border-slate-800 pb-2 no-print print:hidden article-top-toolbar min-w-0 max-w-full">
         <div className="flex items-center gap-2.5 flex-wrap">
           <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 flex-wrap">
             <button
@@ -1398,7 +1398,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       {activeTab === 'article' && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
           {/* Article Content Pane (3 columns) */}
-          <article ref={articlePaneRef} className="lg:col-span-3 bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-7 shadow-xs space-y-6">
+          <article ref={articlePaneRef} className="lg:col-span-3 bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-4 sm:p-7 shadow-xs space-y-6 min-w-0 max-w-full overflow-x-clip">
             {/* Dedicated Print & PDF Export Document Header */}
             <div className="hidden print:block mb-6 pb-4 border-b-2 border-slate-900 text-black not-prose">
               <div className="flex items-center justify-between text-[11px] text-slate-700 mb-1.5 font-mono">

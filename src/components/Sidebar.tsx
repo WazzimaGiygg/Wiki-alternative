@@ -116,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       id="desktop-sidebar"
-      className={`relative flex-col transition-all duration-200 z-20 select-none shrink-0 sticky top-16 self-start max-h-[calc(100vh-5rem)] overflow-hidden flex no-print print:hidden ${
+      className={`relative flex-col transition-all duration-200 z-20 select-none shrink-0 sticky top-16 self-start max-h-[calc(100vh-5rem)] overflow-hidden no-print print:hidden ${
         isWin1
           ? 'bg-white border-2 border-black !rounded-none shadow-none font-mono text-black'
           : isWin31

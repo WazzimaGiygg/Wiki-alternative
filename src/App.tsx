@@ -1199,7 +1199,7 @@ export default function App() {
   const activePage = pages.find((p) => p.uid === (activeArticle?.pageUid || selectedPageUid)) || pages[0];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors w-full max-w-full overflow-x-clip">
       {/* 1. Top Header */}
       <Header
         user={user}
@@ -1233,7 +1233,7 @@ export default function App() {
       />
 
       {/* 2. Main Workspace Layout */}
-      <div className="flex-1 flex max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 gap-4 lg:gap-6">
+      <div className="flex-1 flex max-w-7xl w-full mx-auto px-2.5 sm:px-6 lg:px-8 py-3 sm:py-6 gap-3 lg:gap-6 min-w-0">
         {/* Collapsible Navigation Sidebar */}
         <Sidebar
           currentView={currentView}
@@ -1256,12 +1256,12 @@ export default function App() {
         />
 
         {/* Content Body Container */}
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 w-full max-w-full overflow-x-clip">
           {/* Wikidiota Native Wikipedia Vector Tabs & Wikiomite Foundation Notice */}
           {theme === 'wikidiota' && (
             <div className="wikidiota-vector-header mb-4 select-none">
               {/* Vector Tabs Navigation Bar */}
-              <div className="flex items-end justify-between border-b border-[#a7d7f9] text-xs font-sans">
+              <div className="flex items-end justify-between border-b border-[#a7d7f9] text-xs font-sans overflow-x-auto scrollbar-none max-w-full">
                 {/* Left Tabs (Namespaces) */}
                 <div className="flex items-center gap-1 -mb-px">
                   <button

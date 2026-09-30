@@ -168,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
   const popularLanguages = allLanguages.slice(0, 8);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#ffffff] dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 transition-colors select-none no-print print:hidden">
+    <header className="sticky top-0 z-40 bg-[#ffffff] dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 transition-colors select-none no-print print:hidden w-full max-w-full overflow-x-clip">
       {/* Windows 1.0 (1985) MS-DOS Executive Window Title Bar */}
       {isWin1 && (
         <div className="bg-[#0000aa] text-white border-b-2 border-black font-mono text-xs select-none">
@@ -723,9 +723,9 @@ export const Header: React.FC<HeaderProps> = ({
       )}
 
       {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isHalfLife ? 'bg-[#121512] text-[#ff9900] border-b border-[#ff9900]/40' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-4 font-mono`}>
-        <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full">
-          <div className="flex items-center gap-2">
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isHalfLife ? 'bg-[#121512] text-[#ff9900] border-b border-[#ff9900]/40' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-2.5 sm:px-4 font-mono w-full max-w-full overflow-hidden`}>
+        <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 truncate">
             {isWin95 ? (
               <div className="flex items-center gap-2">
                 <span className="bg-[#000080] text-white px-1.5 py-0.2 text-[10px] font-bold border-t border-l border-white border-r border-b border-black">
@@ -792,17 +792,18 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>🌐</span> WIKIDIOTA • WIKIOMITE FOUNDATION
               </span>
             ) : (
-              <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold">WIKIZERO v3.0</span>
+              <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold shrink-0">WIKIZERO v3.0</span>
             )}
-            {!isWin95 && <span className={isRepo ? "text-[#22d3ee]/80" : isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : isStardew ? "text-[#fed88b]" : "text-slate-400"}>{t('header.open_encyclopedia')}</span>}
+            {!isWin95 && <span className={`${isRepo ? "text-[#22d3ee]/80" : isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : isStardew ? "text-[#fed88b]" : "text-slate-400"} hidden md:inline truncate`}>{t('header.open_encyclopedia')}</span>}
           </div>
-          <div className={`flex items-center gap-4 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : isStardew ? 'text-[#fed88b]' : 'text-slate-400'} text-[11px]`}>
+          <div className={`flex items-center gap-2 sm:gap-4 shrink-0 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : isStardew ? 'text-[#fed88b]' : 'text-slate-400'} text-[11px]`}>
             <button
               onClick={onOpenLanguagesModal}
-              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-300 text-slate-300'} flex items-center gap-1 transition`}
+              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-300 text-slate-300'} flex items-center gap-1 transition cursor-pointer`}
+              title="Mudar idioma da enciclopédia"
             >
               <Globe2 size={11} className={isWin95 ? 'text-[#000080]' : isGenshin ? 'text-[#72e2db]' : 'text-blue-400'} />
-              <span>{currentLanguage.flag} {currentLanguage.nativeName} ({currentLanguage.code})</span>
+              <span>{currentLanguage.flag} <span className="hidden sm:inline">{currentLanguage.nativeName}</span> ({currentLanguage.code})</span>
             </button>
             <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
             <button
@@ -820,13 +821,13 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline font-sans">{isDark ? 'Tema Claro' : 'Tema Escuro'}</span>
             </button>
             <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
-            <span className="hidden sm:inline">GNU GPL v3.0</span>
-            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden md:inline text-slate-600'}>|</span>
+            <span className="hidden md:inline">GNU GPL v3.0</span>
+            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden lg:inline text-slate-600'}>|</span>
             <a
               href={formatExternalUrl("https://github.com/WazzimaGiygg/Wiki-alternative")}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${isWin95 ? 'hover:underline text-[#000080]' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-400 text-slate-300'} flex items-center gap-1`}
+              className={`${isWin95 ? 'hover:underline text-[#000080]' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-400 text-slate-300'} hidden sm:flex items-center gap-1`}
             >
               GitHub <ExternalLink size={10} />
             </a>
@@ -835,17 +836,17 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Main High Density Header Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-1.5 sm:gap-3 w-full min-w-0 max-w-full">
         {/* Left Side: Mobile Menu Button + Brand Logo & Title */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
           {/* Hamburger Menu Trigger for Mobile Drawer */}
           <button
             id="btn-header-mobile-drawer"
             onClick={onOpenMobileDrawer}
-            className="p-2 -ml-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden active:scale-95 transition min-w-[40px] min-h-[40px] flex items-center justify-center"
+            className="p-1.5 sm:p-2 -ml-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden active:scale-95 transition min-w-[36px] min-h-[36px] flex items-center justify-center shrink-0"
             aria-label="Abrir menu de navegação"
           >
-            <Menu size={20} />
+            <Menu size={19} />
           </button>
 
           {isWin95 ? (
@@ -1766,16 +1767,16 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* High Density Navigation Links & Controls */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Quick Mobile Search Button (Visible on mobile/tablet) */}
           <button
             id="btn-header-mobile-search"
             onClick={onOpenMobileSearch}
-            className="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden transition active:scale-95 min-w-[38px] min-h-[38px] flex items-center justify-center"
+            className="p-1.5 sm:p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden transition active:scale-95 min-w-[34px] min-h-[34px] flex items-center justify-center shrink-0"
             aria-label="Pesquisar artigos"
             title="Buscar"
           >
-            <Search size={18} />
+            <Search size={16} />
           </button>
           <nav className="hidden lg:flex items-center gap-1 text-xs font-medium mr-1 border-r border-slate-200 dark:border-slate-800 pr-2">
             <button
@@ -1818,7 +1819,7 @@ export const Header: React.FC<HeaderProps> = ({
             id="btn-header-theme-toggle"
             type="button"
             onClick={onToggleTheme}
-            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 ${
+            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 min-w-[32px] min-h-[32px] justify-center ${
               isDark
                 ? 'bg-slate-800/90 hover:bg-slate-700/90 text-amber-300 border-slate-700 ring-1 ring-amber-400/30'
                 : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
@@ -1836,8 +1837,68 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
 
-          {/* Language Switcher Dropdown */}
-          <div className="relative" ref={langMenuRef}>
+          {/* Language Switcher Dropdown (Desktop / Tablet) */}
+          <div className="relative hidden md:block" ref={langMenuRef}>
+            <button
+              onClick={() => setShowLangMenu(!showLangMenu)}
+              className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-200"
+              title={t('header.change_language')}
+            >
+              <span className="text-sm">{currentLanguage.flag}</span>
+              <span className="font-mono text-[11px] uppercase hidden sm:inline">{currentLanguage.code}</span>
+              <ChevronDown size={11} className="text-slate-400" />
+            </button>
+
+            {showLangMenu && (
+              <div className="absolute right-0 mt-1.5 w-64 bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 shadow-xl py-1 z-50 animate-in fade-in text-xs">
+                <div className="px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[10px] font-mono">
+                    {t('header.change_language')}
+                  </span>
+                  <span className="text-[10px] text-slate-400">45+ idiomas</span>
+                </div>
+
+                <div className="max-h-56 overflow-y-auto py-1">
+                  {popularLanguages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setLanguage(lang);
+                        setShowLangMenu(false);
+                      }}
+                      className={`w-full text-left px-3 py-1.5 flex items-center justify-between text-xs transition ${
+                        currentLanguage.code === lang.code
+                          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{lang.flag}</span>
+                        <span>{lang.nativeName}</span>
+                      </div>
+                      <span className="font-mono text-[10px] text-slate-400 uppercase">{lang.code}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="p-1.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                  <button
+                    onClick={() => {
+                      setShowLangMenu(false);
+                      if (onOpenLanguagesModal) onOpenLanguagesModal();
+                    }}
+                    className="w-full text-center py-1.5 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                  >
+                    <Globe2 size={13} />
+                    <span>{t('header.all_languages')}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Online Users Trigger & Modal/Dropdown (Desktop / Tablet) */}
+          <div className="relative hidden sm:block" ref={onlineMenuRef}>
             <button
               onClick={() => setShowLangMenu(!showLangMenu)}
               className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-200"
@@ -2004,10 +2065,10 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Notification Bell */}
-          <div className="relative" ref={notifRef}>
+          <div className="relative shrink-0" ref={notifRef}>
             <button
               onClick={() => setShowNotifs(!showNotifs)}
-              className="p-1.5 relative rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="p-1.5 relative rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0"
               title={t('header.notifications')}
             >
               <Bell size={15} />
@@ -2255,10 +2316,10 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={onLoginClick}
-                className="px-2.5 py-1 text-xs font-semibold rounded bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1 shadow-xs"
+                className="px-2 sm:px-2.5 py-1 text-xs font-semibold rounded bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1 shadow-xs shrink-0"
               >
                 <UserIcon size={12} />
                 <span>{t('header.login')}</span>

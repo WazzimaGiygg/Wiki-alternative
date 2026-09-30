@@ -63,8 +63,8 @@ export const Footer: React.FC<FooterProps> = ({
   const { currentLanguage, t } = useLanguage();
 
   return (
-    <footer className="mt-12 bg-[#f8f9fa] dark:bg-[#0b0f17] border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 py-6 pb-24 md:pb-6 transition-colors select-none font-sans no-print print:hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+    <footer className="mt-12 bg-[#f8f9fa] dark:bg-[#0b0f17] border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 py-6 pb-24 md:pb-6 transition-colors select-none font-sans no-print print:hidden w-full max-w-full overflow-x-clip">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-4 min-w-0">
         {/* R.E.P.O. Semiwork Tactical Contractor Mission Footer Strip */}
         {theme === 'repo' && (
           <div className="p-3 bg-[#070a0e] border border-[#f59e0b]/50 rounded text-xs font-mono text-slate-300 flex flex-wrap items-center justify-between gap-3 shadow-[0_0_12px_rgba(245,158,11,0.15)]">
