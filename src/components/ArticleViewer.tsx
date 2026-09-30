@@ -63,6 +63,7 @@ import { WazzimaGiyggTimeline } from './WazzimaGiyggTimeline';
 import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
 import { ReadingProgressBar } from './ReadingProgressBar';
 import { ArticleTopTableOfContents } from './ArticleTopTableOfContents';
+import { ResearchEthicsBadge } from './ResearchEthicsBadge';
 import { StorageService } from '../services/storageService';
 
 interface ArticleViewerProps {
@@ -1550,6 +1551,13 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 </div>
               </div>
             </header>
+
+            {/* Comitê de Ética em Pesquisa com Seres Humanos (CEP / CONEP) */}
+            {article.comiteEtica && article.comiteEtica.statusEtica !== 'nao_se_aplica' && (
+              <div className="not-prose my-3">
+                <ResearchEthicsBadge info={article.comiteEtica} variant="card" />
+              </div>
+            )}
 
             {/* WazzimaGiygg Dossier Timeline Spotlight Banner */}
             {isWazzimaGiyggArticle && (

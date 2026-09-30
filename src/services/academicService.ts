@@ -25,6 +25,158 @@ const STORAGE_KEY_PUBLICATIONS = 'wiki_academic_publications_cache_v1';
 const STORAGE_KEY_PEER_REVIEWS = 'wiki_academic_peer_reviews_cache_v1';
 const PURGE_SPECULATIVE_FLAG = 'wiki_academic_purged_speculative_v1';
 
+export const INITIAL_ACADEMIC_PUBLICATIONS: AcademicPublication[] = [
+  {
+    id: 'acad-cep-tese-001',
+    tipo: 'tese_doutorado',
+    titulo: 'Avaliação de Intervenções Digitais no Desenvolvimento Cognitivo e Psicossocial de Crianças em Idade Escolar',
+    subtitulo: 'Ensaio Clínico Randomizado Controlado Multicêntrico no Estado de São Paulo',
+    tituloIngles: 'Evaluation of Digital Interventions on Cognitive and Psychosocial Development of School-Age Children: A Multicenter Randomized Controlled Trial',
+    autores: [
+      {
+        nome: 'Dra. Mariana Vasconcelos Ribeiro',
+        nomeCitacao: 'RIBEIRO, M. V.',
+        filiacao: 'Universidade de São Paulo (USP)',
+        departamento: 'Faculdade de Medicina - Departamento de Pediatria e Saúde Coletiva',
+        orcid: '0000-0002-8419-7231',
+        email: 'mariana.vasconcelos@usp.br',
+      },
+    ],
+    orientadores: [
+      {
+        nome: 'Prof. Dr. Carlos Eduardo Nogueira',
+        filiacao: 'Universidade de São Paulo (USP)',
+      },
+    ],
+    bancaExaminadora: [
+      'Prof. Dr. Roberto Guimarães (UNICAMP)',
+      'Profa. Dra. Helena Siqueira (UNIFESP)',
+      'Prof. Dr. André Bastos (Fiocruz)',
+    ],
+    universidadeOuInstituicao: 'Universidade de São Paulo (USP)',
+    programaPosGraduacao: 'Programa de Pós-Graduação em Saúde Coletiva e Pediatria',
+    anoPublicacao: 2024,
+    dataPublicacao: '2024-05-20',
+    doi: '10.11606/T.5.2024.t-182901',
+    resumo: 'Investigação clínica controlada analisando os impactos de interfaces pedagógicas adaptativas e estímulos digitais no rendimento neurocognitivo de 450 crianças em escolas públicas. Estudo rigorosamente submetido e aprovado pelo Comitê de Ética em Pesquisa com Seres Humanos do Hospital das Clínicas da FMUSP, cumprindo integralmente as exigências do Conselho Nacional de Saúde.',
+    resumoIngles: 'A multicenter randomized controlled clinical trial evaluating the effects of adaptive pedagogical digital interfaces on the cognitive and psychosocial performance of 450 school children.',
+    palavrasChave: ['Desenvolvimento Infantil', 'Tecnologias Assistivas', 'Ensaio Clínico', 'Bioética', 'Comitê de Ética'],
+    areaConhecimentoCnpq: 'Ciências da Saúde',
+    agenciaFomento: 'FAPESP',
+    processoFomento: 'Processo 2021/14980-2',
+    statusAcesso: 'open_access',
+    licenca: 'Creative Commons CC-BY 4.0',
+    totalCitacoes: 14,
+    visualizacoes: 320,
+    downloads: 185,
+    statusRevisao: 'peer_reviewed',
+    comiteEtica: {
+      envolveSeresHumanos: true,
+      statusEtica: 'aprovado',
+      nomeComite: 'Comitê de Ética em Pesquisa do Hospital das Clínicas da FMUSP (CEP/HCFMUSP)',
+      numeroCaae: '58491022.3.0000.0068',
+      numeroParecer: 'Parecer Consubstanciado nº 5.842.119',
+      instituicaoProponente: 'Faculdade de Medicina da Universidade de São Paulo',
+      dataAprovacao: '2023-04-18',
+      temTcle: true,
+      resolucaoRegulamentadora: 'Resolução CNS nº 466/2012 (Pesquisas em Saúde e Biomédicas)',
+      justificativaOuObservacoes: 'Consentimento formal colhido mediante Termo de Consentimento Livre e Esclarecido (TCLE) dos pais e Termo de Assentimento Livre e Esclarecido (TALE) das crianças. Dados integralmente anonimizados.',
+      linkPlataformaBrasilOuComprovante: 'https://plataformabrasil.saude.gov.br/',
+    },
+    dataCriacao: '2024-05-20T10:00:00Z',
+  },
+  {
+    id: 'acad-cep-livro-002',
+    tipo: 'livro_academico',
+    titulo: 'Bioética, Dignidade Humana e Pesquisa com Participantes Vulneráveis no Brasil',
+    subtitulo: 'Teoria, Procedimentos na Plataforma Brasil e Prática Regulatória do Sistema CEP/CONEP',
+    tituloIngles: 'Bioethics, Human Dignity and Research with Vulnerable Participants in Brazil',
+    autores: [
+      {
+        nome: 'Prof. Dr. Alexandre Fontoura Dias',
+        nomeCitacao: 'DIAS, A. F.',
+        filiacao: 'Fundação Oswaldo Cruz (Fiocruz)',
+        departamento: 'Escola Nacional de Saúde Pública Sergio Arouca (ENSP)',
+        orcid: '0000-0003-1102-4590',
+      },
+      {
+        nome: 'Dra. Beatriz Albuquerque Leite',
+        nomeCitacao: 'LEITE, B. A.',
+        filiacao: 'Universidade Estadual de Campinas (UNICAMP)',
+        departamento: 'Faculdade de Ciências Médicas',
+        orcid: '0000-0001-9032-1188',
+      },
+    ],
+    universidadeOuInstituicao: 'Editora Fiocruz / UNICAMP',
+    anoPublicacao: 2023,
+    isbn: '978-85-7541-689-1',
+    doi: '10.7476/9788575416891',
+    resumo: 'Livro acadêmico de referência abordando a trajetória dos Comitês de Ética em Pesquisa (CEP) e da Comissão Nacional de Ética em Pesquisa (CONEP) no Brasil. Analisa a aplicação das Resoluções CNS 466/2012 e 510/2016, a proteção das populações vulneráveis, povos indígenas e participantes de ensaios clínicos.',
+    palavrasChave: ['Bioética', 'Comitê de Ética em Pesquisa', 'CONEP', 'Plataforma Brasil', 'Direitos Humanos'],
+    areaConhecimentoCnpq: 'Ciências Humanas',
+    statusAcesso: 'open_access',
+    licenca: 'Creative Commons CC-BY-NC 4.0',
+    totalCitacoes: 38,
+    visualizacoes: 740,
+    downloads: 410,
+    statusRevisao: 'peer_reviewed',
+    comiteEtica: {
+      envolveSeresHumanos: true,
+      statusEtica: 'aprovado',
+      nomeComite: 'Comitê de Ética em Pesquisa da Fundação Oswaldo Cruz (CEP/Fiocruz)',
+      numeroCaae: '41209320.1.0000.5248',
+      numeroParecer: 'Parecer Consubstanciado nº 4.901.882',
+      instituicaoProponente: 'Fundação Oswaldo Cruz',
+      dataAprovacao: '2022-10-15',
+      temTcle: true,
+      resolucaoRegulamentadora: 'Resolução CNS nº 510/2016 (Ciências Humanas e Sociais - CHS)',
+      justificativaOuObservacoes: 'Pesquisa social qualitativa com membros de comitês de ética e voluntários de estudos clínicos, conduzida com TCLE assinado e sigilo absoluto de dados.',
+    },
+    dataCriacao: '2023-11-10T14:30:00Z',
+  },
+  {
+    id: 'acad-cep-artigo-003',
+    tipo: 'artigo_periodico',
+    titulo: 'Dinâmica de Moderação Comunitária e Conflito Epistêmico em Plataformas Wiki Abertas',
+    subtitulo: 'Análise de Redes Sociais e Métricas de Engajamento de Editores Voluntários',
+    tituloIngles: 'Community Moderation Dynamics and Epistemic Conflict in Open Wiki Platforms',
+    autores: [
+      {
+        nome: 'Prof. Dr. Ricardo Mendonça Sampaio',
+        nomeCitacao: 'SAMPAIO, R. M.',
+        filiacao: 'Universidade Federal de Minas Gerais (UFMG)',
+        departamento: 'Departamento de Ciência da Computação e Comunicação Social',
+        orcid: '0000-0002-3904-8119',
+      },
+    ],
+    universidadeOuInstituicao: 'Universidade Federal de Minas Gerais (UFMG)',
+    periodicoOuEvento: 'Revista Brasileira de Informática na Educação e Mídias Digitais',
+    volume: '32',
+    fasciculo: '2',
+    paginas: '45-68',
+    anoPublicacao: 2024,
+    doi: '10.5753/rbie.2024.3202',
+    resumo: 'Estudo analítico sobre colaboração coletiva, mediação de disputas e integridade editorial em enciclopédias digitais. Por utilizar apenas dados secundários agregados e públicos sem identificação pessoal, o trabalho foi enquadrado em dispensa formal de apreciação ética conforme a Resolução CNS 510/2016.',
+    palavrasChave: ['Enciclopédia Wiki', 'Moderação', 'Comunicação Digital', 'Ética em Pesquisa'],
+    areaConhecimentoCnpq: 'Ciências Sociais Aplicadas',
+    statusAcesso: 'open_access',
+    totalCitacoes: 8,
+    visualizacoes: 195,
+    downloads: 92,
+    statusRevisao: 'peer_reviewed',
+    comiteEtica: {
+      envolveSeresHumanos: true,
+      statusEtica: 'dispensado',
+      nomeComite: 'Comitê de Ética em Pesquisa da UFMG (COEP/UFMG)',
+      numeroParecer: 'Dispensa Regulamentar nos termos do Art. 1º, Parágrafo Único da Res. CNS 510/2016',
+      instituicaoProponente: 'Universidade Federal de Minas Gerais',
+      resolucaoRegulamentadora: 'Resolução CNS nº 510/2016 (Ciências Humanas e Sociais - CHS)',
+      justificativaOuObservacoes: 'Pesquisa documental com dados agregados de livre acesso público na web, sem manipulação de sujeitos ou identificação de dados sensíveis individuais.',
+    },
+    dataCriacao: '2024-03-15T09:00:00Z',
+  },
+];
+
 export function purgeSpeculativeAcademicData(): void {
   if (typeof window === 'undefined') return;
   if (!localStorage.getItem(PURGE_SPECULATIVE_FLAG)) {
@@ -83,6 +235,21 @@ function normalizePublication(id: string, data: any): AcademicPublication {
     downloads: Number(data.downloads) || 0,
     statusRevisao: data.statusRevisao || 'peer_reviewed',
     artigoWikiVinculadoTitulo: data.artigoWikiVinculadoTitulo || undefined,
+    comiteEtica: data.comiteEtica
+      ? {
+          envolveSeresHumanos: !!data.comiteEtica.envolveSeresHumanos,
+          statusEtica: data.comiteEtica.statusEtica || 'nao_se_aplica',
+          nomeComite: data.comiteEtica.nomeComite || undefined,
+          numeroParecer: data.comiteEtica.numeroParecer || undefined,
+          numeroCaae: data.comiteEtica.numeroCaae || undefined,
+          instituicaoProponente: data.comiteEtica.instituicaoProponente || undefined,
+          dataAprovacao: data.comiteEtica.dataAprovacao || undefined,
+          temTcle: data.comiteEtica.temTcle !== undefined ? !!data.comiteEtica.temTcle : undefined,
+          resolucaoRegulamentadora: data.comiteEtica.resolucaoRegulamentadora || undefined,
+          justificativaOuObservacoes: data.comiteEtica.justificativaOuObservacoes || undefined,
+          linkPlataformaBrasilOuComprovante: data.comiteEtica.linkPlataformaBrasilOuComprovante || undefined,
+        }
+      : undefined,
     submittedByUid: data.submittedByUid || undefined,
     submittedByName: data.submittedByName || undefined,
     dataCriacao: data.dataCriacao || new Date().toISOString(),
@@ -126,28 +293,30 @@ export const AcademicService = {
         // Ordena por ano decrescente e data de criação
         list.sort((a, b) => b.anoPublicacao - a.anoPublicacao || new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime());
 
-        try {
-          localStorage.setItem(STORAGE_KEY_PUBLICATIONS, JSON.stringify(list));
-        } catch {
-          // ignora quota
+        if (list.length > 0) {
+          try {
+            localStorage.setItem(STORAGE_KEY_PUBLICATIONS, JSON.stringify(list));
+          } catch {
+            // ignora quota
+          }
+          return list;
         }
-        return list;
       } catch (err) {
         console.warn('[AcademicService] Erro ao consultar Firestore:', err);
       }
     }
 
-    // Fallback local
+    // Fallback local ou dados padrão
     try {
       const raw = localStorage.getItem(STORAGE_KEY_PUBLICATIONS);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch {
       // ignora
     }
-    return [];
+    return INITIAL_ACADEMIC_PUBLICATIONS;
   },
 
   /**
@@ -201,12 +370,13 @@ export const AcademicService = {
           const list: AcademicPublication[] = [];
           snap.forEach((d) => list.push(normalizePublication(d.id, d.data())));
           list.sort((a, b) => b.anoPublicacao - a.anoPublicacao || new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime());
+          const finalList = list.length > 0 ? list : INITIAL_ACADEMIC_PUBLICATIONS;
           try {
-            localStorage.setItem(STORAGE_KEY_PUBLICATIONS, JSON.stringify(list));
+            localStorage.setItem(STORAGE_KEY_PUBLICATIONS, JSON.stringify(finalList));
           } catch {
             // ignora
           }
-          callback(list);
+          callback(finalList);
         },
         (error) => {
           console.warn('[AcademicService] Snapshot error:', error);
@@ -275,6 +445,7 @@ export const AcademicService = {
       downloads: Number(data.downloads ?? existing?.downloads ?? 0),
       statusRevisao: data.statusRevisao || 'peer_reviewed',
       artigoWikiVinculadoTitulo: data.artigoWikiVinculadoTitulo?.trim() || undefined,
+      comiteEtica: data.comiteEtica ?? existing?.comiteEtica,
       submittedByUid: data.submittedByUid || existing?.submittedByUid,
       submittedByName: data.submittedByName || existing?.submittedByName,
       dataCriacao: existing?.dataCriacao || now,

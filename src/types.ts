@@ -1,3 +1,7 @@
+import { ResearchEthicsCommitteeInfo, EthicsApprovalStatus } from './types/ethics';
+
+export type { ResearchEthicsCommitteeInfo, EthicsApprovalStatus };
+
 export interface WikiArticle {
   id: string;
   pageUid: string;
@@ -22,6 +26,8 @@ export interface WikiArticle {
   lockedAt?: string;
   lockReason?: string;
   protectionLevel?: 'moderators_only' | 'all';
+  // Comitê de Ética em Pesquisa com Seres Humanos (CEP / CONEP)
+  comiteEtica?: ResearchEthicsCommitteeInfo;
 }
 
 export interface ArticleHistoryItem {
@@ -1375,7 +1381,10 @@ export interface LibraryItem {
   // Vínculos com a Enciclopédia WikiWorldWeb
   artigoWikiVinculadoId?: string;
   artigoWikiVinculadoTitulo?: string;
-  
+
+  // Comitê de Ética em Pesquisa com Seres Humanos (CEP / CONEP)
+  comiteEtica?: ResearchEthicsCommitteeInfo;
+
   // Metadados do cadastro e auditoria
   cadastradoPorUid?: string;
   cadastradoPorNome?: string;

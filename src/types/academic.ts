@@ -1,5 +1,10 @@
+import { ResearchEthicsCommitteeInfo, EthicsApprovalStatus } from './ethics';
+
+export type { ResearchEthicsCommitteeInfo, EthicsApprovalStatus };
+
 export type AcademicPublicationType =
   | 'artigo_periodico'       // Artigo em Periódico Científico / Journal Article
+  | 'livro_academico'        // Livro Científico / Livro de Pesquisa / Obra Autoral Acadêmica
   | 'preprint'               // Pré-publicação / Preprint (arXiv, bioRxiv, SciELO)
   | 'conferencia'            // Anais de Congresso / Conference Paper / Proceeding
   | 'tese_doutorado'         // Tese de Doutorado / Ph.D. Dissertation
@@ -97,6 +102,9 @@ export interface AcademicPublication {
   // Arbitragem e Wiki
   statusRevisao: AcademicReviewStatus;
   artigoWikiVinculadoTitulo?: string;
+
+  // Comitê de Ética em Pesquisa com Seres Humanos (CEP / CONEP / Plataforma Brasil)
+  comiteEtica?: ResearchEthicsCommitteeInfo;
 
   // Auditoria
   submittedByUid?: string;

@@ -49,6 +49,8 @@ import { PdfExportModal } from './PdfExportModal';
 import { UnsavedChangesModal } from './UnsavedChangesModal';
 import { htmlToWikitext } from '../utils/wikitextConverters';
 import { GeminiChatbotDrawer } from './GeminiChatbotDrawer';
+import { ResearchEthicsFormSection } from './ResearchEthicsFormSection';
+import { ResearchEthicsCommitteeInfo } from '../types/ethics';
 
 interface WikitextEditorProps {
   initialArticle?: WikiArticle | null;
@@ -113,6 +115,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [customWikitextCode, setCustomWikitextCode] = useState('');
   const [insertModalTab, setInsertModalTab] = useState<'edit' | 'preview'>('edit');
   const [dailyLimitStatus, setDailyLimitStatus] = useState<DailyEditLimitStatus | null>(null);
+  const [comiteEtica, setComiteEtica] = useState<ResearchEthicsCommitteeInfo | undefined>(initialArticle?.comiteEtica);
+  const [showEthicsModal, setShowEthicsModal] = useState(false);
 
   // Find & Replace state (Ctrl+H)
   const [showFindReplace, setShowFindReplace] = useState(false);
@@ -493,6 +497,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           idioma,
           descricao: finalDescricao,
           resumo: editSummary || finalDescricao.slice(0, 140) + '...',
+          comiteEtica,
         },
         editSummary,
         isMinor
@@ -736,6 +741,81 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         user={user}
       />
 
+      {/* Modal do Comitê de Ética em Pesquisa com Seres Humanos (CEP / CONEP) */}
+      {showEthicsModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+          onClick={() => setShowEthicsModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-600 text-white shadow-sm">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
+                    Comitê de Ética em Pesquisa com Seres Humanos
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Conformidade regulatória para artigos que envolvem voluntários humanos (Resoluções CNS 466/12 e 510/16)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEthicsModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 text-sm font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <ResearchEthicsFormSection
+              value={comiteEtica}
+              onChange={setComiteEtica}
+              contextTitle="Artigo Enciclopédico"
+            />
+
+            {/* Ações do Modal */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!comiteEtica || !comiteEtica.envolveSeresHumanos) {
+                    alert('Configure os dados do Comitê de Ética antes de inserir a predefinição.');
+                    return;
+                  }
+                  const cepCode = `\n\n== Comitê de Ética em Pesquisa com Seres Humanos ==\n` +
+                    `* '''Situação Ética:''' ${comiteEtica.statusEtica === 'aprovado' ? 'Aprovado pelo CEP/CONEP' : comiteEtica.statusEtica === 'dispensado' ? 'Dispensado de Apreciação Ética (Res. CNS 510/2016)' : 'Em Tramitação'}\n` +
+                    (comiteEtica.nomeComite ? `* '''Comitê Responsável:''' ${comiteEtica.nomeComite}\n` : '') +
+                    (comiteEtica.numeroCaae ? `* '''Número do CAAE:''' ${comiteEtica.numeroCaae}\n` : '') +
+                    (comiteEtica.numeroParecer ? `* '''Número do Parecer:''' ${comiteEtica.numeroParecer}\n` : '') +
+                    (comiteEtica.dataAprovacao ? `* '''Data de Aprovação:''' ${comiteEtica.dataAprovacao}\n` : '') +
+                    `* '''Resolução de Referência:''' ${comiteEtica.resolucaoRegulamentadora || 'Resolução CNS nº 466/2012'}\n`;
+                  setDescricao((prev) => prev + cepCode);
+                  setShowEthicsModal(false);
+                }}
+                className="w-full sm:w-auto px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition cursor-pointer"
+              >
+                Inserir Seção no Texto Wikitext
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowEthicsModal(false)}
+                className="w-full sm:w-auto px-5 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition cursor-pointer"
+              >
+                Concluir e Salvar Dados Éticos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Editor Header Bar */}
       <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-3.5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -872,6 +952,25 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             >
               <FileDown size={13} className="text-rose-600 dark:text-rose-400" />
               <span className="hidden sm:inline">Exportar PDF</span>
+            </button>
+
+            {/* Botão de Comitê de Ética em Pesquisa com Seres Humanos */}
+            <button
+              type="button"
+              onClick={() => setShowEthicsModal(true)}
+              className={`px-2.5 py-1 rounded border transition text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer ${
+                comiteEtica?.envolveSeresHumanos && comiteEtica.statusEtica !== 'nao_se_aplica'
+                  ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/30'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title="Comitê de Ética em Pesquisa com Seres Humanos (CEP / CONEP / Plataforma Brasil)"
+            >
+              <ShieldCheck size={13} className={comiteEtica?.envolveSeresHumanos && comiteEtica.statusEtica !== 'nao_se_aplica' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'} />
+              <span>
+                {comiteEtica?.envolveSeresHumanos && comiteEtica.statusEtica !== 'nao_se_aplica'
+                  ? `CEP: ${comiteEtica.statusEtica === 'aprovado' ? 'Aprovado' : comiteEtica.statusEtica === 'dispensado' ? 'Dispensado' : 'Em Análise'}`
+                  : 'Comitê de Ética'}
+              </span>
             </button>
 
             <button

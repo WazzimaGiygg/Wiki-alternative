@@ -41,8 +41,11 @@ import {
   AcademicAuthor,
   AcademicPeerReview,
   ResearcherProfile,
+  ResearchEthicsCommitteeInfo,
 } from '../types/academic';
 import { AcademicService } from '../services/academicService';
+import { ResearchEthicsBadge } from './ResearchEthicsBadge';
+import { ResearchEthicsFormSection } from './ResearchEthicsFormSection';
 import {
   formatToAbnt,
   formatToBibtex,
@@ -58,6 +61,7 @@ interface AcademicCatalogViewProps {
 
 const PUBLICATION_TYPE_LABELS: Record<AcademicPublicationType, { label: string; icon: string; badgeColor: string }> = {
   artigo_periodico: { label: 'Artigo em Periódico', icon: '📄', badgeColor: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+  livro_academico: { label: 'Livro Acadêmico / Científico', icon: '📚', badgeColor: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800' },
   preprint: { label: 'Preprint / Pré-publicação', icon: '⚡', badgeColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-800' },
   conferencia: { label: 'Anais de Congresso', icon: '🏛️', badgeColor: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
   tese_doutorado: { label: 'Tese de Doutorado', icon: '🎓', badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' },
@@ -99,6 +103,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
   const [selectedArea, setSelectedArea] = useState<string>('Todas as Áreas');
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>('todos');
   const [onlyOpenAccess, setOnlyOpenAccess] = useState(false);
+  const [selectedEthicsFilter, setSelectedEthicsFilter] = useState<string>('todos');
   const [sortBy, setSortBy] = useState<'relevancia' | 'citacoes' | 'ano'>('relevancia');
 
   // Sincronização Firebase
@@ -154,6 +159,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
   const [formCodigoUrl, setFormCodigoUrl] = useState('');
   const [formArtigoWiki, setFormArtigoWiki] = useState('');
   const [formCitacoesIniciais, setFormCitacoesIniciais] = useState<number>(0);
+  const [formComiteEtica, setFormComiteEtica] = useState<ResearchEthicsCommitteeInfo | undefined>(undefined);
 
   // Subscrição em Tempo Real ao Firebase
   useEffect(() => {
@@ -226,6 +232,17 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
         return false;
       }
 
+      // Comitê de Ética em Pesquisa com Seres Humanos
+      if (selectedEthicsFilter === 'aprovado' && p.comiteEtica?.statusEtica !== 'aprovado') {
+        return false;
+      }
+      if (selectedEthicsFilter === 'dispensado' && p.comiteEtica?.statusEtica !== 'dispensado') {
+        return false;
+      }
+      if (selectedEthicsFilter === 'com_humanos' && !p.comiteEtica?.envolveSeresHumanos) {
+        return false;
+      }
+
       // Filtro de Ano
       const currentYear = new Date().getFullYear();
       if (selectedYearFilter === 'desde_2026' && p.anoPublicacao < 2026) return false;
@@ -242,7 +259,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
       const scoreB = (b.totalCitacoes || 0) * 2 + (b.anoPublicacao >= 2024 ? 5 : 0);
       return scoreB - scoreA;
     });
-  }, [publications, searchQuery, selectedType, selectedArea, onlyOpenAccess, selectedYearFilter, sortBy]);
+  }, [publications, searchQuery, selectedType, selectedArea, onlyOpenAccess, selectedEthicsFilter, selectedYearFilter, sortBy]);
 
   // Perfis de Pesquisadores (Google Acadêmico)
   const researcherProfiles = useMemo(() => {
@@ -279,6 +296,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
     setFormCodigoUrl('');
     setFormArtigoWiki('');
     setFormCitacoesIniciais(0);
+    setFormComiteEtica(undefined);
     setActiveTab('submissao');
   };
 
@@ -311,6 +329,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
     setFormCodigoUrl(pub.codigoOuDadosUrl || '');
     setFormArtigoWiki(pub.artigoWikiVinculadoTitulo || '');
     setFormCitacoesIniciais(pub.totalCitacoes || 0);
+    setFormComiteEtica(pub.comiteEtica);
     setActiveTab('submissao');
   };
 
@@ -375,6 +394,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
         artigoWikiVinculadoTitulo: formArtigoWiki || undefined,
         totalCitacoes: formCitacoesIniciais,
         statusRevisao: formTipo === 'preprint' ? 'preprint_open' : 'peer_reviewed',
+        comiteEtica: formComiteEtica,
         submittedByUid: currentUser?.uid,
         submittedByName: currentUser?.displayName || currentUser?.email,
       });
@@ -631,7 +651,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
             </div>
 
             {/* Filtros Avançados */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 mt-4 text-xs">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
                   Tipo de Produção
@@ -643,6 +663,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
                 >
                   <option value="todos">Todos os Tipos de Obra</option>
                   <option value="artigo_periodico">Artigos em Periódicos</option>
+                  <option value="livro_academico">Livros Acadêmicos / Científicos</option>
                   <option value="preprint">Preprints / Pré-publicações</option>
                   <option value="tese_doutorado">Teses de Doutorado</option>
                   <option value="dissertacao_mestrado">Dissertações de Mestrado</option>
@@ -666,6 +687,22 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
                   {CNPQ_AREAS.map((area) => (
                     <option key={area} value={area}>{area}</option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                  Comitê de Ética (CEP/CONEP)
+                </label>
+                <select
+                  value={selectedEthicsFilter}
+                  onChange={(e) => setSelectedEthicsFilter(e.target.value)}
+                  className="w-full p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                >
+                  <option value="todos">Todos os Status Éticos</option>
+                  <option value="aprovado">Aprovado pelo CEP/CONEP</option>
+                  <option value="dispensado">Dispensado / Isento (Res. 510/16)</option>
+                  <option value="com_humanos">Pesquisas com Seres Humanos</option>
                 </select>
               </div>
 
@@ -877,6 +914,13 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
                     <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-serif italic">
                       {selectedPub.resumoIngles}
                     </p>
+                  </div>
+                )}
+
+                {/* Comitê de Ética em Pesquisa com Seres Humanos (CEP / CONEP) */}
+                {selectedPub.comiteEtica && selectedPub.comiteEtica.statusEtica !== 'nao_se_aplica' && (
+                  <div className="mt-4">
+                    <ResearchEthicsBadge info={selectedPub.comiteEtica} variant="card" />
                   </div>
                 )}
 
@@ -1125,6 +1169,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
                                 <Globe className="w-2.5 h-2.5" /> PDF Aberto
                               </span>
                             )}
+                            <ResearchEthicsBadge info={pub.comiteEtica} variant="badge" />
                           </div>
 
                           {/* Título Principal (Estilo Google Acadêmico) */}
@@ -1344,6 +1389,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
                   className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-medium"
                 >
                   <option value="artigo_periodico">Artigo em Periódico Científico (Journal Paper)</option>
+                  <option value="livro_academico">Livro Acadêmico / Livro Científico / Obra Autoral</option>
                   <option value="preprint">Preprint / Pré-publicação Aberta (arXiv / SciELO)</option>
                   <option value="conferencia">Artigo em Anais de Congresso / Conferência</option>
                   <option value="tese_doutorado">Tese de Doutorado (Ph.D. Dissertation)</option>
@@ -1650,6 +1696,15 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
                   className="w-full p-2 rounded bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
                 />
               </div>
+            </div>
+
+            {/* Comitê de Ética em Pesquisa com Seres Humanos (CEP / CONEP) */}
+            <div className="pt-2">
+              <ResearchEthicsFormSection
+                value={formComiteEtica}
+                onChange={setFormComiteEtica}
+                contextTitle={formTipo === 'livro_academico' ? 'Livro Acadêmico' : 'Trabalho Acadêmico'}
+              />
             </div>
 
             {/* Botões de Ação do Formulário */}

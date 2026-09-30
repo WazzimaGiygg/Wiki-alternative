@@ -393,6 +393,7 @@ export const StorageService = {
             versao: typeof data.versao === 'number' ? data.versao : 1,
             tags: Array.isArray(data.tags) ? data.tags : [],
             historico: Array.isArray(data.historico) ? data.historico : [],
+            comiteEtica: data.comiteEtica || undefined,
           });
         });
 
@@ -510,6 +511,7 @@ export const StorageService = {
               versao: typeof data.versao === 'number' ? data.versao : 1,
               tags: Array.isArray(data.tags) ? data.tags : [],
               historico: Array.isArray(data.historico) ? data.historico : [],
+              comiteEtica: data.comiteEtica || undefined,
             });
           });
           list.sort((a, b) => {
@@ -892,6 +894,7 @@ export const StorageService = {
         tags: articleData.tags || [],
         historico: [historyItem],
         isLocked: false,
+        comiteEtica: articleData.comiteEtica || undefined,
       };
       articles.unshift(article);
     }
@@ -926,6 +929,7 @@ export const StorageService = {
           lockedAt: article.lockedAt || null,
           lockReason: article.lockReason || null,
           protectionLevel: article.protectionLevel || null,
+          comiteEtica: article.comiteEtica || null,
           atualizadoEm: serverTimestamp(),
         };
 

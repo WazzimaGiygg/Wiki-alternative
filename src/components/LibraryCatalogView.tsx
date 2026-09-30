@@ -42,6 +42,9 @@ import {
   LibraryService,
   DEWEY_CLASSES,
 } from '../services/libraryService';
+import { ResearchEthicsBadge } from './ResearchEthicsBadge';
+import { ResearchEthicsFormSection } from './ResearchEthicsFormSection';
+import { ResearchEthicsCommitteeInfo } from '../types/ethics';
 
 interface LibraryCatalogViewProps {
   currentUser: UserProfile | null;
@@ -117,6 +120,7 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
     estadoConservacao: PhysicalConservationState;
     statusCirculacao: PhysicalCirculationStatus;
     artigoWikiVinculadoTitulo: string;
+    comiteEtica?: ResearchEthicsCommitteeInfo;
   }>({
     tipo: 'livro',
     titulo: '',
@@ -395,6 +399,7 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
       estadoConservacao: 'bom',
       statusCirculacao: 'disponivel',
       artigoWikiVinculadoTitulo: '',
+      comiteEtica: undefined,
     });
     setActiveTab('cadastro');
   };
@@ -445,6 +450,7 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
       estadoConservacao: item.estadoConservacao,
       statusCirculacao: item.statusCirculacao,
       artigoWikiVinculadoTitulo: item.artigoWikiVinculadoTitulo || '',
+      comiteEtica: item.comiteEtica,
     });
     setActiveTab('cadastro');
   };
@@ -533,6 +539,7 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
         estadoConservacao: formData.estadoConservacao,
         statusCirculacao: formData.statusCirculacao,
         artigoWikiVinculadoTitulo: formData.artigoWikiVinculadoTitulo.trim() || undefined,
+        comiteEtica: formData.comiteEtica,
       });
 
       setSelectedItem(saved);
@@ -953,6 +960,12 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
                         {item.editora} • {item.anoPublicacao}
                         {item.edicao ? ` • ${item.edicao}` : ''}
                       </p>
+
+                      {item.comiteEtica && item.comiteEtica.statusEtica !== 'nao_se_aplica' && (
+                        <div className="mt-2">
+                          <ResearchEthicsBadge info={item.comiteEtica} variant="badge" />
+                        </div>
+                      )}
 
                       {/* Notação de Chamada na estante */}
                       <div className="mt-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
@@ -1660,6 +1673,15 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
             </div>
           </div>
 
+          {/* 6. COMITÊ DE ÉTICA EM PESQUISA COM SERES HUMANOS (CEP / CONEP) */}
+          <div className="pt-1">
+            <ResearchEthicsFormSection
+              value={formData.comiteEtica}
+              onChange={(val) => setFormData({ ...formData, comiteEtica: val })}
+              contextTitle="Livro / Obra Científica"
+            />
+          </div>
+
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
@@ -1792,6 +1814,13 @@ export const LibraryCatalogView: React.FC<LibraryCatalogViewProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Comitê de Ética em Pesquisa com Seres Humanos (Livros & Obras Científicas) */}
+              {selectedItem.comiteEtica && selectedItem.comiteEtica.statusEtica !== 'nao_se_aplica' && (
+                <div className="my-1">
+                  <ResearchEthicsBadge info={selectedItem.comiteEtica} variant="card" />
+                </div>
+              )}
 
               {/* LOCALIZAÇÃO FÍSICA NA ESTANTE & CIRCULAÇÃO */}
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
