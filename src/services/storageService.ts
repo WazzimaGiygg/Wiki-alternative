@@ -78,6 +78,8 @@ import {
   WatchlistItem,
   ArticleRatingData,
   DailyEditLimitStatus,
+  LgpdAccountDeletionRequest,
+  LgpdDeletionRequestStatus,
 } from '../types';
 import { sanitizeIpForDocId, hashIpAddress } from '../utils/ipUtils';
 import { verifyClientIpForLogin } from '../utils/wikimediaIpChecker';
@@ -164,6 +166,7 @@ const STORAGE_KEYS = {
   EMERGENCY_IP_REPORTS: 'wikizero_emergency_ip_reports_v1',
   UCOC_REPORTS: 'wikizero_ucoc_reports_v1',
   LGPD_NOTIFICATION_CONFIG: 'wikizero_lgpd_notif_config_v1',
+  LGPD_DELETION_REQUESTS: 'wikizero_lgpd_deletion_requests_v1',
   DAILY_EDITS_PREFIX: 'wikizero_daily_edits_',
   CHROME_PREFERENCE_NOTICED: 'wikizero_chrome_recommendation_noticed_v1',
 };
@@ -1497,6 +1500,68 @@ export const StorageService = {
         'google_user_registered',
         `Novo usuário registrado e conectado via Google OAuth 2.0 / OpenID Connect (${u.email || u.uid}). Perfil criado e liberado com sucesso.`,
         null
+      );
+
+      return publicProfile;
+    }
+
+    // 1.5. LGPD: Se a conta deste Google UID foi excluída e anonimizada anteriormente sob a LGPD
+    // O UID Google é preservado para identificá-la. Ao tentar criar outra conta / entrar:
+    // O sistema a identifica, preserva o histórico de desassociação das contribuições passadas,
+    // e provisiona um novo cadastro limpo sem restauração de dados pessoais ou autoria anteriores.
+    if (existingProfile?.accountDeletedLGPD) {
+      const prevDeletionDate = existingProfile.deletedAtLGPD || 'data anterior';
+      const prevPseudonym = existingProfile.genericPseudonymLGPD || 'Usuário Anonimizado (LGPD)';
+
+      this.logUserAuditAction(
+        u.uid,
+        u.displayName || u.email || 'Novo Editor',
+        'lgpd_reidentified_google_uid',
+        `Identificação preventiva LGPD: Google UID '${u.uid}' (conta previamente excluída sob Art. 18, VI em ${prevDeletionDate}) autenticou-se novamente para novo cadastro. Contribuições anteriores permanecem irrevogavelmente associadas ao pseudônimo "${prevPseudonym}".`,
+        null
+      );
+
+      const rawName = (u.displayName || u.email?.split('@')[0] || 'Novo Editor').trim();
+      const cleanUsername = rawName.replace(/\s+/g, '_');
+      const determinedRole: UserRole = isBanned ? 'leitor' : 'editor';
+
+      const freshProfile: UserProfile = {
+        uid: u.uid, // Preservação identificatória do UID Google!
+        email: u.email || '',
+        displayName: rawName,
+        username: cleanUsername,
+        photoURL: u.photoURL || undefined,
+        role: determinedRole,
+        isGuest: false,
+        isBanned,
+        banReason: isBanned ? (banStatus.reason || 'Violação das políticas comunitárias.') : undefined,
+        permissions: {
+          canEdit: !isBanned,
+          canCreate: !isBanned && determinedRole !== 'leitor',
+          canTalk: !isBanned,
+          canDelete: false,
+          canGrantBarnstars: false,
+        },
+        reputationScore: 100,
+        editsCount: 0,
+        warningCount: 0,
+        location: 'Brasil',
+        lastActive: new Date().toISOString(),
+        isOnline: true,
+        createdAt: new Date().toISOString(),
+        previousAccountDeletedLGPD: true,
+        previousDeletedAtLGPD: prevDeletionDate,
+        accountDeletedLGPD: false,
+      };
+
+      const publicProfile = await this.ensureUserPage(freshProfile);
+      this.saveUser(publicProfile);
+
+      this.sendLgpdNotification(
+        'Identificação de Conta (LGPD Art. 18)',
+        `Seu Google UID foi identificado. Conforme a LGPD, seus dados e autoria de edições anteriores permanecem definitivamente anonimizados como "${prevPseudonym}". Um novo perfil limpo foi inicializado para este acesso.`,
+        'notifyOnPrivacyUpdate',
+        'info'
       );
 
       return publicProfile;
@@ -3533,6 +3598,565 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       success: true,
       user: updatedUser,
       message: `Imagem removida com sucesso sob a LGPD. O avatar do usuário exibirá a primeira letra do nome ('${initialLetter}').`,
+    };
+  },
+
+  // ==========================================
+  // === LGPD ART. 18, VI - EXCLUSÃO DE CONTAS ===
+  // ==========================================
+
+  /**
+   * Obtém todas as solicitações de exclusão de dados pessoais registradas pelos titulares.
+   */
+  async getLgpdDeletionRequests(): Promise<LgpdAccountDeletionRequest[]> {
+    initializeLocalStorage();
+    if (firebaseActive && db) {
+      try {
+        const snap = await getDocs(collection(db, 'lgpd_deletion_requests'));
+        const list: LgpdAccountDeletionRequest[] = [];
+        snap.forEach((d) => list.push(d.data() as LgpdAccountDeletionRequest));
+        localStorage.setItem(STORAGE_KEYS.LGPD_DELETION_REQUESTS, JSON.stringify(list));
+        return list.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+      } catch (err) {
+        console.warn('[StorageService] Erro ao buscar lgpd_deletion_requests no Firestore:', err);
+      }
+    }
+    const local = safeGetArray<LgpdAccountDeletionRequest>(STORAGE_KEYS.LGPD_DELETION_REQUESTS, []);
+    return local.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+  },
+
+  /**
+   * Consulta a solicitação de exclusão do titular (ativa ou mais recente).
+   */
+  async getLgpdDeletionRequestForUser(userUid: string): Promise<LgpdAccountDeletionRequest | null> {
+    if (!userUid) return null;
+    const requests = await this.getLgpdDeletionRequests();
+    return (
+      requests.find((r) => r.userUid === userUid && r.status === 'pendente') ||
+      requests.find((r) => r.userUid === userUid) ||
+      null
+    );
+  },
+
+  /**
+   * Registra a solicitação de exclusão definitiva de conta no Painel do Titular (LGPD Art. 18, VI).
+   */
+  async createLgpdDeletionRequest(
+    user: UserProfile,
+    reason?: string
+  ): Promise<{ success: boolean; request?: LgpdAccountDeletionRequest; message: string }> {
+    if (!user || !user.uid || user.isGuest) {
+      return {
+        success: false,
+        message: 'Apenas usuários autenticados possuem registros cadastrais passíveis de solicitação de exclusão.',
+      };
+    }
+
+    const requests = await this.getLgpdDeletionRequests();
+    const existingPending = requests.find((r) => r.userUid === user.uid && r.status === 'pendente');
+    if (existingPending) {
+      return {
+        success: true,
+        request: existingPending,
+        message: 'Você já possui uma solicitação de exclusão pendente de análise pela administração.',
+      };
+    }
+
+    const newRequest: LgpdAccountDeletionRequest = {
+      id: `lgpd-del-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      userUid: user.uid,
+      originalDisplayName: user.displayName || user.username || user.uid,
+      originalUsername: user.username || user.displayName || user.uid,
+      originalEmail: user.email || undefined,
+      userReason:
+        (reason || '').trim() ||
+        'Solicitação de eliminação definitiva de dados com base no Artigo 18, inciso VI da LGPD (Lei nº 13.709/2018).',
+      requestedAt: new Date().toISOString(),
+      status: 'pendente',
+    };
+
+    const updated = [newRequest, ...requests];
+    localStorage.setItem(STORAGE_KEYS.LGPD_DELETION_REQUESTS, JSON.stringify(updated));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'lgpd_deletion_requests', newRequest.id), newRequest);
+      } catch (err) {
+        console.warn('[StorageService] Erro ao salvar solicitação LGPD no Firestore:', err);
+      }
+    }
+
+    this.logUserAuditAction(
+      user.uid,
+      newRequest.originalDisplayName,
+      'lgpd_deletion_requested',
+      `Solicitação formal de exclusão definitiva de dados registrada pelo titular (LGPD Art. 18, VI). Motivo: "${newRequest.userReason}".`,
+      user
+    );
+
+    this.sendLgpdNotification(
+      'Solicitação de Exclusão Registrada',
+      'Sua solicitação de exclusão definitiva de dados pessoais (Art. 18, VI da LGPD) foi protocolada e aguarda homologação pela administração.',
+      'notifyOnPrivacyUpdate',
+      'warning'
+    );
+
+    return {
+      success: true,
+      request: newRequest,
+      message: 'Sua solicitação de exclusão foi registrada com sucesso e encaminhada ao Painel Administrativo.',
+    };
+  },
+
+  /**
+   * Cancela a solicitação de exclusão pendente caso o próprio titular decida revogar o pedido.
+   */
+  async cancelLgpdDeletionRequest(
+    requestId: string,
+    userUid: string
+  ): Promise<{ success: boolean; message: string }> {
+    const requests = await this.getLgpdDeletionRequests();
+    const reqIndex = requests.findIndex((r) => r.id === requestId);
+    if (reqIndex === -1) {
+      return { success: false, message: 'Solicitação não encontrada.' };
+    }
+
+    const req = requests[reqIndex];
+    if (req.userUid !== userUid) {
+      return { success: false, message: 'Você não tem permissão para cancelar esta solicitação.' };
+    }
+
+    if (req.status !== 'pendente') {
+      return { success: false, message: 'Esta solicitação não está mais pendente e não pode ser cancelada.' };
+    }
+
+    const updatedReq: LgpdAccountDeletionRequest = {
+      ...req,
+      status: 'cancelada',
+    };
+
+    requests[reqIndex] = updatedReq;
+    localStorage.setItem(STORAGE_KEYS.LGPD_DELETION_REQUESTS, JSON.stringify(requests));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'lgpd_deletion_requests', requestId), updatedReq, { merge: true });
+      } catch (err) {
+        console.warn('[StorageService] Erro ao cancelar solicitação LGPD no Firestore:', err);
+      }
+    }
+
+    return { success: true, message: 'Solicitação de exclusão cancelada com sucesso.' };
+  },
+
+  /**
+   * Rejeita administrativamente uma solicitação de exclusão (com justificativa legal fundamentada).
+   */
+  async rejectLgpdDeletionRequest(
+    requestId: string,
+    rejectionReason: string,
+    adminUser: UserProfile | null
+  ): Promise<{ success: boolean; message: string }> {
+    const isAdmin =
+      adminUser?.role === 'admin' ||
+      adminUser?.email === 'pedrohenriquecardonaperes@gmail.com';
+    if (!isAdmin) {
+      return { success: false, message: 'Apenas Administradores podem avaliar solicitações de exclusão sob a LGPD.' };
+    }
+
+    const requests = await this.getLgpdDeletionRequests();
+    const reqIndex = requests.findIndex((r) => r.id === requestId);
+    if (reqIndex === -1) {
+      return { success: false, message: 'Solicitação não encontrada.' };
+    }
+
+    const req = requests[reqIndex];
+    const updatedReq: LgpdAccountDeletionRequest = {
+      ...req,
+      status: 'rejeitada',
+      rejectionReason: rejectionReason.trim(),
+      processedAt: new Date().toISOString(),
+      processedByUid: adminUser?.uid,
+      processedByName: adminUser?.displayName || adminUser?.email || 'Administrador',
+    };
+
+    requests[reqIndex] = updatedReq;
+    localStorage.setItem(STORAGE_KEYS.LGPD_DELETION_REQUESTS, JSON.stringify(requests));
+
+    if (firebaseActive && db) {
+      try {
+        await setDoc(doc(db, 'lgpd_deletion_requests', requestId), updatedReq, { merge: true });
+      } catch (err) {
+        console.warn('[StorageService] Erro ao rejeitar solicitação LGPD no Firestore:', err);
+      }
+    }
+
+    this.logUserAuditAction(
+      req.userUid,
+      req.originalDisplayName,
+      'lgpd_deletion_rejected',
+      `Solicitação de exclusão LGPD rejeitada. Justificativa: "${rejectionReason}". Administrador: ${adminUser?.displayName || adminUser?.email}.`,
+      adminUser
+    );
+
+    return { success: true, message: 'Solicitação rejeitada com justificativa registrada em auditoria.' };
+  },
+
+  /**
+   * Executa a exclusão definitiva de conta no Painel Administrativo:
+   * 1. Elimina todos os dados pessoais (email, biografia, foto, redes, preferências).
+   * 2. Preserva estritamente o Google UID (u.uid) para identificação preventiva em futuras tentativas de cadastro.
+   * 3. Substitui o autor em todos os verbetes, coleções e históricos de revisão por um nome genérico.
+   * 4. Registra a auditoria perene de conformidade.
+   */
+  async executeAdminUserDeletionLGPD(params: {
+    targetUid: string;
+    requestId?: string;
+    genericPseudonym?: string;
+    legalJustification?: string;
+    adminUser: UserProfile | null;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    genericPseudonym: string;
+    articlesUpdated: number;
+    revisionsUpdated: number;
+    recentChangesUpdated: number;
+    pagesUpdated: number;
+  }> {
+    const isAdmin =
+      params.adminUser?.role === 'admin' ||
+      params.adminUser?.email === 'pedrohenriquecardonaperes@gmail.com';
+
+    if (!isAdmin) {
+      return {
+        success: false,
+        message: 'Acesso negado: A exclusão e anonimização de contas sob a LGPD é restrita exclusivamente a Administradores.',
+        genericPseudonym: '',
+        articlesUpdated: 0,
+        revisionsUpdated: 0,
+        recentChangesUpdated: 0,
+        pagesUpdated: 0,
+      };
+    }
+
+    const user = await this.getUserProfile(params.targetUid);
+    if (!user) {
+      return {
+        success: false,
+        message: 'Usuário não encontrado na base de dados.',
+        genericPseudonym: '',
+        articlesUpdated: 0,
+        revisionsUpdated: 0,
+        recentChangesUpdated: 0,
+        pagesUpdated: 0,
+      };
+    }
+
+    const oldName = user.displayName || user.username || user.uid;
+    const oldEmail = (user.email || '').trim().toLowerCase();
+    const genericName = (params.genericPseudonym || '').trim() || 'Usuário Anonimizado (LGPD)';
+    const justificationText =
+      (params.legalJustification || '').trim() ||
+      'Atendimento à solicitação do titular para eliminação definitiva de dados pessoais (Artigo 18, VI da LGPD - Lei nº 13.709/2018)';
+
+    let articlesUpdated = 0;
+    let revisionsUpdated = 0;
+    let pagesUpdated = 0;
+    let recentChangesUpdated = 0;
+
+    // 1. Substituir autor e histórico de revisões em todos os artigos
+    try {
+      const articles = await this.getArticles();
+      const updatedArticles = articles.map((art) => {
+        let changed = false;
+        let artAutor = art.autor;
+        let artAutorEmail = art.autorEmail;
+
+        const isAuthorMatch =
+          (art.autorUid && art.autorUid === user.uid) ||
+          (art.autor && art.autor.toLowerCase().trim() === oldName.toLowerCase().trim()) ||
+          (oldEmail && art.autorEmail && art.autorEmail.toLowerCase().trim() === oldEmail);
+
+        if (isAuthorMatch) {
+          artAutor = genericName;
+          artAutorEmail = undefined;
+          changed = true;
+          articlesUpdated++;
+        }
+
+        const historico = art.historico?.map((h) => {
+          const isHistMatch =
+            (h.autor && h.autor.toLowerCase().trim() === oldName.toLowerCase().trim()) ||
+            (oldEmail && h.autorEmail && h.autorEmail.toLowerCase().trim() === oldEmail);
+
+          if (isHistMatch) {
+            changed = true;
+            revisionsUpdated++;
+            return {
+              ...h,
+              autor: genericName,
+              autorEmail: undefined,
+            };
+          }
+          return h;
+        });
+
+        if (changed) {
+          return {
+            ...art,
+            autor: artAutor,
+            autorEmail: artAutorEmail,
+            historico,
+          };
+        }
+        return art;
+      });
+
+      localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(updatedArticles));
+
+      if (firebaseActive && db) {
+        for (const art of updatedArticles) {
+          const isMatch =
+            (art.autorUid && art.autorUid === user.uid) ||
+            art.autor === genericName;
+          if (isMatch) {
+            try {
+              await setDoc(doc(db, 'articles', art.id), art, { merge: true });
+            } catch (err) {
+              console.warn('[StorageService] Erro ao sincronizar artigo anonimizado no Firestore:', err);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[StorageService] Erro ao anonimizar artigos sob LGPD:', e);
+    }
+
+    // 2. Substituir autor nas páginas e coleções criadas
+    try {
+      const pages = await this.getPages();
+      const updatedPages = pages.map((page) => {
+        if (page.autor && page.autor.toLowerCase().trim() === oldName.toLowerCase().trim()) {
+          pagesUpdated++;
+          return { ...page, autor: genericName };
+        }
+        return page;
+      });
+      localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(updatedPages));
+      if (firebaseActive && db) {
+        for (const page of updatedPages) {
+          if (page.autor === genericName) {
+            try {
+              await setDoc(doc(db, 'pages', page.uid), page, { merge: true });
+            } catch (err) {
+              console.warn('[StorageService] Erro ao sincronizar página anonimizada no Firestore:', err);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[StorageService] Erro ao anonimizar páginas sob LGPD:', e);
+    }
+
+    // 3. Substituir em Alterações Recentes (Recent Changes)
+    try {
+      const recentChanges = await this.getRecentChanges();
+      const updatedRecentChanges = recentChanges.map((rc) => {
+        const isMatch =
+          (rc.autorUid && rc.autorUid === user.uid) ||
+          (rc.autor && rc.autor.toLowerCase().trim() === oldName.toLowerCase().trim()) ||
+          (oldEmail && rc.autorEmail && rc.autorEmail.toLowerCase().trim() === oldEmail);
+        if (isMatch) {
+          recentChangesUpdated++;
+          return {
+            ...rc,
+            autor: genericName,
+            autorEmail: undefined,
+          };
+        }
+        return rc;
+      });
+      localStorage.setItem(STORAGE_KEYS.RECENT_CHANGES, JSON.stringify(updatedRecentChanges));
+    } catch (e) {
+      console.warn('[StorageService] Erro ao anonimizar recent changes sob LGPD:', e);
+    }
+
+    // 4. Atualizar perfil do usuário: EXCLUIR TODOS OS DADOS PESSOAIS
+    // Preservando ESTRITAMENTE o UID Google para identificação preventiva
+    const anonymizedUser: UserProfile = {
+      uid: user.uid, // PRESERVADO para identificação de novas contas!
+      email: '', // Excluído permanentemente!
+      displayName: genericName,
+      username: `anon_${user.uid.slice(0, 8)}`,
+      photoURL: undefined,
+      avatarRemovedByAdmin: true,
+      bio: 'Conta excluída e dados pessoais eliminados definitivamente conforme Artigo 18, inciso VI da LGPD (Lei nº 13.709/2018). Autoria das contribuições desassociada e atribuída a identificador genérico.',
+      location: '',
+      website: '',
+      birthdate: undefined,
+      dataConsentimento: undefined,
+      ipConsentimento: undefined,
+      role: 'leitor',
+      isGuest: false,
+      isBanned: false,
+      accountDeletedLGPD: true,
+      deletedAtLGPD: new Date().toISOString(),
+      genericPseudonymLGPD: genericName,
+      deletionProcessedBy: params.adminUser?.displayName || params.adminUser?.email || 'Administrador',
+      deletionLegalJustification: justificationText,
+      permissions: {
+        canEdit: false,
+        canCreate: false,
+        canTalk: false,
+        canDelete: false,
+        canGrantBarnstars: false,
+      },
+      reputationScore: 0,
+      editsCount: 0,
+      warningCount: 0,
+      lastActive: new Date().toISOString(),
+      isOnline: false,
+      createdAt: user.createdAt,
+    };
+
+    // Salvar na lista comunitária
+    const community = await this.getCommunityUsers();
+    const updatedCommunity = community.map((u) => (u.uid === user.uid ? anonymizedUser : u));
+    localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(updatedCommunity));
+
+    // Excluir dados cadastrais pessoais no Firestore mantendo exclusivamente o UID Google indexado
+    if (firebaseActive && db) {
+      try {
+        const firestoreCleanPayload = {
+          uid: anonymizedUser.uid,
+          email: '',
+          displayName: genericName,
+          username: anonymizedUser.username,
+          accountDeletedLGPD: true,
+          deletedAtLGPD: anonymizedUser.deletedAtLGPD,
+          genericPseudonymLGPD: genericName,
+          deletionProcessedBy: anonymizedUser.deletionProcessedBy,
+          deletionLegalJustification: justificationText,
+          role: 'leitor',
+          bio: anonymizedUser.bio,
+          photoURL: deleteField(),
+          avatarRemovedByAdmin: true,
+          location: deleteField(),
+          website: deleteField(),
+          birthdate: deleteField(),
+          dataConsentimento: deleteField(),
+          ipConsentimento: deleteField(),
+        };
+        await setDoc(doc(db, 'userpage', user.uid), firestoreCleanPayload);
+        try {
+          await setDoc(doc(db, 'users', user.uid), firestoreCleanPayload);
+        } catch {
+          // ignora
+        }
+      } catch (err) {
+        console.warn('[StorageService] Erro ao sincronizar perfil excluído no Firestore:', err);
+      }
+    }
+
+    // Se o usuário logado atualmente for o titular excluído, encerrar sessão local
+    const currentUser = this.getCurrentUser();
+    if (currentUser && (currentUser.uid === user.uid || (currentUser.email && currentUser.email === user.email))) {
+      this.clearUser();
+    }
+
+    // 5. Atualizar ou criar o registro da solicitação LGPD
+    const requests = await this.getLgpdDeletionRequests();
+    let reqToUpdate = params.requestId ? requests.find((r) => r.id === params.requestId) : null;
+    if (!reqToUpdate) {
+      reqToUpdate = requests.find((r) => r.userUid === user.uid && r.status === 'pendente') || null;
+    }
+
+    if (reqToUpdate) {
+      reqToUpdate.status = 'executada';
+      reqToUpdate.processedAt = new Date().toISOString();
+      reqToUpdate.processedByUid = params.adminUser?.uid;
+      reqToUpdate.processedByName = params.adminUser?.displayName || params.adminUser?.email || 'Administrador';
+      reqToUpdate.genericPseudonymAssigned = genericName;
+      reqToUpdate.adminNotes = justificationText;
+      reqToUpdate.contributionsAnonymizedCount = {
+        articlesCreated: articlesUpdated,
+        revisionsUpdated,
+        recentChangesUpdated,
+        pagesUpdated,
+      };
+
+      const updatedReqs = requests.map((r) => (r.id === reqToUpdate!.id ? reqToUpdate! : r));
+      localStorage.setItem(STORAGE_KEYS.LGPD_DELETION_REQUESTS, JSON.stringify(updatedReqs));
+
+      if (firebaseActive && db) {
+        try {
+          await setDoc(doc(db, 'lgpd_deletion_requests', reqToUpdate.id), reqToUpdate);
+        } catch (err) {
+          console.warn('[StorageService] Erro ao atualizar solicitação LGPD executada no Firestore:', err);
+        }
+      }
+    } else {
+      const executedReq: LgpdAccountDeletionRequest = {
+        id: `lgpd-del-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        userUid: user.uid,
+        originalDisplayName: oldName,
+        originalUsername: user.username || oldName,
+        originalEmail: oldEmail || undefined,
+        userReason: 'Solicitação direta do titular atendida administrativamente.',
+        requestedAt: new Date().toISOString(),
+        status: 'executada',
+        processedAt: new Date().toISOString(),
+        processedByUid: params.adminUser?.uid,
+        processedByName: params.adminUser?.displayName || params.adminUser?.email || 'Administrador',
+        genericPseudonymAssigned: genericName,
+        adminNotes: justificationText,
+        contributionsAnonymizedCount: {
+          articlesCreated: articlesUpdated,
+          revisionsUpdated,
+          recentChangesUpdated,
+          pagesUpdated,
+        },
+      };
+      const updatedReqs = [executedReq, ...requests];
+      localStorage.setItem(STORAGE_KEYS.LGPD_DELETION_REQUESTS, JSON.stringify(updatedReqs));
+      if (firebaseActive && db) {
+        try {
+          await setDoc(doc(db, 'lgpd_deletion_requests', executedReq.id), executedReq);
+        } catch (err) {
+          console.warn('[StorageService] Erro ao salvar log de exclusão executada no Firestore:', err);
+        }
+      }
+    }
+
+    // 6. Registrar auditoria perene
+    this.logUserAuditAction(
+      user.uid,
+      genericName,
+      'lgpd_account_deletion',
+      `Exclusão definitiva de conta sob o Art. 18, VI da LGPD. Dados pessoais eliminados, Google UID preservado para identificação preventiva. Contribuições atribuídas ao nome genérico "${genericName}" (${articlesUpdated} verbetes, ${revisionsUpdated} revisões, ${pagesUpdated} coleções). Fundamento: ${justificationText}. Administrador: ${params.adminUser?.displayName || params.adminUser?.email}.`,
+      params.adminUser
+    );
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(
+          new CustomEvent('wikizero:lgpd-account-deleted', { detail: { uid: user.uid, genericName } })
+        );
+        window.dispatchEvent(new Event('storage'));
+      } catch {
+        // ignore
+      }
+    }
+
+    return {
+      success: true,
+      message: `Conta excluída e anonimizada com sucesso sob a LGPD. ${articlesUpdated} verbetes e ${revisionsUpdated} revisões foram atribuídos ao nome "${genericName}". O Google UID foi preservado para fins de segurança e identificação preventiva.`,
+      genericPseudonym: genericName,
+      articlesUpdated,
+      revisionsUpdated,
+      recentChangesUpdated,
+      pagesUpdated,
     };
   },
 

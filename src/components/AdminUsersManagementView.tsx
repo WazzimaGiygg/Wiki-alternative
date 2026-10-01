@@ -45,8 +45,12 @@ import {
   Share2,
   ImageOff,
   ShieldCheck,
+  Trash2,
+  UserMinus,
+  Copy,
+  FileText,
 } from 'lucide-react';
-import { UserProfile, UserRole } from '../types';
+import { UserProfile, UserRole, LgpdAccountDeletionRequest } from '../types';
 import { StorageService } from '../services/storageService';
 
 interface AdminUsersManagementViewProps {
@@ -57,6 +61,7 @@ interface AdminUsersManagementViewProps {
   onNavigateToPromotionRequests?: () => void;
   onNavigateToContactAdmin?: () => void;
   onBack?: () => void;
+  initialAdminTab?: 'users' | 'lgpd_requests';
 }
 
 type MainCategoryFilter = 'all' | 'admin' | 'moderador' | 'editor' | 'leitor' | 'outros' | 'banned';
@@ -79,6 +84,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
   onNavigateToPromotionRequests,
   onNavigateToContactAdmin,
   onBack,
+  initialAdminTab = 'users',
 }) => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -136,14 +142,46 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
   const [isProcessingRegister, setIsProcessingRegister] = useState(false);
   const [regFeedback, setRegFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
+  // Estados do Painel LGPD de Solicitações de Exclusão (Art. 18, VI)
+  const [activeAdminTab, setActiveAdminTab] = useState<'users' | 'lgpd_requests'>(initialAdminTab || 'users');
+  const [lgpdRequests, setLgpdRequests] = useState<LgpdAccountDeletionRequest[]>([]);
+  const [lgpdStatusFilter, setLgpdStatusFilter] = useState<'all' | 'pendente' | 'executada' | 'rejeitada' | 'cancelada'>('all');
+  const [lgpdSearchQuery, setLgpdSearchQuery] = useState('');
+
+  // Estados do Modal Administrativo de Exclusão LGPD
+  const [targetUserForDeletionLGPD, setTargetUserForDeletionLGPD] = useState<UserProfile | null>(null);
+  const [targetRequestForExecution, setTargetRequestForExecution] = useState<LgpdAccountDeletionRequest | null>(null);
+  const [genericPseudonymPreset, setGenericPseudonymPreset] = useState('Usuário Anonimizado (LGPD)');
+  const [customPseudonymInput, setCustomPseudonymInput] = useState('');
+  const [deletionJustificationPreset, setDeletionJustificationPreset] = useState(
+    'Atendimento à solicitação formal do titular para eliminação definitiva de dados pessoais (Art. 18, VI da LGPD - Lei nº 13.709/2018)'
+  );
+  const [customDeletionJustification, setCustomDeletionJustification] = useState('');
+  const [isProcessingDeletion, setIsProcessingDeletion] = useState(false);
+  const [deletionFeedback, setDeletionFeedback] = useState<{
+    msg: string;
+    type: 'success' | 'error';
+    details?: any;
+  } | null>(null);
+
+  // Estados do Modal Administrativo de Rejeição de Solicitação LGPD
+  const [targetRequestForRejection, setTargetRequestForRejection] = useState<LgpdAccountDeletionRequest | null>(null);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+  const [isProcessingRejection, setIsProcessingRejection] = useState(false);
+  const [copiedUid, setCopiedUid] = useState<string | null>(null);
+
   const isRealAdmin =
     currentUser?.role === 'admin' ||
     currentUser?.email === 'pedrohenriquecardonaperes@gmail.com';
 
   const loadUsers = async () => {
     setIsLoading(true);
-    const communityUsers = await StorageService.getCommunityUsers();
+    const [communityUsers, requests] = await Promise.all([
+      StorageService.getCommunityUsers(),
+      StorageService.getLgpdDeletionRequests(),
+    ]);
     setUsers(communityUsers);
+    setLgpdRequests(requests);
     setIsLoading(false);
   };
 
@@ -156,6 +194,20 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
   useEffect(() => {
     loadUsers();
   }, []);
+
+  const pendingLgpdCount = useMemo(() => {
+    return lgpdRequests.filter((r) => r.status === 'pendente').length;
+  }, [lgpdRequests]);
+
+  const pendingRequestsMap = useMemo(() => {
+    const map = new Map<string, LgpdAccountDeletionRequest>();
+    lgpdRequests.forEach((req) => {
+      if (req.status === 'pendente') {
+        map.set(req.userUid, req);
+      }
+    });
+    return map;
+  }, [lgpdRequests]);
 
   // Compute Active Advanced Filters Count
   const activeAdvFiltersCount = useMemo(() => {
@@ -325,6 +377,135 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
       setAvatarFeedback({ msg: result.message, type: 'error' });
     }
   };
+
+  // LGPD Account Deletion Modal handlers (Art. 18, VI)
+  const handleOpenDeletionModal = (targetUser: UserProfile, linkedRequest?: LgpdAccountDeletionRequest) => {
+    const req = linkedRequest || pendingRequestsMap.get(targetUser.uid) || null;
+    setTargetUserForDeletionLGPD(targetUser);
+    setTargetRequestForExecution(req);
+    setGenericPseudonymPreset('Usuário Anonimizado (LGPD)');
+    setCustomPseudonymInput('');
+    setDeletionJustificationPreset(
+      req?.userReason
+        ? `Atendimento à solicitação formal do titular (LGPD Art. 18, VI). Motivo informado: "${req.userReason}"`
+        : 'Atendimento à solicitação formal do titular para eliminação definitiva de dados pessoais (Art. 18, VI da LGPD - Lei nº 13.709/2018)'
+    );
+    setCustomDeletionJustification('');
+    setDeletionFeedback(null);
+  };
+
+  const handleExecuteDeletion = async () => {
+    if (!targetUserForDeletionLGPD) return;
+    const finalPseudonym =
+      genericPseudonymPreset === 'custom'
+        ? customPseudonymInput.trim() || 'Usuário Anonimizado (LGPD)'
+        : genericPseudonymPreset;
+    const finalJustification =
+      deletionJustificationPreset === 'custom'
+        ? customDeletionJustification.trim() || 'Eliminação definitiva de dados pessoais sob Art. 18, VI da LGPD'
+        : deletionJustificationPreset;
+
+    setIsProcessingDeletion(true);
+    setDeletionFeedback(null);
+    try {
+      const res = await StorageService.executeAdminUserDeletionLGPD({
+        targetUid: targetUserForDeletionLGPD.uid,
+        requestId: targetRequestForExecution?.id,
+        genericPseudonym: finalPseudonym,
+        legalJustification: finalJustification,
+        adminUser: currentUser,
+      });
+
+      if (res.success) {
+        setDeletionFeedback({
+          msg: res.message,
+          type: 'success',
+          details: {
+            articlesUpdated: res.articlesUpdated,
+            revisionsUpdated: res.revisionsUpdated,
+            genericPseudonym: res.genericPseudonym,
+          },
+        });
+        await loadUsers();
+        setTimeout(() => {
+          setTargetUserForDeletionLGPD(null);
+          setTargetRequestForExecution(null);
+          setDeletionFeedback(null);
+        }, 3000);
+      } else {
+        setDeletionFeedback({ msg: res.message, type: 'error' });
+      }
+    } catch (e: any) {
+      setDeletionFeedback({ msg: e.message || 'Erro ao processar exclusão.', type: 'error' });
+    } finally {
+      setIsProcessingDeletion(false);
+    }
+  };
+
+  const handleOpenRejectionModal = (req: LgpdAccountDeletionRequest) => {
+    setTargetRequestForRejection(req);
+    setRejectionReasonInput('');
+  };
+
+  const handleConfirmRejection = async () => {
+    if (!targetRequestForRejection) return;
+    if (!rejectionReasonInput.trim()) {
+      alert('Por favor, informe a justificativa administrativa para a rejeição da solicitação.');
+      return;
+    }
+    setIsProcessingRejection(true);
+    try {
+      const res = await StorageService.rejectLgpdDeletionRequest(
+        targetRequestForRejection.id,
+        rejectionReasonInput,
+        currentUser
+      );
+      if (res.success) {
+        await loadUsers();
+        setTargetRequestForRejection(null);
+      } else {
+        alert(res.message);
+      }
+    } catch (e: any) {
+      alert(e.message || 'Erro ao rejeitar solicitação.');
+    } finally {
+      setIsProcessingRejection(false);
+    }
+  };
+
+  const handleCopyUid = (uid: string) => {
+    navigator.clipboard.writeText(uid);
+    setCopiedUid(uid);
+    setTimeout(() => setCopiedUid(null), 2000);
+  };
+
+  const filteredLgpdRequests = useMemo(() => {
+    return lgpdRequests.filter((req) => {
+      if (lgpdStatusFilter !== 'all' && req.status !== lgpdStatusFilter) {
+        return false;
+      }
+      if (lgpdSearchQuery.trim()) {
+        const q = lgpdSearchQuery.toLowerCase().trim();
+        const match =
+          (req.originalDisplayName || '').toLowerCase().includes(q) ||
+          (req.originalUsername || '').toLowerCase().includes(q) ||
+          (req.originalEmail || '').toLowerCase().includes(q) ||
+          (req.userUid || '').toLowerCase().includes(q) ||
+          (req.id || '').toLowerCase().includes(q) ||
+          (req.genericPseudonymAssigned || '').toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [lgpdRequests, lgpdStatusFilter, lgpdSearchQuery]);
+
+  const lgpdKpis = useMemo(() => {
+    const total = lgpdRequests.length;
+    const pendentes = lgpdRequests.filter((r) => r.status === 'pendente').length;
+    const executadas = lgpdRequests.filter((r) => r.status === 'executada').length;
+    const rejeitadas = lgpdRequests.filter((r) => r.status === 'rejeitada' || r.status === 'cancelada').length;
+    return { total, pendentes, executadas, rejeitadas };
+  }, [lgpdRequests]);
 
   // Filter and Sort Users with Full Advanced Logic
   const filteredUsers = useMemo(() => {
@@ -647,6 +828,47 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
         </button>
       </div>
 
+      {/* 1.5 Mode Switcher: Diretório de Usuários vs Painel LGPD de Exclusões */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800 mb-6 gap-2">
+        <button
+          onClick={() => setActiveAdminTab('users')}
+          className={`pb-3 px-4 text-xs font-bold font-mono uppercase tracking-wider flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            activeAdminTab === 'users'
+              ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <Users size={16} />
+          <span>Diretório de Contas & Usuários</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+            {users.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveAdminTab('lgpd_requests')}
+          className={`pb-3 px-4 text-xs font-bold font-mono uppercase tracking-wider flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            activeAdminTab === 'lgpd_requests'
+              ? 'border-red-600 text-red-600 dark:border-red-400 dark:text-red-400'
+              : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <ShieldAlert size={16} />
+          <span>Solicitações de Exclusão LGPD (Art. 18, VI)</span>
+          {pendingLgpdCount > 0 ? (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold bg-red-600 text-white animate-pulse">
+              {pendingLgpdCount} pendente{pendingLgpdCount > 1 ? 's' : ''}
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+              {lgpdRequests.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeAdminTab === 'users' && (
+        <>
       {/* 2. Header with KPI Cards */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 sm:p-6 shadow-xs mb-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
@@ -1462,10 +1684,26 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center justify-between gap-1 flex-wrap">
                         <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
                           {u.displayName || u.username}
                         </h3>
+                        {pendingRequestsMap.has(u.uid) && (
+                          <span
+                            className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 animate-pulse flex items-center gap-0.5 shrink-0"
+                            title="Solicitação de exclusão pendente de homologação"
+                          >
+                            <Clock size={9} /> Solicitação LGPD
+                          </span>
+                        )}
+                        {u.accountDeletedLGPD && (
+                          <span
+                            className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 flex items-center gap-0.5 shrink-0"
+                            title="Conta excluída e dados eliminados sob a LGPD"
+                          >
+                            <UserX size={9} /> Excluída (LGPD)
+                          </span>
+                        )}
                       </div>
                       <div className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
                         User:{userIdentifier}
@@ -1527,6 +1765,16 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                           title="Retificar Nome (LGPD Art. 18, III)"
                         >
                           <UserCog size={13} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDeletionModal(u);
+                          }}
+                          className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 transition"
+                          title="Excluir Conta e Anonimizar Contribuições (LGPD Art. 18, VI)"
+                        >
+                          <Trash2 size={13} />
                         </button>
                       </>
                     )}
@@ -1590,8 +1838,26 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                             )}
                           </div>
                           <div>
-                            <div className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
-                              {u.displayName || u.username}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                                {u.displayName || u.username}
+                              </span>
+                              {pendingRequestsMap.has(u.uid) && (
+                                <span
+                                  className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 animate-pulse flex items-center gap-0.5"
+                                  title="Solicitação de exclusão pendente de homologação"
+                                >
+                                  <Clock size={9} /> Solicitação LGPD
+                                </span>
+                              )}
+                              {u.accountDeletedLGPD && (
+                                <span
+                                  className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 flex items-center gap-0.5"
+                                  title="Conta excluída e dados eliminados sob a LGPD"
+                                >
+                                  <UserX size={9} /> Excluída (LGPD)
+                                </span>
+                              )}
                             </div>
                             <div className="text-[10px] text-slate-400 font-mono">User:{userIdentifier}</div>
                           </div>
@@ -1638,6 +1904,16 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                               >
                                 <UserCog size={14} />
                               </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenDeletionModal(u);
+                                }}
+                                className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 transition"
+                                title="Excluir Conta e Anonimizar Contribuições (LGPD Art. 18, VI)"
+                              >
+                                <Trash2 size={14} />
+                              </button>
                             </>
                           )}
                           <span className="text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition font-semibold text-xs flex items-center gap-0.5">
@@ -1650,6 +1926,382 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+    </>
+  )}
+
+      {/* 2.5 PAINEL ADMINISTRATIVO LGPD: SOLICITAÇÕES DE EXCLUSÃO DE CONTAS */}
+      {activeAdminTab === 'lgpd_requests' && (
+        <div className="space-y-6">
+          {/* Header Card LGPD */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 sm:p-6 shadow-xs">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 shadow-xs">
+                  <ShieldAlert size={26} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-xl sm:text-2xl font-serif-heading font-bold text-slate-900 dark:text-white">
+                      Painel Administrativo LGPD: Exclusão e Anonimização
+                    </h1>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                      Art. 18, VI LGPD
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
+                    Atendimento formal às solicitações dos titulares de dados para eliminação definitiva de contas.
+                    Ao homologar o procedimento, todos os dados pessoais do titular são expurgados, o <strong>Google UID é preservado</strong> para identificação preventiva de novas contas, e a autoria em todos os verbetes e revisões é retroativamente atribuída a um nome genérico neutro.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw size={12} className={isRefreshing ? 'animate-spin text-red-600' : ''} />
+                <span>Atualizar Fila</span>
+              </button>
+            </div>
+
+            {/* Legal Framework Disclaimer Box */}
+            <div className="mt-4 p-3 bg-blue-50/70 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-800/60 text-xs text-blue-900 dark:text-blue-200 space-y-1">
+              <div className="font-bold flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-blue-950 dark:text-blue-100">
+                <ShieldCheck size={14} className="text-blue-600 dark:text-blue-400" />
+                <span>Garantias Normativas e Preservação do Google UID (Lei 13.709/2018 & Marco Civil)</span>
+              </div>
+              <p className="text-[11px] leading-relaxed">
+                • <strong>Dados Cadastrais Eliminados:</strong> Nome real, e-mail, biografia, redes sociais, preferências de cookies e imagem de perfil são irrevogavelmente expurgados.
+                <br />
+                • <strong>Retenção Estrita do Google UID:</strong> O identificador único originado do Google OAuth é conservado estritamente como registro de segurança para que, caso o titular tente autenticar-se novamente, o sistema reconheça a identidade e mantenha as contribuições passadas desassociadas.
+                <br />
+                • <strong>Substituição de Autoria:</strong> Todo o acervo criado pelo titular (artigos, revisões de histórico e registros de edições) permanece sob a licença livre enciclopédica, atribuído ao pseudônimo institucional definido pelo Administrador.
+              </p>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-4">
+              <button
+                onClick={() => setLgpdStatusFilter('all')}
+                className={`p-3 rounded-lg border text-left transition ${
+                  lgpdStatusFilter === 'all'
+                    ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-600'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40'
+                }`}
+              >
+                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Total de Solicitações
+                </div>
+                <div className="text-xl font-bold font-serif-heading text-slate-900 dark:text-white mt-0.5">
+                  {lgpdKpis.total}
+                </div>
+                <div className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">Fila Geral</div>
+              </button>
+
+              <button
+                onClick={() => setLgpdStatusFilter('pendente')}
+                className={`p-3 rounded-lg border text-left transition ${
+                  lgpdStatusFilter === 'pendente'
+                    ? 'border-red-600 bg-red-50/60 dark:bg-red-950/40 ring-1 ring-red-600'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40'
+                }`}
+              >
+                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                  <span>Pendentes</span>
+                  {lgpdKpis.pendentes > 0 && (
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                  )}
+                </div>
+                <div className="text-xl font-bold font-serif-heading text-red-600 dark:text-red-400 mt-0.5">
+                  {lgpdKpis.pendentes}
+                </div>
+                <div className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">Aguardando Execução</div>
+              </button>
+
+              <button
+                onClick={() => setLgpdStatusFilter('executada')}
+                className={`p-3 rounded-lg border text-left transition ${
+                  lgpdStatusFilter === 'executada'
+                    ? 'border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/40 ring-1 ring-emerald-600'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40'
+                }`}
+              >
+                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Executadas
+                </div>
+                <div className="text-xl font-bold font-serif-heading text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  {lgpdKpis.executadas}
+                </div>
+                <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Anonimizadas com Sucesso</div>
+              </button>
+
+              <button
+                onClick={() => setLgpdStatusFilter('rejeitada')}
+                className={`p-3 rounded-lg border text-left transition ${
+                  lgpdStatusFilter === 'rejeitada'
+                    ? 'border-slate-600 bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-600'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40'
+                }`}
+              >
+                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Rejeitadas / Canceladas
+                </div>
+                <div className="text-xl font-bold font-serif-heading text-slate-700 dark:text-slate-300 mt-0.5">
+                  {lgpdKpis.rejeitadas}
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Histórico Arquivado</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Search & Status Filter Bar */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3.5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="relative w-full sm:w-80">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={lgpdSearchQuery}
+                onChange={(e) => setLgpdSearchQuery(e.target.value)}
+                placeholder="Buscar por usuário, email, Google UID ou protocolo..."
+                className="w-full pl-8 pr-3 py-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs focus:ring-1 focus:ring-red-500 outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto font-mono text-[11px]">
+              {(['all', 'pendente', 'executada', 'rejeitada'] as const).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setLgpdStatusFilter(st)}
+                  className={`px-2.5 py-1 rounded transition cursor-pointer font-bold ${
+                    lgpdStatusFilter === st
+                      ? 'bg-red-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {st === 'all'
+                    ? 'Todas'
+                    : st === 'pendente'
+                    ? 'Pendentes'
+                    : st === 'executada'
+                    ? 'Executadas'
+                    : 'Rejeitadas'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Requests List */}
+          <div className="space-y-3">
+            {filteredLgpdRequests.length === 0 ? (
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center space-y-2">
+                <ShieldCheck size={32} className="mx-auto text-emerald-500" />
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                  Nenhuma solicitação encontrada
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                  {lgpdStatusFilter === 'pendente'
+                    ? 'Todas as solicitações de exclusão sob a LGPD foram homologadas e processadas pela administração.'
+                    : 'Não há registros de solicitações de exclusão de dados com os filtros atuais.'}
+                </p>
+              </div>
+            ) : (
+              filteredLgpdRequests.map((req) => {
+                const matchedUser = users.find((u) => u.uid === req.userUid);
+                const isPending = req.status === 'pendente';
+                const isExecuted = req.status === 'executada';
+
+                return (
+                  <div
+                    key={req.id}
+                    className={`bg-white dark:bg-slate-900 border rounded-lg p-4 sm:p-5 shadow-xs transition space-y-3.5 ${
+                      isPending
+                        ? 'border-amber-300 dark:border-amber-800/80 ring-1 ring-amber-400/30'
+                        : isExecuted
+                        ? 'border-emerald-200 dark:border-emerald-800/60'
+                        : 'border-slate-200 dark:border-slate-800 opacity-80'
+                    }`}
+                  >
+                    {/* Header Row: Protocol ID, Status, Timestamp */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase tracking-wider ${
+                            isPending
+                              ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300'
+                              : isExecuted
+                              ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300'
+                              : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-300'
+                          }`}
+                        >
+                          {isPending
+                            ? '⏳ Pendente de Execução'
+                            : isExecuted
+                            ? '✓ Executada & Anonimizada'
+                            : `✕ ${req.status === 'cancelada' ? 'Cancelada pelo Titular' : 'Rejeitada'}`}
+                        </span>
+
+                        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                          Protocolo: <strong className="text-slate-800 dark:text-slate-200">{req.id}</strong>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                        <Calendar size={12} />
+                        <span>Solicitado em: {new Date(req.requestedAt).toLocaleString('pt-BR')}</span>
+                      </div>
+                    </div>
+
+                    {/* Middle Row: User Details & UID Google */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Left: User identity & Google UID */}
+                      <div className="space-y-1.5 text-xs bg-slate-50 dark:bg-slate-800/60 p-3 rounded border border-slate-200 dark:border-slate-700/80">
+                        <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                          <span>Titular Solicitante:</span>
+                          {matchedUser && (
+                            <button
+                              onClick={() => onNavigateToUser(matchedUser.displayName || matchedUser.username || matchedUser.uid)}
+                              className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                            >
+                              Ver Perfil <ExternalLink size={10} />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500">Nome Cadastral:</span>
+                          <span className="font-bold text-slate-900 dark:text-white font-sans">
+                            {req.originalDisplayName}
+                          </span>
+                        </div>
+
+                        {req.originalEmail && (
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-slate-500">E-mail:</span>
+                            <span className="text-slate-700 dark:text-slate-300 font-mono truncate max-w-[200px]">
+                              {req.originalEmail}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500">Google UID (Preservado):</span>
+                          <div className="flex items-center gap-1 font-mono">
+                            <code className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1 py-0.5 rounded text-[10px] truncate max-w-[160px]">
+                              {req.userUid}
+                            </code>
+                            <button
+                              onClick={() => handleCopyUid(req.userUid)}
+                              className="text-slate-400 hover:text-blue-600 transition"
+                              title="Copiar Google UID"
+                            >
+                              {copiedUid === req.userUid ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Justification & Reason */}
+                      <div className="space-y-1.5 text-xs bg-slate-50 dark:bg-slate-800/60 p-3 rounded border border-slate-200 dark:border-slate-700/80">
+                        <div className="font-bold text-slate-800 dark:text-slate-200">
+                          Motivo Informado pelo Titular:
+                        </div>
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 italic bg-white dark:bg-slate-900/60 p-2 rounded border border-slate-200 dark:border-slate-700 leading-relaxed">
+                          "{req.userReason || 'Solicitação formal de eliminação de dados (LGPD Art. 18, VI).'}"
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Execution Details (if already executed) */}
+                    {isExecuted && (
+                      <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded border border-emerald-200 dark:border-emerald-800/80 space-y-1.5 text-xs text-emerald-900 dark:text-emerald-200 font-mono text-[11px]">
+                        <div className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-300">
+                          <CheckCircle2 size={14} />
+                          <span>Procedimento de Exclusão Concluído com Sucesso</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-sans text-[11px]">
+                          <div>
+                            <span className="text-emerald-700 dark:text-emerald-400 block text-[10px] uppercase font-mono">
+                              Pseudônimo Atribuído:
+                            </span>
+                            <strong className="text-slate-900 dark:text-white">
+                              {req.genericPseudonymAssigned || 'Usuário Anonimizado (LGPD)'}
+                            </strong>
+                          </div>
+                          <div>
+                            <span className="text-emerald-700 dark:text-emerald-400 block text-[10px] uppercase font-mono">
+                              Homologado Por:
+                            </span>
+                            <span>{req.processedByName || 'Administrador'}</span>
+                          </div>
+                          <div>
+                            <span className="text-emerald-700 dark:text-emerald-400 block text-[10px] uppercase font-mono">
+                              Data da Execução:
+                            </span>
+                            <span>{req.processedAt ? new Date(req.processedAt).toLocaleString('pt-BR') : '-'}</span>
+                          </div>
+                        </div>
+
+                        {req.contributionsAnonymizedCount && (
+                          <div className="pt-1 text-[10px] text-emerald-800 dark:text-emerald-300 border-t border-emerald-200 dark:border-emerald-800/60">
+                            • Verbetes criados anonimizados: <strong>{req.contributionsAnonymizedCount.articlesCreated}</strong> | 
+                            • Revisões de histórico atualizadas: <strong>{req.contributionsAnonymizedCount.revisionsUpdated}</strong> | 
+                            • Coleções atualizadas: <strong>{req.contributionsAnonymizedCount.pagesUpdated || 0}</strong>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Rejection Details (if rejected) */}
+                    {req.status === 'rejeitada' && req.rejectionReason && (
+                      <div className="bg-rose-50 dark:bg-rose-950/40 p-2.5 rounded border border-rose-200 dark:border-rose-800 text-xs text-rose-900 dark:text-rose-200">
+                        <span className="font-bold block text-[11px]">Justificativa Administrativa da Rejeição:</span>
+                        <p className="text-[11px] mt-0.5">"{req.rejectionReason}"</p>
+                        <span className="text-[10px] text-rose-700 dark:text-rose-400 font-mono block mt-1">
+                          Avaliador: {req.processedByName} em {req.processedAt ? new Date(req.processedAt).toLocaleString('pt-BR') : '-'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Action Bar (if Pending) */}
+                    {isPending && isRealAdmin && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleOpenRejectionModal(req)}
+                          className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold cursor-pointer transition flex items-center gap-1.5"
+                        >
+                          <X size={13} />
+                          <span>Rejeitar Solicitação</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const targetU: UserProfile = matchedUser || {
+                              uid: req.userUid,
+                              displayName: req.originalDisplayName,
+                              username: req.originalUsername,
+                              email: req.originalEmail || '',
+                              role: 'editor',
+                              isGuest: false,
+                              isBanned: false,
+                              createdAt: req.requestedAt,
+                            };
+                            handleOpenDeletionModal(targetU, req);
+                          }}
+                          className="px-4 py-1.5 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Trash2 size={13} />
+                          <span>Executar Exclusão e Anonimizar Contribuições (LGPD)</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}
@@ -2054,6 +2706,278 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Admin LGPD User Account Deletion & Anonymization Modal (Art. 18, VI) */}
+      {targetUserForDeletionLGPD && (
+        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="max-w-lg w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 text-xs flex flex-col max-h-[90vh]">
+            <div className="bg-[#1e293b] p-3 text-white flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-2 font-mono">
+                <ShieldAlert size={18} className="text-red-400" />
+                <div>
+                  <h3 className="font-bold text-xs uppercase tracking-wider">
+                    Executar Exclusão Definitiva de Conta (LGPD Art. 18, VI)
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-sans">
+                    Eliminação de Dados Pessoais & Substituição por Identificador Genérico
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setTargetUserForDeletionLGPD(null);
+                  setTargetRequestForExecution(null);
+                  setDeletionFeedback(null);
+                }}
+                className="text-white/70 hover:text-white p-0.5 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3.5 overflow-y-auto">
+              {/* Target User Info Card */}
+              <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs">
+                <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/60 pb-1">
+                  <span className="text-slate-500 font-mono text-[11px]">Nome Atual:</span>
+                  <strong className="text-slate-900 dark:text-white font-sans">
+                    {targetUserForDeletionLGPD.displayName || targetUserForDeletionLGPD.username}
+                  </strong>
+                </div>
+                {targetUserForDeletionLGPD.email && (
+                  <div className="flex justify-between border-b border-slate-200 dark:border-slate-700/60 pb-1">
+                    <span className="text-slate-500 font-mono text-[11px]">E-mail:</span>
+                    <span className="text-slate-800 dark:text-slate-200 font-mono text-[11px]">
+                      {targetUserForDeletionLGPD.email}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-mono text-[11px]">Google UID (Preservado):</span>
+                  <code className="text-blue-600 dark:text-blue-400 font-mono text-[11px] bg-blue-50 dark:bg-blue-950/60 px-1 py-0.5 rounded">
+                    {targetUserForDeletionLGPD.uid}
+                  </code>
+                </div>
+              </div>
+
+              {/* Callout: Preservação Preventiva do Google UID */}
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-lg border border-amber-300 dark:border-amber-800/80 text-[11px] text-amber-900 dark:text-amber-200 space-y-1 leading-relaxed">
+                <div className="font-bold flex items-center gap-1.5 text-amber-950 dark:text-amber-100 font-mono text-[11px] uppercase">
+                  <AlertTriangle size={13} className="text-amber-600" />
+                  <span>Preservação Estrita do Google UID para Identificação Preventiva</span>
+                </div>
+                <p>
+                  Todos os dados cadastrais (nome, e-mail, biografia, foto e preferências) serão expurgados.
+                  O <strong>Google UID</strong> continuará retido exclusivamente para que, se este titular realizar novo login ou cadastro com sua conta Google, o sistema reconheça o identificador preventivamente e mantenha o histórico de edições passadas desassociado.
+                </p>
+              </div>
+
+              {/* Field: Pseudônimo Genérico */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Nome Genérico para Substituição nas Contribuições:
+                </label>
+                <select
+                  value={genericPseudonymPreset}
+                  onChange={(e) => setGenericPseudonymPreset(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-red-500"
+                >
+                  <option value="Usuário Anonimizado (LGPD)">Usuário Anonimizado (LGPD) [Recomendado]</option>
+                  <option value="Autor Anonimizado">Autor Anonimizado</option>
+                  <option value="Conta Excluída (LGPD)">Conta Excluída (LGPD)</option>
+                  <option value="Ex-editor (Direito ao Esquecimento)">Ex-editor (Direito ao Esquecimento)</option>
+                  <option value="custom">Outro Identificador Personalizado...</option>
+                </select>
+
+                {genericPseudonymPreset === 'custom' && (
+                  <input
+                    type="text"
+                    value={customPseudonymInput}
+                    onChange={(e) => setCustomPseudonymInput(e.target.value)}
+                    placeholder="Ex: Usuário Anônimo #1042"
+                    className="mt-1.5 w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                  />
+                )}
+              </div>
+
+              {/* Field: Justificativa Legal */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Fundamento Legal / Justificativa Administrativa:
+                </label>
+                <select
+                  value={deletionJustificationPreset}
+                  onChange={(e) => setDeletionJustificationPreset(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                >
+                  <option value="Atendimento à solicitação formal do titular para eliminação definitiva de dados pessoais (Art. 18, VI da LGPD - Lei nº 13.709/2018)">
+                    Atendimento à solicitação do titular (Art. 18, VI LGPD)
+                  </option>
+                  <option value="Minimização e eliminação definitiva de dados pessoais sob diretriz de privacidade (Art. 6º, III e Art. 18 LGPD)">
+                    Minimização e eliminação de dados (Art. 6º, III e Art. 18 LGPD)
+                  </option>
+                  <option value="Requisição formal atendida pelo Encarregado de Proteção de Dados (DPO / Marco Civil)">
+                    Requisição formal atendida pelo DPO
+                  </option>
+                  <option value="custom">Outra Justificativa (Personalizada)...</option>
+                </select>
+
+                {deletionJustificationPreset === 'custom' && (
+                  <textarea
+                    value={customDeletionJustification}
+                    onChange={(e) => setCustomDeletionJustification(e.target.value)}
+                    placeholder="Descreva o fundamento administrativo ou número do protocolo DPO..."
+                    rows={2}
+                    className="mt-1.5 w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                  />
+                )}
+              </div>
+
+              {/* Checklist de Conformidade */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded border border-slate-200 dark:border-slate-700 text-[11px] space-y-1 text-slate-600 dark:text-slate-400">
+                <span className="font-bold text-slate-800 dark:text-slate-200 block text-[10px] uppercase font-mono">
+                  Ações que serão executadas no banco de dados:
+                </span>
+                <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+                  <Check size={12} />
+                  <span>Exclusão permanente de email, foto de perfil, biografia e dados cadastrais.</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400">
+                  <Check size={12} />
+                  <span>Preservação exclusiva do Google UID ({targetUserForDeletionLGPD.uid}) para identificação.</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-purple-700 dark:text-purple-400">
+                  <Check size={12} />
+                  <span>Substituição retroativa do nome em todos os artigos e histórico de edições.</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                  <Check size={12} />
+                  <span>Registro perene na auditoria criptográfica/imutável da administração.</span>
+                </div>
+              </div>
+
+              {/* Feedback Message */}
+              {deletionFeedback && (
+                <div
+                  className={`p-2.5 rounded border text-xs flex items-start gap-2 ${
+                    deletionFeedback.type === 'success'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+                      : 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200'
+                  }`}
+                >
+                  {deletionFeedback.type === 'success' ? (
+                    <CheckCircle2 size={15} className="shrink-0 text-emerald-600 mt-0.5" />
+                  ) : (
+                    <AlertTriangle size={15} className="shrink-0 text-rose-600 mt-0.5" />
+                  )}
+                  <div>
+                    <span className="font-bold block">{deletionFeedback.msg}</span>
+                    {deletionFeedback.details && (
+                      <span className="text-[10px] font-mono block mt-1">
+                        Verbetes atualizados: {deletionFeedback.details.articlesUpdated} | Revisões: {deletionFeedback.details.revisionsUpdated}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setTargetUserForDeletionLGPD(null);
+                  setTargetRequestForExecution(null);
+                  setDeletionFeedback(null);
+                }}
+                disabled={isProcessingDeletion}
+                className="px-3 py-1.5 text-xs rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteDeletion}
+                disabled={isProcessingDeletion}
+                className="px-4 py-1.5 text-xs rounded bg-red-600 hover:bg-red-700 text-white font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {isProcessingDeletion ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Trash2 size={13} />
+                )}
+                <span>Confirmar e Executar Exclusão Definitiva</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 9. Admin Rejection Modal for LGPD Deletion Request */}
+      {targetRequestForRejection && (
+        <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden animate-in zoom-in-95 text-xs">
+            <div className="bg-[#1e293b] p-3 text-white flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-2 font-mono">
+                <X size={16} className="text-rose-400" />
+                <h3 className="font-bold text-xs uppercase tracking-wider">
+                  Rejeitar Solicitação de Exclusão LGPD
+                </h3>
+              </div>
+              <button
+                onClick={() => setTargetRequestForRejection(null)}
+                className="text-white/70 hover:text-white p-0.5 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Informe o fundamento jurídico ou administrativo para a rejeição da solicitação protocolada por{' '}
+                <strong className="text-slate-900 dark:text-white">{targetRequestForRejection.originalDisplayName}</strong>{' '}
+                (Protocolo: {targetRequestForRejection.id}).
+              </p>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Justificativa Administrativa da Rejeição:
+                </label>
+                <textarea
+                  value={rejectionReasonInput}
+                  onChange={(e) => setRejectionReasonInput(e.target.value)}
+                  placeholder="Ex: Requerimento duplicado, conta em litígio de governança ou ausência de comprovação de titularidade..."
+                  rows={3}
+                  className="w-full p-2 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-rose-500"
+                />
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setTargetRequestForRejection(null)}
+                className="px-3 py-1.5 text-xs rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRejection}
+                disabled={isProcessingRejection}
+                className="px-4 py-1.5 text-xs rounded bg-rose-600 hover:bg-rose-700 text-white font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {isProcessingRejection ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <X size={13} />
+                )}
+                <span>Confirmar Rejeição</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

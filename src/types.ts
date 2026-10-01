@@ -128,6 +128,14 @@ export interface UserProfile {
   geminiPlan?: 'free' | 'premium';
   geminiUsage?: UserGeminiUsage;
   recentActivity?: UserActivityLogEntry[];
+  // LGPD Art. 18, VI - Exclusão Definitiva de Conta e Anonimização
+  accountDeletedLGPD?: boolean;
+  deletedAtLGPD?: string;
+  genericPseudonymLGPD?: string;
+  deletionProcessedBy?: string;
+  deletionLegalJustification?: string;
+  previousAccountDeletedLGPD?: boolean;
+  previousDeletedAtLGPD?: string;
 }
 
 export interface UserGeminiUsage {
@@ -213,11 +221,42 @@ export interface UserAuditLog {
     | 'promotion_created'
     | 'promotion_voted'
     | 'promotion_concluded'
-    | 'vpn_login_blocked';
+    | 'vpn_login_blocked'
+    | 'lgpd_deletion_requested'
+    | 'lgpd_account_deletion'
+    | 'lgpd_deletion_rejected'
+    | 'lgpd_reidentified_google_uid';
   performedBy: string;
   performedByRole: string;
   details: string;
   date: string;
+}
+
+export type LgpdDeletionRequestStatus = 'pendente' | 'executada' | 'rejeitada' | 'cancelada';
+
+export interface LgpdAccountDeletionRequest {
+  id: string;
+  userUid: string;
+  originalDisplayName: string;
+  originalUsername: string;
+  originalEmail?: string;
+  userReason?: string;
+  requestedAt: string;
+  status: LgpdDeletionRequestStatus;
+
+  // Detalhes da Execução Administrativa
+  processedAt?: string;
+  processedByUid?: string;
+  processedByName?: string;
+  genericPseudonymAssigned?: string;
+  adminNotes?: string;
+  rejectionReason?: string;
+  contributionsAnonymizedCount?: {
+    articlesCreated: number;
+    revisionsUpdated: number;
+    recentChangesUpdated?: number;
+    pagesUpdated?: number;
+  };
 }
 
 export interface CheckUserLogEntry {
