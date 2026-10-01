@@ -25,6 +25,7 @@ import {
   AlertCircle,
   FileText,
   FileDown,
+  FileCheck,
   ShieldCheck,
   Clock,
   AlertTriangle,
@@ -39,6 +40,7 @@ import {
   ChevronDown,
   CaseSensitive,
   WholeWord,
+  Wrench,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus } from '../types';
@@ -52,6 +54,13 @@ import { GeminiChatbotDrawer } from './GeminiChatbotDrawer';
 import { ResearchEthicsFormSection } from './ResearchEthicsFormSection';
 import { ResearchEthicsCommitteeInfo } from '../types/ethics';
 import { CitationModal, ExistingNamedRef } from './CitationModal';
+import { CitationValidatorPanel } from './CitationValidatorPanel';
+import {
+  validateWikitextCitations,
+  CitationIssue,
+  fixAllCitationsWithPlaceholders,
+} from '../utils/citationValidator';
+import { CitationHoverTooltip, CitationTooltipData } from './CitationHoverTooltip';
 
 interface WikitextEditorProps {
   initialArticle?: WikiArticle | null;
@@ -135,6 +144,13 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [showCitationModal, setShowCitationModal] = useState(false);
   const [citationSelectedText, setCitationSelectedText] = useState('');
   const [citationFeedback, setCitationFeedback] = useState<string | null>(null);
+  const [showCitationValidator, setShowCitationValidator] = useState(true);
+
+  // Live Citation Hover Tooltip state
+  const [hoverTooltipData, setHoverTooltipData] = useState<CitationTooltipData | null>(null);
+  const [hoverTooltipPos, setHoverTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [isTooltipHovered, setIsTooltipHovered] = useState(false);
+  const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Estado de controle de alterações não salvas e modal de confirmação de saída
   const isNewArticle = !initialArticle;
@@ -478,6 +494,227 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       : 'Citação inserida com sucesso no texto!';
     setCitationFeedback(msg);
     setTimeout(() => setCitationFeedback(null), 5000);
+  };
+
+  // Validador automático de citações e referências em tempo real
+  const citationValidation = useMemo(() => {
+    return validateWikitextCitations(descricao);
+  }, [descricao]);
+
+  // Resumo de status em tempo real: marcadores válidos (verde) vs quebrados ou ausentes (vermelho)
+  const citationMarkersSummary = useMemo(() => {
+    const issues = citationValidation.issues;
+    const hasRefSection = citationValidation.hasReferencesSection;
+    const total = citationValidation.totalCitations;
+
+    const brokenIssues = issues.filter((i) => i.severity === 'error');
+    const warningIssues = issues.filter((i) => i.severity === 'warning');
+
+    const undefinedOrUnclosedCount = issues.filter(
+      (i) => i.type === 'undefined_named_ref' || i.type === 'unclosed_ref_tag' || i.type === 'empty_ref_tag'
+    ).length;
+
+    // Se a seção de referências estiver ausente no final, as citações no texto não possuem onde listar
+    const brokenCount = !hasRefSection && total > 0 ? total : undefinedOrUnclosedCount;
+    const validCount = Math.max(0, total - brokenCount);
+
+    return {
+      total,
+      validCount: hasRefSection ? validCount : 0,
+      brokenCount: hasRefSection ? brokenCount : total,
+      hasRefSection,
+      errorCount: brokenIssues.length,
+      warningCount: warningIssues.length,
+      isValid: citationValidation.isValid && hasRefSection && total > 0,
+    };
+  }, [citationValidation]);
+
+  const handleApplyCitationFix = (newWikitext: string, successMessage: string) => {
+    setDescricao(newWikitext);
+    if (viewMode === 'visual' && visualEditorRef.current) {
+      const { html } = parseWikitext(newWikitext);
+      visualEditorRef.current.innerHTML = html;
+    }
+    setCitationFeedback(successMessage);
+    setTimeout(() => setCitationFeedback(null), 4000);
+  };
+
+  const handleHighlightCitationIssue = (issue: CitationIssue) => {
+    // Alterne para modo edit ou split se estiver no visual para permitir edição direta
+    if (viewMode === 'visual') {
+      setViewMode('split');
+    }
+
+    setTimeout(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+
+      el.focus();
+
+      if (issue.startIndex !== undefined && issue.endIndex !== undefined && issue.startIndex >= 0) {
+        el.setSelectionRange(issue.startIndex, issue.endIndex);
+      } else if (issue.matchText) {
+        const idx = descricao.indexOf(issue.matchText);
+        if (idx !== -1) {
+          el.setSelectionRange(idx, idx + issue.matchText.length);
+        }
+      } else if (issue.line) {
+        const lines = descricao.split('\n');
+        let charPos = 0;
+        for (let i = 0; i < Math.min(issue.line - 1, lines.length); i++) {
+          charPos += lines[i].length + 1;
+        }
+        const lineLen = lines[issue.line - 1]?.length || 0;
+        el.setSelectionRange(charPos, charPos + lineLen);
+      }
+
+      if (issue.line) {
+        const approxLineHeight = 18;
+        const targetScrollTop = Math.max(0, (issue.line - 4) * approxLineHeight);
+        el.scrollTop = targetScrollTop;
+      }
+
+      setCitationFeedback(`Inconsistência destacada: ${issue.title} (Linha ${issue.line || 1})`);
+      setTimeout(() => setCitationFeedback(null), 4000);
+    }, 100);
+  };
+
+  // 'Fix Citations': Cruza todas as tags com a seção de Referências e adiciona entradas pendentes como placeholders
+  const handleFixCitations = () => {
+    let currentText = descricao;
+    if (viewMode === 'visual' && visualEditorRef.current) {
+      const converted = htmlToWikitext(visualEditorRef.current.innerHTML);
+      if (converted) currentText = converted;
+    }
+
+    const result = fixAllCitationsWithPlaceholders(currentText);
+    setDescricao(result.updatedWikitext);
+
+    if (viewMode === 'visual' && visualEditorRef.current) {
+      const { html } = parseWikitext(result.updatedWikitext);
+      visualEditorRef.current.innerHTML = html;
+    }
+
+    let msg = 'Citações cruzadas com sucesso! Entradas pendentes foram adicionadas como placeholders na seção de Referências.';
+    if (result.fixedIssuesDescriptions.length > 0) {
+      msg = result.fixedIssuesDescriptions.join(' • ');
+    }
+    setCitationFeedback(msg);
+    setTimeout(() => setCitationFeedback(null), 6000);
+  };
+
+  // Live hover preview handler for citation markers in visual and split/preview modes
+  const handleCitationHover = (e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement;
+    const footnoteEl = target.closest(
+      '.wiki-footnote, [data-ref-tooltip], a[id^="cite_ref-"]'
+    ) as HTMLElement | null;
+
+    if (footnoteEl) {
+      if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+      const rect = footnoteEl.getBoundingClientRect();
+      const rawTooltip =
+        footnoteEl.getAttribute('data-ref-tooltip') ||
+        footnoteEl.getAttribute('title') ||
+        '';
+      const rawIndex = footnoteEl.getAttribute('data-ref-index');
+      const rawName = footnoteEl.getAttribute('data-ref-name');
+      const isError =
+        footnoteEl.getAttribute('data-ref-error') === 'true' ||
+        footnoteEl.classList.contains('text-rose-600') ||
+        rawTooltip.includes('Erro de Citação');
+
+      setHoverTooltipPos({
+        x: rect.left + rect.width / 2,
+        y: rect.top,
+      });
+      setHoverTooltipData({
+        index: rawIndex ? parseInt(rawIndex, 10) : undefined,
+        name: rawName || undefined,
+        tooltipText: rawTooltip,
+        isError,
+      });
+    } else {
+      if (!isTooltipHovered) {
+        if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+        tooltipTimeoutRef.current = setTimeout(() => {
+          if (!isTooltipHovered) {
+            setHoverTooltipData(null);
+            setHoverTooltipPos(null);
+          }
+        }, 180);
+      }
+    }
+  };
+
+  const handleCitationLeave = () => {
+    if (!isTooltipHovered) {
+      if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+      tooltipTimeoutRef.current = setTimeout(() => {
+        if (!isTooltipHovered) {
+          setHoverTooltipData(null);
+          setHoverTooltipPos(null);
+        }
+      }, 250);
+    }
+  };
+
+  // Live hover preview when hovering / clicking cursor in raw wikitext textarea
+  const handleTextareaCitationHover = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const pos = el.selectionStart;
+    const refRegex = /<ref(?:\s+name=["']([^"']+)["'])?(?:\s*\/>|>([\s\S]*?)<\/ref>)/gi;
+    let m: RegExpExecArray | null;
+    let matchedTag: {
+      name?: string;
+      content: string;
+      isSelfClosing: boolean;
+      start: number;
+      end: number;
+    } | null = null;
+
+    while ((m = refRegex.exec(descricao)) !== null) {
+      if (pos >= m.index && pos <= m.index + m[0].length) {
+        matchedTag = {
+          name: m[1]?.trim(),
+          content: m[2]?.trim() || '',
+          isSelfClosing: m[0].endsWith('/>'),
+          start: m.index,
+          end: m.index + m[0].length,
+        };
+        break;
+      }
+    }
+
+    if (matchedTag) {
+      const elRect = el.getBoundingClientRect();
+      let previewText = matchedTag.content;
+      let isError = false;
+      let idx: number | undefined;
+
+      if (matchedTag.name) {
+        const found = citationValidation.referencesList.find((r) => r.name === matchedTag?.name);
+        if (found) {
+          previewText = found.content;
+          idx = found.index;
+        } else if (matchedTag.isSelfClosing) {
+          isError = true;
+          previewText = `Marcador de citação <ref name="${matchedTag.name}" /> sem definição correspondente no artigo. Use o botão 'Fix Citations' para gerar a entrada correspondente.`;
+        }
+      }
+
+      setHoverTooltipPos({
+        x: elRect.left + Math.min(elRect.width / 2, 280),
+        y: elRect.top + 40,
+      });
+      setHoverTooltipData({
+        index: idx,
+        name: matchedTag.name,
+        tooltipText: previewText.replace(/<[^>]*>/g, '') || `Referência "${matchedTag.name}"`,
+        isError,
+      });
+    }
   };
 
   // Intercept paste in visual editor to format wikitext
@@ -1368,6 +1605,54 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             <span>Citar</span>
           </button>
 
+          {/* Botão do Validador de Citações */}
+          <button
+            type="button"
+            onClick={() => setShowCitationValidator((prev) => !prev)}
+            title="Validador Automático de Citações e Referências (verifica se todos os marcadores possuem entradas correspondentes)"
+            className={`px-2.5 py-0.5 rounded text-xs font-semibold flex items-center gap-1.5 border transition cursor-pointer shadow-2xs ${
+              !citationValidation.isValid
+                ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-200 hover:bg-rose-100'
+                : citationValidation.issues.length > 0
+                ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 hover:bg-amber-100'
+                : 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100'
+            }`}
+          >
+            <ShieldCheck
+              size={13}
+              className={
+                !citationValidation.isValid
+                  ? 'text-rose-600 dark:text-rose-400'
+                  : citationValidation.issues.length > 0
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-emerald-600 dark:text-emerald-400'
+              }
+            />
+            <span>Validador</span>
+            {citationValidation.issues.length > 0 ? (
+              <span
+                className={`text-[9.5px] font-mono px-1 py-0.2 rounded font-bold ${
+                  !citationValidation.isValid ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'
+                }`}
+              >
+                {citationValidation.issues.length}
+              </span>
+            ) : (
+              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold">✓</span>
+            )}
+          </button>
+
+          {/* Botão Fix Citations (Cruza todas as tags com a seção de Referências e adiciona placeholders) */}
+          <button
+            type="button"
+            onClick={handleFixCitations}
+            title="Fix Citations: Cruza todas as tags com a seção de Referências e adiciona entradas pendentes como placeholders no final"
+            className="px-2.5 py-0.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-95"
+          >
+            <Wrench size={12} className="text-white" />
+            <span>Fix Citations</span>
+          </button>
+
           <span className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-0.5" />
 
           {/* Infobox & Table Templates */}
@@ -1439,6 +1724,100 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
               Ctrl+H
             </kbd>
           </button>
+        </div>
+
+        {/* Real-time 'Validation Status' summary at the bottom of the toolbar */}
+        <div className="bg-slate-100/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs select-none">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Status Header */}
+            <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold">
+              <span className="text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Validation Status:
+              </span>
+              {citationMarkersSummary.total === 0 ? (
+                <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 font-sans font-medium text-[11px]">
+                  <FileCheck size={12} className="text-slate-400" />
+                  <span>Sem marcadores</span>
+                </span>
+              ) : citationMarkersSummary.brokenCount === 0 && citationMarkersSummary.hasRefSection ? (
+                <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-300 dark:border-emerald-800 font-sans font-bold text-[11px]">
+                  <CheckCircle2 size={12} className="text-emerald-600" />
+                  <span>Citações Válidas (100% Íntegras)</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.2 rounded border border-rose-300 dark:border-rose-800 font-sans font-bold text-[11px] animate-pulse">
+                  <AlertCircle size={12} className="text-rose-600" />
+                  <span>Inconsistências Encontradas</span>
+                </span>
+              )}
+            </div>
+
+            <span className="w-px h-3.5 bg-slate-300 dark:bg-slate-700 mx-0.5 hidden sm:inline" />
+
+            {/* Visual breakdown: Green = Valid, Red = Broken/Missing */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {/* Green indicator: Valid */}
+              <span
+                title="Citações válidas (destacadas em verde no editor) com definição correspondente e seção de referências ativa"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-bold bg-emerald-100/90 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-2xs"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                <span>{citationMarkersSummary.validCount} Válidas (Verde)</span>
+              </span>
+
+              {/* Red indicator: Broken / Missing */}
+              <span
+                title="Citações quebradas ou ausentes (destacadas em vermelho no editor): tags sem fechamento, sem definição ou sem seção de referências"
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-bold border shadow-2xs ${
+                  citationMarkersSummary.brokenCount > 0
+                    ? 'bg-rose-100/90 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-400 dark:border-rose-700 animate-pulse'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full inline-block ${
+                    citationMarkersSummary.brokenCount > 0 ? 'bg-rose-600 animate-ping' : 'bg-slate-400'
+                  }`}
+                ></span>
+                <span>{citationMarkersSummary.brokenCount} Quebradas / Ausentes (Vermelho)</span>
+              </span>
+
+              {/* References Section indicator */}
+              <span
+                title="Status da presença da seção '== Referências ==' com o marcador {{reflist}}"
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-semibold border ${
+                  citationMarkersSummary.hasRefSection
+                    ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                    : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+                }`}
+              >
+                <span>{citationMarkersSummary.hasRefSection ? '✓ == Referências == Presente' : '✗ == Referências == Ausente'}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {citationMarkersSummary.brokenCount > 0 && (
+              <button
+                type="button"
+                onClick={handleFixCitations}
+                title="Corrigir referências quebradas e adicionar entradas pendentes automaticamente como placeholders"
+                className="px-2.5 py-0.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10.5px] flex items-center gap-1 shadow-2xs transition cursor-pointer active:scale-95"
+              >
+                <Wrench size={10} />
+                <span>Fix Citations</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowCitationValidator((prev) => !prev)}
+              className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-[10.5px] transition cursor-pointer"
+            >
+              <span>{showCitationValidator ? 'Ocultar Painel' : 'Expandir Validador'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Painel Interativo de Localizar e Substituir (Atalho: Ctrl+H) */}
@@ -1623,6 +2002,17 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           </div>
         )}
 
+        {/* Validador Automático de Citações e Referências */}
+        {showCitationValidator && (
+          <CitationValidatorPanel
+            validationResult={citationValidation}
+            onApplyFix={handleApplyCitationFix}
+            currentWikitext={descricao}
+            onOpenCitationModal={handleOpenCitationModal}
+            onHighlightInEditor={handleHighlightCitationIssue}
+          />
+        )}
+
         {/* Content Editing Canvas */}
         <div className="min-h-[440px] flex flex-col">
           {/* 1. VISUAL FORMATTED PAGE MODE (WYSIWYG) */}
@@ -1647,6 +2037,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 onInput={handleVisualEditorInput}
                 onBlur={handleVisualEditorInput}
                 onPaste={handleVisualEditorPaste}
+                onMouseMove={handleCitationHover}
+                onMouseLeave={handleCitationLeave}
                 className="wiki-rendered-content font-wiki-body text-xs flex-1 min-h-[380px] p-4 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 focus:outline-none focus:ring-1 focus:ring-blue-500 overflow-y-auto leading-relaxed"
               />
             </div>
@@ -1655,18 +2047,77 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           {/* 2. RAW WIKITEXT CODE MODE */}
           {viewMode === 'edit' && (
             <div className="p-3 flex-1 flex flex-col bg-white dark:bg-slate-950">
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
-                <span>CÓDIGO-FONTE WIKITEXTO:</span>
+              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1 flex-wrap gap-1">
+                <span className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold">CÓDIGO-FONTE WIKITEXTO:</span>
+                  {citationMarkersSummary.total > 0 && (
+                    <span className="inline-flex items-center gap-1">
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        {citationMarkersSummary.validCount} válidas (verde)
+                      </span>
+                      {citationMarkersSummary.brokenCount > 0 && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                          {citationMarkersSummary.brokenCount} quebradas (vermelho)
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </span>
                 {draftSaved && (
                   <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-bold">
                     <CheckCircle2 size={11} /> Rascunho salvo
                   </span>
                 )}
               </div>
+
+              {/* Strip interativo com marcadores coloridos */}
+              {citationValidation.referencesList.length > 0 && (
+                <div className="mb-2 flex items-center gap-1 overflow-x-auto py-1 px-1.5 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px]">
+                  <span className="font-mono font-bold text-slate-400 shrink-0 uppercase tracking-wider text-[9.5px]">
+                    Marcadores:
+                  </span>
+                  {citationValidation.referencesList.map((ref) => {
+                    const isValid = citationMarkersSummary.hasRefSection && ref.content.length > 0;
+                    return (
+                      <button
+                        key={ref.index}
+                        type="button"
+                        onClick={() => {
+                          const el = textareaRef.current;
+                          if (!el) return;
+                          const targetText = ref.name ? `<ref name="${ref.name}"` : `<ref>${ref.content.substring(0, 15)}`;
+                          const idx = descricao.indexOf(targetText);
+                          if (idx !== -1) {
+                            el.focus();
+                            el.setSelectionRange(idx, idx + targetText.length);
+                            const lines = descricao.substring(0, idx).split('\n').length;
+                            el.scrollTop = Math.max(0, (lines - 4) * 18);
+                          }
+                        }}
+                        title={isValid ? `Citação [${ref.index}] válida (destacada em verde). Clique para localizar no texto.` : `Citação [${ref.index}] quebrada/ausente (destacada em vermelho). Clique para localizar.`}
+                        className={`px-1.5 py-0.5 rounded font-mono font-bold flex items-center gap-1 shrink-0 transition cursor-pointer ${
+                          isValid
+                            ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100'
+                            : 'bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700 hover:bg-rose-100'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${isValid ? 'bg-emerald-500' : 'bg-rose-500 animate-ping'}`}></span>
+                        <span>[{ref.index}{ref.name ? `: ${ref.name}` : ''}]</span>
+                        <span>{isValid ? '✓' : '⚠'}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <textarea
                 ref={textareaRef}
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
+                onSelect={handleTextareaCitationHover}
+                onClick={handleTextareaCitationHover}
+                onKeyUp={handleTextareaCitationHover}
                 placeholder="Escreva seu artigo aqui usando sintaxe MediaWiki..."
                 className="w-full flex-1 min-h-[380px] p-3 text-xs font-mono-code bg-slate-50/50 dark:bg-slate-950/50 text-slate-900 dark:text-slate-100 rounded border border-slate-300 dark:border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y leading-relaxed"
               />
@@ -1677,8 +2128,22 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           {viewMode === 'split' && (
             <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-800 flex-1">
               <div className="p-3 flex flex-col">
-                <div className="text-[10px] font-mono text-slate-400 mb-1 flex items-center justify-between">
-                  <span>CÓDIGO-FONTE:</span>
+                <div className="text-[10px] font-mono text-slate-400 mb-1 flex items-center justify-between flex-wrap gap-1">
+                  <span className="flex items-center gap-1">
+                    <span className="font-bold">CÓDIGO:</span>
+                    {citationMarkersSummary.total > 0 && (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">
+                          {citationMarkersSummary.validCount} verdes
+                        </span>
+                        {citationMarkersSummary.brokenCount > 0 && (
+                          <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300">
+                            {citationMarkersSummary.brokenCount} vermelhas
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </span>
                   {draftSaved && (
                     <span className="text-emerald-600 dark:text-emerald-400 font-bold">Salvo</span>
                   )}
@@ -1687,11 +2152,18 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                   ref={textareaRef}
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
+                  onSelect={handleTextareaCitationHover}
+                  onClick={handleTextareaCitationHover}
+                  onKeyUp={handleTextareaCitationHover}
                   className="w-full flex-1 min-h-[380px] p-2.5 text-xs font-mono-code bg-slate-50/50 dark:bg-slate-950/50 text-slate-900 dark:text-slate-100 rounded border border-slate-300 dark:border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
-              <div className="p-4 overflow-y-auto max-h-[520px]">
+              <div
+                onMouseMove={handleCitationHover}
+                onMouseLeave={handleCitationLeave}
+                className="p-4 overflow-y-auto max-h-[520px]"
+              >
                 <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1 font-mono">
                   <Eye size={12} /> Pré-visualização em Tempo Real
                 </div>
@@ -1705,7 +2177,11 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
           {/* 4. FULL PREVIEW MODE */}
           {viewMode === 'preview' && (
-            <div className="p-6 overflow-y-auto max-h-[600px] bg-white dark:bg-slate-950">
+            <div
+              onMouseMove={handleCitationHover}
+              onMouseLeave={handleCitationLeave}
+              className="p-6 overflow-y-auto max-h-[600px] bg-white dark:bg-slate-950"
+            >
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1 font-mono">
                 <Eye size={12} /> Pré-visualização Completa da Página
               </div>
@@ -2037,6 +2513,29 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         hasReferencesSection={hasReferencesSection}
         existingNamedRefs={existingNamedRefs}
         initialSelectedText={citationSelectedText}
+      />
+
+      {/* Live Tooltip Preview ao passar o mouse sobre marcadores de citação */}
+      <CitationHoverTooltip
+        data={hoverTooltipData}
+        position={hoverTooltipPos}
+        visible={!!hoverTooltipData && !!hoverTooltipPos}
+        onFixCitation={handleFixCitations}
+        onNavigateToRef={(idx) => {
+          if (idx) {
+            const el = document.getElementById(`cite_note-${idx}`);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }}
+        onMouseEnterTooltip={() => {
+          setIsTooltipHovered(true);
+          if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+        }}
+        onMouseLeaveTooltip={() => {
+          setIsTooltipHovered(false);
+          setHoverTooltipData(null);
+          setHoverTooltipPos(null);
+        }}
       />
     </div>
   );

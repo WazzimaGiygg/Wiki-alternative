@@ -37,6 +37,7 @@ export function parseWikitext(
 
   const toc: TocItem[] = [];
   const references: string[] = [];
+  const referenceTooltips: string[] = [];
   const categories: string[] = [];
   const namedRefsMap = new Map<string, number>();
 
@@ -97,38 +98,59 @@ export function parseWikitext(
   });
 
   // 4. Extract Footnotes / References: <ref name="name">Citation</ref> or <ref name="name" /> or <ref>Citation</ref>
-  // Handle empty self-closing named refs first: <ref name="xyz" />
-  text = text.replace(/<ref\s+name=["']([^"']+)["']\s*\/>/gi, (_m, name) => {
-    const existingIndex = namedRefsMap.get(name.trim());
-    if (existingIndex !== undefined) {
-      const footnoteHtml = `<sup class="wiki-footnote inline-block ml-0.5"><a href="#cite_note-${existingIndex}" id="cite_ref-${existingIndex}" class="text-blue-600 dark:text-blue-400 font-mono text-[11px] font-bold hover:underline bg-blue-50 dark:bg-blue-950/60 px-1 py-0.2 rounded border border-blue-200 dark:border-blue-800" title="Ver referência [${existingIndex}]">[${existingIndex}]</a></sup>`;
-      return addInlinePlaceholder(footnoteHtml);
-    }
-    return '';
-  });
+  const hasRefSectionInSource = /(?:==\s*Refer[êe]ncias\s*==|==\s*Referencias\s*==|==\s*References\s*==|<references\s*\/?>|\{\{reflist\}\}|\{\{Reflist\}\})/i.test(wikitext);
 
-  // Handle standard <ref> tags
+  // Handle standard <ref> tags first to populate namedRefsMap
   text = text.replace(/<ref(?:\s+name=["']([^"']+)["'])?>([\s\S]*?)<\/ref>/gi, (_m, name, refContent) => {
     const cleanContent = refContent.trim();
-    let refIndex: number;
+    const cleanTooltip = cleanContent
+      .replace(/<[^>]*>/g, '')
+      .replace(/\[\[(.*?)(?:\|(.*?))?\]\]/g, (_m, p1, p2) => p2 || p1)
+      .replace(/"/g, '&quot;');
 
+    let refIndex: number;
     if (name && namedRefsMap.has(name.trim())) {
       refIndex = namedRefsMap.get(name.trim())!;
     } else {
       references.push(cleanContent);
+      referenceTooltips.push(cleanTooltip);
       refIndex = references.length;
       if (name) {
         namedRefsMap.set(name.trim(), refIndex);
       }
     }
 
-    const cleanTooltip = cleanContent
-      .replace(/<[^>]*>/g, '')
-      .replace(/\[\[(.*?)(?:\|(.*?))?\]\]/g, (_m, p1, p2) => p2 || p1)
-      .replace(/"/g, '&quot;');
+    const isValid = hasRefSectionInSource && cleanContent.length > 0;
+    const indicatorClass = isValid ? 'wiki-citation-valid' : 'wiki-citation-broken';
+    const statusDot = isValid
+      ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-0.5"></span>'
+      : '<span class="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block mr-0.5 animate-pulse"></span>';
+    const labelSuffix = isValid ? '' : ' ⚠';
 
-    const footnoteHtml = `<sup class="wiki-footnote inline-block ml-0.5"><a href="#cite_note-${refIndex}" id="cite_ref-${refIndex}" data-ref-tooltip="${cleanTooltip}" class="text-blue-600 dark:text-blue-400 font-mono text-[11px] font-bold hover:underline bg-blue-50 dark:bg-blue-950/60 px-1 py-0.2 rounded border border-blue-200 dark:border-blue-800" title="${cleanTooltip}">[${refIndex}]</a></sup>`;
+    const footnoteHtml = `<sup class="wiki-footnote inline-block ml-0.5 cursor-pointer" data-ref-index="${refIndex}" data-ref-name="${name ? escapeHtml(name.trim()) : ''}" data-ref-tooltip="${cleanTooltip}"><a href="#cite_note-${refIndex}" id="cite_ref-${refIndex}" data-ref-index="${refIndex}" data-ref-name="${name ? escapeHtml(name.trim()) : ''}" data-ref-tooltip="${cleanTooltip}" class="${indicatorClass} font-mono text-[11px] font-bold hover:underline" title="${cleanTooltip}">${statusDot}[${refIndex}${labelSuffix}]</a></sup>`;
     return addInlinePlaceholder(footnoteHtml);
+  });
+
+  // Handle self-closing reused named refs: <ref name="xyz" />
+  text = text.replace(/<ref\s+name=["']([^"']+)["']\s*\/>/gi, (_m, name) => {
+    const trimmedName = name.trim();
+    const existingIndex = namedRefsMap.get(trimmedName);
+    if (existingIndex !== undefined) {
+      const tooltip = referenceTooltips[existingIndex - 1] || `Ver referência [${existingIndex}]`;
+      const isValid = hasRefSectionInSource;
+      const indicatorClass = isValid ? 'wiki-citation-valid' : 'wiki-citation-broken';
+      const statusDot = isValid
+        ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-0.5"></span>'
+        : '<span class="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block mr-0.5 animate-pulse"></span>';
+      const labelSuffix = isValid ? '' : ' ⚠';
+
+      const footnoteHtml = `<sup class="wiki-footnote inline-block ml-0.5 cursor-pointer" data-ref-index="${existingIndex}" data-ref-name="${escapeHtml(trimmedName)}" data-ref-tooltip="${tooltip}"><a href="#cite_note-${existingIndex}" id="cite_ref-${existingIndex}" data-ref-index="${existingIndex}" data-ref-name="${escapeHtml(trimmedName)}" data-ref-tooltip="${tooltip}" class="${indicatorClass} font-mono text-[11px] font-bold hover:underline" title="${tooltip}">${statusDot}[${existingIndex}${labelSuffix}]</a></sup>`;
+      return addInlinePlaceholder(footnoteHtml);
+    }
+    // Highlight undefined citation inconsistency in rendered article in RED
+    const errorTooltip = `Esta referência ("${escapeHtml(trimmedName)}") foi invocada no texto mas não possui uma entrada correspondente definida na seção de referências. Use o botão 'Fix Citations' para gerar a entrada correspondente.`;
+    const errorHtml = `<sup class="wiki-footnote inline-block ml-0.5 not-prose cursor-pointer" data-ref-error="true" data-ref-name="${escapeHtml(trimmedName)}" data-ref-tooltip="${errorTooltip}"><span data-ref-error="true" data-ref-name="${escapeHtml(trimmedName)}" data-ref-tooltip="${errorTooltip}" class="wiki-citation-broken font-mono text-[10px] font-bold" title="Erro de Citação: O marcador <ref name=&quot;${trimmedName}&quot; /> não possui uma definição no artigo."><span class="w-1.5 h-1.5 rounded-full bg-rose-600 inline-block mr-0.5 animate-ping"></span>[Erro: ref ${escapeHtml(trimmedName)} ⚠]</span></sup>`;
+    return addInlinePlaceholder(errorHtml);
   });
 
   // 5. Extract Galleries: <gallery> ... </gallery> or {{Galeria|...}}

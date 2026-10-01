@@ -3958,6 +3958,69 @@ html.theme-halflife ::-webkit-scrollbar-thumb:hover {
   scroll-margin-top: 5rem;
 }
 
+/* Visual Citation Indicators (Green = Valid, Red = Broken/Missing) */
+.wiki-citation-valid {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.6) !important;
+  color: #047857 !important;
+  border-radius: 4px;
+  padding: 1px 4px !important;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.1);
+}
+
+.dark .wiki-citation-valid {
+  background-color: rgba(16, 185, 129, 0.22) !important;
+  border-color: rgba(52, 211, 153, 0.7) !important;
+  color: #34d399 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.wiki-citation-valid:hover {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.45);
+  transform: translateY(-0.5px);
+}
+
+.wiki-citation-broken {
+  background-color: rgba(244, 63, 94, 0.16) !important;
+  border: 1.5px solid #e11d48 !important;
+  color: #be123c !important;
+  border-radius: 4px;
+  padding: 1px 5px !important;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  animation: brokenCitationPulse 2.2s infinite ease-in-out;
+}
+
+.dark .wiki-citation-broken {
+  background-color: rgba(244, 63, 94, 0.28) !important;
+  border-color: #f43f5e !important;
+  color: #fda4af !important;
+}
+
+.wiki-citation-broken:hover {
+  background-color: rgba(244, 63, 94, 0.3) !important;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+  transform: translateY(-0.5px);
+}
+
+@keyframes brokenCitationPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
+  }
+}
+
+
 
 
 
