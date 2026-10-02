@@ -57,6 +57,7 @@ interface SpecialPagesViewProps {
   onNavigateToEmergencyContact?: () => void;
   onNavigateToPromotionRequests?: () => void;
   onNavigateToUnblockRequests?: () => void;
+  onNavigateToDataRemovalRequests?: () => void;
   onNavigateToCheckUser?: (username?: string) => void;
   onNavigateToUsersList?: () => void;
   onNavigateToUpload?: () => void;
@@ -87,6 +88,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToEditingEthics,
   onNavigateToPromotionRequests,
   onNavigateToUnblockRequests,
+  onNavigateToDataRemovalRequests,
   onNavigateToCheckUser,
   onNavigateToUsersList,
   onNavigateToUpload,
@@ -540,6 +542,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Recursos de Desbloqueio
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToDataRemovalRequests && (
+          <button
+            id="btn-specialpages-dataremoval"
+            onClick={onNavigateToDataRemovalRequests}
+            className="p-3 rounded-lg border border-red-200 dark:border-red-800/60 bg-red-50/50 dark:bg-red-950/30 hover:bg-red-100/70 dark:hover:bg-red-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-red-600 text-white shrink-0">
+              <ShieldAlert size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-red-900 dark:text-red-200 truncate group-hover:underline">
+                  Special:DataRemovalRequests
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-red-600 text-white">
+                  LGPD
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Pedidos de Remoção de Dados (Art. 18, VI)
               </div>
             </div>
           </button>

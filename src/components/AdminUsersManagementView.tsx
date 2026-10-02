@@ -167,6 +167,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
   // Estados do Modal Administrativo de Rejeição de Solicitação LGPD
   const [targetRequestForRejection, setTargetRequestForRejection] = useState<LgpdAccountDeletionRequest | null>(null);
   const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+  const [rejectionError, setRejectionError] = useState<string | null>(null);
   const [isProcessingRejection, setIsProcessingRejection] = useState(false);
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
 
@@ -383,12 +384,12 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
     const req = linkedRequest || pendingRequestsMap.get(targetUser.uid) || null;
     setTargetUserForDeletionLGPD(targetUser);
     setTargetRequestForExecution(req);
-    setGenericPseudonymPreset('Usuário Anonimizado (LGPD)');
-    setCustomPseudonymInput('');
+    setGenericPseudonymPreset(targetUser.uid);
+    setCustomPseudonymInput(targetUser.uid);
     setDeletionJustificationPreset(
       req?.userReason
         ? `Atendimento à solicitação formal do titular (LGPD Art. 18, VI). Motivo informado: "${req.userReason}"`
-        : 'Atendimento à solicitação formal do titular para eliminação definitiva de dados pessoais (Art. 18, VI da LGPD - Lei nº 13.709/2018)'
+        : 'Atendimento à solicitação formal do titular para eliminação definitiva de dados pessoais (Art. 18, VI da LGPD - Lei nº 13.709/2018). Autoria atribuída ao UID Google.'
     );
     setCustomDeletionJustification('');
     setDeletionFeedback(null);
@@ -398,8 +399,8 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
     if (!targetUserForDeletionLGPD) return;
     const finalPseudonym =
       genericPseudonymPreset === 'custom'
-        ? customPseudonymInput.trim() || 'Usuário Anonimizado (LGPD)'
-        : genericPseudonymPreset;
+        ? customPseudonymInput.trim() || targetUserForDeletionLGPD.uid
+        : targetUserForDeletionLGPD.uid;
     const finalJustification =
       deletionJustificationPreset === 'custom'
         ? customDeletionJustification.trim() || 'Eliminação definitiva de dados pessoais sob Art. 18, VI da LGPD'
@@ -445,15 +446,17 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
   const handleOpenRejectionModal = (req: LgpdAccountDeletionRequest) => {
     setTargetRequestForRejection(req);
     setRejectionReasonInput('');
+    setRejectionError(null);
   };
 
   const handleConfirmRejection = async () => {
     if (!targetRequestForRejection) return;
     if (!rejectionReasonInput.trim()) {
-      alert('Por favor, informe a justificativa administrativa para a rejeição da solicitação.');
+      setRejectionError('Por favor, informe a justificativa administrativa para a rejeição da solicitação.');
       return;
     }
     setIsProcessingRejection(true);
+    setRejectionError(null);
     try {
       const res = await StorageService.rejectLgpdDeletionRequest(
         targetRequestForRejection.id,
@@ -464,10 +467,10 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
         await loadUsers();
         setTargetRequestForRejection(null);
       } else {
-        alert(res.message);
+        setRejectionError(res.message);
       }
     } catch (e: any) {
-      alert(e.message || 'Erro ao rejeitar solicitação.');
+      setRejectionError(e.message || 'Erro ao rejeitar solicitação.');
     } finally {
       setIsProcessingRejection(false);
     }
@@ -2294,7 +2297,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                           className="px-4 py-1.5 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5"
                         >
                           <Trash2 size={13} />
-                          <span>Executar Exclusão e Anonimizar Contribuições (LGPD)</span>
+                          <span>Executar Anonimização (Substituir Nome pelo UID Google)</span>
                         </button>
                       </div>
                     )}
@@ -2775,30 +2778,41 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                 </p>
               </div>
 
-              {/* Field: Pseudônimo Genérico */}
+              {/* Opção de Anonimização / Substituição pelo UID Google */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Nome Genérico para Substituição nas Contribuições:
+                  Opção de Anonimização (LGPD Art. 18, VI):
                 </label>
                 <select
                   value={genericPseudonymPreset}
-                  onChange={(e) => setGenericPseudonymPreset(e.target.value)}
-                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 focus:ring-1 focus:ring-red-500"
+                  onChange={(e) => {
+                    setGenericPseudonymPreset(e.target.value);
+                    if (e.target.value === 'custom' && !customPseudonymInput) {
+                      setCustomPseudonymInput(targetUserForDeletionLGPD.uid);
+                    }
+                  }}
+                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 font-mono focus:ring-1 focus:ring-red-500"
                 >
-                  <option value="Usuário Anonimizado (LGPD)">Usuário Anonimizado (LGPD) [Recomendado]</option>
-                  <option value="Autor Anonimizado">Autor Anonimizado</option>
-                  <option value="Conta Excluída (LGPD)">Conta Excluída (LGPD)</option>
-                  <option value="Ex-editor (Direito ao Esquecimento)">Ex-editor (Direito ao Esquecimento)</option>
+                  <option value={targetUserForDeletionLGPD.uid}>
+                    Anonimização: Substituir Nome de Usuário pelo UID Google ({targetUserForDeletionLGPD.uid}) [Padrão LGPD]
+                  </option>
                   <option value="custom">Outro Identificador Personalizado...</option>
                 </select>
 
-                {genericPseudonymPreset === 'custom' && (
+                {genericPseudonymPreset !== 'custom' ? (
+                  <div className="mt-1.5 p-2 bg-blue-50 dark:bg-blue-950/40 rounded border border-blue-200 dark:border-blue-800/60 text-[11px] text-blue-900 dark:text-blue-200 flex items-start gap-1.5 leading-relaxed">
+                    <CheckCircle2 size={13} className="text-blue-600 mt-0.5 shrink-0" />
+                    <span>
+                      <strong>Anonimização Ativa:</strong> O nome cadastral de <strong>{targetUserForDeletionLGPD.displayName || targetUserForDeletionLGPD.username}</strong> será substituído estritamente pelo seu UID Google (<code>{targetUserForDeletionLGPD.uid}</code>) em todo o perfil, histórico e artigos.
+                    </span>
+                  </div>
+                ) : (
                   <input
                     type="text"
                     value={customPseudonymInput}
                     onChange={(e) => setCustomPseudonymInput(e.target.value)}
-                    placeholder="Ex: Usuário Anônimo #1042"
-                    className="mt-1.5 w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100"
+                    placeholder={`Ex: ${targetUserForDeletionLGPD.uid}`}
+                    className="mt-1.5 w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 font-mono"
                   />
                 )}
               </div>
@@ -2954,6 +2968,13 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
                   className="w-full p-2 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-rose-500"
                 />
               </div>
+
+              {rejectionError && (
+                <div className="p-2 rounded bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs flex items-center gap-1.5">
+                  <AlertTriangle size={13} className="shrink-0 text-rose-600" />
+                  <span>{rejectionError}</span>
+                </div>
+              )}
             </div>
 
             <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">

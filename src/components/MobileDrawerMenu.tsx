@@ -839,6 +839,19 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
                         ADM
                       </span>
                     </button>
+
+                    <button
+                      onClick={() => handleItemClick('admin-data-removal')}
+                      className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <ShieldAlert size={16} className="text-red-600 dark:text-red-400" />
+                        <span>Pedidos de Remoção (LGPD)</span>
+                      </div>
+                      <span className="text-[9px] font-bold font-mono px-1 rounded bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300">
+                        LGPD
+                      </span>
+                    </button>
                   </>
                 )}
 

@@ -596,6 +596,7 @@ export type ViewMode =
   | 'watchlist'
   | 'user-page'
   | 'admin-users'
+  | 'admin-data-removal'
   | 'admin-firebase'
   | 'checkuser'
   | 'unblock-requests'

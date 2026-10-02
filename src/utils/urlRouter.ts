@@ -187,6 +187,9 @@ export function getCanonicalUid(
     case 'unblock-requests':
       return 'Special:UnblockRequests';
 
+    case 'admin-data-removal':
+      return 'Special:DataRemovalRequests';
+
     case 'promotion-requests':
       return 'Special:PromotionRequests';
 
@@ -360,6 +363,14 @@ export function resolveNavigationUid(
     'unblock-requests': { view: 'unblock-requests' },
     'unblock': { view: 'unblock-requests' },
     'desbloqueio': { view: 'unblock-requests' },
+
+    'special:dataremovalrequests': { view: 'admin-data-removal' },
+    'special:dataremoval': { view: 'admin-data-removal' },
+    'special:lgpdrequests': { view: 'admin-data-removal' },
+    'special:pedidosremocaodados': { view: 'admin-data-removal' },
+    'admin-data-removal': { view: 'admin-data-removal' },
+    'pedidos-remocao-dados': { view: 'admin-data-removal' },
+    'remocao-dados': { view: 'admin-data-removal' },
 
     'special:promotionrequests': { view: 'promotion-requests' },
     'promotion-requests': { view: 'promotion-requests' },

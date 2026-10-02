@@ -650,6 +650,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
+              onClick={() => onNavigate('admin-data-removal')}
+              title="Pedidos de Remoção de Dados (LGPD Art. 18, VI - Exclusão de Contas)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'admin-data-removal'
+                  ? 'bg-white dark:bg-slate-800 text-red-700 dark:text-red-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <ShieldAlert size={15} className="text-red-600 dark:text-red-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate">Remoção de Dados</span>
+                  <span className="text-[8px] bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 font-mono font-bold px-1 rounded-xs">
+                    LGPD
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
               onClick={() => onNavigate('promotion-requests')}
               title="Pedidos de Promoção para Moderador e Administrador (Special:PromotionRequests - RFA)"
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${

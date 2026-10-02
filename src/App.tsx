@@ -9,6 +9,7 @@ import { WikitextEditor } from './components/WikitextEditor';
 import { SpecialPagesView } from './components/SpecialPagesView';
 import { UserPageView } from './components/UserPageView';
 import { AdminUsersManagementView } from './components/AdminUsersManagementView';
+import { AdminDataRemovalRequestsView } from './components/AdminDataRemovalRequestsView';
 import { CheckUserView } from './components/CheckUserView';
 import { UnblockRequestsView } from './components/UnblockRequestsView';
 import { PromotionRequestsView } from './components/PromotionRequestsView';
@@ -1478,6 +1479,7 @@ export default function App() {
               }}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
+              onNavigateToDataRemovalRequests={() => handleNavigate('admin-data-removal')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
               onNavigateToUsersList={() => handleNavigate('admin-users')}
               onNavigateToUpload={() => handleNavigateToUpload()}
@@ -1511,6 +1513,7 @@ export default function App() {
               }}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
+              onNavigateToDataRemovalRequests={() => handleNavigate('admin-data-removal')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
               onNavigateToUsersList={() => handleNavigate('admin-users')}
               onNavigateToUpload={() => handleNavigateToUpload()}
@@ -1602,6 +1605,15 @@ export default function App() {
               currentUser={user}
               onNavigateToUser={handleNavigateToUser}
               onNavigateToCheckUser={handleNavigateToCheckUser}
+              onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'admin-data-removal' && (
+            <AdminDataRemovalRequestsView
+              currentUser={user}
+              onNavigateToUser={handleNavigateToUser}
+              onNavigateToUsersList={() => handleNavigate('admin-users')}
               onBack={() => handleNavigate('hub')}
             />
           )}

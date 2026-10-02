@@ -40,6 +40,7 @@ import {
   Copy,
   ImageOff,
   ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   UserProfile,
@@ -766,6 +767,16 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                     <strong>Conta Suspensa:</strong> {userProfile.banReason || 'Infração às diretrizes editoriais.'}
                     {userProfile.banExpiresAt && ` (Expira em: ${new Date(userProfile.banExpiresAt).toLocaleDateString('pt-BR')})`}
                   </span>
+                </div>
+              )}
+
+              {/* Status de Exclusão LGPD (se houver) */}
+              {userProfile.accountDeletedLGPD && (
+                <div className="mt-2.5 p-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                  <ShieldAlert size={15} className="text-amber-600 mt-0.5 shrink-0" />
+                  <div className="text-[11px] leading-relaxed">
+                    <strong>Conta Excluída & Anonimizada (LGPD Art. 18, VI):</strong> Os dados pessoais foram eliminados definitivamente e a autoria das contribuições foi associada ao UID Google do titular (<code>{userProfile.uid}</code>).
+                  </div>
                 </div>
               )}
             </div>

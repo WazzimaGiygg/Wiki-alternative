@@ -2739,6 +2739,14 @@ export const StorageService = {
               delete (u as any).photoURL;
               u.photoURL = undefined;
             }
+            if (u.accountDeletedLGPD) {
+              u.displayName = u.uid;
+              u.username = u.uid;
+              u.email = '';
+              u.photoURL = undefined;
+              u.avatarRemovedByAdmin = true;
+              u.genericPseudonymLGPD = u.uid;
+            }
             mergedMap.set(u.uid, u);
           });
           remoteUsers.forEach((u) => {
@@ -2748,6 +2756,15 @@ export const StorageService = {
               combined.avatarRemovedByAdmin = true;
               delete (combined as any).photoURL;
               combined.photoURL = undefined;
+            }
+            if (combined.accountDeletedLGPD || u.accountDeletedLGPD || prev?.accountDeletedLGPD) {
+              combined.accountDeletedLGPD = true;
+              combined.displayName = combined.uid;
+              combined.username = combined.uid;
+              combined.email = '';
+              combined.photoURL = undefined;
+              combined.avatarRemovedByAdmin = true;
+              combined.genericPseudonymLGPD = combined.uid;
             }
             mergedMap.set(u.uid, combined);
           });
@@ -2805,6 +2822,14 @@ export const StorageService = {
               delete (u as any).photoURL;
               u.photoURL = undefined;
             }
+            if (u.accountDeletedLGPD) {
+              u.displayName = u.uid;
+              u.username = u.uid;
+              u.email = '';
+              u.photoURL = undefined;
+              u.avatarRemovedByAdmin = true;
+              u.genericPseudonymLGPD = u.uid;
+            }
             mergedMap.set(u.uid, u);
           });
           remoteUsers.forEach((u) => {
@@ -2814,6 +2839,15 @@ export const StorageService = {
               combined.avatarRemovedByAdmin = true;
               delete (combined as any).photoURL;
               combined.photoURL = undefined;
+            }
+            if (combined.accountDeletedLGPD || u.accountDeletedLGPD || prev?.accountDeletedLGPD) {
+              combined.accountDeletedLGPD = true;
+              combined.displayName = combined.uid;
+              combined.username = combined.uid;
+              combined.email = '';
+              combined.photoURL = undefined;
+              combined.avatarRemovedByAdmin = true;
+              combined.genericPseudonymLGPD = combined.uid;
             }
             mergedMap.set(u.uid, combined);
           });
@@ -3840,55 +3874,122 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       };
     }
 
-    const user = await this.getUserProfile(params.targetUid);
+    // Buscar solicitação LGPD se existente para recuperar histórico e dados originais
+    const requests = await this.getLgpdDeletionRequests();
+    let reqToUpdate = params.requestId ? requests.find((r) => r.id === params.requestId) : null;
+    if (!reqToUpdate) {
+      reqToUpdate = requests.find((r) => r.userUid === params.targetUid && r.status === 'pendente') || null;
+    }
+
+    // 1. Tentar encontrar o perfil do usuário ou compor a partir do pedido e da base
+    let user = await this.getUserProfile(params.targetUid);
     if (!user) {
-      return {
-        success: false,
-        message: 'Usuário não encontrado na base de dados.',
-        genericPseudonym: '',
-        articlesUpdated: 0,
-        revisionsUpdated: 0,
-        recentChangesUpdated: 0,
-        pagesUpdated: 0,
+      const community = await this.getCommunityUsers();
+      user =
+        community.find((u) => u.uid === params.targetUid) ||
+        (reqToUpdate?.originalEmail
+          ? community.find((u) => u.email && u.email.toLowerCase() === reqToUpdate!.originalEmail!.toLowerCase())
+          : null) ||
+        null;
+    }
+
+    // Se ainda assim não existir registro completo em community_users, criar objeto de suporte seguro
+    if (!user) {
+      user = {
+        uid: params.targetUid,
+        displayName: reqToUpdate?.originalDisplayName || params.targetUid,
+        username: reqToUpdate?.originalUsername || params.targetUid,
+        email: reqToUpdate?.originalEmail || '',
+        role: 'editor',
+        isGuest: false,
+        isBanned: false,
+        createdAt: reqToUpdate?.requestedAt || new Date().toISOString(),
       };
     }
 
-    const oldName = user.displayName || user.username || user.uid;
-    const oldEmail = (user.email || '').trim().toLowerCase();
-    const genericName = (params.genericPseudonym || '').trim() || 'Usuário Anonimizado (LGPD)';
+    const googleUid = user.uid || params.targetUid;
+    // O nome substituto passa a ser o UID Google do usuário caso selecionada a opção de anonimização
+    let genericName = googleUid;
+    if (
+      params.genericPseudonym &&
+      params.genericPseudonym.trim() !== '' &&
+      params.genericPseudonym !== 'Usuário Anonimizado (LGPD)' &&
+      params.genericPseudonym !== 'Autor Anonimizado' &&
+      params.genericPseudonym !== 'Conta Excluída (LGPD)' &&
+      params.genericPseudonym !== 'Ex-editor (Direito ao Esquecimento)' &&
+      params.genericPseudonym !== 'anonimizacao' &&
+      params.genericPseudonym !== 'anonymize_uid'
+    ) {
+      genericName = params.genericPseudonym.trim();
+    } else {
+      genericName = googleUid;
+    }
     const justificationText =
       (params.legalJustification || '').trim() ||
-      'Atendimento à solicitação do titular para eliminação definitiva de dados pessoais (Artigo 18, VI da LGPD - Lei nº 13.709/2018)';
+      'Atendimento à solicitação do titular para eliminação definitiva de dados pessoais (Artigo 18, VI da LGPD - Lei nº 13.709/2018). Autoria atribuída ao UID Google.';
+
+    // Mapear todos os identificadores conhecidos para substituição integral
+    const matchNames = new Set<string>();
+    [googleUid, user.displayName, user.username, reqToUpdate?.originalDisplayName, reqToUpdate?.originalUsername]
+      .filter(Boolean)
+      .forEach((val) => {
+        const clean = (val as string).trim().toLowerCase();
+        if (clean) {
+          matchNames.add(clean);
+          matchNames.add(clean.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[_+]/g, ' '));
+        }
+      });
+
+    const matchEmails = new Set<string>();
+    [user.email, reqToUpdate?.originalEmail]
+      .filter(Boolean)
+      .forEach((val) => {
+        const clean = (val as string).trim().toLowerCase();
+        if (clean) matchEmails.add(clean);
+      });
 
     let articlesUpdated = 0;
     let revisionsUpdated = 0;
     let pagesUpdated = 0;
     let recentChangesUpdated = 0;
 
-    // 1. Substituir autor e histórico de revisões em todos os artigos
+    // 2. Substituir autor e histórico de revisões em todos os artigos locais
     try {
       const articles = await this.getArticles();
       const updatedArticles = articles.map((art) => {
         let changed = false;
         let artAutor = art.autor;
         let artAutorEmail = art.autorEmail;
+        let artAutorUid = art.autorUid;
+
+        const artAutorClean = (art.autor || '').trim().toLowerCase();
+        const artAutorNorm = artAutorClean.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[_+]/g, ' ');
+        const artAutorEmailClean = (art.autorEmail || '').trim().toLowerCase();
 
         const isAuthorMatch =
-          (art.autorUid && art.autorUid === user.uid) ||
-          (art.autor && art.autor.toLowerCase().trim() === oldName.toLowerCase().trim()) ||
-          (oldEmail && art.autorEmail && art.autorEmail.toLowerCase().trim() === oldEmail);
+          (art.autorUid && (art.autorUid === googleUid || art.autorUid === params.targetUid)) ||
+          matchNames.has(artAutorClean) ||
+          matchNames.has(artAutorNorm) ||
+          (artAutorEmailClean && matchEmails.has(artAutorEmailClean));
 
         if (isAuthorMatch) {
           artAutor = genericName;
+          artAutorUid = googleUid;
           artAutorEmail = undefined;
           changed = true;
           articlesUpdated++;
         }
 
         const historico = art.historico?.map((h) => {
+          const hAutorClean = (h.autor || '').trim().toLowerCase();
+          const hAutorNorm = hAutorClean.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[_+]/g, ' ');
+          const hAutorEmailClean = (h.autorEmail || '').trim().toLowerCase();
+
           const isHistMatch =
-            (h.autor && h.autor.toLowerCase().trim() === oldName.toLowerCase().trim()) ||
-            (oldEmail && h.autorEmail && h.autorEmail.toLowerCase().trim() === oldEmail);
+            (h.autorUid && (h.autorUid === googleUid || h.autorUid === params.targetUid)) ||
+            matchNames.has(hAutorClean) ||
+            matchNames.has(hAutorNorm) ||
+            (hAutorEmailClean && matchEmails.has(hAutorEmailClean));
 
           if (isHistMatch) {
             changed = true;
@@ -3896,6 +3997,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
             return {
               ...h,
               autor: genericName,
+              autorUid: googleUid,
               autorEmail: undefined,
             };
           }
@@ -3906,6 +4008,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
           return {
             ...art,
             autor: artAutor,
+            autorUid: artAutorUid,
             autorEmail: artAutorEmail,
             historico,
           };
@@ -3915,29 +4018,77 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
       localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify(updatedArticles));
 
+      // Sincronizar nos nós do Firestore
       if (firebaseActive && db) {
-        for (const art of updatedArticles) {
-          const isMatch =
-            (art.autorUid && art.autorUid === user.uid) ||
-            art.autor === genericName;
-          if (isMatch) {
-            try {
-              await setDoc(doc(db, 'articles', art.id), art, { merge: true });
-            } catch (err) {
-              console.warn('[StorageService] Erro ao sincronizar artigo anonimizado no Firestore:', err);
+        try {
+          await ensureFirebaseAuth();
+          for (const art of updatedArticles) {
+            const isMatch =
+              art.autor === genericName ||
+              art.autorUid === googleUid;
+            if (isMatch) {
+              try {
+                // 1. /articles/{id}
+                await setDoc(
+                  doc(db, 'articles', art.id),
+                  {
+                    ...art,
+                    autor: genericName,
+                    autorUid: googleUid,
+                    autorEmail: null,
+                    atualizadoEm: serverTimestamp(),
+                  },
+                  { merge: true }
+                );
+
+                // 2. /documentos/{pageUid}/inevitavel/{id}
+                if (art.pageUid) {
+                  try {
+                    await setDoc(
+                      doc(db, 'documentos', art.pageUid, 'inevitavel', art.id),
+                      {
+                        ...art,
+                        autor: genericName,
+                        autorUid: googleUid,
+                        autorEmail: null,
+                        atualizadoEm: serverTimestamp(),
+                      },
+                      { merge: true }
+                    );
+                  } catch {}
+                }
+
+                // 3. /pages/main:{id}
+                try {
+                  await setDoc(
+                    doc(db, 'pages', `main:${art.id}`),
+                    {
+                      authorName: genericName,
+                      authorUid: googleUid,
+                    },
+                    { merge: true }
+                  );
+                } catch {}
+              } catch (err) {
+                console.warn('[StorageService] Erro ao sincronizar artigo anonimizado no Firestore:', err);
+              }
             }
           }
+        } catch (errAuth) {
+          console.warn('[StorageService] Auth error ao atualizar artigos no Firestore:', errAuth);
         }
       }
     } catch (e) {
       console.warn('[StorageService] Erro ao anonimizar artigos sob LGPD:', e);
     }
 
-    // 2. Substituir autor nas páginas e coleções criadas
+    // 3. Substituir autor nas páginas e coleções criadas
     try {
       const pages = await this.getPages();
       const updatedPages = pages.map((page) => {
-        if (page.autor && page.autor.toLowerCase().trim() === oldName.toLowerCase().trim()) {
+        const pAutorClean = (page.autor || '').trim().toLowerCase();
+        const pAutorNorm = pAutorClean.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[_+]/g, ' ');
+        if (matchNames.has(pAutorClean) || matchNames.has(pAutorNorm)) {
           pagesUpdated++;
           return { ...page, autor: genericName };
         }
@@ -3945,53 +4096,85 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       });
       localStorage.setItem(STORAGE_KEYS.PAGES, JSON.stringify(updatedPages));
       if (firebaseActive && db) {
-        for (const page of updatedPages) {
-          if (page.autor === genericName) {
-            try {
-              await setDoc(doc(db, 'pages', page.uid), page, { merge: true });
-            } catch (err) {
-              console.warn('[StorageService] Erro ao sincronizar página anonimizada no Firestore:', err);
+        try {
+          await ensureFirebaseAuth();
+          for (const page of updatedPages) {
+            if (page.autor === genericName) {
+              try {
+                await setDoc(doc(db, 'pages', page.uid), { autor: genericName }, { merge: true });
+              } catch (err) {
+                console.warn('[StorageService] Erro ao sincronizar página anonimizada no Firestore:', err);
+              }
             }
           }
-        }
+        } catch {}
       }
     } catch (e) {
       console.warn('[StorageService] Erro ao anonimizar páginas sob LGPD:', e);
     }
 
-    // 3. Substituir em Alterações Recentes (Recent Changes)
+    // 4. Substituir em Alterações Recentes (Recent Changes)
     try {
       const recentChanges = await this.getRecentChanges();
       const updatedRecentChanges = recentChanges.map((rc) => {
+        const rcAutorClean = (rc.autor || '').trim().toLowerCase();
+        const rcAutorNorm = rcAutorClean.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[_+]/g, ' ');
+        const rcEmailClean = (rc.autorEmail || '').trim().toLowerCase();
+
         const isMatch =
-          (rc.autorUid && rc.autorUid === user.uid) ||
-          (rc.autor && rc.autor.toLowerCase().trim() === oldName.toLowerCase().trim()) ||
-          (oldEmail && rc.autorEmail && rc.autorEmail.toLowerCase().trim() === oldEmail);
+          (rc.autorUid && (rc.autorUid === googleUid || rc.autorUid === params.targetUid)) ||
+          matchNames.has(rcAutorClean) ||
+          matchNames.has(rcAutorNorm) ||
+          (rcEmailClean && matchEmails.has(rcEmailClean));
+
         if (isMatch) {
           recentChangesUpdated++;
           return {
             ...rc,
             autor: genericName,
+            autorUid: googleUid,
             autorEmail: undefined,
           };
         }
         return rc;
       });
       localStorage.setItem(STORAGE_KEYS.RECENT_CHANGES, JSON.stringify(updatedRecentChanges));
+
+      if (firebaseActive && db) {
+        try {
+          await ensureFirebaseAuth();
+          for (const rc of updatedRecentChanges) {
+            if (rc.autor === genericName || rc.autorUid === googleUid) {
+              try {
+                await setDoc(
+                  doc(db, 'recent_changes', rc.id),
+                  {
+                    ...rc,
+                    autor: genericName,
+                    autorUid: googleUid,
+                    autorEmail: null,
+                  },
+                  { merge: true }
+                );
+              } catch {}
+            }
+          }
+        } catch {}
+      }
     } catch (e) {
       console.warn('[StorageService] Erro ao anonimizar recent changes sob LGPD:', e);
     }
 
-    // 4. Atualizar perfil do usuário: EXCLUIR TODOS OS DADOS PESSOAIS
-    // Preservando ESTRITAMENTE o UID Google para identificação preventiva
+    // 5. Atualizar perfil do usuário: EXCLUIR TODOS OS DADOS PESSOAIS
+    // O nome de exibição e nome de usuário passam a ser o Google UID do titular
     const anonymizedUser: UserProfile = {
-      uid: user.uid, // PRESERVADO para identificação de novas contas!
+      uid: googleUid, // PRESERVADO para identificação de novas contas!
       email: '', // Excluído permanentemente!
-      displayName: genericName,
-      username: `anon_${user.uid.slice(0, 8)}`,
+      displayName: genericName, // Substituído pelo Google UID!
+      username: genericName, // Substituído pelo Google UID!
       photoURL: undefined,
       avatarRemovedByAdmin: true,
-      bio: 'Conta excluída e dados pessoais eliminados definitivamente conforme Artigo 18, inciso VI da LGPD (Lei nº 13.709/2018). Autoria das contribuições desassociada e atribuída a identificador genérico.',
+      bio: 'Conta excluída e dados pessoais eliminados definitivamente conforme Artigo 18, inciso VI da LGPD (Lei nº 13.709/2018). Autoria das contribuições mantida e associada ao UID Google para fins de conformidade.',
       location: '',
       website: '',
       birthdate: undefined,
@@ -4017,22 +4200,26 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       warningCount: 0,
       lastActive: new Date().toISOString(),
       isOnline: false,
-      createdAt: user.createdAt,
+      createdAt: user.createdAt || new Date().toISOString(),
     };
 
-    // Salvar na lista comunitária
+    // Salvar na lista comunitária com dados purgados
     const community = await this.getCommunityUsers();
-    const updatedCommunity = community.map((u) => (u.uid === user.uid ? anonymizedUser : u));
+    const updatedCommunity = community.map((u) => (u.uid === googleUid ? anonymizedUser : u));
+    if (!updatedCommunity.some((u) => u.uid === googleUid)) {
+      updatedCommunity.push(anonymizedUser);
+    }
     localStorage.setItem(STORAGE_KEYS.COMMUNITY_USERS, JSON.stringify(updatedCommunity));
 
-    // Excluir dados cadastrais pessoais no Firestore mantendo exclusivamente o UID Google indexado
+    // Excluir dados cadastrais pessoais no Firestore mantendo exclusivamente o UID Google
     if (firebaseActive && db) {
       try {
+        await ensureFirebaseAuth();
         const firestoreCleanPayload = {
-          uid: anonymizedUser.uid,
+          uid: googleUid,
           email: '',
           displayName: genericName,
-          username: anonymizedUser.username,
+          username: genericName,
           accountDeletedLGPD: true,
           deletedAtLGPD: anonymizedUser.deletedAtLGPD,
           genericPseudonymLGPD: genericName,
@@ -4048,9 +4235,9 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
           dataConsentimento: deleteField(),
           ipConsentimento: deleteField(),
         };
-        await setDoc(doc(db, 'userpage', user.uid), firestoreCleanPayload);
+        await setDoc(doc(db, 'userpage', googleUid), firestoreCleanPayload, { merge: true });
         try {
-          await setDoc(doc(db, 'users', user.uid), firestoreCleanPayload);
+          await setDoc(doc(db, 'users', googleUid), firestoreCleanPayload, { merge: true });
         } catch {
           // ignora
         }
@@ -4059,19 +4246,27 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       }
     }
 
-    // Se o usuário logado atualmente for o titular excluído, encerrar sessão local
+    // 6. Limpar dados residuais locais (mensagens de recados do usuário)
+    try {
+      const rawTalk = localStorage.getItem(STORAGE_KEYS.USER_TALK_MESSAGES);
+      if (rawTalk) {
+        const talkList = JSON.parse(rawTalk);
+        const filteredTalk = talkList.filter((m: any) => m.recipientUid !== googleUid && m.senderUid !== googleUid);
+        localStorage.setItem(STORAGE_KEYS.USER_TALK_MESSAGES, JSON.stringify(filteredTalk));
+      }
+    } catch {}
+
+    // Se o usuário logado atualmente for o titular excluído, encerrar sessão local imediatamente
     const currentUser = this.getCurrentUser();
-    if (currentUser && (currentUser.uid === user.uid || (currentUser.email && currentUser.email === user.email))) {
+    if (currentUser && (currentUser.uid === googleUid || (currentUser.email && matchEmails.has(currentUser.email.toLowerCase())))) {
       this.clearUser();
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        localStorage.removeItem('wikizero_user_v1');
+      }
     }
 
-    // 5. Atualizar ou criar o registro da solicitação LGPD
-    const requests = await this.getLgpdDeletionRequests();
-    let reqToUpdate = params.requestId ? requests.find((r) => r.id === params.requestId) : null;
-    if (!reqToUpdate) {
-      reqToUpdate = requests.find((r) => r.userUid === user.uid && r.status === 'pendente') || null;
-    }
-
+    // 7. Atualizar ou criar o registro da solicitação LGPD
     if (reqToUpdate) {
       reqToUpdate.status = 'executada';
       reqToUpdate.processedAt = new Date().toISOString();
@@ -4091,6 +4286,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
       if (firebaseActive && db) {
         try {
+          await ensureFirebaseAuth();
           await setDoc(doc(db, 'lgpd_deletion_requests', reqToUpdate.id), reqToUpdate);
         } catch (err) {
           console.warn('[StorageService] Erro ao atualizar solicitação LGPD executada no Firestore:', err);
@@ -4099,11 +4295,11 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
     } else {
       const executedReq: LgpdAccountDeletionRequest = {
         id: `lgpd-del-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        userUid: user.uid,
-        originalDisplayName: oldName,
-        originalUsername: user.username || oldName,
-        originalEmail: oldEmail || undefined,
-        userReason: 'Solicitação direta do titular atendida administrativamente.',
+        userUid: googleUid,
+        originalDisplayName: user.displayName || googleUid,
+        originalUsername: user.username || googleUid,
+        originalEmail: user.email || undefined,
+        userReason: 'Solicitação de eliminação de dados cadastrais atendida administrativamente.',
         requestedAt: new Date().toISOString(),
         status: 'executada',
         processedAt: new Date().toISOString(),
@@ -4122,6 +4318,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       localStorage.setItem(STORAGE_KEYS.LGPD_DELETION_REQUESTS, JSON.stringify(updatedReqs));
       if (firebaseActive && db) {
         try {
+          await ensureFirebaseAuth();
           await setDoc(doc(db, 'lgpd_deletion_requests', executedReq.id), executedReq);
         } catch (err) {
           console.warn('[StorageService] Erro ao salvar log de exclusão executada no Firestore:', err);
@@ -4129,19 +4326,19 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       }
     }
 
-    // 6. Registrar auditoria perene
+    // 8. Registrar auditoria perene
     this.logUserAuditAction(
-      user.uid,
+      googleUid,
       genericName,
       'lgpd_account_deletion',
-      `Exclusão definitiva de conta sob o Art. 18, VI da LGPD. Dados pessoais eliminados, Google UID preservado para identificação preventiva. Contribuições atribuídas ao nome genérico "${genericName}" (${articlesUpdated} verbetes, ${revisionsUpdated} revisões, ${pagesUpdated} coleções). Fundamento: ${justificationText}. Administrador: ${params.adminUser?.displayName || params.adminUser?.email}.`,
+      `Exclusão definitiva de conta sob o Art. 18, VI da LGPD. Dados pessoais eliminados, Google UID preservado. Contribuições atribuídas ao UID Google "${genericName}" (${articlesUpdated} verbetes, ${revisionsUpdated} revisões, ${pagesUpdated} coleções). Fundamento: ${justificationText}. Administrador: ${params.adminUser?.displayName || params.adminUser?.email}.`,
       params.adminUser
     );
 
     if (typeof window !== 'undefined') {
       try {
         window.dispatchEvent(
-          new CustomEvent('wikizero:lgpd-account-deleted', { detail: { uid: user.uid, genericName } })
+          new CustomEvent('wikizero:lgpd-account-deleted', { detail: { uid: googleUid, genericName } })
         );
         window.dispatchEvent(new Event('storage'));
       } catch {
@@ -4151,7 +4348,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     return {
       success: true,
-      message: `Conta excluída e anonimizada com sucesso sob a LGPD. ${articlesUpdated} verbetes e ${revisionsUpdated} revisões foram atribuídos ao nome "${genericName}". O Google UID foi preservado para fins de segurança e identificação preventiva.`,
+      message: `Conta excluída e anonimizada com sucesso sob a LGPD. ${articlesUpdated} verbetes e ${revisionsUpdated} revisões foram atribuídos ao UID Google "${genericName}". Todos os dados cadastrais foram permanentemente eliminados.`,
       genericPseudonym: genericName,
       articlesUpdated,
       revisionsUpdated,

@@ -2253,6 +2253,15 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
                     <button
                       onClick={() => {
+                        onNavigate('admin-data-removal');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 font-medium"
+                    >
+                      <ShieldAlert size={13} className="text-red-500" /> Pedidos de Remoção (LGPD)
+                    </button>
+                    <button
+                      onClick={() => {
                         onNavigate('admin-firebase');
                         setShowUserMenu(false);
                       }}

@@ -399,8 +399,9 @@ export const MyDataModal: React.FC<MyDataModalProps> = ({
                       </li>
                       <li>
                         <strong>Anonimização das Contribuições:</strong> Seus verbetes e edições permanecerão no
-                        patrimônio de conhecimento livre, mas o nome do autor será retroativamente substituído por um{' '}
-                        <strong>nome genérico de usuário</strong> (ex: "Usuário Anonimizado (LGPD)").
+                        patrimônio de conhecimento livre, mas o nome do autor será retroativamente substituído pelo seu{' '}
+                        <strong>UID Google</strong> (<code className="text-[10px] bg-red-100 dark:bg-red-900/50 px-1 py-0.5 rounded font-mono">{user?.uid}</code>),
+                        eliminando qualquer associação ao seu nome real ou e-mail.
                       </li>
                     </ul>
                   </div>
@@ -427,7 +428,7 @@ export const MyDataModal: React.FC<MyDataModalProps> = ({
                     />
                     <span>
                       Declaro que compreendo que a exclusão é definitiva e autorizo expressamente a substituição da
-                      autoria em todas as minhas contribuições por um nome genérico de usuário.
+                      autoria em todas as minhas contribuições pelo meu UID Google.
                     </span>
                   </label>
 
