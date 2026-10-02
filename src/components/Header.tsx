@@ -1143,15 +1143,18 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <div
               onClick={() => onNavigate('hub')}
-              className="flex items-center gap-2 cursor-pointer group flex-shrink-0"
+              className="flex items-center gap-2.5 cursor-pointer group flex-shrink-0"
+              title="WikiZero - Página Principal"
             >
-              <div className="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center font-serif-heading font-bold text-lg shadow-xs group-hover:bg-blue-700 transition">
-                W
-              </div>
+              <img
+                src="/logo.png"
+                alt="Logotipo WikiZero"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded object-contain drop-shadow-xs group-hover:scale-105 transition"
+              />
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-serif-heading font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
-                    WazzimaGiygg
+                    WikiZero
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-1 py-0.2 rounded-xs">
                     Wiki

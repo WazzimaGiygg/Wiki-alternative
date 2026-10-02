@@ -109,12 +109,14 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
         {/* Drawer Header with User Profile / Login */}
         <div className="p-4 bg-gradient-to-r from-blue-700 to-indigo-800 text-white flex flex-col gap-3 pt-[max(1rem,env(safe-area-inset-top))]">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded bg-white text-blue-800 flex items-center justify-center font-serif-heading font-bold text-base shadow-xs">
-                W
-              </div>
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/logo.png"
+                alt="Logotipo WikiZero"
+                className="w-7 h-7 rounded object-contain drop-shadow-xs bg-white/10"
+              />
               <div>
-                <span className="font-serif-heading font-bold text-base tracking-tight block leading-tight">WazzimaGiygg</span>
+                <span className="font-serif-heading font-bold text-base tracking-tight block leading-tight">WikiZero</span>
                 <span className="text-[10px] text-blue-100 font-serif italic block leading-tight" title="Frase Principal da Wiki">
                   «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
                 </span>

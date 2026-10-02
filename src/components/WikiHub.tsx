@@ -124,37 +124,44 @@ export const WikiHub: React.FC<WikiHubProps> = ({
       {/* High Density Portal Header / Welcome Banner */}
       <div className="bg-[#f8f9fa] dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-          <div className="space-y-2 max-w-3xl">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white px-2 py-0.5 rounded-xs font-mono">
-                {t('hub.welcome_badge')}
-              </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                <Globe2 size={12} className="text-blue-500" />
-                <span>{currentLanguage.flag} {currentLanguage.nativeName} ({currentLanguage.name})</span>
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-bold font-serif-heading text-slate-900 dark:text-white tracking-tight leading-tight">
-              {t('hub.welcome_title')}
-            </h1>
-
-            {/* Frase Principal da Wiki (Lema Oficial) */}
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 shadow-2xs">
-              <span className="text-xl select-none" role="img" aria-label="Conhecimento">🏛️</span>
-              <div className="flex-1 min-w-0">
-                <p className="font-serif italic font-bold text-sm sm:text-base text-blue-950 dark:text-blue-200 tracking-wide">
-                  «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
-                </p>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-0.5">
-                  <strong className="text-blue-700 dark:text-blue-400 font-semibold">Frase Principal da Wiki</strong> • "Não, o Tempo não é o senhor do conhecimento!"
-                </p>
+          <div className="flex items-start gap-4 max-w-3xl">
+            <img
+              src="/logo.png"
+              alt="Logotipo WikiZero"
+              className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md shrink-0 hidden sm:block p-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60"
+            />
+            <div className="space-y-2 flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white px-2 py-0.5 rounded-xs font-mono">
+                  {t('hub.welcome_badge')}
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <Globe2 size={12} className="text-blue-500" />
+                  <span>{currentLanguage.flag} {currentLanguage.nativeName} ({currentLanguage.name})</span>
+                </span>
               </div>
-            </div>
 
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
-              {t('hub.welcome_desc')}
-            </p>
+              <h1 className="text-2xl sm:text-3xl font-bold font-serif-heading text-slate-900 dark:text-white tracking-tight leading-tight">
+                {t('hub.welcome_title')}
+              </h1>
+
+              {/* Frase Principal da Wiki (Lema Oficial) */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 shadow-2xs">
+                <span className="text-xl select-none" role="img" aria-label="Conhecimento">🏛️</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-serif italic font-bold text-sm sm:text-base text-blue-950 dark:text-blue-200 tracking-wide">
+                    «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
+                  </p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-0.5">
+                    <strong className="text-blue-700 dark:text-blue-400 font-semibold">Frase Principal da Wiki</strong> • "Não, o Tempo não é o senhor do conhecimento!"
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
+                {t('hub.welcome_desc')}
+              </p>
+            </div>
           </div>
 
           {/* Quick Action Buttons */}

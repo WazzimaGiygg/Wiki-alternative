@@ -303,25 +303,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         {/* Modal Header */}
         <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3 mb-3 flex-shrink-0">
-          <div
-            className={`w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-md flex-shrink-0 ${
-              isAnyIpBlocked
-                ? 'bg-gradient-to-br from-rose-600 to-red-700 ring-2 ring-rose-500/30'
-                : 'bg-gradient-to-br from-blue-600 to-indigo-700'
-            }`}
-          >
-            {isAnyIpBlocked ? (
-              <Ban size={18} />
-            ) : isRecaptchaVerified ? (
-              <Unlock size={18} />
-            ) : (
-              <Lock size={18} />
-            )}
-          </div>
+          <img
+            src="/logo.png"
+            alt="Logotipo WikiZero"
+            className="w-10 h-10 rounded-xl object-contain shadow-md flex-shrink-0 p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base font-serif-heading font-bold text-slate-900 dark:text-white leading-tight">
-                Login de Usuário
+                Login • WikiZero
               </h3>
               {isBlockedByWikimedia ? (
                 <span className="bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-300 dark:border-rose-800 flex items-center gap-1">

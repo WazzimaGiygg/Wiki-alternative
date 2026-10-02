@@ -535,9 +535,9 @@ export const Footer: React.FC<FooterProps> = ({
         {/* Top Info & Navigation Row */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" title="Servidor Firestore e Cache Operacional" />
+            <img src="/logo.png" alt="Logotipo WikiZero" className="w-5 h-5 object-contain rounded-xs shrink-0" />
             <span className="font-bold text-slate-800 dark:text-slate-200">
-              WazzimaGiygg / WikiWorldWeb v3.3
+              WikiZero / WikiWorldWeb
             </span>
             <span className="text-slate-300 dark:text-slate-700">|</span>
             <button

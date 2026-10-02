@@ -253,26 +253,26 @@ const SEED_FILES: WikiFile[] = [
   },
   {
     id: 'file-wikizero-emblema',
-    name: 'WikiZero_Emblema.svg',
-    title: 'Arquivo:WikiZero_Emblema.svg',
-    description: 'Logotipo e emblema oficial da enciclopédia aberta WikiZero, simbolizando a preservação do conhecimento livre, soberania informacional e transparência editorial.',
+    name: 'Logo_WikiZero.svg',
+    title: 'Arquivo:Logo_WikiZero.svg',
+    description: 'Logotipo e emblema oficial da enciclopédia WikiZero em forma de cubo isométrico com relevo e padrões de labirinto geométrico.',
     license: 'own-work',
     licenseDetails: 'Logotipo oficial da WikiZero disponibilizado sob a licença Creative Commons Atribuição-CompartilhaIgual 4.0.',
-    author: 'Equipe de Design WazzimaGiygg / WikiZero',
-    source: 'Repositório Oficial do Projeto WikiZero',
-    mimeType: 'image/svg+xml',
-    sizeBytes: 42000,
-    width: 800,
-    height: 800,
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+    author: 'WikiZero',
+    source: 'Logotipo Oficial da WikiZero',
+    mimeType: 'image/png',
+    sizeBytes: 264192,
+    width: 512,
+    height: 512,
+    url: '/logo.png',
     thumbnails: {
-      sm: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=70',
-      md: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
-      lg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+      sm: '/logo.png',
+      md: '/logo.png',
+      lg: '/logo.png',
     },
-    uploadedBy: 'WazzimaGiygg',
-    uploadedByUid: 'wazzima_owner',
-    uploadedAt: '2026-08-15T12:00:00Z',
+    uploadedBy: 'WikiZero',
+    uploadedByUid: 'wikizero_official',
+    uploadedAt: '2026-10-02T16:00:00Z',
     storageProvider: 'local_fallback',
     firebasePlan: 'blaze',
     categories: ['Identidade Visual da WikiZero', 'Logotipos', 'Trabalho Próprio'],
@@ -280,19 +280,64 @@ const SEED_FILES: WikiFile[] = [
       {
         id: 'ver-logo-1',
         versionNumber: 1,
-        url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+        url: '/logo.png',
         thumbnails: {
-          sm: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=70',
-          md: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
-          lg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+          sm: '/logo.png',
+          md: '/logo.png',
+          lg: '/logo.png',
         },
-        sizeBytes: 42000,
-        width: 800,
-        height: 800,
-        uploadedBy: 'WazzimaGiygg',
-        uploadedByUid: 'wazzima_owner',
-        uploadedAt: '2026-08-15T12:00:00Z',
-        comment: 'Vetor de identidade visual oficial.',
+        sizeBytes: 264192,
+        width: 512,
+        height: 512,
+        uploadedBy: 'WikiZero',
+        uploadedByUid: 'wikizero_official',
+        uploadedAt: '2026-10-02T16:00:00Z',
+        comment: 'Logotipo oficial do cubo WikiZero adicionado.',
+      },
+    ],
+  },
+  {
+    id: 'file-wikizero-emblema-alt',
+    name: 'WikiZero_Emblema.svg',
+    title: 'Arquivo:WikiZero_Emblema.svg',
+    description: 'Logotipo e emblema oficial da enciclopédia aberta WikiZero, simbolizando a preservação do conhecimento livre, soberania informacional e transparência editorial.',
+    license: 'own-work',
+    licenseDetails: 'Logotipo oficial da WikiZero disponibilizado sob a licença Creative Commons Atribuição-CompartilhaIgual 4.0.',
+    author: 'Equipe de Design WazzimaGiygg / WikiZero',
+    source: 'Repositório Oficial do Projeto WikiZero',
+    mimeType: 'image/png',
+    sizeBytes: 264192,
+    width: 512,
+    height: 512,
+    url: '/logo.png',
+    thumbnails: {
+      sm: '/logo.png',
+      md: '/logo.png',
+      lg: '/logo.png',
+    },
+    uploadedBy: 'WikiZero',
+    uploadedByUid: 'wikizero_official',
+    uploadedAt: '2026-10-02T16:00:00Z',
+    storageProvider: 'local_fallback',
+    firebasePlan: 'blaze',
+    categories: ['Identidade Visual da WikiZero', 'Logotipos', 'Trabalho Próprio'],
+    history: [
+      {
+        id: 'ver-logo-2',
+        versionNumber: 1,
+        url: '/logo.png',
+        thumbnails: {
+          sm: '/logo.png',
+          md: '/logo.png',
+          lg: '/logo.png',
+        },
+        sizeBytes: 264192,
+        width: 512,
+        height: 512,
+        uploadedBy: 'WikiZero',
+        uploadedByUid: 'wikizero_official',
+        uploadedAt: '2026-10-02T16:00:00Z',
+        comment: 'Vetor de identidade visual oficial atualizado para o logotipo do cubo.',
       },
     ],
   },
@@ -301,8 +346,32 @@ const SEED_FILES: WikiFile[] = [
 // Helper: inicializa localStorage
 function initializeFilesStorage() {
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-    if (!localStorage.getItem(STORAGE_KEY_FILES)) {
+    const raw = localStorage.getItem(STORAGE_KEY_FILES);
+    if (!raw) {
       localStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(SEED_FILES));
+    } else {
+      try {
+        const files: WikiFile[] = JSON.parse(raw);
+        let changed = false;
+        const logo1 = files.find(f => f.name === 'Logo_WikiZero.svg');
+        if (!logo1) {
+          files.unshift(SEED_FILES[0]);
+          changed = true;
+        } else if (logo1.url !== '/logo.png') {
+          logo1.url = '/logo.png';
+          logo1.thumbnails = { sm: '/logo.png', md: '/logo.png', lg: '/logo.png' };
+          changed = true;
+        }
+        const logo2 = files.find(f => f.name === 'WikiZero_Emblema.svg');
+        if (logo2 && logo2.url !== '/logo.png') {
+          logo2.url = '/logo.png';
+          logo2.thumbnails = { sm: '/logo.png', md: '/logo.png', lg: '/logo.png' };
+          changed = true;
+        }
+        if (changed) {
+          localStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(files));
+        }
+      } catch {}
     }
   }
 }

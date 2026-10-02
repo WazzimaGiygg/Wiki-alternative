@@ -177,10 +177,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar Header with Title & Collapse Action */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
         {!isCollapsed && (
-          <span className={`text-[10px] font-bold uppercase tracking-wider font-mono ${isHalfLife ? 'text-[#ff9900] flex items-center gap-1' : 'text-slate-400 dark:text-slate-500'}`}>
-            {isHalfLife && <span className="text-[11px]">λ</span>}
-            {isHalfLife ? 'BLACK MESA NET' : t('sidebar.navigation')}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <img src="/logo.png" alt="WikiZero Logo" className="w-4 h-4 object-contain rounded-xs shrink-0" />
+            <span className={`text-[10px] font-bold uppercase tracking-wider font-mono truncate ${isHalfLife ? 'text-[#ff9900] flex items-center gap-1' : 'text-slate-500 dark:text-slate-400'}`}>
+              {isHalfLife && <span className="text-[11px]">λ</span>}
+              {isHalfLife ? 'BLACK MESA NET' : 'WikiZero'}
+            </span>
+          </div>
         )}
         <button
           onClick={onToggleCollapse}

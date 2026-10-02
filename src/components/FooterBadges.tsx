@@ -267,9 +267,29 @@ export const WazzimaSupportBadge: React.FC = () => (
   </a>
 );
 
+export const WikiZeroBadge: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    title="WikiZero - Enciclopédia Aberta e Livre"
+    className="inline-flex items-center justify-between w-[88px] h-[31px] bg-gradient-to-br from-slate-900 via-slate-800 to-black border border-slate-700 hover:border-blue-500 rounded transition p-1 shadow-xs group cursor-pointer"
+  >
+    <img src="/logo.png" alt="WikiZero" className="w-5 h-5 object-contain rounded-xs shrink-0" />
+    <div className="flex flex-col text-right leading-none pr-0.5">
+      <span className="text-[5.5px] font-mono tracking-tighter text-blue-400 font-bold uppercase">
+        OFFICIAL
+      </span>
+      <span className="text-[7.5px] font-sans font-bold text-white group-hover:text-blue-300 tracking-tight">
+        WikiZero
+      </span>
+    </div>
+  </button>
+);
+
 export const FooterBadges: React.FC<{ onNavigate?: (view: any) => void }> = ({ onNavigate }) => {
   return (
     <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 pt-1">
+      <WikiZeroBadge onClick={() => onNavigate && onNavigate('hub')} />
       <WazzimaSupportBadge />
       <LgpdMarcoCivilBadge onClick={() => onNavigate && onNavigate('privacy')} />
       <FirebaseBadge />
