@@ -236,9 +236,16 @@ export const UnblockRequestsView: React.FC<UnblockRequestsViewProps> = ({
 
     setIsSubmittingDecision(true);
     try {
+      const mappedDecision: 'aprovado' | 'recusado' | 'em_analise' =
+        decisionType === 'rejected'
+          ? 'recusado'
+          : decisionType === 'requested_more_info'
+          ? 'em_analise'
+          : 'aprovado';
+
       const res = await StorageService.evaluateUnblockRequest(
         selectedRequest.id,
-        decisionType,
+        mappedDecision,
         decisionNotes,
         currentUser
       );

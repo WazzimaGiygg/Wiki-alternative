@@ -600,6 +600,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
+              onClick={() => onNavigate('admin-council')}
+              title="Conselho de Burocratas & Moderadores (Special:Bureaucrats)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'admin-council'
+                  ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-200 font-bold border border-purple-300 dark:border-purple-700 shadow-xs'
+                  : 'text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/30'
+              }`}
+            >
+              <Crown size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate font-semibold">Burocratas & Moderação</span>
+                  <span className="text-[8px] bg-purple-200 dark:bg-purple-900 text-purple-900 dark:text-purple-200 font-mono font-bold px-1 rounded-xs">
+                    CONSELHO
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
               onClick={() => onNavigate('admin-users')}
               title="Diretório de Usuários (Special:ListUsers)"
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${

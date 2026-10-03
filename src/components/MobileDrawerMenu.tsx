@@ -11,6 +11,7 @@ import {
   Moon,
   Sun,
   Shield,
+  Crown,
   ShieldCheck,
   ShieldAlert,
   FileText,
@@ -579,7 +580,7 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
                 }`}
               >
                 <Layers size={16} className="text-purple-600" />
-                <span>{t('sidebar.special_pages')}</span>
+                <span>Páginas Especiais</span>
               </button>
 
               <button
@@ -644,6 +645,23 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               >
                 <ImageIcon size={16} className="text-indigo-600" />
                 <span>Galeria de Ficheiros</span>
+              </button>
+
+              <button
+                onClick={() => handleItemClick('admin-council')}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition ${
+                  currentView === 'admin-council'
+                    ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-200 font-bold'
+                    : 'text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Crown size={16} className="text-purple-600 dark:text-purple-400" />
+                  <span>Central de Burocratas & Moderação</span>
+                </div>
+                <span className="text-[9px] font-bold font-mono px-1 rounded bg-purple-200 dark:bg-purple-900 text-purple-900 dark:text-purple-200">
+                  CONSELHO
+                </span>
               </button>
 
               <button
@@ -741,7 +759,7 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
                 }`}
               >
                 <Star size={16} className="text-amber-500" />
-                <span>{t('sidebar.watchlist')}</span>
+                <span>Artigos Vigiados</span>
               </button>
 
               <button

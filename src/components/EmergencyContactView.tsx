@@ -164,7 +164,7 @@ export const EmergencyContactView: React.FC<EmergencyContactViewProps> = ({
 }) => {
   // Verificação estrita de prerrogativa de Administrador para a Área Restrita
   const isSuperAdminEmail = currentUser?.email === 'pedrohenriquecardonaperes@gmail.com';
-  const isAdminRole = currentUser?.role === 'admin' || currentUser?.role === 'administrador';
+  const isAdminRole = currentUser?.role === 'admin' || (currentUser?.role as string) === 'administrador';
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const isAdmin = Boolean(isSuperAdminEmail || isAdminRole || isAdminUnlocked);
 

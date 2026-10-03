@@ -41,12 +41,14 @@ import { StorageService } from '../services/storageService';
 interface PromotionRequestsViewProps {
   currentUser: UserProfile | null;
   onNavigateToUser: (identifier: string) => void;
+  onNavigateToAdminCouncil?: () => void;
   onBack?: () => void;
 }
 
 export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
   currentUser,
   onNavigateToUser,
+  onNavigateToAdminCouncil,
   onBack,
 }) => {
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
@@ -442,6 +444,16 @@ export const PromotionRequestsView: React.FC<PromotionRequestsViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5">
+          {onNavigateToAdminCouncil && (
+            <button
+              onClick={onNavigateToAdminCouncil}
+              className="px-3 py-2 rounded-lg bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/60 dark:hover:bg-purple-800 text-purple-900 dark:text-purple-200 border border-purple-300 dark:border-purple-700 text-sm font-semibold flex items-center gap-1.5 transition"
+            >
+              <Crown size={15} />
+              <span>Conselho de Burocratas</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsModalOpen(true)}
             className="px-4 py-2 rounded-lg bg-purple-700 hover:bg-purple-800 text-white font-medium text-sm flex items-center gap-2 shadow-xs transition"

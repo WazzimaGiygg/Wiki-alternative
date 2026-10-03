@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Users,
   Shield,
+  Crown,
   Search,
   Filter,
   Award,
@@ -59,6 +60,7 @@ interface AdminUsersManagementViewProps {
   onNavigateToCheckUser?: (username: string) => void;
   onNavigateToUnblockRequests?: () => void;
   onNavigateToPromotionRequests?: () => void;
+  onNavigateToAdminCouncil?: () => void;
   onNavigateToContactAdmin?: () => void;
   onBack?: () => void;
   initialAdminTab?: 'users' | 'lgpd_requests';
@@ -82,6 +84,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
   onNavigateToCheckUser,
   onNavigateToUnblockRequests,
   onNavigateToPromotionRequests,
+  onNavigateToAdminCouncil,
   onNavigateToContactAdmin,
   onBack,
   initialAdminTab = 'users',
@@ -893,6 +896,15 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
 
           {/* Quick Action Links & Export */}
           <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+            {onNavigateToAdminCouncil && (
+              <button
+                onClick={onNavigateToAdminCouncil}
+                className="px-2.5 py-1.5 rounded bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-bold flex items-center gap-1.5 transition shadow-sm"
+              >
+                <Crown size={13} />
+                <span>Special:Bureaucrats (Conselho)</span>
+              </button>
+            )}
             {onNavigateToCheckUser && (
               <button
                 onClick={() => onNavigateToCheckUser('Usuario_Suspeito')}

@@ -1,6 +1,7 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { LanguageProvider } from './context/LanguageContext';
 import { ExtensionManager } from './core/ExtensionManager';
 import './index.css';
@@ -13,8 +14,10 @@ ExtensionManager.getInstance().loadExtensionsFromGlob().catch((err) => {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <LanguageProvider>
-      <App />
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <App />
+      </LanguageProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );

@@ -67,7 +67,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
     if (!query || query.trim().length < 2) {
       // Se a query for vazia ou curta, retorna os artigos mais populares/recentes
       return [...articles]
-        .sort((a, b) => (b.views || 0) - (a.views || 0))
+        .sort((a, b) => (b.visualizacoes || 0) - (a.visualizacoes || 0))
         .slice(0, 4);
     }
 
@@ -102,7 +102,7 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
 
     // Fallback para artigos em alta se não houver semelhantes
     return [...articles]
-      .sort((a, b) => (b.views || 0) - (a.views || 0))
+      .sort((a, b) => (b.visualizacoes || 0) - (a.visualizacoes || 0))
       .slice(0, 4);
   }, [articles, query]);
 

@@ -7,6 +7,7 @@ import {
   User as UserIcon,
   LogOut,
   Shield,
+  Crown,
   Layers,
   Edit3,
   BookOpen,
@@ -735,7 +736,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline"><u>A</u>rquivo</span>
                   <span onClick={() => onNavigate('editor')} className="cursor-pointer hover:underline"><u>E</u>ditar</span>
                   <span onClick={onOpenLanguagesModal} className="cursor-pointer hover:underline"><u>E</u>xibir</span>
-                  <span onClick={() => onNavigate('history')} className="cursor-pointer hover:underline"><u>F</u>avoritos</span>
+                  <span onClick={() => onNavigate('watchlist')} className="cursor-pointer hover:underline"><u>F</u>avoritos</span>
                   <span onClick={() => onNavigate('hub')} className="cursor-pointer hover:underline">A<u>j</u>uda</span>
                 </div>
               </div>
@@ -2253,6 +2254,15 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
                     >
                       <Layers size={13} className="text-purple-600 dark:text-purple-400" /> Diretório de Usuários
+                    </button>
+                    <button
+                      onClick={() => {
+                        onNavigate('admin-council');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 flex items-center gap-2 font-bold"
+                    >
+                      <Crown size={13} className="text-purple-600 dark:text-purple-400" /> Central de Burocratas & Moderação
                     </button>
                     <button
                       onClick={() => {

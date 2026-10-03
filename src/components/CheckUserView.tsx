@@ -142,6 +142,8 @@ export const CheckUserView: React.FC<CheckUserViewProps> = ({
         displayName: 'Administrador',
         email: 'admin@wikizero.org',
         role: 'admin',
+        isGuest: false,
+        isBanned: false,
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString(),
       };
@@ -788,7 +790,7 @@ export const CheckUserView: React.FC<CheckUserViewProps> = ({
                   <div className="space-y-3">
                     {matchedAccounts.map((account) => {
                       const isTargetAccount = account.username.toLowerCase() === targetInput.toLowerCase();
-                      const hasSockpuppetFlag = account.isSockpuppet || account.bio?.includes('{{Fantoche');
+                      const hasSockpuppetFlag = account.isSockpuppet || (account as any).bio?.includes('{{Fantoche');
 
                       return (
                         <div

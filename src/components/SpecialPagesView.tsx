@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Vote,
   Scale,
+  Crown,
   UserX,
   Users,
   Upload,
@@ -60,6 +61,7 @@ interface SpecialPagesViewProps {
   onNavigateToDataRemovalRequests?: () => void;
   onNavigateToCheckUser?: (username?: string) => void;
   onNavigateToUsersList?: () => void;
+  onNavigateToAdminCouncil?: () => void;
   onNavigateToUpload?: () => void;
   onNavigateToFilesList?: () => void;
   onNavigateToArbitration?: () => void;
@@ -91,6 +93,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToDataRemovalRequests,
   onNavigateToCheckUser,
   onNavigateToUsersList,
+  onNavigateToAdminCouncil,
   onNavigateToUpload,
   onNavigateToFilesList,
   onNavigateToArbitration,
@@ -313,6 +316,26 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Lista de Usuários
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToAdminCouncil && (
+          <button
+            onClick={onNavigateToAdminCouncil}
+            className="p-3 rounded-lg border border-purple-300 dark:border-purple-800 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 dark:from-purple-950/40 dark:to-indigo-950/40 hover:from-purple-100 dark:hover:from-purple-900/50 text-left transition flex items-center gap-2.5 group ring-1 ring-purple-400/30"
+          >
+            <div className="p-2 rounded-md bg-gradient-to-tr from-purple-700 to-indigo-600 text-white shrink-0 shadow-sm">
+              <Crown size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-purple-900 dark:text-purple-200 truncate group-hover:underline flex items-center gap-1.5">
+                Special:Bureaucrats
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-200 dark:bg-purple-900 text-purple-800 dark:text-purple-200 font-mono">Conselho</span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Gestão da Administração, Burocratas & Moderadores
               </div>
             </div>
           </button>

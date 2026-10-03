@@ -2462,7 +2462,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             idioma: idioma || 'Português',
             autor: user?.displayName || user?.username || 'Editor WikiWorldWeb',
             dataCriacao: initialArticle?.dataCriacao || new Date().toISOString(),
-            dataModificacao: new Date().toISOString(),
+            dataEdicao: new Date().toISOString(),
             versao: initialArticle?.versao || 1,
           }}
           pageName={pages.find((p) => p.uid === pageUid)?.titulo || 'WikiWorldWeb'}

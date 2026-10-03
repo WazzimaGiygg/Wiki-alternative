@@ -225,7 +225,10 @@ export interface UserAuditLog {
     | 'lgpd_deletion_requested'
     | 'lgpd_account_deletion'
     | 'lgpd_deletion_rejected'
-    | 'lgpd_reidentified_google_uid';
+    | 'lgpd_reidentified_google_uid'
+    | 'bureaucrat_flag_change'
+    | 'bureaucrat_decree'
+    | 'moderator_patrol_action';
   performedBy: string;
   performedByRole: string;
   details: string;
@@ -596,6 +599,7 @@ export type ViewMode =
   | 'watchlist'
   | 'user-page'
   | 'admin-users'
+  | 'admin-council'
   | 'admin-data-removal'
   | 'admin-firebase'
   | 'checkuser'

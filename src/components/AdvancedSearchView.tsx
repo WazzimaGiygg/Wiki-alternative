@@ -235,9 +235,9 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
         });
 
         // Boost para artigos mais visualizados
-        score += Math.min((article.views || 0) * 0.1, 25);
+        score += Math.min((article.visualizacoes || 0) * 0.1, 25);
       } else {
-        score = article.views || 0;
+        score = article.visualizacoes || 0;
       }
 
       return { article, score };
@@ -259,7 +259,7 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
         return dateA - dateB;
       }
       if (sortBy === 'views') {
-        return (b.article.views || 0) - (a.article.views || 0);
+        return (b.article.visualizacoes || 0) - (a.article.visualizacoes || 0);
       }
       if (sortBy === 'title') {
         return (a.article.titulo || '').localeCompare(b.article.titulo || '');
@@ -763,10 +763,10 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                        {article.views !== undefined && (
+                        {article.visualizacoes !== undefined && (
                           <span className="flex items-center gap-1" title="Visualizações">
                             <Eye size={11} />
-                            {article.views}
+                            {article.visualizacoes}
                           </span>
                         )}
                         <span>{(article.descricao?.length || 0).toLocaleString()} carac.</span>
@@ -849,10 +849,10 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
 
                   <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 text-[11px] text-slate-400 gap-1">
                     <div className="flex items-center gap-2">
-                      {article.views !== undefined && (
+                      {article.visualizacoes !== undefined && (
                         <span className="flex items-center gap-1">
                           <Eye size={11} />
-                          {article.views}
+                          {article.visualizacoes}
                         </span>
                       )}
                       <span>{new Date(article.dataCriacao || '').toLocaleDateString('pt-BR')}</span>

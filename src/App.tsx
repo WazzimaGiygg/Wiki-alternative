@@ -9,6 +9,7 @@ import { WikitextEditor } from './components/WikitextEditor';
 import { SpecialPagesView } from './components/SpecialPagesView';
 import { UserPageView } from './components/UserPageView';
 import { AdminUsersManagementView } from './components/AdminUsersManagementView';
+import { AdminCouncilView } from './components/AdminCouncilView';
 import { AdminDataRemovalRequestsView } from './components/AdminDataRemovalRequestsView';
 import { CheckUserView } from './components/CheckUserView';
 import { UnblockRequestsView } from './components/UnblockRequestsView';
@@ -1292,7 +1293,7 @@ export default function App() {
                       }
                     }}
                     className={`px-3 py-1.5 border border-b-0 rounded-t-xs font-medium text-[13px] transition ${
-                      currentView === 'article' || currentView === 'hub' || currentView === 'page'
+                      currentView === 'article' || currentView === 'hub'
                         ? 'bg-white border-[#a7d7f9] text-[#202122] font-semibold shadow-2xs'
                         : 'bg-[#f6f6f6] border-transparent text-[#0645ad] hover:text-[#0b0080]'
                     }`}
@@ -1498,6 +1499,7 @@ export default function App() {
               onNavigateToDataRemovalRequests={() => handleNavigate('admin-data-removal')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
               onNavigateToUsersList={() => handleNavigate('admin-users')}
+              onNavigateToAdminCouncil={() => handleNavigate('admin-council')}
               onNavigateToUpload={() => handleNavigateToUpload()}
               onNavigateToFilesList={() => handleNavigate('files-list')}
               onNavigateToArbitration={() => handleNavigate('arbitration')}
@@ -1532,6 +1534,7 @@ export default function App() {
               onNavigateToDataRemovalRequests={() => handleNavigate('admin-data-removal')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
               onNavigateToUsersList={() => handleNavigate('admin-users')}
+              onNavigateToAdminCouncil={() => handleNavigate('admin-council')}
               onNavigateToUpload={() => handleNavigateToUpload()}
               onNavigateToFilesList={() => handleNavigate('files-list')}
               onNavigateToArbitration={() => handleNavigate('arbitration')}
@@ -1601,7 +1604,22 @@ export default function App() {
               onNavigateToCheckUser={handleNavigateToCheckUser}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
+              onNavigateToAdminCouncil={() => handleNavigate('admin-council')}
               onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
+              onBack={() => handleNavigate('hub')}
+            />
+          )}
+
+          {currentView === 'admin-council' && (
+            <AdminCouncilView
+              currentUser={user}
+              onNavigateToUser={handleNavigateToUser}
+              onNavigateToCheckUser={handleNavigateToCheckUser}
+              onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
+              onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
+              onNavigateToUsersList={() => handleNavigate('admin-users')}
+              onNavigateToArbitration={() => handleNavigate('arbitration')}
+              onNavigateToUCoC={() => handleNavigate('ucoc')}
               onBack={() => handleNavigate('hub')}
             />
           )}
@@ -1638,6 +1656,7 @@ export default function App() {
             <PromotionRequestsView
               currentUser={user}
               onNavigateToUser={handleNavigateToUser}
+              onNavigateToAdminCouncil={() => handleNavigate('admin-council')}
               onBack={() => handleNavigate('hub')}
             />
           )}
@@ -2263,10 +2282,10 @@ export default function App() {
       <GeminiPremiumModal
         isOpen={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
-        currentUser={user}
-        triggerQuotaType={premiumQuotaType}
-        onOpenLogin={handleLoginClick}
-        onUpgradeSuccess={() => {
+        user={user}
+        quotaTypeTriggered={premiumQuotaType}
+        onUserUpdated={(updatedUser) => {
+          setUser(updatedUser);
           handleNotify('Plano Gemini Premium ativado com sucesso! Aproveite recursos ilimitados.', 'success');
         }}
       />
