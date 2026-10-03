@@ -120,6 +120,13 @@ export default function App() {
   const [showNotebookModal, setShowNotebookModal] = useState<boolean>(false);
 
   const [currentView, setCurrentView] = useState<ViewMode>('hub');
+  const [isVectorTabTransitioning, setIsVectorTabTransitioning] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsVectorTabTransitioning(true);
+    const timer = setTimeout(() => setIsVectorTabTransitioning(false), 350);
+    return () => clearTimeout(timer);
+  }, [currentView]);
   const [selectedPageUid, setSelectedPageUid] = useState<string | null>(null);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [editingArticle, setEditingArticle] = useState<WikiArticle | null>(null);
@@ -1349,6 +1356,15 @@ export default function App() {
                     ★
                   </span>
                 </div>
+              </div>
+
+              {/* Subtle loading bar animation below the tabs when switching view modes */}
+              <div className="h-[2px] w-full bg-[#f0f8ff] overflow-hidden">
+                {isVectorTabTransitioning ? (
+                  <div className="h-full bg-[#3366cc] animate-pulse w-full transition-all duration-300" />
+                ) : (
+                  <div className="h-full bg-transparent w-full" />
+                )}
               </div>
 
               {/* Humorous Wikipedia / Wikiomite Foundation Notice Box */}
