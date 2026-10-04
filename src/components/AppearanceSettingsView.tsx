@@ -22,11 +22,15 @@ import {
   Gamepad2,
   Bell,
   ShieldCheck,
+  Puzzle,
+  Lock,
 } from 'lucide-react';
 import { AppTheme, DeviceMode, ViewMode } from '../types';
+import { ExtensionManager } from '../core/ExtensionManager';
 import { playPCSpeakerBeep, playWin95Tada } from '../utils/win95Audio';
 import { playHalfLifeHEVBeep, playHalfLifeGeiger } from '../utils/halfLifeAudio';
 import { playWin31StartupSound, playWin31Ding } from '../utils/win31Audio';
+import { playAndroid23Chime, playAndroid23Click } from '../utils/android23Audio';
 
 interface AppearanceSettingsViewProps {
   currentTheme: AppTheme;
@@ -53,6 +57,21 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
   });
 
   const [showSavedFeedback, setShowSavedFeedback] = useState(false);
+  const [extensionNotice, setExtensionNotice] = useState<string | null>(null);
+
+  // Monitora em tempo real se a extensão do Android 2.3 está ativa no ExtensionManager
+  const [isAndroid23Active, setIsAndroid23Active] = useState<boolean>(() =>
+    ExtensionManager.getInstance().isExtensionLoaded('Android23GingerbreadTheme')
+  );
+
+  useEffect(() => {
+    const unsub = ExtensionManager.getInstance().subscribe(() => {
+      setIsAndroid23Active(
+        ExtensionManager.getInstance().isExtensionLoaded('Android23GingerbreadTheme')
+      );
+    });
+    return unsub;
+  }, []);
 
   // Apply typography adjustments to document body
   useEffect(() => {
@@ -73,8 +92,18 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
   }, [fontScale, fontFamily]);
 
   const handleSelectTheme = (newTheme: AppTheme) => {
+    if (newTheme === 'android23' && !isAndroid23Active) {
+      setExtensionNotice(
+        'O tema Android 2.3 Gingerbread faz parte de uma extensão e está atualmente DESATIVADA pelo Conselho de Burocratas. Apenas burocratas podem reativar a extensão no Painel de Administração.'
+      );
+      setTimeout(() => setExtensionNotice(null), 6000);
+      return;
+    }
+
     onSetTheme(newTheme);
-    if (newTheme === 'win1') {
+    if (newTheme === 'android23') {
+      playAndroid23Chime(0.28);
+    } else if (newTheme === 'win1') {
       playPCSpeakerBeep(880, 0.12, 0.25);
       setTimeout(() => playPCSpeakerBeep(1174, 0.14, 0.25), 130);
     } else if (newTheme === 'win31') {
@@ -307,6 +336,21 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
       ),
     },
     {
+      id: 'android23',
+      name: 'Android 2.3 Gingerbread (2010)',
+      subtitle: 'Nexus S, Dark AMOLED UI & Acentos Verde Néon',
+      description: 'Design lendário do Android 2.3 Gingerbread provido pela extensão da enciclopédia: barra de status preta AMOLED, indicadores de sinal de rede e bateria em verde néon vibrante (#A4C639), botões táteis chanfrados e tipografia Droid Sans.',
+      tag: 'Gingerbread 2.3 (Extensão)',
+      accentColor: '#A4C639',
+      bgPreview: 'bg-[#0c0d10] border-[#252830] border-t-2 border-t-[#A4C639] text-[#e2e8f0]',
+      badgeStyle: 'bg-[#A4C639]/20 text-[#A4C639] border border-[#A4C639]/50 font-bold',
+      icon: (
+        <svg className="w-4 h-4 fill-current text-[#A4C639]" viewBox="0 0 24 24">
+          <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
+        </svg>
+      ),
+    },
+    {
       id: 'stardew',
       name: 'Stardew Valley (Vale da Estrela)',
       subtitle: 'Pelican Town, Madeira & Pergaminho',
@@ -441,6 +485,26 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
 
       {/* 2. Theme Selection Cards Grid */}
       <div className="space-y-3">
+        {extensionNotice && (
+          <div className="p-3.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 flex items-start justify-between gap-3 animate-in fade-in duration-200">
+            <div className="flex items-start gap-2.5">
+              <Lock size={16} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              <div className="text-xs leading-relaxed">
+                <span className="font-bold block text-sm">Extensão Bloqueada</span>
+                {extensionNotice}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigate('admin-extensions')}
+              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 flex items-center gap-1 transition shadow-xs"
+            >
+              <Puzzle size={13} />
+              <span>Painel de Extensões</span>
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Layers size={16} className="text-blue-600 dark:text-blue-400" />
@@ -492,6 +556,19 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                         </p>
                       </div>
                     </div>
+                    {t.id === 'android23' && (
+                      <div className="shrink-0">
+                        {isAndroid23Active ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#A4C639]/20 text-[#558b2f] dark:text-[#A4C639] border border-[#A4C639]/40 flex items-center gap-1">
+                            <Puzzle size={10} /> Extensão Ativa
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1">
+                            <Lock size={10} /> Desativada
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Micro Visual Preview Box */}
@@ -649,27 +726,62 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                         <span className="text-[10px]">↺</span>
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectTheme(t.id);
-                      }}
-                      className={`px-3 py-1 rounded-md text-xs font-semibold transition flex items-center gap-1 ${
-                        isSelected
-                          ? 'bg-blue-600 text-white font-bold shadow-xs'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {isSelected ? (
-                        <>
-                          <Check size={12} />
-                          <span>Ativo</span>
-                        </>
-                      ) : (
-                        <span>Ativar</span>
-                      )}
-                    </button>
+                    {t.id === 'android23' && isAndroid23Active && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playAndroid23Chime(0.35);
+                        }}
+                        className="px-2.5 py-1 rounded-md text-[11px] font-bold border border-[#A4C639]/50 bg-[#A4C639]/15 text-[#558b2f] dark:text-[#A4C639] hover:bg-[#A4C639]/25 transition flex items-center gap-1 font-mono"
+                        title="Tocar notificação clássica do Android 2.3 Gingerbread"
+                      >
+                        <span>Chime 2.3</span>
+                        <span className="text-[10px]">🔔</span>
+                      </button>
+                    )}
+                    {t.id === 'android23' && !isAndroid23Active && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigate('admin-extensions');
+                        }}
+                        className="px-2.5 py-1 rounded-md text-[11px] font-medium border border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition flex items-center gap-1"
+                        title="Abrir painel de extensões (Apenas Burocratas)"
+                      >
+                        <Lock size={11} />
+                        <span>Gerenciar</span>
+                      </button>
+                    )}
+                    {t.id === 'android23' && !isAndroid23Active ? (
+                      <span className="px-3 py-1 rounded-md text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-500 cursor-not-allowed flex items-center gap-1">
+                        <Lock size={12} />
+                        <span>Desativada</span>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectTheme(t.id);
+                        }}
+                        className={`px-3 py-1 rounded-md text-xs font-semibold transition flex items-center gap-1 ${
+                          isSelected
+                            ? 'bg-blue-600 text-white font-bold shadow-xs'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {isSelected ? (
+                          <>
+                            <Check size={12} />
+                            <span>Ativo</span>
+                          </>
+                        ) : (
+                          <span>Ativar</span>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

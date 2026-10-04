@@ -119,6 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isWikidiota = theme === 'wikidiota';
   const isGenshin = theme === 'genshin';
   const isAndroid = theme === 'android15';
+  const isAndroid23 = theme === 'android23';
   const isStardew = theme === 'stardew';
   const isRepo = theme === 'repo';
   const isMinecraft = theme === 'minecraft';
@@ -514,6 +515,44 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
+      {/* Android 2.3 Gingerbread Notification Status Bar */}
+      {isAndroid23 && (
+        <div className="android23-statusbar bg-black text-[#c0c4cc] text-[10px] font-sans flex items-center justify-between px-3 py-1 select-none border-b border-[#1f2024]">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1 font-mono font-bold text-[#A4C639]">
+              <svg className="w-3 h-3 fill-current text-[#A4C639]" viewBox="0 0 24 24">
+                <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
+              </svg>
+              <span>Android 2.3</span>
+            </span>
+            <span className="text-[#444] hidden sm:inline">|</span>
+            <span className="text-[#A4C639] font-bold text-[9px] px-1.5 py-0.2 rounded bg-[#A4C639]/15 border border-[#A4C639]/40 hidden sm:inline">
+              Gingerbread
+            </span>
+            <span className="text-[#888] text-[9px] hidden md:inline">Samsung Nexus S • AMOLED UI</span>
+          </div>
+
+          <div className="flex items-center gap-2.5 text-[10px]">
+            <span className="text-[#A4C639] font-mono font-bold text-[9px] flex items-center gap-0.5">
+              <span>H</span>
+              <span className="text-[7px]">▲▼</span>
+            </span>
+            <div className="flex items-end gap-0.5 h-2.5" title="Sinal Celular HSPA+">
+              <span className="w-0.5 h-1 bg-[#A4C639]" />
+              <span className="w-0.5 h-1.5 bg-[#A4C639]" />
+              <span className="w-0.5 h-2 bg-[#A4C639]" />
+              <span className="w-0.5 h-2.5 bg-[#A4C639]" />
+            </div>
+            <div className="flex items-center gap-1" title="Bateria 100%">
+              <div className="w-4 h-2 border border-[#888] rounded-xs p-0.5 flex items-center">
+                <div className="w-full h-full bg-[#A4C639]" />
+              </div>
+            </div>
+            <span className="font-mono text-white text-[10px] font-semibold">10:04</span>
+          </div>
+        </div>
+      )}
+
       {/* Google 4-Color Accent Line when Google Theme is active */}
       {isGoogleTheme && <div className="google-gradient-bar w-full" />}
 
@@ -522,6 +561,9 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Android 1.5 Robot Green Accent Line */}
       {isAndroid && <div className="android-accent-bar w-full" />}
+
+      {/* Android 2.3 Bugdroid Green Accent Line */}
+      {isAndroid23 && <div className="android23-accent-bar w-full" />}
 
       {/* Stardew Valley Prismatic & Golden Wheat Accent Line */}
       {isStardew && <div className="stardew-accent-bar w-full" />}
@@ -725,7 +767,7 @@ export const Header: React.FC<HeaderProps> = ({
       )}
 
       {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isHalfLife ? 'bg-[#121512] text-[#ff9900] border-b border-[#ff9900]/40' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-2.5 sm:px-4 font-mono w-full max-w-full overflow-hidden`}>
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isHalfLife ? 'bg-[#121512] text-[#ff9900] border-b border-[#ff9900]/40' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isAndroid23 ? 'bg-[#0f1013] text-[#A4C639] border-b border-[#22242a]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-2.5 sm:px-4 font-mono w-full max-w-full overflow-hidden`}>
         <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full min-w-0">
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 truncate">
             {isWin95 ? (
@@ -779,6 +821,13 @@ export const Header: React.FC<HeaderProps> = ({
                   <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
                 </svg>
                 ANDROID 1.5 CUPCAKE
+              </span>
+            ) : isAndroid23 ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#A4C639] text-black">
+                <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
+                </svg>
+                ANDROID 2.3 GINGERBREAD
               </span>
             ) : isStardew ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#c6892e] text-[#2c1605] border border-[#f5cb74]">

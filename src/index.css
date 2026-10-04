@@ -2007,6 +2007,151 @@ html.theme-android15 footer {
 }
 
 /* ========================================================================== */
+/* TEMA ANDROID 2.3 (Gingerbread OS 2010 - Dark AMOLED, Neon Green & Droid)   */
+/* ========================================================================== */
+html.theme-android23 {
+  color-scheme: dark;
+}
+
+html.theme-android23 body {
+  background-color: #0c0d10;
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, rgba(164, 198, 57, 0.16) 0%, transparent 60%),
+    linear-gradient(180deg, #131418 0%, #0a0b0d 100%);
+  color: #e2e8f0;
+  font-family: 'Droid Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Android 2.3 Gingerbread Jet-Black Notification Status Bar */
+.android23-statusbar {
+  background-color: #000000;
+  border-bottom: 1px solid #1f2024;
+  color: #c0c4cc;
+}
+
+/* Android 2.3 Characteristic Bugdroid Green Accent Line */
+.android23-accent-bar {
+  height: 3px;
+  background: linear-gradient(90deg, #76b900 0%, #A4C639 50%, #88cc00 100%);
+  box-shadow: 0 0 12px rgba(164, 198, 57, 0.7);
+}
+
+/* Android 2.3 AMOLED Dark Charcoal Header with Neon Green Accent */
+html.theme-android23 header {
+  background: linear-gradient(180deg, #25272c 0%, #1a1b1f 60%, #121316 100%) !important;
+  border-bottom: 2px solid #A4C639 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+/* Android 2.3 Search Box Widget with Neon Green Highlight */
+html.theme-android23 .android23-search-widget {
+  background-color: #17181c;
+  border: 1.5px solid #33363f;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+  color: #ffffff;
+}
+
+html.theme-android23 .android23-search-widget:focus-within {
+  border-color: #A4C639;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 12px rgba(164, 198, 57, 0.65);
+}
+
+/* Android 2.3 Classic Beveled Dark Buttons */
+.android23-btn {
+  background: linear-gradient(180deg, #44474e 0%, #2f3137 50%, #202226 100%);
+  border: 1px solid #151618;
+  color: #ffffff;
+  border-radius: 5px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8);
+  transition: all 0.15s ease;
+}
+
+.android23-btn:hover {
+  background: linear-gradient(180deg, #51545c 0%, #3a3c42 50%, #282a2e 100%);
+  border-color: #A4C639;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 8px rgba(164, 198, 57, 0.5);
+}
+
+.android23-btn:active {
+  background: linear-gradient(180deg, #18191c 0%, #25272b 100%);
+  border-color: #FF9000;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* Android 2.3 Content Cards & Surfaces */
+html.theme-android23 .bg-white,
+html.theme-android23 .dark\:bg-slate-900,
+html.theme-android23 .dark\:bg-\[\#0f172a\] {
+  background-color: #121316 !important;
+  border-color: #26282e !important;
+  color: #e2e8f0 !important;
+}
+
+html.theme-android23 .bg-slate-50,
+html.theme-android23 .dark\:bg-slate-800,
+html.theme-android23 .dark\:bg-\[\#1e293b\] {
+  background-color: #1a1b20 !important;
+  border-color: #2f323a !important;
+  color: #cbd5e1 !important;
+}
+
+/* Android 2.3 Article Content Typography & Links */
+html.theme-android23 .wiki-rendered-content {
+  color: #e2e8f0;
+  line-height: 1.7;
+}
+
+html.theme-android23 .wiki-rendered-content h1,
+html.theme-android23 .wiki-rendered-content h2,
+html.theme-android23 .wiki-rendered-content h3 {
+  color: #A4C639 !important;
+  border-bottom-color: #333842 !important;
+  text-shadow: 0 0 12px rgba(164, 198, 57, 0.25);
+}
+
+html.theme-android23 .wiki-rendered-content .wiki-link {
+  color: #88cc00 !important;
+  text-decoration: underline;
+  text-decoration-color: rgba(136, 204, 0, 0.4);
+}
+
+html.theme-android23 .wiki-rendered-content .wiki-link:hover {
+  color: #b0ff22 !important;
+  text-shadow: 0 0 8px rgba(164, 198, 57, 0.6);
+}
+
+/* Android 2.3 Tables */
+html.theme-android23 .wiki-rendered-content .wikitable {
+  background-color: #14161a;
+  border-color: #2d3038;
+}
+
+html.theme-android23 .wiki-rendered-content .wikitable th {
+  background: linear-gradient(180deg, #2b2e35 0%, #1e2025 100%);
+  color: #A4C639;
+  border-color: #3d414a;
+}
+
+html.theme-android23 .wiki-rendered-content .wikitable td {
+  border-color: #282a32;
+}
+
+/* Android 2.3 Sidebar */
+html.theme-android23 aside {
+  background-color: #111215 !important;
+  border-right: 1px solid #282a30 !important;
+}
+
+/* Android 2.3 Footer */
+html.theme-android23 footer {
+  background-color: #0c0d10 !important;
+  border-top: 2px solid #A4C639 !important;
+}
+
+/* ========================================================================== */
 /* TEMA STARDEW VALLEY (Pelican Town, Farm, Parchment & Wood Aesthetic)       */
 /* ========================================================================== */
 html.theme-stardew {

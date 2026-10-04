@@ -12,6 +12,17 @@ import { HookRegistry, WikiExtension } from './Extension';
 import { UserProfile, InstalledExtensionMeta, ExtensionCategory } from '../types';
 import { StorageService } from '../services/storageService';
 
+// Extensões nativas instaladas no núcleo
+import ReadingTimeEnhancer from '../extensions/reading-time';
+import MathKatex from '../extensions/math-katex';
+import SyntaxHighlightGeSHi from '../extensions/code-highlight';
+import CiteAcademicFootnotes from '../extensions/footnotes-ref';
+import InfoboxResponsiveStyler from '../extensions/infobox-styler';
+import DisambiguationNotice from '../extensions/disambiguation';
+import EditorialMetricsCollector from '../extensions/word-metrics';
+import QrCodeQuickShare from '../extensions/qr-code-share';
+import Android23GingerbreadTheme from '../extensions/android-23-theme';
+
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
  */
@@ -53,6 +64,34 @@ export class ExtensionManager {
   private constructor() {
     this.hookRegistry = new HookRegistry();
     this.loadPersistedData();
+    this.registerBuiltinExtensions();
+  }
+
+  /**
+   * Registra síncronamente as 9 extensões nativas do WikiZero, garantindo
+   * que estejam imediatamente prontas para o consumo do sistema e dos burocratas.
+   */
+  private registerBuiltinExtensions(): void {
+    const builtins: (new () => WikiExtension)[] = [
+      ReadingTimeEnhancer,
+      MathKatex,
+      SyntaxHighlightGeSHi,
+      CiteAcademicFootnotes,
+      InfoboxResponsiveStyler,
+      DisambiguationNotice,
+      EditorialMetricsCollector,
+      QrCodeQuickShare,
+      Android23GingerbreadTheme,
+    ];
+
+    for (const ExtensionClass of builtins) {
+      try {
+        const instance = new ExtensionClass();
+        this.registerExtension(instance, true);
+      } catch (err) {
+        console.error('[ExtensionManager] Erro ao registrar extensão embutida:', err);
+      }
+    }
   }
 
   /**

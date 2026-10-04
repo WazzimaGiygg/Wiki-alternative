@@ -193,10 +193,10 @@ export default function App() {
     };
   }, []);
 
-  // Multi-theme state supporting light, dark, google, google-dark, win95, winxp, win7, win10, win31, genshin, android15, stardew, repo, minecraft, roblox, nokia3310, win1, halflife
+  // Multi-theme state supporting light, dark, google, google-dark, win95, winxp, win7, win10, win31, genshin, android15, android23, stardew, repo, minecraft, roblox, nokia3310, win1, halflife
   const [theme, setTheme] = useState<AppTheme>(() => {
     const saved = localStorage.getItem('wikizero_theme_v3') as AppTheme | null;
-    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'winxp' || saved === 'win7' || saved === 'win10' || saved === 'win31' || saved === 'wikidiota' || saved === 'genshin' || saved === 'android15' || saved === 'stardew' || saved === 'repo' || saved === 'minecraft' || saved === 'roblox' || saved === 'nokia3310' || saved === 'win1' || saved === 'halflife')) {
+    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'winxp' || saved === 'win7' || saved === 'win10' || saved === 'win31' || saved === 'wikidiota' || saved === 'genshin' || saved === 'android15' || saved === 'android23' || saved === 'stardew' || saved === 'repo' || saved === 'minecraft' || saved === 'roblox' || saved === 'nokia3310' || saved === 'win1' || saved === 'halflife')) {
       return saved;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -232,12 +232,12 @@ export default function App() {
     return saved === 'win10';
   });
 
-  const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'win10' || theme === 'genshin' || theme === 'android15' || theme === 'repo' || theme === 'minecraft' || theme === 'roblox' || theme === 'halflife';
+  const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'win10' || theme === 'genshin' || theme === 'android15' || theme === 'android23' || theme === 'repo' || theme === 'minecraft' || theme === 'roblox' || theme === 'halflife';
 
   // Apply appropriate theme classes to document root
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-win7', 'theme-win10', 'theme-win31', 'theme-wikidiota', 'theme-genshin', 'theme-android15', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1', 'theme-halflife');
+    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-win7', 'theme-win10', 'theme-win31', 'theme-wikidiota', 'theme-genshin', 'theme-android15', 'theme-android23', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1', 'theme-halflife');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -261,6 +261,8 @@ export default function App() {
       root.classList.add('dark', 'theme-genshin');
     } else if (theme === 'android15') {
       root.classList.add('dark', 'theme-android15');
+    } else if (theme === 'android23') {
+      root.classList.add('dark', 'theme-android23');
     } else if (theme === 'stardew') {
       root.classList.add('theme-stardew');
     } else if (theme === 'repo') {

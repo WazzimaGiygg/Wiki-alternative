@@ -998,7 +998,7 @@ export interface EmergencyReport {
   actionLogs: EmergencyReportActionLog[];
 }
 
-export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'winxp' | 'win7' | 'win10' | 'win31' | 'wikidiota' | 'genshin' | 'android15' | 'stardew' | 'repo' | 'minecraft' | 'roblox' | 'nokia3310' | 'win1' | 'halflife';
+export type AppTheme = 'light' | 'dark' | 'google' | 'google-dark' | 'win95' | 'winxp' | 'win7' | 'win10' | 'win31' | 'wikidiota' | 'genshin' | 'android15' | 'android23' | 'stardew' | 'repo' | 'minecraft' | 'roblox' | 'nokia3310' | 'win1' | 'halflife';
 
 export interface GeminiChatbotConfig {
   chatbotId: string;
