@@ -21,16 +21,34 @@ export default class ReadingTimeEnhancer implements WikiExtension {
     return 'Equipe WikiWorldWeb';
   }
 
-  onRegister(hooks: HookRegistry): void {
-    hooks.addFilter<number>('article:read_time_minutes', (currentEstimate: number, text?: string) => {
-      if (!text || typeof text !== 'string') return currentEstimate || 1;
-      const words = text.trim().split(/\s+/).filter(Boolean).length;
-      return Math.max(1, Math.ceil(words / 200));
-    });
+  getCategory(): 'utility' {
+    return 'utility';
+  }
 
-    hooks.addAction('extension:loaded', (ext: WikiExtension) => {
-      // Diagnostic log
-    });
+  isCore(): boolean {
+    return true;
+  }
+
+  onRegister(hooks: HookRegistry): void {
+    hooks.addFilter<number>(
+      'article:read_time_minutes',
+      (currentEstimate: number, text?: string) => {
+        if (!text || typeof text !== 'string') return currentEstimate || 1;
+        const words = text.trim().split(/\s+/).filter(Boolean).length;
+        return Math.max(1, Math.ceil(words / 200));
+      },
+      10,
+      this.getName()
+    );
+
+    hooks.addAction(
+      'extension:loaded',
+      (ext: WikiExtension) => {
+        // Diagnostic log
+      },
+      10,
+      this.getName()
+    );
   }
 
   onUnregister(hooks: HookRegistry): void {

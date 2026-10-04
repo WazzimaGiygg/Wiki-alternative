@@ -18,15 +18,18 @@ import {
   History,
   CheckCircle2,
   Lock,
+  Puzzle,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
+import { ExtensionManager } from '../core/ExtensionManager';
 import { AdminUsersManagementView } from './AdminUsersManagementView';
 import { AdminCouncilView } from './AdminCouncilView';
 import { AdminDataRemovalRequestsView } from './AdminDataRemovalRequestsView';
 import { UnblockRequestsView } from './UnblockRequestsView';
+import { AdminExtensionsManagementView } from './AdminExtensionsManagementView';
 
-export type AdminDashboardTab = 'users' | 'council' | 'data-removal' | 'unblock-requests';
+export type AdminDashboardTab = 'users' | 'council' | 'data-removal' | 'unblock-requests' | 'extensions';
 
 export interface UnifiedAdminDashboardProps {
   currentUser: UserProfile | null;
@@ -64,6 +67,8 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
     pendingUnblockCount: 0,
     pendingPromotionCount: 0,
     bannedUsersCount: 0,
+    activeExtensionsCount: 0,
+    totalExtensionsCount: 0,
   });
 
   const loadSummaryStats = async () => {
@@ -89,6 +94,9 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
       const pendingUnblock = unblockReqs.filter((r) => r.status === 'em_analise');
       const pendingPromo = promoReqs.filter((r) => r.status === 'em_votacao');
 
+      const allExts = ExtensionManager.getInstance().getAllInstalledExtensions();
+      const activeExts = allExts.filter((e) => e.enabled).length;
+
       setStats({
         totalUsers: allUsers.length,
         operatorsCount: operators.length,
@@ -96,6 +104,8 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
         pendingUnblockCount: pendingUnblock.length,
         pendingPromotionCount: pendingPromo.length,
         bannedUsersCount: banned.length,
+        activeExtensionsCount: activeExts,
+        totalExtensionsCount: allExts.length,
       });
     } catch (err) {
       console.error('[UnifiedAdminDashboard] Erro ao carregar métricas:', err);
@@ -233,7 +243,7 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
           </div>
 
           {/* Primary Tab Navigation Strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-4">
             {/* Tab 1: Users Management */}
             <button
               type="button"
@@ -373,6 +383,38 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
                 </span>
               )}
             </button>
+
+            {/* Tab 5: Extensions Management */}
+            <button
+              type="button"
+              onClick={() => handleTabChange('extensions')}
+              className={`p-3 rounded-xl border text-left transition flex items-center justify-between group ${
+                activeTab === 'extensions'
+                  ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-500 dark:border-purple-600 ring-2 ring-purple-500/20 text-purple-900 dark:text-purple-100 shadow-xs'
+                  : 'bg-slate-50/70 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className={`p-2 rounded-lg shrink-0 ${
+                    activeTab === 'extensions'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:text-purple-600'
+                  }`}
+                >
+                  <Puzzle className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold truncate">5. Extensões da Wiki</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    Burocratas & ganchos
+                  </div>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
+                {stats.activeExtensionsCount} ativas
+              </span>
+            </button>
           </div>
         </div>
       </header>
@@ -427,6 +469,16 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
               currentUser={currentUser}
               onNavigateToUser={onNavigateToUser}
               onNavigateToCheckUser={onNavigateToCheckUser}
+              onBack={onBack}
+            />
+          </div>
+        )}
+
+        {activeTab === 'extensions' && (
+          <div className="animate-in fade-in duration-200">
+            <AdminExtensionsManagementView
+              currentUser={currentUser}
+              onNavigateToUser={onNavigateToUser}
               onBack={onBack}
             />
           </div>

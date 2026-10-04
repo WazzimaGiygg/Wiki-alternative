@@ -80,6 +80,8 @@ import {
   DailyEditLimitStatus,
   LgpdAccountDeletionRequest,
   LgpdDeletionRequestStatus,
+  InstalledExtensionMeta,
+  ExtensionActionLog,
 } from '../types';
 import { sanitizeIpForDocId, hashIpAddress } from '../utils/ipUtils';
 import { verifyClientIpForLogin } from '../utils/wikimediaIpChecker';
@@ -167,6 +169,9 @@ const STORAGE_KEYS = {
   UCOC_REPORTS: 'wikizero_ucoc_reports_v1',
   LGPD_NOTIFICATION_CONFIG: 'wikizero_lgpd_notif_config_v1',
   LGPD_DELETION_REQUESTS: 'wikizero_lgpd_deletion_requests_v1',
+  EXTENSIONS_STATES: 'wikizero_extensions_states_v1',
+  CUSTOM_EXTENSIONS: 'wikizero_custom_extensions_v1',
+  EXTENSION_ACTION_LOGS: 'wikizero_extension_action_logs_v1',
   DAILY_EDITS_PREFIX: 'wikizero_daily_edits_',
   CHROME_PREFERENCE_NOTICED: 'wikizero_chrome_recommendation_noticed_v1',
 };
@@ -4947,6 +4952,93 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     logs.unshift(newLog);
     localStorage.setItem(STORAGE_KEYS.USER_AUDIT_LOGS, JSON.stringify(logs));
+  },
+
+  // === GERENCIAMENTO DE EXTENSÕES (BUROCRATAS) ===
+  getExtensionActionLogs(): ExtensionActionLog[] {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.EXTENSION_ACTION_LOGS);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  logExtensionAction(
+    logData: Omit<ExtensionActionLog, 'id' | 'timestamp'>
+  ): ExtensionActionLog {
+    try {
+      const logs = this.getExtensionActionLogs();
+      const newEntry: ExtensionActionLog = {
+        id: 'extlog-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+        timestamp: new Date().toISOString(),
+        ...logData,
+      };
+      logs.unshift(newEntry);
+      // Keep up to 200 logs
+      if (logs.length > 200) logs.length = 200;
+      localStorage.setItem(STORAGE_KEYS.EXTENSION_ACTION_LOGS, JSON.stringify(logs));
+
+      // Also mirror to global audit logs for bureaucrat transparency
+      this.logUserAuditAction(
+        logData.operatorUid || 'system',
+        logData.operatorUsername || 'Burocrata',
+        'permission_change',
+        `[Extensões] Ação "${logData.action}" na extensão "${logData.extensionName}": ${logData.details || ''}`,
+        {
+          uid: logData.operatorUid,
+          displayName: logData.operatorUsername,
+          role: (logData.operatorRole as any) || 'admin',
+          email: '',
+          isGuest: false,
+          isBanned: false,
+          createdAt: new Date().toISOString(),
+        }
+      );
+
+      return newEntry;
+    } catch (e) {
+      console.warn('Erro ao salvar log de extensão:', e);
+      return {
+        id: 'extlog-' + Date.now(),
+        timestamp: new Date().toISOString(),
+        ...logData,
+      };
+    }
+  },
+
+  getSavedExtensionStates(): Record<string, boolean> {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.EXTENSIONS_STATES);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  },
+
+  saveExtensionStates(states: Record<string, boolean>): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.EXTENSIONS_STATES, JSON.stringify(states));
+    } catch (e) {
+      console.warn('Erro ao salvar estados de extensões:', e);
+    }
+  },
+
+  getSavedCustomExtensions(): InstalledExtensionMeta[] {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_EXTENSIONS);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  saveCustomExtensions(extensions: InstalledExtensionMeta[]): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CUSTOM_EXTENSIONS, JSON.stringify(extensions));
+    } catch (e) {
+      console.warn('Erro ao salvar extensões personalizadas:', e);
+    }
   },
 
   // === USER CONTRIBUTIONS ===

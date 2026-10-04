@@ -602,6 +602,7 @@ export type ViewMode =
   | 'admin-users'
   | 'admin-council'
   | 'admin-data-removal'
+  | 'admin-extensions'
   | 'admin-firebase'
   | 'checkuser'
   | 'unblock-requests'
@@ -1451,6 +1452,50 @@ export interface LibraryFilterOptions {
   apenasComDisponibilidade?: boolean;
   ordenacao?: 'recentes' | 'titulo' | 'autor' | 'ano_desc' | 'ano_asc' | 'avaliacoes';
 }
+
+// ==========================================
+// GERENCIAMENTO DE EXTENSÕES DA WIKI
+// ==========================================
+
+export type ExtensionCategory =
+  | 'content'
+  | 'rendering'
+  | 'formatting'
+  | 'utility'
+  | 'interface'
+  | 'security';
+
+export interface InstalledExtensionMeta {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  author: string;
+  category: ExtensionCategory;
+  enabled: boolean;
+  isCore?: boolean;
+  installedAt: string;
+  installedBy?: string;
+  lastModifiedAt?: string;
+  lastModifiedBy?: string;
+  website?: string;
+  hooks: string[];
+  customScript?: string;
+  settings?: Record<string, any>;
+}
+
+export interface ExtensionActionLog {
+  id: string;
+  extensionId: string;
+  extensionName: string;
+  action: 'activated' | 'deactivated' | 'added' | 'removed' | 'configured';
+  operatorUid: string;
+  operatorUsername: string;
+  operatorRole: string;
+  timestamp: string;
+  details?: string;
+}
+
 
 
 

@@ -233,6 +233,94 @@ export class HookRegistry {
   }
 
   /**
+   * Remove todos os filtros e ações associados a uma extensão específica.
+   */
+  public removeAllHooksForExtension(extensionName: string): void {
+    if (!extensionName) return;
+
+    for (const [name, hooks] of this.filters.entries()) {
+      const remaining = hooks.filter((h) => h.extensionName !== extensionName);
+      if (remaining.length === 0) {
+        this.filters.delete(name);
+      } else {
+        this.filters.set(name, remaining);
+      }
+    }
+
+    for (const [name, hooks] of this.actions.entries()) {
+      const remaining = hooks.filter((h) => h.extensionName !== extensionName);
+      if (remaining.length === 0) {
+        this.actions.delete(name);
+      } else {
+        this.actions.set(name, remaining);
+      }
+    }
+  }
+
+  /**
+   * Retorna os hooks registrados por uma determinada extensão.
+   */
+  public getHooksForExtension(extensionName: string): { filters: string[]; actions: string[] } {
+    const filters: string[] = [];
+    const actions: string[] = [];
+
+    for (const [name, hooks] of this.filters.entries()) {
+      if (hooks.some((h) => h.extensionName === extensionName)) {
+        filters.push(name);
+      }
+    }
+
+    for (const [name, hooks] of this.actions.entries()) {
+      if (hooks.some((h) => h.extensionName === extensionName)) {
+        actions.push(name);
+      }
+    }
+
+    return { filters, actions };
+  }
+
+  /**
+   * Retorna relatório detalhado de todos os ganchos ativos para inspeção técnica e diagnóstica.
+   */
+  public getAllHooksDetailed(): {
+    type: 'filter' | 'action';
+    hookName: string;
+    extensionName: string;
+    priority: number;
+  }[] {
+    const list: {
+      type: 'filter' | 'action';
+      hookName: string;
+      extensionName: string;
+      priority: number;
+    }[] = [];
+
+    for (const [name, hooks] of this.filters.entries()) {
+      for (const hook of hooks) {
+        list.push({
+          type: 'filter',
+          hookName: name,
+          extensionName: hook.extensionName || 'Núcleo / Anônima',
+          priority: hook.priority,
+        });
+      }
+    }
+
+    for (const [name, hooks] of this.actions.entries()) {
+      for (const hook of hooks) {
+        list.push({
+          type: 'action',
+          hookName: name,
+          extensionName: hook.extensionName || 'Núcleo / Anônima',
+          priority: hook.priority,
+        });
+      }
+    }
+
+    return list;
+  }
+
+  /**
    * Limpa todos os hooks registrados.
    */
   public clear(): void {
@@ -274,6 +362,21 @@ export interface WikiExtension {
    * Autor ou mantenedor da extensão.
    */
   getAuthor?(): string;
+
+  /**
+   * Categoria temática da extensão.
+   */
+  getCategory?(): 'content' | 'rendering' | 'formatting' | 'utility' | 'interface' | 'security';
+
+  /**
+   * Indica se é uma extensão nativa / essencial da Wiki.
+   */
+  isCore?(): boolean;
+
+  /**
+   * Link da documentação oficial da extensão.
+   */
+  getWebsite?(): string;
 
   /**
    * Método opcional executado quando a extensão for descarregada/desativada.

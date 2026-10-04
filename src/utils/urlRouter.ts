@@ -172,6 +172,9 @@ export function getCanonicalUid(
     case 'admin-council':
       return 'Special:Bureaucrats';
 
+    case 'admin-extensions':
+      return 'Special:Extensions';
+
     case 'checkuser':
       return options.targetUserIdentifier ? `CheckUser:${options.targetUserIdentifier}` : 'Special:CheckUser';
 
@@ -378,6 +381,13 @@ export function resolveNavigationUid(
     'admin-council': { view: 'admin-council' },
     'burocratas': { view: 'admin-council' },
     'governanca': { view: 'admin-council' },
+
+    'special:extensions': { view: 'admin-extensions' },
+    'special:extensoes': { view: 'admin-extensions' },
+    'special:plugins': { view: 'admin-extensions' },
+    'admin-extensions': { view: 'admin-extensions' },
+    'extensions': { view: 'admin-extensions' },
+    'extensoes': { view: 'admin-extensions' },
 
     'special:checkuser': { view: 'checkuser' },
     'checkuser': { view: 'checkuser' },

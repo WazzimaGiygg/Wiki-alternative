@@ -42,6 +42,7 @@ import {
   Newspaper,
   Lock,
   Globe,
+  Puzzle,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -64,6 +65,7 @@ interface SpecialPagesViewProps {
   onNavigateToAdminDashboard?: () => void;
   onNavigateToUsersList?: () => void;
   onNavigateToAdminCouncil?: () => void;
+  onNavigateToExtensions?: () => void;
   onNavigateToUpload?: () => void;
   onNavigateToFilesList?: () => void;
   onNavigateToArbitration?: () => void;
@@ -97,6 +99,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToAdminDashboard,
   onNavigateToUsersList,
   onNavigateToAdminCouncil,
+  onNavigateToExtensions,
   onNavigateToUpload,
   onNavigateToFilesList,
   onNavigateToArbitration,
@@ -359,6 +362,26 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Gestão da Administração, Burocratas & Moderadores
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToExtensions && (
+          <button
+            onClick={onNavigateToExtensions}
+            className="p-3 rounded-lg border border-purple-200 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100/70 dark:hover:bg-purple-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-purple-600 text-white shrink-0">
+              <Puzzle size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-purple-900 dark:text-purple-200 truncate group-hover:underline flex items-center gap-1.5">
+                Special:Extensions
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-200 dark:bg-purple-900 text-purple-800 dark:text-purple-200 font-mono">Burocratas</span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Gerenciamento de Extensões, Ganchos & Módulos
               </div>
             </div>
           </button>

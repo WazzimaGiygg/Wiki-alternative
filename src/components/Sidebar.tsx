@@ -43,6 +43,7 @@ import {
   GraduationCap,
   Newspaper,
   Clock,
+  Puzzle,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -607,7 +608,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 currentView === 'admin-users' ||
                 currentView === 'admin-council' ||
                 currentView === 'admin-data-removal' ||
-                currentView === 'unblock-requests'
+                currentView === 'unblock-requests' ||
+                currentView === 'admin-extensions'
                   ? 'bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-950/80 dark:to-indigo-950/80 text-purple-900 dark:text-purple-100 font-bold border border-purple-300 dark:border-purple-700 shadow-xs'
                   : 'text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/30'
               }`}
@@ -638,6 +640,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="truncate font-semibold">Burocratas & Moderação</span>
                   <span className="text-[8px] bg-purple-200 dark:bg-purple-900 text-purple-900 dark:text-purple-200 font-mono font-bold px-1 rounded-xs">
                     CONSELHO
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
+              onClick={() => onNavigate('admin-extensions')}
+              title="Gerenciamento de Extensões da Wiki (Special:Extensions)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'admin-extensions'
+                  ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-200 font-bold border border-purple-300 dark:border-purple-700 shadow-xs'
+                  : 'text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/30'
+              }`}
+            >
+              <Puzzle size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate font-semibold">Extensões da Wiki</span>
+                  <span className="text-[8px] bg-purple-200 dark:bg-purple-900 text-purple-900 dark:text-purple-200 font-mono font-bold px-1 rounded-xs">
+                    BUROCRATAS
                   </span>
                 </div>
               )}

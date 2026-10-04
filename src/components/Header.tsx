@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Sun,
   Moon,
+  Puzzle,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -2272,6 +2273,15 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full text-left px-3 py-1.5 text-xs text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 flex items-center gap-2 font-bold"
                     >
                       <Crown size={13} className="text-purple-600 dark:text-purple-400" /> Central de Burocratas & Moderação
+                    </button>
+                    <button
+                      onClick={() => {
+                        onNavigate('admin-extensions');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 flex items-center gap-2 font-medium"
+                    >
+                      <Puzzle size={13} className="text-purple-600 dark:text-purple-400" /> Extensões da Wiki (Burocratas)
                     </button>
                     <button
                       onClick={() => {
