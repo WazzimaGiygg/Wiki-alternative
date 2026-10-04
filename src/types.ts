@@ -598,6 +598,7 @@ export type ViewMode =
   | 'special-pages'
   | 'watchlist'
   | 'user-page'
+  | 'admin-dashboard'
   | 'admin-users'
   | 'admin-council'
   | 'admin-data-removal'

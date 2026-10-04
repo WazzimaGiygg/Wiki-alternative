@@ -8,6 +8,7 @@ import { ArticleViewer } from './components/ArticleViewer';
 import { WikitextEditor } from './components/WikitextEditor';
 import { SpecialPagesView } from './components/SpecialPagesView';
 import { UserPageView } from './components/UserPageView';
+import { UnifiedAdminDashboard } from './components/UnifiedAdminDashboard';
 import { AdminUsersManagementView } from './components/AdminUsersManagementView';
 import { AdminCouncilView } from './components/AdminCouncilView';
 import { AdminDataRemovalRequestsView } from './components/AdminDataRemovalRequestsView';
@@ -1498,6 +1499,7 @@ export default function App() {
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToDataRemovalRequests={() => handleNavigate('admin-data-removal')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
+              onNavigateToAdminDashboard={() => handleNavigate('admin-dashboard')}
               onNavigateToUsersList={() => handleNavigate('admin-users')}
               onNavigateToAdminCouncil={() => handleNavigate('admin-council')}
               onNavigateToUpload={() => handleNavigateToUpload()}
@@ -1533,6 +1535,7 @@ export default function App() {
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToDataRemovalRequests={() => handleNavigate('admin-data-removal')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
+              onNavigateToAdminDashboard={() => handleNavigate('admin-dashboard')}
               onNavigateToUsersList={() => handleNavigate('admin-users')}
               onNavigateToAdminCouncil={() => handleNavigate('admin-council')}
               onNavigateToUpload={() => handleNavigateToUpload()}
@@ -1597,29 +1600,29 @@ export default function App() {
             />
           )}
 
-          {currentView === 'admin-users' && (
-            <AdminUsersManagementView
+          {(currentView === 'admin-dashboard' ||
+            currentView === 'admin-users' ||
+            currentView === 'admin-council' ||
+            currentView === 'admin-data-removal' ||
+            currentView === 'unblock-requests') && (
+            <UnifiedAdminDashboard
               currentUser={user}
+              initialTab={
+                currentView === 'admin-council'
+                  ? 'council'
+                  : currentView === 'admin-data-removal'
+                  ? 'data-removal'
+                  : currentView === 'unblock-requests'
+                  ? 'unblock-requests'
+                  : 'users'
+              }
               onNavigateToUser={handleNavigateToUser}
               onNavigateToCheckUser={handleNavigateToCheckUser}
-              onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
-              onNavigateToAdminCouncil={() => handleNavigate('admin-council')}
-              onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
-              onBack={() => handleNavigate('hub')}
-            />
-          )}
-
-          {currentView === 'admin-council' && (
-            <AdminCouncilView
-              currentUser={user}
-              onNavigateToUser={handleNavigateToUser}
-              onNavigateToCheckUser={handleNavigateToCheckUser}
-              onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
-              onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
-              onNavigateToUsersList={() => handleNavigate('admin-users')}
               onNavigateToArbitration={() => handleNavigate('arbitration')}
+              onNavigateToContactAdmin={() => handleNavigate('contact-admin')}
               onNavigateToUCoC={() => handleNavigate('ucoc')}
+              onNavigateToFirebaseAdmin={() => handleNavigate('admin-firebase')}
               onBack={() => handleNavigate('hub')}
             />
           )}
@@ -1630,24 +1633,6 @@ export default function App() {
               initialTarget={targetUserIdentifier || 'Usuario_Suspeito'}
               onNavigateToUser={handleNavigateToUser}
               onNavigateToArticle={handleSelectArticle}
-              onBack={() => handleNavigate('hub')}
-            />
-          )}
-
-          {currentView === 'unblock-requests' && (
-            <UnblockRequestsView
-              currentUser={user}
-              onNavigateToUser={handleNavigateToUser}
-              onNavigateToCheckUser={handleNavigateToCheckUser}
-              onBack={() => handleNavigate('hub')}
-            />
-          )}
-
-          {currentView === 'admin-data-removal' && (
-            <AdminDataRemovalRequestsView
-              currentUser={user}
-              onNavigateToUser={handleNavigateToUser}
-              onNavigateToUsersList={() => handleNavigate('admin-users')}
               onBack={() => handleNavigate('hub')}
             />
           )}

@@ -163,6 +163,9 @@ export function getCanonicalUid(
     case 'user-page':
       return options.targetUserIdentifier ? `User:${options.targetUserIdentifier}` : 'Special:ListUsers';
 
+    case 'admin-dashboard':
+      return 'Special:AdminDashboard';
+
     case 'admin-users':
       return 'Special:ListUsers';
 
@@ -352,6 +355,13 @@ export function resolveNavigationUid(
     'special:upload': { view: 'upload' },
     'upload': { view: 'upload' },
     'carregar-arquivo': { view: 'upload' },
+
+    'special:admindashboard': { view: 'admin-dashboard' },
+    'special:admin': { view: 'admin-dashboard' },
+    'special:dashboard': { view: 'admin-dashboard' },
+    'admin-dashboard': { view: 'admin-dashboard' },
+    'painel-admin': { view: 'admin-dashboard' },
+    'dashboard-admin': { view: 'admin-dashboard' },
 
     'special:listusers': { view: 'admin-users' },
     'admin-users': { view: 'admin-users' },

@@ -2248,6 +2248,15 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
                     <button
                       onClick={() => {
+                        onNavigate('admin-dashboard');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-purple-800 dark:text-purple-200 bg-purple-50/60 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 flex items-center gap-2 font-bold rounded-sm mb-0.5"
+                    >
+                      <Shield size={13} className="text-purple-600 dark:text-purple-400" /> Painel de Administração (HUB)
+                    </button>
+                    <button
+                      onClick={() => {
                         onNavigate('admin-users');
                         setShowUserMenu(false);
                       }}

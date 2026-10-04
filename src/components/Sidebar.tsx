@@ -600,6 +600,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
+              onClick={() => onNavigate('admin-dashboard')}
+              title="Painel Unificado de Administração (Special:AdminDashboard)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'admin-dashboard' ||
+                currentView === 'admin-users' ||
+                currentView === 'admin-council' ||
+                currentView === 'admin-data-removal' ||
+                currentView === 'unblock-requests'
+                  ? 'bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-950/80 dark:to-indigo-950/80 text-purple-900 dark:text-purple-100 font-bold border border-purple-300 dark:border-purple-700 shadow-xs'
+                  : 'text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/30'
+              }`}
+            >
+              <Shield size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate font-semibold">Painel Administrativo</span>
+                  <span className="text-[8px] bg-purple-200 dark:bg-purple-900 text-purple-900 dark:text-purple-200 font-mono font-bold px-1 rounded-xs">
+                    HUB
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
               onClick={() => onNavigate('admin-council')}
               title="Conselho de Burocratas & Moderadores (Special:Bureaucrats)"
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${

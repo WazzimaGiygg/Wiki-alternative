@@ -648,6 +648,27 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               </button>
 
               <button
+                onClick={() => handleItemClick('admin-dashboard')}
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition ${
+                  currentView === 'admin-dashboard' ||
+                  currentView === 'admin-users' ||
+                  currentView === 'admin-council' ||
+                  currentView === 'admin-data-removal' ||
+                  currentView === 'unblock-requests'
+                    ? 'bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-950/80 dark:to-indigo-950/80 text-purple-900 dark:text-purple-100 font-bold'
+                    : 'text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Shield size={16} className="text-purple-600 dark:text-purple-400" />
+                  <span>Painel de Administração (HUB)</span>
+                </div>
+                <span className="text-[9px] font-bold font-mono px-1 rounded bg-purple-200 dark:bg-purple-900 text-purple-900 dark:text-purple-200">
+                  ADMIN
+                </span>
+              </button>
+
+              <button
                 onClick={() => handleItemClick('admin-council')}
                 className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition ${
                   currentView === 'admin-council'

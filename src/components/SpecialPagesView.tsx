@@ -22,6 +22,7 @@ import {
   Vote,
   Scale,
   Crown,
+  Shield,
   UserX,
   Users,
   Upload,
@@ -60,6 +61,7 @@ interface SpecialPagesViewProps {
   onNavigateToUnblockRequests?: () => void;
   onNavigateToDataRemovalRequests?: () => void;
   onNavigateToCheckUser?: (username?: string) => void;
+  onNavigateToAdminDashboard?: () => void;
   onNavigateToUsersList?: () => void;
   onNavigateToAdminCouncil?: () => void;
   onNavigateToUpload?: () => void;
@@ -92,6 +94,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToUnblockRequests,
   onNavigateToDataRemovalRequests,
   onNavigateToCheckUser,
+  onNavigateToAdminDashboard,
   onNavigateToUsersList,
   onNavigateToAdminCouncil,
   onNavigateToUpload,
@@ -297,6 +300,26 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Galeria de Ficheiros
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToAdminDashboard && (
+          <button
+            onClick={onNavigateToAdminDashboard}
+            className="p-3 rounded-lg border border-purple-300 dark:border-purple-700 bg-gradient-to-r from-purple-100/90 to-indigo-100/90 dark:from-purple-950/60 dark:to-indigo-950/60 hover:from-purple-200/90 dark:hover:from-purple-900/70 text-left transition flex items-center gap-2.5 group ring-1 ring-purple-400/40 shadow-xs"
+          >
+            <div className="p-2 rounded-md bg-gradient-to-tr from-purple-700 to-indigo-700 text-white shrink-0 shadow-sm">
+              <Shield size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-purple-950 dark:text-purple-100 truncate group-hover:underline flex items-center gap-1.5">
+                Special:AdminDashboard
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-600 text-white font-mono font-bold">HUB</span>
+              </div>
+              <div className="text-[10px] text-purple-800 dark:text-purple-300 truncate font-medium">
+                Painel Unificado de Administração
               </div>
             </div>
           </button>
