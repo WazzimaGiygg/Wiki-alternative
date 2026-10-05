@@ -1464,7 +1464,90 @@ export type ExtensionCategory =
   | 'utility'
   | 'interface'
   | 'security'
-  | 'tool';
+  | 'tool'
+  | 'theme'
+  | 'editor'
+  | 'widget'
+  | 'moderation'
+  | 'export';
+
+export interface ExtensionSettingField {
+  key: string;
+  label: string;
+  type: 'boolean' | 'string' | 'number' | 'select' | 'color';
+  defaultValue: any;
+  options?: string[]; // Opções para type === 'select'
+  description?: string;
+}
+
+export interface CustomWikitextTagRule {
+  tag: string;
+  template: string;
+  description?: string;
+  hasClosingTag?: boolean;
+}
+
+export interface CustomToolInputField {
+  id: string;
+  label: string;
+  type: 'number' | 'text' | 'select';
+  defaultValue?: any;
+  placeholder?: string;
+  options?: { label: string; value: string | number }[];
+  helpText?: string;
+}
+
+export interface CustomToolConfig {
+  toolId: string;
+  title: string;
+  icon?: string;
+  description?: string;
+  badge?: string;
+  category?: string;
+  htmlWidget?: string;
+  inputs?: CustomToolInputField[];
+  calculationFormula?: string; // Expressão JS avaliada com 'inputs', retornando resultado
+  resultLabel?: string;
+  unitSuffix?: string;
+}
+
+export interface CustomThemeConfig {
+  themeId: string;
+  displayName: string;
+  description?: string;
+  baseTheme?: 'light' | 'dark' | 'retro' | 'cyberpunk' | 'monochrome';
+  accentColor?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  fontFamily?: string;
+  previewGradient?: string;
+  customCss?: string;
+}
+
+export interface CustomEditorPluginConfig {
+  buttonId: string;
+  label: string;
+  icon?: string;
+  tooltip?: string;
+  snippetTemplate: string;
+  shortcut?: string;
+}
+
+export interface CustomArticleBannerConfig {
+  bannerId: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'alert' | 'success' | 'tip';
+  position?: 'top' | 'bottom';
+  targetNamespace?: string;
+}
+
+export interface CustomContentFilterRule {
+  pattern: string;
+  replacement: string;
+  isRegex?: boolean;
+  description?: string;
+}
 
 export interface InstalledExtensionMeta {
   id: string;
@@ -1482,7 +1565,18 @@ export interface InstalledExtensionMeta {
   website?: string;
   hooks: string[];
   customScript?: string;
+  customCss?: string;
+  customTags?: CustomWikitextTagRule[];
+  toolConfig?: CustomToolConfig;
+  themeConfig?: CustomThemeConfig;
+  editorPluginConfig?: CustomEditorPluginConfig;
+  bannerConfig?: CustomArticleBannerConfig;
+  filterRules?: CustomContentFilterRule[];
+  dependencies?: string[];
+  settingsSchema?: ExtensionSettingField[];
   settings?: Record<string, any>;
+  permissions?: string[];
+  tags?: string[];
 }
 
 export interface ExtensionActionLog {

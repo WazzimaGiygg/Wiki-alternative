@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Palette,
   Monitor,
@@ -59,19 +59,23 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
   const [showSavedFeedback, setShowSavedFeedback] = useState(false);
   const [extensionNotice, setExtensionNotice] = useState<string | null>(null);
 
+  const extensionManager = ExtensionManager.getInstance();
+  const [, setExtensionUpdateTick] = useState<number>(0);
+
   // Monitora em tempo real se a extensão do Android 2.3 está ativa no ExtensionManager
   const [isAndroid23Active, setIsAndroid23Active] = useState<boolean>(() =>
-    ExtensionManager.getInstance().isExtensionLoaded('Android23GingerbreadTheme')
+    extensionManager.isExtensionLoaded('Android23GingerbreadTheme')
   );
 
   useEffect(() => {
-    const unsub = ExtensionManager.getInstance().subscribe(() => {
+    const unsub = extensionManager.subscribe(() => {
       setIsAndroid23Active(
-        ExtensionManager.getInstance().isExtensionLoaded('Android23GingerbreadTheme')
+        extensionManager.isExtensionLoaded('Android23GingerbreadTheme')
       );
+      setExtensionUpdateTick((prev) => prev + 1);
     });
     return unsub;
-  }, []);
+  }, [extensionManager]);
 
   // Apply typography adjustments to document body
   useEffect(() => {
@@ -422,6 +426,27 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
     },
   ];
 
+  // Temas visuais dinâmicos registrados por extensões instaladas
+  const customExtThemes = useMemo(() => {
+    return extensionManager.getActiveThemes().map((ct) => ({
+      id: ct.themeId as any,
+      name: ct.displayName,
+      subtitle: ct.description || 'Tema fornecido por extensão',
+      description: `Tema visual personalizado fornecido por extensão: paleta exclusiva com acentos em ${ct.accentColor || '#3b82f6'}, tipografia e variáveis integradas ao sistema.`,
+      tag: 'Extensão Visual',
+      accentColor: ct.accentColor || '#3b82f6',
+      bgPreview:
+        ct.baseTheme === 'dark' || ct.baseTheme === 'cyberpunk'
+          ? 'bg-slate-900 border-2 border-purple-500 text-white font-sans shadow-md'
+          : 'bg-white border-2 border-purple-500 text-slate-900 font-sans shadow-md',
+      badgeStyle:
+        'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-300 font-bold',
+      icon: <Palette size={18} className="text-purple-500" />,
+    }));
+  }, [extensionManager]);
+
+  const allThemesList = useMemo(() => [...themesList, ...customExtThemes], [themesList, customExtThemes]);
+
   return (
     <div className="w-full space-y-6 animate-in fade-in select-none">
       {/* 1. Header & Navigation Breadcrumb */}
@@ -513,12 +538,12 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
             </h2>
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400">
-            {themesList.length} estilos disponíveis
+            {allThemesList.length} estilos disponíveis
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {themesList.map((t) => {
+          {allThemesList.map((t) => {
             const isSelected = currentTheme === t.id;
 
             return (

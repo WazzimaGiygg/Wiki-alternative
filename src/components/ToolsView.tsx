@@ -29,13 +29,15 @@ import {
   Puzzle,
   Lock,
   Shield,
+  Wrench,
 } from 'lucide-react';
-import { AppTheme } from '../types';
+import { AppTheme, CustomToolConfig } from '../types';
 import { WeatherTool } from './WeatherTool';
 import { GoogleScholarTool } from './GoogleScholarTool';
 import { ChromeAppTool } from './ChromeAppTool';
 import { CalculatorTool } from './CalculatorTool';
 import { WorldClockTool } from './WorldClockTool';
+import { CustomInteractiveToolRunner } from './CustomInteractiveToolRunner';
 import { ExtensionManager } from '../core/ExtensionManager';
 
 interface ToolsViewProps {
@@ -46,7 +48,7 @@ interface ToolsViewProps {
   onNavigateToExtensions?: () => void;
 }
 
-export type ToolTab = 'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app';
+export type ToolTab = 'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app' | string;
 
 // ==========================================
 // AVISO DE EXTENSÃO DE FERRAMENTA DESATIVADA
@@ -438,11 +440,22 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
     extensionManager.isExtensionLoaded('WeatherForecastToolExtension')
   );
 
+  const [customTools, setCustomTools] = useState<CustomToolConfig[]>(() =>
+    extensionManager.getActiveTools().filter(
+      (t) => !['calculator', 'world-clock', 'weather'].includes(t.toolId)
+    )
+  );
+
   useEffect(() => {
     const checkStates = () => {
       setIsCalculatorActive(extensionManager.isExtensionLoaded('CalculatorToolExtension'));
       setIsWorldClockActive(extensionManager.isExtensionLoaded('WorldClockToolExtension'));
       setIsWeatherActive(extensionManager.isExtensionLoaded('WeatherForecastToolExtension'));
+      setCustomTools(
+        extensionManager.getActiveTools().filter(
+          (t) => !['calculator', 'world-clock', 'weather'].includes(t.toolId)
+        )
+      );
     };
 
     checkStates();
@@ -693,6 +706,44 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
               </div>
             </div>
           </button>
+
+          {/* Abas Dinâmicas de Ferramentas de Extensões Instaladas */}
+          {customTools.map((ct) => {
+            const isSelected = activeTab === ct.toolId || activeTab === `custom-${ct.toolId}`;
+            return (
+              <button
+                key={ct.toolId}
+                id={`tab-btn-custom-${ct.toolId}`}
+                onClick={() => setActiveTab(ct.toolId)}
+                className={`p-3 rounded-2xl border text-left transition flex items-center justify-between gap-2 cursor-pointer ${
+                  isSelected
+                    ? 'border-cyan-500 bg-cyan-50/80 dark:bg-cyan-950/40 text-cyan-950 dark:text-cyan-100 ring-2 ring-cyan-400/20'
+                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`p-2 rounded-xl shrink-0 ${
+                      isSelected
+                        ? 'bg-cyan-600 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    {ct.icon ? <span className="text-sm">{ct.icon}</span> : <Wrench size={18} />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold truncate">{ct.title || ct.toolId}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                      <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
+                        ext
+                      </span>
+                      <span>{ct.badge || 'Módulo'}</span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -740,6 +791,21 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
 
       {activeTab === 'keyboard-checker' && <KeyboardCheckerTab theme={theme} />}
       {activeTab === 'chrome-app' && <ChromeAppTool theme={theme} />}
+
+      {/* Renderização de Ferramentas Customizadas de Extensão */}
+      {customTools.map((ct) => {
+        if (activeTab === ct.toolId || activeTab === `custom-${ct.toolId}`) {
+          return (
+            <CustomInteractiveToolRunner
+              key={ct.toolId}
+              tool={ct}
+              theme={theme}
+              onNavigateToExtensions={onNavigateToExtensions}
+            />
+          );
+        }
+        return null;
+      })}
     </div>
   );
 };

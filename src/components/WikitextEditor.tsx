@@ -41,9 +41,11 @@ import {
   CaseSensitive,
   WholeWord,
   Wrench,
+  Puzzle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus } from '../types';
+import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus, CustomEditorPluginConfig } from '../types';
+import { ExtensionManager } from '../core/ExtensionManager';
 import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
 import { SaveReasonModal } from './SaveReasonModal';
@@ -127,6 +129,19 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [dailyLimitStatus, setDailyLimitStatus] = useState<DailyEditLimitStatus | null>(null);
   const [comiteEtica, setComiteEtica] = useState<ResearchEthicsCommitteeInfo | undefined>(initialArticle?.comiteEtica);
   const [showEthicsModal, setShowEthicsModal] = useState(false);
+
+  // Plugins de botões dinâmicos registrados por extensões
+  const [editorPlugins, setEditorPlugins] = useState<CustomEditorPluginConfig[]>(() =>
+    ExtensionManager.getInstance().getActiveEditorPlugins()
+  );
+
+  useEffect(() => {
+    const updatePlugins = () => {
+      setEditorPlugins(ExtensionManager.getInstance().getActiveEditorPlugins());
+    };
+    const unsub = ExtensionManager.getInstance().subscribe(updatePlugins);
+    return () => unsub();
+  }, []);
 
   // Find & Replace state (Ctrl+H)
   const [showFindReplace, setShowFindReplace] = useState(false);
@@ -1694,6 +1709,20 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           >
             <Code2 size={12} /> Inserir Wikitexto
           </button>
+
+          {/* Botões Dinâmicos Registrados por Extensões do Editor */}
+          {editorPlugins.map((btn) => (
+            <button
+              key={btn.buttonId}
+              type="button"
+              onClick={() => insertWikitext(btn.snippetTemplate)}
+              title={btn.tooltip || `Extensão: ${btn.label}`}
+              className="px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 rounded text-xs font-semibold flex items-center gap-1 border border-purple-200 dark:border-purple-800 transition cursor-pointer"
+            >
+              <Puzzle size={11} className="text-purple-600 dark:text-purple-400" />
+              <span>{btn.label}</span>
+            </button>
+          ))}
 
           <span className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-0.5" />
 

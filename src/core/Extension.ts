@@ -332,6 +332,15 @@ export class HookRegistry {
 /**
  * Interface principal que toda extensão/plugin do WikiWorldWeb deve implementar.
  */
+import {
+  ExtensionSettingField,
+  ExtensionCategory,
+  CustomToolConfig,
+  CustomThemeConfig,
+  CustomEditorPluginConfig,
+  CustomArticleBannerConfig,
+} from '../types';
+
 export interface WikiExtension {
   /**
    * Retorna o identificador ou nome único da extensão.
@@ -350,8 +359,9 @@ export interface WikiExtension {
    * Permite à extensão registrar suas ações, filtros e manipuladores no HookRegistry.
    *
    * @param hooks Instância central do registro de hooks do WikiWorldWeb
+   * @param context Contexto opcional contendo configurações ativas da extensão
    */
-  onRegister(hooks: HookRegistry): void;
+  onRegister(hooks: HookRegistry, context?: { settings?: Record<string, any>; manager?: any }): void;
 
   /**
    * Descrição opcional da funcionalidade da extensão.
@@ -366,7 +376,7 @@ export interface WikiExtension {
   /**
    * Categoria temática da extensão.
    */
-  getCategory?(): 'content' | 'rendering' | 'formatting' | 'utility' | 'interface' | 'security' | 'tool';
+  getCategory?(): ExtensionCategory;
 
   /**
    * Indica se é uma extensão nativa / essencial da Wiki.
@@ -382,4 +392,44 @@ export interface WikiExtension {
    * Método opcional executado quando a extensão for descarregada/desativada.
    */
   onUnregister?(hooks: HookRegistry): void;
+
+  /**
+   * CSS customizado opcional fornecido pela extensão, injetado no DOM quando ativa.
+   */
+  getCustomCss?(): string;
+
+  /**
+   * Esquema de opções configuráveis pelo burocrata no painel administrativo.
+   */
+  getSettingsSchema?(): ExtensionSettingField[];
+
+  /**
+   * Lista de permissões ou capacidades requeridas pela extensão.
+   */
+  getPermissions?(): string[];
+
+  /**
+   * Configuração de ferramenta interativa fornecida pela extensão.
+   */
+  getToolConfig?(): CustomToolConfig;
+
+  /**
+   * Configuração de tema visual fornecido pela extensão.
+   */
+  getThemeConfig?(): CustomThemeConfig;
+
+  /**
+   * Configuração de plugin para a barra do editor wikitext.
+   */
+  getEditorPluginConfig?(): CustomEditorPluginConfig;
+
+  /**
+   * Configuração de banner ou aviso para artigos.
+   */
+  getBannerConfig?(): CustomArticleBannerConfig;
+
+  /**
+   * Dependências declaradas requeridas para esta extensão funcionar.
+   */
+  getDependencies?(): string[];
 }

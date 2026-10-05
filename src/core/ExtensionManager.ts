@@ -9,7 +9,18 @@
  */
 
 import { HookRegistry, WikiExtension } from './Extension';
-import { UserProfile, InstalledExtensionMeta, ExtensionCategory } from '../types';
+import {
+  UserProfile,
+  InstalledExtensionMeta,
+  ExtensionCategory,
+  CustomWikitextTagRule,
+  CustomToolConfig,
+  CustomThemeConfig,
+  CustomEditorPluginConfig,
+  CustomArticleBannerConfig,
+  CustomContentFilterRule,
+  ExtensionSettingField,
+} from '../types';
 import { StorageService } from '../services/storageService';
 
 // Extensões nativas instaladas no núcleo
@@ -53,6 +64,9 @@ export class ExtensionManager {
   /** Estados de ativação persistidos ({ [extensionName]: boolean }) */
   private extensionStates: Record<string, boolean> = {};
 
+  /** Configurações de extensões persistidas ({ [extensionName]: Record<string, any> }) */
+  private extensionSettings: Record<string, Record<string, any>> = {};
+
   /** Extensões personalizadas adicionadas em tempo de execução pelos burocratas */
   private customExtensions: InstalledExtensionMeta[] = [];
 
@@ -71,8 +85,7 @@ export class ExtensionManager {
   }
 
   /**
-   * Registra síncronamente as 9 extensões nativas do WikiZero, garantindo
-   * que estejam imediatamente prontas para o consumo do sistema e dos burocratas.
+   * Registra síncronamente as extensões nativas do WikiZero.
    */
   private registerBuiltinExtensions(): void {
     const builtins: (new () => WikiExtension)[] = [
@@ -142,10 +155,47 @@ export class ExtensionManager {
   }
 
   /**
-   * Carrega os estados salvos de ativação e extensões customizadas do armazenamento local.
+   * Injeta CSS específico de uma extensão no <head> do documento de forma segura e isolada.
+   */
+  public injectExtensionCss(extensionName: string, css: string): void {
+    if (typeof document === 'undefined' || !css || !css.trim()) return;
+    try {
+      const styleId = `wiki-ext-style-${extensionName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+      let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = styleId;
+        styleEl.setAttribute('data-extension', extensionName);
+        document.head.appendChild(styleEl);
+      }
+      styleEl.textContent = css;
+    } catch (e) {
+      console.warn(`[ExtensionManager] Erro ao injetar CSS para '${extensionName}':`, e);
+    }
+  }
+
+  /**
+   * Remove o CSS injetado de uma extensão ao desativá-la ou desinstalá-la.
+   */
+  public removeExtensionCss(extensionName: string): void {
+    if (typeof document === 'undefined') return;
+    try {
+      const styleId = `wiki-ext-style-${extensionName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+      const styleEl = document.getElementById(styleId);
+      if (styleEl && styleEl.parentNode) {
+        styleEl.parentNode.removeChild(styleEl);
+      }
+    } catch (e) {
+      console.warn(`[ExtensionManager] Erro ao remover CSS de '${extensionName}':`, e);
+    }
+  }
+
+  /**
+   * Carrega os estados salvos de ativação, extensões customizadas e configurações do armazenamento local.
    */
   private loadPersistedData(): void {
     this.extensionStates = StorageService.getSavedExtensionStates();
+    this.extensionSettings = StorageService.getSavedExtensionSettings();
     this.customExtensions = StorageService.getSavedCustomExtensions();
   }
 
@@ -154,6 +204,13 @@ export class ExtensionManager {
    */
   private persistStates(): void {
     StorageService.saveExtensionStates(this.extensionStates);
+  }
+
+  /**
+   * Salva as configurações de todas as extensões.
+   */
+  private persistSettings(): void {
+    StorageService.saveExtensionSettings(this.extensionSettings);
   }
 
   /**
@@ -184,8 +241,16 @@ export class ExtensionManager {
 
     if (isEnabled && !this.loadedExtensions.has(name)) {
       try {
-        extension.onRegister(this.hookRegistry);
+        const settings = this.extensionSettings[name] || {};
+        extension.onRegister(this.hookRegistry, { settings, manager: this });
         this.loadedExtensions.set(name, extension);
+
+        // Injeta CSS se a extensão disponibilizar
+        if (typeof extension.getCustomCss === 'function') {
+          const css = extension.getCustomCss();
+          if (css) this.injectExtensionCss(name, css);
+        }
+
         console.info(`[ExtensionManager] 🧩 Extensão '${name}' (v${extension.getVersion()}) inicializada.`);
       } catch (error) {
         console.error(`[ExtensionManager] Falha ao inicializar extensão '${name}':`, error);
@@ -251,7 +316,7 @@ export class ExtensionManager {
               }
             }
 
-            if (extensionInstance) {
+            if (extensionInstance && !this.registeredExtensions.has(extensionInstance.getName())) {
               this.registerExtension(extensionInstance, true);
             }
           } catch (err) {
@@ -279,6 +344,7 @@ export class ExtensionManager {
 
   /**
    * Instancia e registra extensões customizadas adicionadas dinamicamente por burocratas.
+   * Suporta scripts, CSS isolado, tags customizadas de Wikitext e ferramentas interativas.
    */
   private mountCustomExtensions(): void {
     for (const customMeta of this.customExtensions) {
@@ -292,22 +358,306 @@ export class ExtensionManager {
         getCategory: () => customMeta.category,
         isCore: () => false,
         getWebsite: () => customMeta.website,
-        onRegister: (hooks: HookRegistry) => {
-          // Se houver script customizado configurado
+        getCustomCss: () => customMeta.customCss,
+        getSettingsSchema: () => customMeta.settingsSchema,
+        getPermissions: () => customMeta.permissions,
+        getToolConfig: () => customMeta.toolConfig,
+        getThemeConfig: () => customMeta.themeConfig,
+        getEditorPluginConfig: () => customMeta.editorPluginConfig,
+        getBannerConfig: () => customMeta.bannerConfig,
+        getDependencies: () => customMeta.dependencies,
+        onRegister: (hooks: HookRegistry, ctx?: { settings?: Record<string, any> }) => {
+          const activeSettings = { ...(customMeta.settings || {}), ...(ctx?.settings || {}) };
+
+          // 1. Injeção de CSS customizado se definido
+          if (customMeta.customCss && customMeta.customCss.trim()) {
+            this.injectExtensionCss(customMeta.name, customMeta.customCss);
+          }
+
+          // 2. Registro dinâmico de tags customizadas de Wikitext (ex: <spoiler>, <badge>, <blur>)
+          if (customMeta.customTags && customMeta.customTags.length > 0) {
+            hooks.addFilter<string>(
+              'render:wikitext',
+              (text: string) => {
+                if (!text) return text;
+                let processed = text;
+
+                for (const tagRule of customMeta.customTags!) {
+                  if (!tagRule.tag) continue;
+                  const tagName = tagRule.tag.trim().toLowerCase();
+
+                  if (tagRule.hasClosingTag !== false) {
+                    // Substituição de tag com fechamento <tag>conteudo</tag>
+                    const regex = new RegExp(`<${tagName}\\b([^>]*)>([\\s\\S]*?)<\\/${tagName}>`, 'gi');
+                    processed = processed.replace(regex, (_match, attrs, content) => {
+                      let template = tagRule.template || `<div class="wiki-custom-tag-${tagName}">{{content}}</div>`;
+                      return template
+                        .replace(/\{\{content\}\}/g, content)
+                        .replace(/\{\{attrs\}\}/g, attrs || '');
+                    });
+                  } else {
+                    // Tag auto-fechada <tag attr="val" />
+                    const regexSelf = new RegExp(`<${tagName}\\b([^>]*)\\/?>`, 'gi');
+                    processed = processed.replace(regexSelf, (_match, attrs) => {
+                      let template = tagRule.template || `<span class="wiki-custom-tag-${tagName}"></span>`;
+                      return template.replace(/\{\{attrs\}\}/g, attrs || '');
+                    });
+                  }
+                }
+
+                return processed;
+              },
+              12,
+              customMeta.name
+            );
+          }
+
+          // 3. Registro de ferramenta personalizada se configurada
+          if (customMeta.toolConfig && customMeta.toolConfig.toolId) {
+            const toolId = customMeta.toolConfig.toolId;
+            hooks.addFilter<string[]>(
+              'tools:registered_tools',
+              (tools: string[] = []) => {
+                if (!tools.includes(toolId)) {
+                  return [...tools, toolId];
+                }
+                return tools;
+              },
+              10,
+              customMeta.name
+            );
+            hooks.addFilter<boolean>(
+              `tool:${toolId}_available`,
+              () => true,
+              10,
+              customMeta.name
+            );
+          }
+
+          // 4. Registro de tema visual se configurado
+          if (customMeta.themeConfig && customMeta.themeConfig.themeId) {
+            const tc = customMeta.themeConfig;
+            hooks.addFilter<any[]>(
+              'theme:registered_themes',
+              (themes: any[] = []) => {
+                if (!themes.some((t) => t.themeId === tc.themeId)) {
+                  return [...themes, tc];
+                }
+                return themes;
+              },
+              10,
+              customMeta.name
+            );
+            hooks.addFilter<boolean>(
+              `theme:${tc.themeId}_available`,
+              () => true,
+              10,
+              customMeta.name
+            );
+
+            // Injeta variáveis de CSS do tema dinamicamente
+            const themeCss = `
+:root[data-theme="${tc.themeId}"] {
+  --color-primary: ${tc.accentColor || '#3b82f6'};
+  --color-accent: ${tc.accentColor || '#3b82f6'};
+  --bg-theme: ${tc.backgroundColor || '#ffffff'};
+  --text-theme: ${tc.textColor || '#0f172a'};
+  ${tc.fontFamily ? `--font-family-theme: ${tc.fontFamily};` : ''}
+}
+${tc.customCss || ''}
+`;
+            this.injectExtensionCss(`theme-${tc.themeId}`, themeCss);
+          }
+
+          // 5. Registro de botão do editor wikitext
+          if (customMeta.editorPluginConfig && customMeta.editorPluginConfig.buttonId) {
+            const ep = customMeta.editorPluginConfig;
+            hooks.addFilter<any[]>(
+              'editor:toolbar_buttons',
+              (btns: any[] = []) => {
+                if (!btns.some((b) => b.buttonId === ep.buttonId)) {
+                  return [...btns, ep];
+                }
+                return btns;
+              },
+              10,
+              customMeta.name
+            );
+          }
+
+          // 6. Registro de banner / aviso para artigos
+          if (customMeta.bannerConfig && customMeta.bannerConfig.title) {
+            const bc = customMeta.bannerConfig;
+            const bannerClasses =
+              bc.type === 'alert'
+                ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200'
+                : bc.type === 'warning'
+                ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200'
+                : bc.type === 'success'
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                : 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-900 dark:text-blue-200';
+
+            const icon =
+              bc.type === 'alert' ? '⛔' : bc.type === 'warning' ? '⚠️' : bc.type === 'success' ? '✅' : '📢';
+
+            const bannerHtml = `
+<div class="wiki-custom-banner my-3 p-3.5 rounded-2xl border ${bannerClasses} flex items-center gap-3 text-xs shadow-xs font-sans">
+  <span class="text-base select-none">${icon}</span>
+  <div class="min-w-0">
+    <div class="font-bold">${bc.title}</div>
+    <div class="opacity-90">${bc.message}</div>
+  </div>
+</div>`;
+
+            hooks.addFilter<string>(
+              'render:html',
+              (html: string) => {
+                if (!html) return html;
+                return bc.position === 'bottom' ? html + bannerHtml : bannerHtml + html;
+              },
+              8,
+              customMeta.name
+            );
+          }
+
+          // 7. Filtros de vocabulário e regras de conteúdo
+          if (customMeta.filterRules && customMeta.filterRules.length > 0) {
+            hooks.addFilter<string>(
+              'render:wikitext',
+              (text: string) => {
+                if (!text) return text;
+                let out = text;
+                for (const rule of customMeta.filterRules!) {
+                  if (!rule.pattern) continue;
+                  if (rule.isRegex) {
+                    try {
+                      const rx = new RegExp(rule.pattern, 'gi');
+                      out = out.replace(rx, rule.replacement || '');
+                    } catch (e) {
+                      console.warn(`[ExtensionManager] Regex inválido na regra de '${customMeta.name}':`, e);
+                    }
+                  } else {
+                    out = out.split(rule.pattern).join(rule.replacement || '');
+                  }
+                }
+                return out;
+              },
+              13,
+              customMeta.name
+            );
+          }
+
+          // 8. Execução de script dinâmico avançado fornecido pelo burocrata
           if (customMeta.customScript && customMeta.customScript.trim()) {
             try {
-              // Executa de forma segura injetando hooks e nome
-              const runner = new Function('hooks', 'extensionName', customMeta.customScript);
-              runner(hooks, customMeta.name);
+              const utils = {
+                injectCss: (css: string) => this.injectExtensionCss(customMeta.name, css),
+                removeCss: () => this.removeExtensionCss(customMeta.name),
+                log: (msg: string) => console.info(`[${customMeta.name}] ${msg}`),
+                warn: (msg: string) => console.warn(`[${customMeta.name}] ${msg}`),
+                getSetting: (key: string, defaultVal: any) =>
+                  activeSettings[key] !== undefined ? activeSettings[key] : defaultVal,
+                addTag: (
+                  tagName: string,
+                  formatter: (content: string, attrs?: string) => string,
+                  hasClosing: boolean = true
+                ) => {
+                  hooks.addFilter<string>(
+                    'render:wikitext',
+                    (txt: string) => {
+                      if (!txt) return txt;
+                      if (hasClosing) {
+                        const rx = new RegExp(`<${tagName}\\b([^>]*)>([\\s\\S]*?)<\\/${tagName}>`, 'gi');
+                        return txt.replace(rx, (_m, attrs, body) => formatter(body, attrs));
+                      } else {
+                        const rx = new RegExp(`<${tagName}\\b([^>]*)\\/?>`, 'gi');
+                        return txt.replace(rx, (_m, attrs) => formatter('', attrs));
+                      }
+                    },
+                    12,
+                    customMeta.name
+                  );
+                },
+                addTool: (tool: CustomToolConfig) => {
+                  if (!tool || !tool.toolId) return;
+                  hooks.addFilter<string[]>(
+                    'tools:registered_tools',
+                    (tools: string[] = []) => (!tools.includes(tool.toolId) ? [...tools, tool.toolId] : tools),
+                    10,
+                    customMeta.name
+                  );
+                  hooks.addFilter<boolean>(`tool:${tool.toolId}_available`, () => true, 10, customMeta.name);
+                },
+                addTheme: (theme: CustomThemeConfig) => {
+                  if (!theme || !theme.themeId) return;
+                  hooks.addFilter<any[]>(
+                    'theme:registered_themes',
+                    (thms: any[] = []) => (!thms.some((t) => t.themeId === theme.themeId) ? [...thms, theme] : thms),
+                    10,
+                    customMeta.name
+                  );
+                  hooks.addFilter<boolean>(`theme:${theme.themeId}_available`, () => true, 10, customMeta.name);
+                },
+                addEditorButton: (btn: CustomEditorPluginConfig) => {
+                  if (!btn || !btn.buttonId) return;
+                  hooks.addFilter<any[]>(
+                    'editor:toolbar_buttons',
+                    (btns: any[] = []) => (!btns.some((b) => b.buttonId === btn.buttonId) ? [...btns, btn] : btns),
+                    10,
+                    customMeta.name
+                  );
+                },
+                addArticleBanner: (banner: CustomArticleBannerConfig) => {
+                  if (!banner || !banner.title) return;
+                  hooks.addFilter<string>(
+                    'render:html',
+                    (html: string) => {
+                      const bannerHtml = `<div class="wiki-custom-banner my-3 p-3.5 rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/60 text-xs flex items-center gap-2"><span>📢</span><div><strong>${banner.title}:</strong> ${banner.message}</div></div>`;
+                      return banner.position === 'bottom' ? html + bannerHtml : bannerHtml + html;
+                    },
+                    8,
+                    customMeta.name
+                  );
+                },
+                addContentFilter: (pattern: string, replacement: string, isRegex?: boolean) => {
+                  hooks.addFilter<string>(
+                    'render:wikitext',
+                    (txt: string) => {
+                      if (!txt) return txt;
+                      if (isRegex) {
+                        return txt.replace(new RegExp(pattern, 'gi'), replacement);
+                      }
+                      return txt.split(pattern).join(replacement);
+                    },
+                    13,
+                    customMeta.name
+                  );
+                },
+              };
+
+              const runner = new Function('hooks', 'extensionName', 'settings', 'utils', customMeta.customScript);
+              runner(hooks, customMeta.name, activeSettings, utils);
             } catch (e) {
               console.error(`[ExtensionManager] Erro no script da extensão customizada '${customMeta.name}':`, e);
             }
-          } else {
-            // Gancho padrão de log e banner diagnóstico
+          } else if (
+            !customMeta.customTags &&
+            !customMeta.customCss &&
+            !customMeta.toolConfig &&
+            !customMeta.themeConfig &&
+            !customMeta.editorPluginConfig &&
+            !customMeta.bannerConfig &&
+            !customMeta.filterRules
+          ) {
+            // Gancho padrão para diagnóstico
             hooks.addAction('article:viewed', () => {}, 20, customMeta.name);
           }
         },
         onUnregister: (hooks: HookRegistry) => {
+          this.removeExtensionCss(customMeta.name);
+          if (customMeta.themeConfig?.themeId) {
+            this.removeExtensionCss(`theme-${customMeta.themeConfig.themeId}`);
+          }
           hooks.removeAllHooksForExtension(customMeta.name);
         },
       };
@@ -323,7 +673,6 @@ export class ExtensionManager {
   public getAllInstalledExtensions(): InstalledExtensionMeta[] {
     const list: InstalledExtensionMeta[] = [];
 
-    // 1. Extensões registradas via código / glob
     for (const [name, ext] of this.registeredExtensions.entries()) {
       const isEnabled = this.loadedExtensions.has(name);
       const isCore = typeof ext.isCore === 'function' ? ext.isCore() : true;
@@ -340,8 +689,41 @@ export class ExtensionManager {
       const hooksInfo = this.hookRegistry.getHooksForExtension(name);
       const allHooks = [...hooksInfo.filters, ...hooksInfo.actions];
 
-      // Verifica se é uma extensão customizada existente para preservar metadados adicionais
+      // Busca dados adicionais se for uma extensão customizada existente
       const customMatch = this.customExtensions.find((c) => c.name === name);
+
+      const settingsSchema: ExtensionSettingField[] | undefined =
+        typeof ext.getSettingsSchema === 'function'
+          ? ext.getSettingsSchema()
+          : customMatch?.settingsSchema;
+
+      const activeSettings = this.extensionSettings[name] || customMatch?.settings || {};
+
+      const permissions =
+        typeof ext.getPermissions === 'function'
+          ? ext.getPermissions()
+          : customMatch?.permissions || ['render_hook'];
+
+      const toolConfig =
+        typeof ext.getToolConfig === 'function' ? ext.getToolConfig() : customMatch?.toolConfig;
+
+      const themeConfig =
+        typeof ext.getThemeConfig === 'function' ? ext.getThemeConfig() : customMatch?.themeConfig;
+
+      const editorPluginConfig =
+        typeof ext.getEditorPluginConfig === 'function'
+          ? ext.getEditorPluginConfig()
+          : customMatch?.editorPluginConfig;
+
+      const bannerConfig =
+        typeof ext.getBannerConfig === 'function'
+          ? ext.getBannerConfig()
+          : customMatch?.bannerConfig;
+
+      const dependencies =
+        typeof ext.getDependencies === 'function'
+          ? ext.getDependencies()
+          : customMatch?.dependencies;
 
       list.push({
         id: customMatch?.id || `ext-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
@@ -354,9 +736,25 @@ export class ExtensionManager {
         isCore: customMatch ? false : isCore,
         installedAt: customMatch?.installedAt || '2026-01-01T00:00:00.000Z',
         installedBy: customMatch?.installedBy || 'Sistema (Nativo)',
+        lastModifiedAt: customMatch?.lastModifiedAt,
+        lastModifiedBy: customMatch?.lastModifiedBy,
         website,
-        hooks: allHooks.length > 0 ? allHooks : (customMatch?.hooks || ['render:wikitext']),
+        hooks: allHooks.length > 0 ? allHooks : customMatch?.hooks || ['render:wikitext'],
         customScript: customMatch?.customScript,
+        customCss:
+          customMatch?.customCss ||
+          (typeof ext.getCustomCss === 'function' ? ext.getCustomCss() : undefined),
+        customTags: customMatch?.customTags,
+        toolConfig,
+        themeConfig,
+        editorPluginConfig,
+        bannerConfig,
+        filterRules: customMatch?.filterRules,
+        dependencies,
+        settingsSchema,
+        settings: activeSettings,
+        permissions,
+        tags: customMatch?.tags,
       });
     }
 
@@ -389,10 +787,17 @@ export class ExtensionManager {
     }
 
     try {
-      ext.onRegister(this.hookRegistry);
+      const settings = this.extensionSettings[name] || {};
+      ext.onRegister(this.hookRegistry, { settings, manager: this });
       this.loadedExtensions.set(name, ext);
       this.extensionStates[name] = true;
       this.persistStates();
+
+      // Injeta CSS se disponível
+      if (typeof ext.getCustomCss === 'function') {
+        const css = ext.getCustomCss();
+        if (css) this.injectExtensionCss(name, css);
+      }
 
       // Atualiza lista de custom extensions se for customizada
       const customIdx = this.customExtensions.findIndex((c) => c.name === name || c.id === nameOrId);
@@ -456,6 +861,7 @@ export class ExtensionManager {
     }
 
     try {
+      this.removeExtensionCss(name);
       if (typeof ext.onUnregister === 'function') {
         ext.onUnregister(this.hookRegistry);
       }
@@ -480,7 +886,7 @@ export class ExtensionManager {
         operatorUid: currentUser?.uid || '',
         operatorUsername: currentUser?.displayName || currentUser?.username || currentUser?.email || 'Burocrata',
         operatorRole: currentUser?.role || 'admin',
-        details: `Extensão desativada pelo burocrata. Todos os ganchos associados foram removidos do barramento.`,
+        details: `Extensão desativada pelo burocrata. Todos os ganchos e estilos foram suspensos.`,
       });
 
       this.hookRegistry.doAction('extension:deactivated', name);
@@ -488,7 +894,7 @@ export class ExtensionManager {
 
       return {
         success: true,
-        message: `Extensão '${name}' desativada com sucesso. Seus ganchos foram suspensos.`,
+        message: `Extensão '${name}' desativada com sucesso. Seus ganchos e estilos foram suspensos.`,
       };
     } catch (err: any) {
       console.error(`[ExtensionManager] Erro ao desativar extensão '${name}':`, err);
@@ -497,6 +903,70 @@ export class ExtensionManager {
         message: `Falha ao desativar '${name}': ${err?.message || 'Erro desconhecido.'}`,
       };
     }
+  }
+
+  /**
+   * ATUALIZAÇÃO DE CONFIGURAÇÕES DE EXTENSÃO
+   * Permite aos burocratas calibrar parâmetros em tempo real.
+   */
+  public updateExtensionSettings(
+    nameOrId: string,
+    newSettings: Record<string, any>,
+    currentUser: UserProfile | null
+  ): { success: boolean; message: string } {
+    if (!isUserBureaucrat(currentUser)) {
+      return {
+        success: false,
+        message: 'Apenas burocratas possuem autorização para alterar parâmetros de extensões.',
+      };
+    }
+
+    const ext = this.findExtension(nameOrId);
+    if (!ext) {
+      return { success: false, message: `Extensão '${nameOrId}' não encontrada.` };
+    }
+
+    const name = ext.getName();
+    this.extensionSettings[name] = { ...(this.extensionSettings[name] || {}), ...newSettings };
+    this.persistSettings();
+
+    // Se for extensão personalizada, atualiza também seu registro
+    const customIdx = this.customExtensions.findIndex((c) => c.name === name || c.id === nameOrId);
+    if (customIdx >= 0) {
+      this.customExtensions[customIdx].settings = this.extensionSettings[name];
+      this.customExtensions[customIdx].lastModifiedAt = new Date().toISOString();
+      this.customExtensions[customIdx].lastModifiedBy = currentUser?.displayName || currentUser?.username || 'Burocrata';
+      this.persistCustomExtensions();
+    }
+
+    // Se estiver ativa, reinicializa para aplicar as novas configurações imediatamente
+    if (this.loadedExtensions.has(name)) {
+      try {
+        if (typeof ext.onUnregister === 'function') {
+          ext.onUnregister(this.hookRegistry);
+        }
+        this.hookRegistry.removeAllHooksForExtension(name);
+        ext.onRegister(this.hookRegistry, { settings: this.extensionSettings[name], manager: this });
+      } catch (err) {
+        console.warn(`[ExtensionManager] Erro ao recarregar extensão '${name}' com novas configurações:`, err);
+      }
+    }
+
+    StorageService.logExtensionAction({
+      extensionId: nameOrId,
+      extensionName: name,
+      action: 'configured',
+      operatorUid: currentUser?.uid || '',
+      operatorUsername: currentUser?.displayName || currentUser?.username || 'Burocrata',
+      operatorRole: currentUser?.role || 'admin',
+      details: `Configurações atualizadas pelo burocrata: ${Object.keys(newSettings).join(', ')}.`,
+    });
+
+    this.notifyListeners();
+    return {
+      success: true,
+      message: `Configurações da extensão '${name}' atualizadas com sucesso!`,
+    };
   }
 
   /**
@@ -541,45 +1011,30 @@ export class ExtensionManager {
       website: data.website?.trim() || undefined,
       hooks: data.hooks && data.hooks.length > 0 ? data.hooks : ['render:wikitext'],
       customScript: data.customScript,
+      customCss: data.customCss,
+      customTags: data.customTags,
+      toolConfig: data.toolConfig,
+      themeConfig: data.themeConfig,
+      editorPluginConfig: data.editorPluginConfig,
+      bannerConfig: data.bannerConfig,
+      filterRules: data.filterRules,
+      dependencies: data.dependencies,
+      settingsSchema: data.settingsSchema,
+      settings: data.settings || {},
+      permissions: data.permissions || ['render_hook'],
+      tags: data.tags,
     };
 
-    // Cria a instância dinâmica
-    const dynamicExt: WikiExtension = {
-      getName: () => newMeta.name,
-      getVersion: () => newMeta.version,
-      getDescription: () => newMeta.description,
-      getAuthor: () => newMeta.author,
-      getCategory: () => newMeta.category,
-      isCore: () => false,
-      getWebsite: () => newMeta.website,
-      onRegister: (hooks: HookRegistry) => {
-        if (newMeta.customScript && newMeta.customScript.trim()) {
-          try {
-            const runner = new Function('hooks', 'extensionName', newMeta.customScript);
-            runner(hooks, newMeta.name);
-          } catch (e) {
-            console.error(`[ExtensionManager] Erro no script da extensão '${newMeta.name}':`, e);
-          }
-        } else {
-          // Gancho padrão inofensivo
-          hooks.addFilter<string>(
-            'render:wikitext',
-            (text: string) => text,
-            10,
-            newMeta.name
-          );
-        }
-      },
-      onUnregister: (hooks: HookRegistry) => {
-        hooks.removeAllHooksForExtension(newMeta.name);
-      },
-    };
+    if (newMeta.settings && Object.keys(newMeta.settings).length > 0) {
+      this.extensionSettings[cleanName] = newMeta.settings;
+      this.persistSettings();
+    }
 
     this.customExtensions.push(newMeta);
     this.persistCustomExtensions();
 
-    this.registerExtension(dynamicExt, newMeta.enabled);
-    this.persistStates();
+    // Monta dinamicamente a extensão recém cadastrada
+    this.mountCustomExtensions();
 
     StorageService.logExtensionAction({
       extensionId: id,
@@ -631,23 +1086,25 @@ export class ExtensionManager {
     }
 
     try {
-      // 1. Desativa e descarrega hooks
+      this.removeExtensionCss(name);
       if (typeof ext.onUnregister === 'function') {
         ext.onUnregister(this.hookRegistry);
       }
       this.hookRegistry.removeAllHooksForExtension(name);
       this.loadedExtensions.delete(name);
       delete this.extensionStates[name];
+      delete this.extensionSettings[name];
       this.registeredExtensions.delete(name);
       this.persistStates();
+      this.persistSettings();
 
-      // 2. Remove do armazenamento de customizadas
+      // Remove do armazenamento de customizadas
       this.customExtensions = this.customExtensions.filter(
         (c) => c.name !== name && c.id !== nameOrId
       );
       this.persistCustomExtensions();
 
-      // 3. Log de auditoria
+      // Log de auditoria
       const operatorName = currentUser?.displayName || currentUser?.username || currentUser?.email || 'Burocrata';
       StorageService.logExtensionAction({
         extensionId: nameOrId,
@@ -675,22 +1132,338 @@ export class ExtensionManager {
   }
 
   /**
+   * Exporta um pacote JSON completo de backup contendo todas as extensões e suas configurações.
+   */
+  public exportAllExtensionsPackage(): string {
+    const installed = this.getAllInstalledExtensions();
+    const packagePayload = {
+      wikiZeroPackageVersion: '2.0.0',
+      exportedAt: new Date().toISOString(),
+      system: 'WikiWorldWeb / WikiZero Ecosystem',
+      extensionsCount: installed.length,
+      extensions: installed,
+      states: this.extensionStates,
+      settings: this.extensionSettings,
+    };
+    return JSON.stringify(packagePayload, null, 2);
+  }
+
+  /**
+   * Importa e restaura um pacote ou lista de extensões JSON com validação de segurança de burocrata.
+   */
+  public importExtensionsPackage(
+    jsonString: string,
+    currentUser: UserProfile | null
+  ): { success: boolean; message: string; importedCount?: number } {
+    if (!isUserBureaucrat(currentUser)) {
+      return {
+        success: false,
+        message: 'Acesso negado: Apenas burocratas podem importar pacotes de extensões.',
+      };
+    }
+
+    try {
+      const parsed = JSON.parse(jsonString);
+      const listToImport: Partial<InstalledExtensionMeta>[] = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed.extensions)
+        ? parsed.extensions
+        : parsed.name
+        ? [parsed]
+        : [];
+
+      if (listToImport.length === 0) {
+        return { success: false, message: 'O arquivo JSON não contém nenhuma extensão válida para importação.' };
+      }
+
+      let count = 0;
+      for (const item of listToImport) {
+        if (!item.name) continue;
+        const clean = item.name.trim().replace(/\s+/g, '');
+        // Se já existe, atualiza metadados e scripts
+        const existingIdx = this.customExtensions.findIndex((c) => c.name === clean);
+        if (existingIdx >= 0) {
+          this.customExtensions[existingIdx] = {
+            ...this.customExtensions[existingIdx],
+            ...item,
+            name: clean,
+            lastModifiedAt: new Date().toISOString(),
+            lastModifiedBy: currentUser?.displayName || currentUser?.username || 'Burocrata',
+          };
+          count++;
+        } else if (!this.registeredExtensions.has(clean)) {
+          this.addExtension(item, currentUser);
+          count++;
+        }
+      }
+
+      this.persistCustomExtensions();
+      this.mountCustomExtensions();
+      this.notifyListeners();
+
+      return {
+        success: true,
+        message: `${count} extensão(ões) importada(s) ou atualizada(s) com sucesso pelo burocrata.`,
+        importedCount: count,
+      };
+    } catch (e: any) {
+      return {
+        success: false,
+        message: `Falha ao importar pacote: ${e?.message || 'JSON inválido'}`,
+      };
+    }
+  }
+
+  /**
+   * Retorna todas as ferramentas interativas registradas por extensões ativas.
+   */
+  public getActiveTools(): CustomToolConfig[] {
+    const tools: CustomToolConfig[] = [];
+    for (const [name, ext] of this.loadedExtensions.entries()) {
+      if (typeof ext.getToolConfig === 'function') {
+        const tc = ext.getToolConfig();
+        if (tc && tc.toolId && !tools.some((t) => t.toolId === tc.toolId)) {
+          tools.push(tc);
+        }
+      }
+    }
+    for (const c of this.customExtensions) {
+      if (this.loadedExtensions.has(c.name) && c.toolConfig && c.toolConfig.toolId) {
+        if (!tools.some((t) => t.toolId === c.toolConfig!.toolId)) {
+          tools.push(c.toolConfig);
+        }
+      }
+    }
+    return tools;
+  }
+
+  /**
+   * Retorna todos os temas visuais registrados por extensões ativas.
+   */
+  public getActiveThemes(): CustomThemeConfig[] {
+    const themes: CustomThemeConfig[] = [];
+    for (const [name, ext] of this.loadedExtensions.entries()) {
+      if (typeof ext.getThemeConfig === 'function') {
+        const tc = ext.getThemeConfig();
+        if (tc && tc.themeId && !themes.some((t) => t.themeId === tc.themeId)) {
+          themes.push(tc);
+        }
+      }
+    }
+    for (const c of this.customExtensions) {
+      if (this.loadedExtensions.has(c.name) && c.themeConfig && c.themeConfig.themeId) {
+        if (!themes.some((t) => t.themeId === c.themeConfig!.themeId)) {
+          themes.push(c.themeConfig);
+        }
+      }
+    }
+    return themes;
+  }
+
+  /**
+   * Retorna plugins de botões da barra de ferramentas do editor wikitext ativos.
+   */
+  public getActiveEditorPlugins(): CustomEditorPluginConfig[] {
+    const plugins: CustomEditorPluginConfig[] = [];
+    for (const [name, ext] of this.loadedExtensions.entries()) {
+      if (typeof ext.getEditorPluginConfig === 'function') {
+        const ep = ext.getEditorPluginConfig();
+        if (ep && ep.buttonId && !plugins.some((p) => p.buttonId === ep.buttonId)) {
+          plugins.push(ep);
+        }
+      }
+    }
+    for (const c of this.customExtensions) {
+      if (this.loadedExtensions.has(c.name) && c.editorPluginConfig && c.editorPluginConfig.buttonId) {
+        if (!plugins.some((p) => p.buttonId === c.editorPluginConfig!.buttonId)) {
+          plugins.push(c.editorPluginConfig);
+        }
+      }
+    }
+    return plugins;
+  }
+
+  /**
+   * Retorna avisos ou banners ativos configurados por extensões.
+   */
+  public getActiveBanners(): CustomArticleBannerConfig[] {
+    const banners: CustomArticleBannerConfig[] = [];
+    for (const [name, ext] of this.loadedExtensions.entries()) {
+      if (typeof ext.getBannerConfig === 'function') {
+        const bn = ext.getBannerConfig();
+        if (bn && bn.title && !banners.some((b) => b.bannerId === bn.bannerId)) {
+          banners.push(bn);
+        }
+      }
+    }
+    for (const c of this.customExtensions) {
+      if (this.loadedExtensions.has(c.name) && c.bannerConfig && c.bannerConfig.title) {
+        if (!banners.some((b) => b.bannerId === c.bannerConfig!.bannerId)) {
+          banners.push(c.bannerConfig);
+        }
+      }
+    }
+    return banners;
+  }
+
+  /**
+   * Valida dependências de uma extensão instalada.
+   */
+  public checkDependencies(nameOrId: string): { satisfied: boolean; missing: string[] } {
+    const meta = this.getAllInstalledExtensions().find(
+      (e) => e.name.toLowerCase() === nameOrId.toLowerCase() || e.id === nameOrId
+    );
+    if (!meta || !meta.dependencies || meta.dependencies.length === 0) {
+      return { satisfied: true, missing: [] };
+    }
+    const missing: string[] = [];
+    for (const dep of meta.dependencies) {
+      if (!this.loadedExtensions.has(dep)) {
+        missing.push(dep);
+      }
+    }
+    return { satisfied: missing.length === 0, missing };
+  }
+
+  /**
+   * Valida um manifesto de extensão contra o esquema oficial.
+   */
+  public validateExtensionManifest(data: any): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    if (!data || typeof data !== 'object') {
+      return { valid: false, errors: ['Manifesto inválido: JSON deve ser um objeto.'] };
+    }
+    if (!data.name || typeof data.name !== 'string' || !data.name.trim()) {
+      errors.push('Campo obrigatório ausente: "name" (deve ser string não vazia).');
+    }
+    if (data.version && typeof data.version !== 'string') {
+      errors.push('Formato inválido: "version" deve ser uma string semver (ex: "1.0.0").');
+    }
+    if (data.category && typeof data.category !== 'string') {
+      errors.push('Formato inválido: "category" deve ser uma string de categoria válida.');
+    }
+    if (data.customTags && !Array.isArray(data.customTags)) {
+      errors.push('Formato inválido: "customTags" deve ser uma lista (array).');
+    }
+    if (data.dependencies && !Array.isArray(data.dependencies)) {
+      errors.push('Formato inválido: "dependencies" deve ser uma lista (array).');
+    }
+    return { valid: errors.length === 0, errors };
+  }
+
+  /**
+   * Executa um teste em sandbox de um script de extensão com entrada de exemplo.
+   * Suporta validação de transformações de wikitexto, ferramentas e temas.
+   */
+  public executeSandboxTest(
+    script: string,
+    sampleInput: string = '= Exemplo de Artigo =\nTexto de teste enciclopédico com [[links]] e citações.'
+  ): {
+    success: boolean;
+    output: string;
+    logs: string[];
+    registeredHooks: { type: string; name: string }[];
+    error?: string;
+  } {
+    try {
+      const testHooks = new HookRegistry();
+      const logs: string[] = [];
+      const registered: { type: string; name: string }[] = [];
+
+      const mockUtils = {
+        injectCss: (css: string) => logs.push(`[CSS Injetado]: ${css.slice(0, 50)}...`),
+        removeCss: () => logs.push('[CSS Removido]'),
+        log: (msg: string) => logs.push(`[Log]: ${msg}`),
+        warn: (msg: string) => logs.push(`[Aviso]: ${msg}`),
+        getSetting: (_key: string, defVal: any) => defVal,
+        addTag: (tagName: string, formatter: (c: string, attrs?: string) => string, hasClosing: boolean = true) => {
+          registered.push({ type: 'tag', name: `<${tagName}>` });
+          testHooks.addFilter<string>('render:wikitext', (t: string) => {
+            if (hasClosing) {
+              const rx = new RegExp(`<${tagName}\\b([^>]*)>([\\s\\S]*?)<\\/${tagName}>`, 'gi');
+              return t.replace(rx, (_m, attrs, body) => formatter(body, attrs));
+            } else {
+              const rx = new RegExp(`<${tagName}\\b([^>]*)\\/?>`, 'gi');
+              return t.replace(rx, (_m, attrs) => formatter('', attrs));
+            }
+          });
+        },
+        addTool: (tool: CustomToolConfig) => {
+          registered.push({ type: 'tool', name: tool.title || tool.toolId });
+          logs.push(`[Ferramenta]: ${tool.title || tool.toolId} registrada.`);
+        },
+        addTheme: (theme: CustomThemeConfig) => {
+          registered.push({ type: 'theme', name: theme.displayName || theme.themeId });
+          logs.push(`[Tema]: ${theme.displayName || theme.themeId} registrado.`);
+        },
+        addEditorButton: (btn: CustomEditorPluginConfig) => {
+          registered.push({ type: 'editor_button', name: btn.label || btn.buttonId });
+          logs.push(`[Botão do Editor]: ${btn.label} registrado.`);
+        },
+        addArticleBanner: (banner: CustomArticleBannerConfig) => {
+          registered.push({ type: 'banner', name: banner.title });
+          logs.push(`[Aviso de Artigo]: ${banner.title} registrado.`);
+        },
+        addContentFilter: (pattern: string, replacement: string, isRegex?: boolean) => {
+          registered.push({ type: 'filter', name: pattern });
+          testHooks.addFilter<string>('render:wikitext', (txt: string) => {
+            if (!txt) return txt;
+            return isRegex
+              ? txt.replace(new RegExp(pattern, 'gi'), replacement)
+              : txt.split(pattern).join(replacement);
+          });
+        },
+      };
+
+      const runner = new Function('hooks', 'extensionName', 'settings', 'utils', script);
+      runner(testHooks, 'SandboxExtension', {}, mockUtils);
+
+      // Audita hooks registrados
+      const detailed = testHooks.getAllHooksDetailed();
+      for (const h of detailed) {
+        registered.push({ type: h.type, name: h.hookName });
+      }
+
+      // Testa aplicação do filtro
+      let result = sampleInput;
+      if (testHooks.hasFilter('render:wikitext')) {
+        result = testHooks.applyFilters<string>('render:wikitext', sampleInput);
+      }
+      if (testHooks.hasFilter('render:html')) {
+        result = testHooks.applyFilters<string>('render:html', result);
+      }
+
+      return {
+        success: true,
+        output: result,
+        logs,
+        registeredHooks: registered,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        output: '',
+        logs: [],
+        registeredHooks: [],
+        error: err?.message || 'Erro de execução do script.',
+      };
+    }
+  }
+
+  /**
    * Localiza uma extensão pelo nome ou ID.
    */
   private findExtension(nameOrId: string): WikiExtension | undefined {
-    // Busca exata pelo nome
     if (this.registeredExtensions.has(nameOrId)) {
       return this.registeredExtensions.get(nameOrId);
     }
 
-    // Busca insensível a maiúsculas
     for (const [name, ext] of this.registeredExtensions.entries()) {
       if (name.toLowerCase() === nameOrId.toLowerCase()) {
         return ext;
       }
     }
 
-    // Busca por id nas extensões customizadas
     const customMatch = this.customExtensions.find(
       (c) => c.id === nameOrId || c.name.toLowerCase() === nameOrId.toLowerCase()
     );

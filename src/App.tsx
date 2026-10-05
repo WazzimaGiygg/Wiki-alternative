@@ -73,6 +73,7 @@ import { CURATED_FEATURED_ARTICLES } from './components/WikiFeaturedArticle';
 import { updateSEO } from './utils/seoManager';
 import { RecentlyReadService } from './utils/recentlyReadService';
 import { StorageService } from './services/storageService';
+import { ExtensionManager } from './core/ExtensionManager';
 import {
   WikiPage,
   WikiArticle,
@@ -232,12 +233,57 @@ export default function App() {
     return saved === 'win10';
   });
 
-  const isDark = theme === 'dark' || theme === 'google-dark' || theme === 'win10' || theme === 'genshin' || theme === 'android15' || theme === 'android23' || theme === 'repo' || theme === 'minecraft' || theme === 'roblox' || theme === 'halflife';
+  const customThemeObj = useMemo(() => {
+    return ExtensionManager.getInstance().getActiveThemes().find((t) => t.themeId === theme);
+  }, [theme]);
+
+  const isDark =
+    theme === 'dark' ||
+    theme === 'google-dark' ||
+    theme === 'win10' ||
+    theme === 'genshin' ||
+    theme === 'android15' ||
+    theme === 'android23' ||
+    theme === 'repo' ||
+    theme === 'minecraft' ||
+    theme === 'roblox' ||
+    theme === 'halflife' ||
+    Boolean(customThemeObj && (customThemeObj.baseTheme === 'dark' || customThemeObj.baseTheme === 'cyberpunk'));
 
   // Apply appropriate theme classes to document root
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-google', 'theme-google-dark', 'theme-win95', 'theme-winxp', 'theme-win7', 'theme-win10', 'theme-win31', 'theme-wikidiota', 'theme-genshin', 'theme-android15', 'theme-android23', 'theme-stardew', 'theme-repo', 'theme-minecraft', 'theme-roblox', 'theme-nokia3310', 'theme-win1', 'theme-halflife');
+    root.classList.remove(
+      'dark',
+      'theme-google',
+      'theme-google-dark',
+      'theme-win95',
+      'theme-winxp',
+      'theme-win7',
+      'theme-win10',
+      'theme-win31',
+      'theme-wikidiota',
+      'theme-genshin',
+      'theme-android15',
+      'theme-android23',
+      'theme-stardew',
+      'theme-repo',
+      'theme-minecraft',
+      'theme-roblox',
+      'theme-nokia3310',
+      'theme-win1',
+      'theme-halflife'
+    );
+
+    // Remove any previously set custom theme classes or style properties
+    Array.from(root.classList)
+      .filter((cls) => cls.startsWith('theme-custom-') || cls.startsWith('theme-ext-'))
+      .forEach((cls) => root.classList.remove(cls));
+
+    root.style.removeProperty('--theme-accent');
+    root.style.removeProperty('--theme-bg');
+    root.style.removeProperty('--theme-text');
+    root.style.removeProperty('--theme-font');
 
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -277,10 +323,27 @@ export default function App() {
       root.classList.add('theme-win1');
     } else if (theme === 'halflife') {
       root.classList.add('dark', 'theme-halflife');
+    } else if (customThemeObj) {
+      if (customThemeObj.baseTheme === 'dark' || customThemeObj.baseTheme === 'cyberpunk') {
+        root.classList.add('dark');
+      }
+      root.classList.add(`theme-custom-${customThemeObj.themeId}`);
+      if (customThemeObj.accentColor) {
+        root.style.setProperty('--theme-accent', customThemeObj.accentColor);
+      }
+      if (customThemeObj.backgroundColor) {
+        root.style.setProperty('--theme-bg', customThemeObj.backgroundColor);
+      }
+      if (customThemeObj.textColor) {
+        root.style.setProperty('--theme-text', customThemeObj.textColor);
+      }
+      if (customThemeObj.fontFamily) {
+        root.style.setProperty('--theme-font', customThemeObj.fontFamily);
+      }
     }
 
     localStorage.setItem('wikizero_theme_v3', theme);
-  }, [theme]);
+  }, [theme, customThemeObj]);
 
   const handleShowNotFound = (
     query: string,

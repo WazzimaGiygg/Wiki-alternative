@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Puzzle,
   Shield,
@@ -30,8 +30,33 @@ import {
   Eye,
   Check,
   Zap,
+  Sparkles,
+  Upload,
+  FileText,
+  Settings,
+  Play,
+  Palette,
+  Tag,
+  Terminal,
+  Wrench,
+  Copy,
+  ChevronRight,
+  Maximize2,
 } from 'lucide-react';
-import { UserProfile, InstalledExtensionMeta, ExtensionCategory, ExtensionActionLog } from '../types';
+import {
+  UserProfile,
+  InstalledExtensionMeta,
+  ExtensionCategory,
+  ExtensionActionLog,
+  CustomWikitextTagRule,
+  CustomToolConfig,
+  CustomThemeConfig,
+  CustomEditorPluginConfig,
+  CustomArticleBannerConfig,
+  CustomContentFilterRule,
+  CustomToolInputField,
+  ExtensionSettingField,
+} from '../types';
 import { ExtensionManager, isUserBureaucrat } from '../core/ExtensionManager';
 import { StorageService } from '../services/storageService';
 
@@ -54,33 +79,109 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'core' | 'custom'>('all');
   const [viewLayout, setViewLayout] = useState<'grid' | 'table'>('grid');
 
-  // Modals
+  // Modais de Controle
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [showHooksModal, setShowHooksModal] = useState<boolean>(false);
   const [showAuditModal, setShowAuditModal] = useState<boolean>(false);
+  const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
   const [inspectingExtension, setInspectingExtension] = useState<InstalledExtensionMeta | null>(null);
+  const [editingSettingsExtension, setEditingSettingsExtension] = useState<InstalledExtensionMeta | null>(null);
   const [extensionToDelete, setExtensionToDelete] = useState<InstalledExtensionMeta | null>(null);
 
-  // Notifications / feedback
+  // Notificações e Feedback
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
-  // New extension form state
-  const [addMode, setAddMode] = useState<'form' | 'catalog' | 'json'>('catalog');
+  // Modos de Adição de Extensões
+  const [addMode, setAddMode] = useState<'catalog' | 'visual' | 'code' | 'json'>('catalog');
+
+  // Estado do Criador Visual (No-Code Builder com 7 tipos)
+  const [visualType, setVisualType] = useState<'tool' | 'theme' | 'tag' | 'editor' | 'banner' | 'filter' | 'css'>('tool');
+  const [visName, setVisName] = useState<string>('');
+  const [visDesc, setVisDesc] = useState<string>('');
+  const [visCategory, setVisCategory] = useState<ExtensionCategory>('tool');
+
+  // 1. Tool Visual State
+  const [visToolId, setVisToolId] = useState<string>('conversor-temperatura');
+  const [visToolTitle, setVisToolTitle] = useState<string>('Conversor de Temperatura');
+  const [visToolIcon, setVisToolIcon] = useState<string>('🌡️');
+  const [visToolBadge, setVisToolBadge] = useState<string>('Física');
+  const [visToolFormula, setVisToolFormula] = useState<string>('(celsius * 9/5) + 32');
+  const [visToolResultLabel, setVisToolResultLabel] = useState<string>('Temperatura em Fahrenheit');
+  const [visToolUnitSuffix, setVisToolUnitSuffix] = useState<string>('°F');
+  const [visToolInputs, setVisToolInputs] = useState<CustomToolInputField[]>([
+    { id: 'celsius', label: 'Graus Celsius (°C)', type: 'number', defaultValue: 25, placeholder: 'Ex: 25' },
+  ]);
+  const [visToolHtmlWidget, setVisToolHtmlWidget] = useState<string>('');
+
+  // 2. Theme Visual State
+  const [visThemeId, setVisThemeId] = useState<string>('cyberpunk-neon');
+  const [visThemeName, setVisThemeName] = useState<string>('Cyberpunk Néon 2077');
+  const [visThemeBase, setVisThemeBase] = useState<'light' | 'dark' | 'retro' | 'cyberpunk' | 'monochrome'>('dark');
+  const [visThemeAccent, setVisThemeAccent] = useState<string>('#00ffff');
+  const [visThemeBg, setVisThemeBg] = useState<string>('#0a0c14');
+  const [visThemeText, setVisThemeText] = useState<string>('#e2e8f0');
+  const [visThemeFont, setVisThemeFont] = useState<string>('JetBrains Mono, monospace');
+  const [visThemeCss, setVisThemeCss] = useState<string>('');
+
+  // 3. Tag Visual State
+  const [visTag, setVisTag] = useState<string>('spoiler');
+  const [visTagTemplate, setVisTagTemplate] = useState<string>(
+    '<span class="wiki-spoiler px-2 py-0.5 rounded bg-slate-300 dark:bg-slate-700 text-transparent hover:text-inherit select-none cursor-pointer transition border border-slate-400/40" title="Clique ou passe o mouse para revelar" onclick="this.classList.toggle(\'text-transparent\')">{{content}}</span>'
+  );
+  const [visTagHasClosing, setVisTagHasClosing] = useState<boolean>(true);
+
+  // 4. Editor Plugin Visual State
+  const [visEditorBtnId, setVisEditorBtnId] = useState<string>('btn-quick-cite');
+  const [visEditorBtnLabel, setVisEditorBtnLabel] = useState<string>('Citar Livro');
+  const [visEditorBtnSnippet, setVisEditorBtnSnippet] = useState<string>(
+    '<ref>{{Citar livro |autor=Sobrenome, Nome |título=Título da Obra |editora=Editora |ano=2026 |páginas=42}}</ref>'
+  );
+  const [visEditorBtnTooltip, setVisEditorBtnTooltip] = useState<string>('Inserir citação bibliográfica rápida');
+
+  // 5. Banner Visual State
+  const [visBannerId, setVisBannerId] = useState<string>('aviso-revisao');
+  const [visBannerTitle, setVisBannerTitle] = useState<string>('Artigo Sob Revisão Acadêmica');
+  const [visBannerText, setVisBannerText] = useState<string>('Este verbete está sendo avaliado por editores do corpo científico da enciclopédia.');
+  const [visBannerType, setVisBannerType] = useState<'info' | 'warning' | 'alert' | 'success' | 'tip'>('info');
+  const [visBannerPosition, setVisBannerPosition] = useState<'top' | 'bottom'>('top');
+
+  // 6. Filter Visual State
+  const [visFilterPattern, setVisFilterPattern] = useState<string>('\\b(ONU|OMS|UNESCO|IA|SUS)\\b');
+  const [visFilterReplacement, setVisFilterReplacement] = useState<string>(
+    '<abbr title="Termo Enciclopédico Catalogado" class="underline decoration-dotted font-semibold cursor-help">$1</abbr>'
+  );
+  const [visFilterIsRegex, setVisFilterIsRegex] = useState<boolean>(true);
+
+  // 7. CSS Visual State
+  const [visCss, setVisCss] = useState<string>(
+    '/* Estilos da extensão visual */\n.wiki-highlight-custom {\n  background-color: rgba(250, 204, 21, 0.25);\n  border-bottom: 2px solid #eab308;\n}'
+  );
+
+  // Estado do Criador por Código Avançado
   const [newExtName, setNewExtName] = useState<string>('');
   const [newExtVersion, setNewExtVersion] = useState<string>('1.0.0');
   const [newExtDesc, setNewExtDesc] = useState<string>('');
   const [newExtCategory, setNewExtCategory] = useState<ExtensionCategory>('utility');
   const [newExtAuthor, setNewExtAuthor] = useState<string>('');
   const [newExtWebsite, setNewExtWebsite] = useState<string>('');
-  const [newExtScript, setNewExtScript] = useState<string>('');
-  const [newExtEnabled, setNewExtEnabled] = useState<boolean>(true);
+  const [newExtScript, setNewExtScript] = useState<string>(
+    `// Extensão personalizada do WikiWorldWeb\nhooks.addFilter('render:wikitext', function(text, articleTitle) {\n  if (!text) return text;\n  // Exemplo: Destaca termos importantes com tooltip\n  return text.replace(/\\\\b(IMPORTANTE|ATENÇÃO)\\\\b/g, '<span class="px-1.5 py-0.2 rounded font-bold bg-amber-100 text-amber-900 border border-amber-300">$1</span>');\n}, 12, extensionName);\n`
+  );
+  const [newExtCss, setNewExtCss] = useState<string>('');
   const [jsonManifest, setJsonManifest] = useState<string>('');
 
-  // Bureaucrat status
+  // Sandbox Tester
+  const [sandboxInput, setSandboxInput] = useState<string>('= Artigo de Teste =\nEste é um texto contendo ATENÇÃO e termos com [[link]].');
+  const [sandboxResult, setSandboxResult] = useState<{ success: boolean; output: string; error?: string } | null>(null);
+
+  // Editor de Parâmetros de Configuração
+  const [settingsFormData, setSettingsFormData] = useState<Record<string, any>>({});
+
+  // Status de Burocrata
   const userIsBureaucrat = isUserBureaucrat(currentUser);
 
-  // Load extensions list
+  // Carrega e atualiza lista de extensões
   const refreshList = () => {
     const list = extensionManager.getAllInstalledExtensions();
     setExtensions(list);
@@ -88,7 +189,6 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
 
   useEffect(() => {
     refreshList();
-    // Subscribe to extension manager events
     const unsubscribe = extensionManager.subscribe(() => {
       refreshList();
     });
@@ -97,15 +197,14 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     };
   }, []);
 
-  // Clear feedback after 5 seconds
   useEffect(() => {
     if (feedback) {
-      const timer = setTimeout(() => setFeedback(null), 5000);
+      const timer = setTimeout(() => setFeedback(null), 5500);
       return () => clearTimeout(timer);
     }
   }, [feedback]);
 
-  // Handle Toggle Activation / Deactivation
+  // Alterna Ativação / Desativação de Extensão
   const handleToggleExtension = async (ext: InstalledExtensionMeta) => {
     if (!userIsBureaucrat) {
       setFeedback({
@@ -119,18 +218,10 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     try {
       if (ext.enabled) {
         const res = extensionManager.deactivateExtension(ext.name, currentUser);
-        if (res.success) {
-          setFeedback({ type: 'success', message: res.message });
-        } else {
-          setFeedback({ type: 'error', message: res.message });
-        }
+        setFeedback({ type: res.success ? 'success' : 'error', message: res.message });
       } else {
         const res = extensionManager.activateExtension(ext.name, currentUser);
-        if (res.success) {
-          setFeedback({ type: 'success', message: res.message });
-        } else {
-          setFeedback({ type: 'error', message: res.message });
-        }
+        setFeedback({ type: res.success ? 'success' : 'error', message: res.message });
       }
       refreshList();
     } catch (err: any) {
@@ -140,7 +231,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     }
   };
 
-  // Handle Remove Extension
+  // Confirmação de Remoção de Extensão
   const handleConfirmDelete = async () => {
     if (!extensionToDelete) return;
     if (!userIsBureaucrat) {
@@ -148,7 +239,6 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
         type: 'error',
         message: 'Apenas Burocratas possuem autorização para desinstalar extensões da Wiki.',
       });
-      setExtensionToDelete(null);
       return;
     }
 
@@ -157,11 +247,11 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       const res = extensionManager.removeExtension(extensionToDelete.name, currentUser);
       if (res.success) {
         setFeedback({ type: 'success', message: res.message });
+        setExtensionToDelete(null);
+        refreshList();
       } else {
         setFeedback({ type: 'error', message: res.message });
       }
-      setExtensionToDelete(null);
-      refreshList();
     } catch (err: any) {
       setFeedback({ type: 'error', message: `Erro ao remover extensão: ${err?.message || 'Desconhecido'}` });
     } finally {
@@ -169,60 +259,12 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     }
   };
 
-  // Handle Add Custom Extension
-  const handleCreateExtension = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Instalação Direta via Catálogo Oficial
+  const handleInstallFromCatalog = (catalogItem: any) => {
     if (!userIsBureaucrat) {
       setFeedback({
         type: 'error',
-        message: 'Ação bloqueada: Apenas Burocratas podem adicionar novas extensões.',
-      });
-      return;
-    }
-
-    if (!newExtName.trim()) {
-      setFeedback({ type: 'error', message: 'Por favor, informe o nome da extensão.' });
-      return;
-    }
-
-    const res = extensionManager.addExtension(
-      {
-        name: newExtName.trim(),
-        version: newExtVersion.trim() || '1.0.0',
-        description: newExtDesc.trim(),
-        category: newExtCategory,
-        author: newExtAuthor.trim() || currentUser?.displayName || currentUser?.username || 'Burocrata',
-        website: newExtWebsite.trim() || undefined,
-        customScript: newExtScript.trim() || undefined,
-        enabled: newExtEnabled,
-      },
-      currentUser
-    );
-
-    if (res.success) {
-      setFeedback({ type: 'success', message: res.message });
-      setShowAddModal(false);
-      resetAddForm();
-      refreshList();
-    } else {
-      setFeedback({ type: 'error', message: res.message });
-    }
-  };
-
-  // Handle Quick Install from Catalog
-  const handleInstallFromCatalog = (catalogItem: {
-    name: string;
-    version: string;
-    description: string;
-    category: ExtensionCategory;
-    author: string;
-    hooks: string[];
-    script?: string;
-  }) => {
-    if (!userIsBureaucrat) {
-      setFeedback({
-        type: 'error',
-        message: 'Apenas Burocratas podem instalar extensões do catálogo.',
+        message: 'Apenas Burocratas podem instalar extensões do catálogo oficial.',
       });
       return;
     }
@@ -234,8 +276,18 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
         description: catalogItem.description,
         category: catalogItem.category,
         author: catalogItem.author,
-        hooks: catalogItem.hooks,
+        hooks: catalogItem.hooks || ['render:wikitext'],
         customScript: catalogItem.script,
+        customCss: catalogItem.customCss,
+        customTags: catalogItem.customTags,
+        toolConfig: catalogItem.toolConfig,
+        themeConfig: catalogItem.themeConfig,
+        editorPluginConfig: catalogItem.editorPluginConfig,
+        bannerConfig: catalogItem.bannerConfig,
+        filterRules: catalogItem.filterRules,
+        dependencies: catalogItem.dependencies,
+        settingsSchema: catalogItem.settingsSchema,
+        settings: catalogItem.defaultSettings || {},
         enabled: true,
       },
       currentUser
@@ -250,136 +302,341 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     }
   };
 
-  // Handle Import JSON Manifest
-  const handleImportJson = () => {
+  // Criação Visual No-Code
+  const handleCreateVisualExtension = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!userIsBureaucrat) {
-      setFeedback({
-        type: 'error',
-        message: 'Apenas Burocratas podem importar manifestos de extensões.',
-      });
+      setFeedback({ type: 'error', message: 'Apenas Burocratas podem criar extensões.' });
       return;
     }
 
-    try {
-      const parsed = JSON.parse(jsonManifest);
-      if (!parsed.name) {
-        setFeedback({ type: 'error', message: 'O JSON deve conter ao menos o campo "name".' });
-        return;
-      }
+    if (!visName.trim()) {
+      setFeedback({ type: 'error', message: 'O nome da extensão é obrigatório.' });
+      return;
+    }
 
-      const res = extensionManager.addExtension(
+    let script = '';
+    let customTags: CustomWikitextTagRule[] | undefined = undefined;
+    let customCss = '';
+    let toolConfig: CustomToolConfig | undefined = undefined;
+    let themeConfig: CustomThemeConfig | undefined = undefined;
+    let editorPluginConfig: CustomEditorPluginConfig | undefined = undefined;
+    let bannerConfig: CustomArticleBannerConfig | undefined = undefined;
+    let filterRules: CustomContentFilterRule[] | undefined = undefined;
+    let category: ExtensionCategory = visCategory;
+
+    if (visualType === 'tool') {
+      category = 'tool';
+      const cleanToolId = (visToolId.trim() || visName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-'));
+      toolConfig = {
+        toolId: cleanToolId,
+        title: visToolTitle.trim() || visName.trim(),
+        icon: visToolIcon.trim() || '🛠️',
+        badge: visToolBadge.trim() || 'Ferramenta',
+        inputs: visToolInputs,
+        calculationFormula: visToolFormula.trim() || undefined,
+        resultLabel: visToolResultLabel.trim() || 'Resultado',
+        unitSuffix: visToolUnitSuffix.trim() || undefined,
+        htmlWidget: visToolHtmlWidget.trim() || undefined,
+      };
+    } else if (visualType === 'theme') {
+      category = 'theme';
+      const cleanThemeId = (visThemeId.trim() || visName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-'));
+      themeConfig = {
+        themeId: cleanThemeId,
+        displayName: visThemeName.trim() || visName.trim(),
+        baseTheme: visThemeBase,
+        accentColor: visThemeAccent,
+        backgroundColor: visThemeBg,
+        textColor: visThemeText,
+        fontFamily: visThemeFont.trim() || undefined,
+        customCss: visThemeCss.trim() || undefined,
+      };
+    } else if (visualType === 'editor') {
+      category = 'editor';
+      const cleanBtnId = (visEditorBtnId.trim() || `btn-${visName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-')}`);
+      editorPluginConfig = {
+        buttonId: cleanBtnId,
+        label: visEditorBtnLabel.trim() || visName.trim(),
+        snippetTemplate: visEditorBtnSnippet,
+        tooltip: visEditorBtnTooltip.trim() || undefined,
+      };
+    } else if (visualType === 'banner') {
+      category = 'content';
+      const cleanBannerId = (visBannerId.trim() || `banner-${visName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-')}`);
+      bannerConfig = {
+        bannerId: cleanBannerId,
+        title: visBannerTitle.trim() || 'Aviso Editorial',
+        message: visBannerText.trim(),
+        type: visBannerType,
+        position: visBannerPosition,
+      };
+    } else if (visualType === 'filter') {
+      category = 'formatting';
+      filterRules = [
         {
-          name: parsed.name,
-          version: parsed.version || '1.0.0',
-          description: parsed.description || '',
-          category: parsed.category || 'utility',
-          author: parsed.author || currentUser?.displayName || 'Burocrata',
-          website: parsed.website,
-          customScript: parsed.customScript || parsed.script,
-          hooks: Array.isArray(parsed.hooks) ? parsed.hooks : ['render:wikitext'],
-          enabled: parsed.enabled !== false,
+          pattern: visFilterPattern.trim(),
+          replacement: visFilterReplacement,
+          isRegex: visFilterIsRegex,
+          description: `Regra de filtro de conteúdo para ${visName}.`,
         },
-        currentUser
-      );
+      ];
+    } else if (visualType === 'tag') {
+      category = 'formatting';
+      customTags = [
+        {
+          tag: visTag.trim().toLowerCase(),
+          template: visTagTemplate,
+          description: `Tag customizada <${visTag}> gerada visualmente.`,
+          hasClosingTag: visTagHasClosing,
+        },
+      ];
+    } else if (visualType === 'css') {
+      category = 'interface';
+      customCss = visCss;
+    }
 
-      if (res.success) {
-        setFeedback({ type: 'success', message: res.message });
-        setShowAddModal(false);
-        setJsonManifest('');
-        refreshList();
-      } else {
-        setFeedback({ type: 'error', message: res.message });
-      }
-    } catch (e: any) {
-      setFeedback({ type: 'error', message: `JSON inválido: ${e?.message || 'Formato incorreto'}` });
+    const res = extensionManager.addExtension(
+      {
+        name: visName.trim(),
+        version: '1.0.0',
+        description: visDesc.trim() || `Extensão (${category}) criada via Construtor Visual pelo burocrata.`,
+        category,
+        customTags,
+        customCss: customCss || undefined,
+        customScript: script || undefined,
+        toolConfig,
+        themeConfig,
+        editorPluginConfig,
+        bannerConfig,
+        filterRules,
+        enabled: true,
+      },
+      currentUser
+    );
+
+    if (res.success) {
+      setFeedback({ type: 'success', message: res.message });
+      setShowAddModal(false);
+      setVisName('');
+      setVisDesc('');
+      refreshList();
+    } else {
+      setFeedback({ type: 'error', message: res.message });
     }
   };
 
-  const resetAddForm = () => {
-    setNewExtName('');
-    setNewExtVersion('1.0.0');
-    setNewExtDesc('');
-    setNewExtCategory('utility');
-    setNewExtAuthor('');
-    setNewExtWebsite('');
-    setNewExtScript('');
-    setNewExtEnabled(true);
-    setJsonManifest('');
+  // Criação Avançada com Código JavaScript
+  const handleCreateCodeExtension = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userIsBureaucrat) {
+      setFeedback({ type: 'error', message: 'Apenas Burocratas podem registrar extensões.' });
+      return;
+    }
+
+    if (!newExtName.trim()) {
+      setFeedback({ type: 'error', message: 'O nome da extensão é obrigatório.' });
+      return;
+    }
+
+    const res = extensionManager.addExtension(
+      {
+        name: newExtName.trim(),
+        version: newExtVersion.trim() || '1.0.0',
+        description: newExtDesc.trim() || 'Extensão avançada criada via código pelo burocrata.',
+        category: newExtCategory,
+        author: newExtAuthor.trim() || currentUser?.displayName || currentUser?.username || 'Burocrata',
+        website: newExtWebsite.trim() || undefined,
+        customScript: newExtScript.trim() || undefined,
+        customCss: newExtCss.trim() || undefined,
+        enabled: true,
+      },
+      currentUser
+    );
+
+    if (res.success) {
+      setFeedback({ type: 'success', message: res.message });
+      setShowAddModal(false);
+      setNewExtName('');
+      setNewExtDesc('');
+      refreshList();
+    } else {
+      setFeedback({ type: 'error', message: res.message });
+    }
   };
 
-  // Filtered extensions
+  // Testar Código no Sandbox
+  const handleRunSandbox = () => {
+    const res = extensionManager.executeSandboxTest(newExtScript, sandboxInput);
+    setSandboxResult(res);
+  };
+
+  // Exportar Backup de Extensões em Arquivo JSON
+  const handleExportPackage = () => {
+    const pkg = extensionManager.exportAllExtensionsPackage();
+    const blob = new Blob([pkg], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `wikizero-extensions-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setFeedback({ type: 'success', message: 'Pacote de backup de extensões baixado com sucesso!' });
+  };
+
+  // Importar Pacote JSON
+  const handleImportJson = () => {
+    if (!userIsBureaucrat) {
+      setFeedback({ type: 'error', message: 'Apenas Burocratas podem importar pacotes de extensões.' });
+      return;
+    }
+
+    const res = extensionManager.importExtensionsPackage(jsonManifest, currentUser);
+    if (res.success) {
+      setFeedback({ type: 'success', message: res.message });
+      setShowAddModal(false);
+      setJsonManifest('');
+      refreshList();
+    } else {
+      setFeedback({ type: 'error', message: res.message });
+    }
+  };
+
+  // Abertura do Modal de Configurações
+  const handleOpenSettings = (ext: InstalledExtensionMeta) => {
+    setEditingSettingsExtension(ext);
+    setSettingsFormData(ext.settings || {});
+    setShowSettingsModal(true);
+  };
+
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSettingsExtension) return;
+
+    const res = extensionManager.updateExtensionSettings(
+      editingSettingsExtension.name,
+      settingsFormData,
+      currentUser
+    );
+
+    if (res.success) {
+      setFeedback({ type: 'success', message: res.message });
+      setShowSettingsModal(false);
+      setEditingSettingsExtension(null);
+      refreshList();
+    } else {
+      setFeedback({ type: 'error', message: res.message });
+    }
+  };
+
+  // Inserção de Snippets no Editor de Código
+  const handleInsertSnippet = (snippetCode: string) => {
+    setNewExtScript((prev) => prev + '\n' + snippetCode);
+  };
+
+  // Filtros da Lista de Extensões
   const filteredExtensions = useMemo(() => {
     return extensions.filter((ext) => {
-      // Category filter
-      if (selectedCategory !== 'all' && ext.category !== selectedCategory) {
-        return false;
-      }
-      // Status filter
+      if (selectedCategory !== 'all' && ext.category !== selectedCategory) return false;
       if (statusFilter === 'active' && !ext.enabled) return false;
       if (statusFilter === 'inactive' && ext.enabled) return false;
       if (statusFilter === 'core' && !ext.isCore) return false;
       if (statusFilter === 'custom' && ext.isCore) return false;
 
-      // Search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesName = ext.name.toLowerCase().includes(q);
-        const matchesDesc = ext.description.toLowerCase().includes(q);
-        const matchesAuthor = ext.author.toLowerCase().includes(q);
-        const matchesHooks = ext.hooks.some((h) => h.toLowerCase().includes(q));
-        if (!matchesName && !matchesDesc && !matchesAuthor && !matchesHooks) {
-          return false;
-        }
-      }
-      return true;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      const matchName = ext.name.toLowerCase().includes(q);
+      const matchDesc = ext.description.toLowerCase().includes(q);
+      const matchAuthor = ext.author.toLowerCase().includes(q);
+      const matchHooks = ext.hooks.some((h) => h.toLowerCase().includes(q));
+      return matchName || matchDesc || matchAuthor || matchHooks;
     });
-  }, [extensions, selectedCategory, statusFilter, searchQuery]);
+  }, [extensions, searchQuery, selectedCategory, statusFilter]);
 
-  // Summary statistics
+  // Estatísticas Rápidas
   const stats = useMemo(() => {
     const total = extensions.length;
     const active = extensions.filter((e) => e.enabled).length;
     const inactive = total - active;
     const core = extensions.filter((e) => e.isCore).length;
     const custom = total - core;
-    const allHooksCount = extensionManager.getHooksAudit().length;
-    return { total, active, inactive, core, custom, allHooksCount };
+    return { total, active, inactive, core, custom };
   }, [extensions]);
 
-  // Pre-configured catalog extensions for quick installation
+  // Catálogo Oficial Expandido com 16+ Extensões de Alto Valor
   const catalogExtensions = [
     {
       name: 'CalculatorToolExtension',
       version: '1.2.0',
-      description: 'Calculadora interativa multiúso com modo padrão, científico (trigonometria, logaritmos, potências, raízes), constantes matemáticas e histórico persistente de cálculos.',
+      description: 'Calculadora interativa multiúso com modo padrão, científico (trigonometria, logaritmos, potências, raízes), constantes matemáticas e histórico persistente.',
       category: 'tool' as ExtensionCategory,
       author: 'WikiZero Tools / Equipe WikiWorldWeb',
       hooks: ['tool:calculator_available', 'tools:registered_tools'],
-      script: `// Registro de ferramenta da calculadora
-hooks.addFilter('tool:calculator_available', () => true, 10, extensionName);
-hooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'calculator'], 10, extensionName);`,
+      script: `// Registro de ferramenta da calculadora\nhooks.addFilter('tool:calculator_available', () => true, 10, extensionName);\nhooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'calculator'], 10, extensionName);`,
     },
     {
       name: 'WorldClockToolExtension',
       version: '1.3.0',
-      description: 'Painel de Horário Certo Mundial com catalogação completa de fusos horários do Brasil (Brasília, Fernando de Noronha, Manaus e Acre), capitais globais e simulador/conversor temporal.',
+      description: 'Painel de Horário Certo Mundial com catalogação de fusos horários do Brasil (Brasília, Noronha, Manaus, Acre), capitais globais, UTC e conversor temporal.',
       category: 'tool' as ExtensionCategory,
       author: 'WikiZero Tools / Equipe WikiWorldWeb',
       hooks: ['tool:world_clock_available', 'tools:registered_tools'],
-      script: `// Registro de ferramenta de horário mundial
-hooks.addFilter('tool:world_clock_available', () => true, 10, extensionName);
-hooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'world-clock'], 10, extensionName);`,
+      script: `// Registro de ferramenta de horário mundial\nhooks.addFilter('tool:world_clock_available', () => true, 10, extensionName);\nhooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'world-clock'], 10, extensionName);`,
     },
     {
       name: 'WeatherForecastToolExtension',
       version: '1.4.0',
-      description: 'Estação meteorológica e previsão do tempo em tempo real com busca global de cidades, geolocalização, índice UV, umidade, vento e previsão estendida de 7 dias.',
+      description: 'Estação meteorológica e previsão do tempo em tempo real com busca global de cidades, geolocalização, radar de chuva, índice UV, vento e previsão de 7 dias.',
       category: 'tool' as ExtensionCategory,
       author: 'WikiZero Meteorologia / Open-Meteo',
       hooks: ['tool:weather_available', 'tools:registered_tools'],
-      script: `// Registro de ferramenta de previsão meteorológica
-hooks.addFilter('tool:weather_available', () => true, 10, extensionName);
-hooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'weather'], 10, extensionName);`,
+      script: `// Registro de ferramenta meteorológica\nhooks.addFilter('tool:weather_available', () => true, 10, extensionName);\nhooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'weather'], 10, extensionName);`,
+    },
+    {
+      name: 'SpoilerBlurTag',
+      version: '1.1.0',
+      description: 'Adiciona a tag <spoiler>...</spoiler> para ocultar trechos com desfoque tátil que revelam o conteúdo mediante clique ou toque do leitor.',
+      category: 'formatting' as ExtensionCategory,
+      author: 'Equipe de Leitura WikiZero',
+      hooks: ['render:wikitext'],
+      customTags: [
+        {
+          tag: 'spoiler',
+          template: '<span class="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-transparent hover:text-inherit select-none cursor-pointer transition border border-slate-300 dark:border-slate-600" title="Clique para revelar o spoiler" onclick="this.classList.toggle(\'text-transparent\')">{{content}}</span>',
+          description: 'Oculta enredos, gabaritos e segredos.',
+        },
+      ],
+    },
+    {
+      name: 'MermaidDiagrams',
+      version: '1.2.5',
+      description: 'Suporte a diagramas de fluxo, gráficos de sequência, diagramas de classe e mapas mentais em wikitexto via marcação <diagram>...</diagram>.',
+      category: 'rendering' as ExtensionCategory,
+      author: 'Ciência da Computação & Modelagem',
+      hooks: ['render:wikitext'],
+      script: `// Renderizador simplificado de caixas de diagramas\nhooks.addFilter('render:wikitext', function(text) {\n  if (!text) return text;\n  return text.replace(/<diagram>([\\s\\S]*?)<\\/diagram>/gi, function(_m, code) {\n    return '<div class=\"p-4 my-4 rounded-2xl bg-slate-900 text-emerald-400 font-mono text-xs border border-slate-700 shadow-sm overflow-x-auto\"><div class=\"text-[10px] text-slate-400 font-bold uppercase mb-1 tracking-wider\">📊 Diagrama Conceitual</div><pre>' + code.trim() + '</pre></div>';\n  });\n}, 12, extensionName);`,
+    },
+    {
+      name: 'ArticleReadingProgressBar',
+      version: '1.0.3',
+      description: 'Adiciona uma barra sutil de progresso de leitura no topo fixo da tela indicando a rolagem do artigo enciclopédico.',
+      category: 'interface' as ExtensionCategory,
+      author: 'Experiência do Usuário (UX)',
+      hooks: ['render:html'],
+      customCss: `/* Barra de progresso de leitura */
+#wiki-reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+  z-index: 9999;
+  width: 0%;
+  transition: width 0.1s ease-out;
+}`,
+      script: `// Script da barra de rolagem\nhooks.addFilter('render:html', function(html) {\n  return '<div id=\"wiki-reading-progress\"></div>' + html;\n}, 2, extensionName);`,
     },
     {
       name: 'DynamicTableFilter',
@@ -388,53 +645,285 @@ hooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'weather
       category: 'interface' as ExtensionCategory,
       author: 'Equipe de Dados WikiZero',
       hooks: ['render:wikitext', 'render:html'],
-      script: `// Hook de aprimoramento de tabelas
-hooks.addFilter('render:wikitext', function(text) {
-  if (!text) return text;
-  return text.replace(/class="wikitable"/g, 'class="wikitable sortable-table shadow-xs"');
-}, 11, extensionName);`,
+      script: `// Hook de aprimoramento de tabelas\nhooks.addFilter('render:wikitext', function(text) {\n  if (!text) return text;\n  return text.replace(/class=\"wikitable\"/g, 'class=\"wikitable sortable-table shadow-xs\"');\n}, 11, extensionName);`,
     },
     {
       name: 'AbbreviationGlossary',
       version: '1.1.0',
-      description: 'Detecta siglas comuns (e.g. ONU, OMS, IA, USP) e anexa tooltips com significado por extenso automaticamente.',
+      description: 'Detecta siglas comuns (e.g. ONU, OMS, IA, USP, MEC, SUS) e anexa tooltips com significado por extenso automaticamente.',
       category: 'content' as ExtensionCategory,
       author: 'Linguística & Vocabulário',
       hooks: ['render:wikitext'],
-      script: `// Glossário dinâmico de abreviaturas
-hooks.addFilter('render:wikitext', function(text) {
-  if (!text) return text;
-  return text.replace(/\\b(ONU|OMS|UNESCO|LGBTQIA\\+|IA|MEC|SUS)\\b/g, '<abbr title="Termo Enciclopédico" class="underline decoration-dotted font-semibold cursor-help">$1</abbr>');
-}, 14, extensionName);`,
+      script: `// Glossário dinâmico de abreviaturas\nhooks.addFilter('render:wikitext', function(text) {\n  if (!text) return text;\n  return text.replace(/\\b(ONU|OMS|UNESCO|LGBTQIA\\+|IA|MEC|SUS)\\b/g, '<abbr title=\"Termo Enciclopédico Catalogado\" class=\"underline decoration-dotted font-semibold cursor-help\">$1</abbr>');\n}, 14, extensionName);`,
     },
     {
-      name: 'PrintOptimizationCleanView',
-      version: '1.2.1',
-      description: 'Remove elementos de navegação e ajusta margens e fontes para geração limpa de documentos PDF e impressão física.',
-      category: 'formatting' as ExtensionCategory,
-      author: 'Publicações WikiWorldWeb',
+      name: 'OpenDyslexicTypography',
+      version: '1.0.1',
+      description: 'Habilita espaçamento otimizado entre letras e palavras e ponderação de peso na base dos glifos para leitores com dislexia.',
+      category: 'interface' as ExtensionCategory,
+      author: 'Acessibilidade & Inclusão',
       hooks: ['render:html'],
-      script: `// Otimizador de impressão
-hooks.addFilter('render:html', function(html) {
-  return '<div class="wiki-clean-print">' + html + '</div>';
-}, 25, extensionName);`,
+      customCss: `/* Modo de Leitura Inclusiva */
+.wiki-rendered-content {
+  letter-spacing: 0.035em !important;
+  word-spacing: 0.12em !important;
+  line-height: 1.85 !important;
+}`,
+      settingsSchema: [
+        {
+          key: 'extraSpacing',
+          label: 'Espaçamento Adicional',
+          type: 'boolean',
+          defaultValue: true,
+          description: 'Aumenta a distância entre linhas para facilitar o rastreamento visual.',
+        },
+      ],
     },
     {
       name: 'ScientificNotationFormatter',
       version: '1.0.2',
-      description: 'Formata expoentes científicos e unidades do Sistema Internacional (SI) no padrão tipográfico internacional.',
+      description: 'Formata grandezas físicas, notação científica e expoentes do Sistema Internacional (SI) no padrão tipográfico universal.',
       category: 'rendering' as ExtensionCategory,
       author: 'Física & Metrologia',
       hooks: ['render:wikitext'],
-      script: `// Formatação de grandezas
-hooks.addFilter('render:wikitext', function(text) {
-  if (!text) return text;
-  return text.replace(/(\\d+)\\s*(m\\/s²|km\\/h|m²|m³|cm²)/g, '$1 <span class="font-mono text-xs">$2</span>');
-}, 15, extensionName);`,
+      script: `// Formatação de grandezas físicas\nhooks.addFilter('render:wikitext', function(text) {\n  if (!text) return text;\n  return text.replace(/(\\d+)\\s*(m\\/s²|km\\/h|m²|m³|cm²)/g, '$1 <span class=\"font-mono text-xs font-semibold\">$2</span>');\n}, 15, extensionName);`,
+    },
+    {
+      name: 'UnitConverterTool',
+      version: '1.2.0',
+      description: 'Conversor universal interativo para distâncias, massas, temperaturas, volumes e dados digitais com execução instantânea de fórmulas.',
+      category: 'tool' as ExtensionCategory,
+      author: 'WikiZero Tools / Ciências Exatas',
+      hooks: ['tools:registered_tools', 'tool:unit-converter_available'],
+      toolConfig: {
+        toolId: 'unit-converter',
+        title: 'Conversor Universal de Unidades',
+        icon: '📏',
+        badge: 'Conversão',
+        inputs: [
+          { id: 'valor', label: 'Valor a Converter', type: 'number', defaultValue: 100 },
+          {
+            id: 'fator',
+            label: 'Escala de Conversão',
+            type: 'select',
+            options: [
+              { label: 'Quilômetros para Milhas (km → mi)', value: 0.621371 },
+              { label: 'Milhas para Quilômetros (mi → km)', value: 1.60934 },
+              { label: 'Quilos para Libras (kg → lb)', value: 2.20462 },
+              { label: 'Libras para Quilos (lb → kg)', value: 0.453592 },
+              { label: 'Metros para Pés (m → ft)', value: 3.28084 },
+              { label: 'Gigabytes para Megabytes (GB → MB)', value: 1024 },
+            ],
+          },
+        ],
+        calculationFormula: 'valor * fator',
+        resultLabel: 'Valor Convertido',
+      },
+    },
+    {
+      name: 'DiceRollerTool',
+      version: '1.1.0',
+      description: 'Sorteador aleatório e rolador de dados poliédricos para jogos, probabilidades, estatísticas e deliberações editoriais.',
+      category: 'tool' as ExtensionCategory,
+      author: 'WikiZero Tools / Ludologia',
+      hooks: ['tools:registered_tools', 'tool:dice-roller_available'],
+      toolConfig: {
+        toolId: 'dice-roller',
+        title: 'Rolador de Dados & Sorteador',
+        icon: '🎲',
+        badge: 'Aleatório',
+        inputs: [
+          {
+            id: 'lados',
+            label: 'Faces do Dado',
+            type: 'select',
+            options: [
+              { label: 'D6 (Dado clássico de 6 faces)', value: 6 },
+              { label: 'D20 (Dado de 20 faces)', value: 20 },
+              { label: 'D100 (Porcentagem 1-100)', value: 100 },
+              { label: 'D12 (12 faces)', value: 12 },
+              { label: 'D8 (8 faces)', value: 8 },
+              { label: 'D4 (4 faces)', value: 4 },
+            ],
+          },
+          { id: 'quantidade', label: 'Quantidade de Dados', type: 'number', defaultValue: 1 },
+        ],
+        calculationFormula: 'Math.floor(Math.random() * lados * quantidade) + quantidade',
+        resultLabel: 'Resultado Sorteado',
+      },
+    },
+    {
+      name: 'TextDiffTool',
+      version: '1.0.1',
+      description: 'Calculador de delta métrico entre texto original e texto revisado com contagem de bytes e auditoria de edições.',
+      category: 'tool' as ExtensionCategory,
+      author: 'WikiZero Tools / Auditoria',
+      hooks: ['tools:registered_tools', 'tool:text-diff_available'],
+      toolConfig: {
+        toolId: 'text-diff',
+        title: 'Comparador de Delta de Texto',
+        icon: '📝',
+        badge: 'Auditoria',
+        inputs: [
+          { id: 'original', label: 'Tamanho do Artigo Anterior (bytes)', type: 'number', defaultValue: 2400 },
+          { id: 'revisao', label: 'Tamanho da Nova Revisão (bytes)', type: 'number', defaultValue: 3100 },
+        ],
+        calculationFormula: 'revisao - original',
+        resultLabel: 'Variação Líquida de Bytes',
+        unitSuffix: 'bytes',
+      },
+    },
+    {
+      name: 'CyberpunkNeonTheme',
+      version: '1.0.0',
+      description: 'Tema visual de alta tecnologia com fundo ultra-escuro, contrastes néon em ciano elétrico (#00ffff), magenta e tipografia mono.',
+      category: 'theme' as ExtensionCategory,
+      author: 'Estúdio de Interface WikiZero',
+      hooks: ['theme:registered_themes', 'theme:cyberpunk_available'],
+      themeConfig: {
+        themeId: 'cyberpunk',
+        displayName: 'Cyberpunk Néon 2077',
+        baseTheme: 'cyberpunk',
+        accentColor: '#00ffff',
+        backgroundColor: '#0a0b12',
+        textColor: '#e0f2fe',
+        fontFamily: 'JetBrains Mono, monospace',
+      },
+    },
+    {
+      name: 'SolarizedPaperTheme',
+      version: '1.0.0',
+      description: 'Tema de leitura acadêmica com fundo em tom pergaminho solarizado quente e acentos dourados para redução de fadiga ocular.',
+      category: 'theme' as ExtensionCategory,
+      author: 'Ergonomia & Leitura',
+      hooks: ['theme:registered_themes', 'theme:solarized-paper_available'],
+      themeConfig: {
+        themeId: 'solarized-paper',
+        displayName: 'Pergaminho Solarizado Acadêmico',
+        baseTheme: 'light',
+        accentColor: '#b58900',
+        backgroundColor: '#fdf6e3',
+        textColor: '#586e75',
+        fontFamily: 'Merriweather, serif',
+      },
+    },
+    {
+      name: 'AmoledOledPureDarkTheme',
+      version: '1.0.0',
+      description: 'Preto puro 100% (#000000) projetado para economia máxima de energia em telas AMOLED e contraste absoluto.',
+      category: 'theme' as ExtensionCategory,
+      author: 'OLED Lab',
+      hooks: ['theme:registered_themes', 'theme:amoled-dark_available'],
+      themeConfig: {
+        themeId: 'amoled-dark',
+        displayName: 'AMOLED Ultra Black 100%',
+        baseTheme: 'dark',
+        accentColor: '#38bdf8',
+        backgroundColor: '#000000',
+        textColor: '#f8fafc',
+      },
+    },
+    {
+      name: 'AlertBoxTag',
+      version: '1.1.0',
+      description: 'Adiciona a tag <alert>...</alert> para criar caixas de destaque enciclopédico de avisos editoriais e advertências históricas.',
+      category: 'formatting' as ExtensionCategory,
+      author: 'Equipe Editorial WikiZero',
+      hooks: ['render:wikitext'],
+      customTags: [
+        {
+          tag: 'alert',
+          template: '<div class="wiki-alert-box p-4 my-3 rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2.5 shadow-2xs font-sans"><span>⚠️</span><div>{{content}}</div></div>',
+          description: 'Avisos e advertências de conteúdo.',
+          hasClosingTag: true,
+        },
+      ],
+    },
+    {
+      name: 'AudioPlayerTag',
+      version: '1.0.0',
+      description: 'Adiciona a marcação <audio>...</audio> para indicar termos com pronúncia fonética e reprodução acessível.',
+      category: 'rendering' as ExtensionCategory,
+      author: 'Linguística & Fonética',
+      hooks: ['render:wikitext'],
+      customTags: [
+        {
+          tag: 'audio',
+          template: '<div class="wiki-audio-embed inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono select-none"><span>🔊</span><span>{{content}}</span></div>',
+          description: 'Pronúncia fonética e transcrições sonoras.',
+          hasClosingTag: true,
+        },
+      ],
+    },
+    {
+      name: 'QuickCitationButton',
+      version: '1.0.0',
+      description: 'Plugin para a barra do editor wikitext: adiciona botão para inserção em 1 clique de citação bibliográfica acadêmica completa.',
+      category: 'editor' as ExtensionCategory,
+      author: 'Pesquisa Acadêmica WikiZero',
+      hooks: ['editor:toolbar_buttons'],
+      editorPluginConfig: {
+        buttonId: 'btn-citation-book',
+        label: 'Citar Livro',
+        tooltip: 'Inserir citação bibliográfica completa com autor, título e ano',
+        snippetTemplate: '<ref>{{Citar livro |autor= |título= |editora= |ano=2026 |páginas= |isbn=}}</ref>',
+      },
+    },
+    {
+      name: 'TemplateInsertButton',
+      version: '1.0.0',
+      description: 'Plugin para a barra do editor wikitext: insere estrutura padrão de infocaixa biográfica pronta para preenchimento.',
+      category: 'editor' as ExtensionCategory,
+      author: 'Biografias WikiZero',
+      hooks: ['editor:toolbar_buttons'],
+      editorPluginConfig: {
+        buttonId: 'btn-infobox-bio',
+        label: 'Infobox Biografia',
+        tooltip: 'Inserir esqueleto de infocaixa biográfica',
+        snippetTemplate: '{{Info/Biografia\n| nome = {{subst:PAGENAME}}\n| imagem = \n| legenda = \n| nascimento_data = \n| nacionalidade = \n| ocupacao = \n}}',
+      },
+    },
+    {
+      name: 'ArticleReviewNotice',
+      version: '1.0.0',
+      description: 'Adiciona banner visual formal notificando que o artigo enciclopédico está sob processo de revisão por pares.',
+      category: 'content' as ExtensionCategory,
+      author: 'Conselho Editorial WikiZero',
+      hooks: ['render:html'],
+      bannerConfig: {
+        bannerId: 'banner-revisao-pares',
+        title: 'Verbete em Avaliação Editorial',
+        message: 'Este artigo está sob escrutínio da comissão científica da enciclopédia para verificação de imparcialidade.',
+        type: 'info',
+        position: 'top',
+      },
+    },
+    {
+      name: 'VandalismWordFilter',
+      version: '1.0.0',
+      description: 'Filtro automático de moderação que sinaliza termos ofensivos e padrões frequentes de vandalismo com aviso neutro.',
+      category: 'security' as ExtensionCategory,
+      author: 'Segurança & Moderação',
+      hooks: ['render:wikitext'],
+      filterRules: [
+        {
+          pattern: '\\b(spam_teste|vandalismo_teste|teste_proibido)\\b',
+          replacement: '<mark class="bg-rose-200 text-rose-900 font-bold px-1 rounded">[termo sob moderação]</mark>',
+          isRegex: true,
+        },
+      ],
+    },
+    {
+      name: 'PeriodicTableTool',
+      version: '1.0.0',
+      description: 'Tabela periódica interativa com informações detalhadas dos 118 elementos químicos, camadas eletrônicas e grupos periódicos.',
+      category: 'tool' as ExtensionCategory,
+      author: 'Química Geral / Sociedade Científica',
+      hooks: ['tools:registered_tools'],
+      script: `// Registra tabela periódica\nhooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'periodic-table'], 10, extensionName);`,
     },
   ];
 
-  // Render Category Icon
   const getCategoryIcon = (cat: ExtensionCategory) => {
     switch (cat) {
       case 'rendering':
@@ -448,9 +937,18 @@ hooks.addFilter('render:wikitext', function(text) {
       case 'interface':
         return <Layout className="w-4 h-4 text-blue-500" />;
       case 'tool':
-        return <Sliders className="w-4 h-4 text-cyan-500" />;
+        return <Wrench className="w-4 h-4 text-cyan-500" />;
+      case 'theme':
+        return <Palette className="w-4 h-4 text-pink-500" />;
+      case 'editor':
+        return <Code className="w-4 h-4 text-blue-500" />;
+      case 'widget':
+        return <Sparkles className="w-4 h-4 text-amber-500" />;
       case 'security':
+      case 'moderation':
         return <Shield className="w-4 h-4 text-red-500" />;
+      case 'export':
+        return <Download className="w-4 h-4 text-teal-500" />;
       default:
         return <Puzzle className="w-4 h-4 text-slate-500" />;
     }
@@ -467,11 +965,21 @@ hooks.addFilter('render:wikitext', function(text) {
       case 'utility':
         return 'Utilitários & Métricas';
       case 'interface':
-        return 'Interface';
+        return 'Interface & Telas';
       case 'tool':
         return 'Ferramenta';
+      case 'theme':
+        return 'Tema Visual';
+      case 'editor':
+        return 'Plugin do Editor';
+      case 'widget':
+        return 'Widget Interativo';
       case 'security':
         return 'Segurança';
+      case 'moderation':
+        return 'Moderação & Antivandalismo';
+      case 'export':
+        return 'Exportação & Interoperabilidade';
       default:
         return cat;
     }
@@ -479,7 +987,7 @@ hooks.addFilter('render:wikitext', function(text) {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 font-sans">
-      {/* Top Banner / Breadcrumb & Actions */}
+      {/* Top Banner & Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -487,218 +995,168 @@ hooks.addFilter('render:wikitext', function(text) {
               Special:Extensions
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              Barramento de Módulos & Ganchos
+              Governança Restrita ao Conselho de Burocratas
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif-heading text-slate-900 dark:text-white flex items-center gap-2.5">
             <Puzzle className="w-7 h-7 text-purple-600 dark:text-purple-400" />
-            Gerenciamento de Extensões da Wiki
+            <span>Gerenciamento de Extensões da Wiki</span>
           </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-3xl">
-            Painel soberano de controle de extensões do WikiZero. De acordo com as diretrizes constitucionais,
-            <strong> apenas burocratas do Conselho</strong> possuem atribuição para adicionar, remover, ativar ou desativar extensões.
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-3xl leading-relaxed">
+            Catálogo completo de módulos, ganchos (hooks) e ferramentas da enciclopédia. Ative, desative, calibre parâmetros, crie extensões visuais (no-code) ou instale pacotes certificados.
           </p>
         </div>
 
-        {/* Global Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+            >
+              Voltar
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={() => setShowHooksModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition shadow-xs"
-            title="Inspecionar filtros e ações registrados no HookRegistry"
+            onClick={handleExportPackage}
+            className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 transition shadow-2xs"
+            title="Exportar pacote completo de backup com todas as extensões e configurações"
           >
-            <Activity className="w-3.5 h-3.5 text-blue-500" />
-            <span>Barramento de Hooks ({stats.allHooksCount})</span>
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>Exportar Backup</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowAuditModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition shadow-xs"
-            title="Histórico de ativações e remoções de extensões"
+            className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 transition shadow-2xs"
+            title="Ver histórico de alterações de extensões"
           >
-            <History className="w-3.5 h-3.5 text-amber-500" />
+            <History className="w-3.5 h-3.5 text-slate-500" />
             <span>Auditoria</span>
           </button>
 
           <button
             type="button"
-            onClick={() => {
-              refreshList();
-              setFeedback({ type: 'info', message: 'Lista de extensões atualizada.' });
-            }}
-            className="p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition"
-            title="Recarregar catálogo"
+            onClick={() => setShowHooksModal(true)}
+            className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 transition shadow-2xs"
+            title="Inspecionar todos os ganchos ativos"
           >
-            <RefreshCw className="w-4 h-4" />
+            <Code className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+            <span>Ganchos ({stats.total})</span>
           </button>
 
-          {/* ADD EXTENSION BUTTON (BUREAUCRAT ONLY) */}
           <button
             type="button"
+            disabled={!userIsBureaucrat}
             onClick={() => {
-              if (!userIsBureaucrat) {
-                setFeedback({
-                  type: 'error',
-                  message: 'Acesso restrito: Apenas Burocratas podem adicionar novas extensões.',
-                });
-                return;
-              }
+              setAddMode('catalog');
               setShowAddModal(true);
             }}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-lg shadow-sm transition ${
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm ${
               userIsBureaucrat
-                ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-500/20'
-                : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed border border-slate-300 dark:border-slate-700'
+                ? 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer active:scale-98'
+                : 'bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed'
             }`}
             title={
               userIsBureaucrat
-                ? 'Adicionar nova extensão à Wiki'
-                : 'Apenas Burocratas podem adicionar extensões'
+                ? 'Instalar nova extensão do catálogo ou criar personalizada'
+                : 'Apenas burocratas podem adicionar extensões'
             }
           >
-            {userIsBureaucrat ? <Plus className="w-4 h-4" /> : <Lock className="w-3.5 h-3.5 text-amber-500" />}
-            <span>Nova Extensão</span>
+            <Plus className="w-4 h-4" />
+            <span>Adicionar Extensão</span>
           </button>
         </div>
       </div>
 
-      {/* Bureaucrat Authentication Status Banner */}
-      <div className="mt-4">
-        {userIsBureaucrat ? (
-          <div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 flex items-start sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-emerald-600 text-white shrink-0">
-                <Crown className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="font-bold text-emerald-950 dark:text-emerald-100">
-                  Prerrogativas de Burocrata Reconhecidas:
-                </span>{' '}
-                <span>
-                  Você está autenticado como <strong>{currentUser?.displayName || currentUser?.username || currentUser?.email}</strong>{' '}
-                  ({currentUser?.group || currentUser?.role}). Você possui poderes plenos para <strong>ativar, desativar, adicionar ou remover</strong> extensões do sistema.
-                </span>
-              </div>
-            </div>
-            <span className="shrink-0 px-2 py-0.5 rounded-full font-mono text-[10px] font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
-              Operador Autorizado
-            </span>
-          </div>
-        ) : (
-          <div className="p-3.5 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 flex items-start sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-amber-600 text-white shrink-0">
-                <Lock className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="font-bold text-amber-950 dark:text-amber-100">
-                  Modo de Somente Leitura (Consulta Pública):
-                </span>{' '}
-                <span>
-                  Você está visualizando o catálogo de extensões instaladas. Por governança constitucional, apenas usuários com a atribuição de{' '}
-                  <strong>Burocrata (Bureaucrat)</strong> podem modificar o estado das extensões.
-                </span>
-              </div>
-            </div>
-            <span className="shrink-0 px-2 py-0.5 rounded-full font-mono text-[10px] font-bold bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
-              Somente Leitura
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Feedback Toast */}
+      {/* Feedback Alert Banner */}
       {feedback && (
         <div
-          className={`mt-4 p-3.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition animate-in fade-in ${
+          className={`my-4 p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs animate-in fade-in duration-200 ${
             feedback.type === 'success'
               ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
               : feedback.type === 'error'
-              ? 'bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-900 dark:text-red-200'
+              ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200'
               : 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-900 dark:text-blue-200'
           }`}
         >
           <div className="flex items-center gap-2">
             {feedback.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             ) : feedback.type === 'error' ? (
-              <AlertTriangle className="w-4 h-4 text-red-600" />
+              <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
             ) : (
-              <Info className="w-4 h-4 text-blue-600" />
+              <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
             )}
-            <span>{feedback.message}</span>
+            <span className="font-medium">{feedback.message}</span>
           </div>
           <button
             type="button"
             onClick={() => setFeedback(null)}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6">
-        <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 shadow-xs">
-          <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Total Instaladas</div>
-          <div className="text-2xl font-bold font-mono text-slate-900 dark:text-white mt-1">
-            {stats.total}
+      {/* Status da Prerrogativa de Burocrata */}
+      <div
+        className={`my-4 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+          userIsBureaucrat
+            ? 'bg-purple-50/70 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/80 text-purple-900 dark:text-purple-200'
+            : 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`p-2 rounded-xl shrink-0 ${
+              userIsBureaucrat
+                ? 'bg-purple-600 text-white'
+                : 'bg-amber-500 text-white'
+            }`}
+          >
+            {userIsBureaucrat ? <Crown className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+          </div>
+          <div>
+            <div className="font-bold text-sm flex items-center gap-1.5">
+              <span>{userIsBureaucrat ? 'Prerrogativa de Burocrata Ativa' : 'Modo de Leitura / Auditoria'}</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/60 dark:bg-black/40 border border-current font-semibold">
+                {currentUser?.role || 'Visitante'}
+              </span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">
+              {userIsBureaucrat
+                ? 'Você possui autorização para ativar, desativar, configurar parâmetros, criar novas extensões e desinstalar módulos.'
+                : 'Apenas burocratas e administradores gerais possuem permissão para modificar o estado de extensões da enciclopédia.'}
+            </p>
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-xs">
-          <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Ativas / Operantes
-          </div>
-          <div className="text-2xl font-bold font-mono text-emerald-800 dark:text-emerald-200 mt-1">
-            {stats.active}
-          </div>
-        </div>
-
-        <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 shadow-xs">
-          <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Desativadas</div>
-          <div className="text-2xl font-bold font-mono text-slate-600 dark:text-slate-400 mt-1">
-            {stats.inactive}
-          </div>
-        </div>
-
-        <div className="p-3.5 rounded-xl border border-purple-200 dark:border-purple-800/40 bg-purple-50/40 dark:bg-purple-950/20 shadow-xs">
-          <div className="text-[11px] font-semibold text-purple-700 dark:text-purple-400">Extensões Core</div>
-          <div className="text-2xl font-bold font-mono text-purple-800 dark:text-purple-200 mt-1">
-            {stats.core}
-          </div>
-        </div>
-
-        <div className="p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800/40 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-xs">
-          <div className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-400">Personalizadas</div>
-          <div className="text-2xl font-bold font-mono text-indigo-800 dark:text-indigo-200 mt-1">
-            {stats.custom}
-          </div>
-        </div>
-
-        <div className="p-3.5 rounded-xl border border-blue-200 dark:border-blue-800/40 bg-blue-50/40 dark:bg-blue-950/20 shadow-xs">
-          <div className="text-[11px] font-semibold text-blue-700 dark:text-blue-400">Ganchos Ativos</div>
-          <div className="text-2xl font-bold font-mono text-blue-800 dark:text-blue-200 mt-1">
-            {stats.allHooksCount}
+            <span>{stats.active} ativas</span>
+            <span className="text-slate-400">/</span>
+            <span className="text-slate-500">{stats.total} total</span>
           </div>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="mt-6 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      {/* Filter Toolbar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-2 pb-4">
         {/* Search Input */}
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por nome, descrição, gancho (e.g. render:wikitext)..."
-            className="w-full pl-9 pr-4 py-2 rounded-lg text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full pl-9 pr-8 py-2 rounded-lg text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
           {searchQuery && (
             <button
@@ -711,7 +1169,7 @@ hooks.addFilter('render:wikitext', function(text) {
           )}
         </div>
 
-        {/* Filter dropdowns */}
+        {/* Filter Dropdowns */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Category Filter */}
           <select
@@ -742,7 +1200,7 @@ hooks.addFilter('render:wikitext', function(text) {
             <option value="custom">Apenas Personalizadas</option>
           </select>
 
-          {/* View Layout Toggle */}
+          {/* Layout Toggle */}
           <div className="flex items-center border border-slate-300 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900 p-0.5">
             <button
               type="button"
@@ -764,457 +1222,413 @@ hooks.addFilter('render:wikitext', function(text) {
                   ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-xs'
                   : 'text-slate-500 hover:text-slate-700'
               }`}
-              title="Visualização em Tabela"
+              title="Visualização em Tabela Detalhada"
             >
-              <FileCode className="w-3.5 h-3.5" />
+              <Sliders className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Extensions Listing */}
-      <div className="mt-6">
-        {filteredExtensions.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white/50 dark:bg-slate-800/40">
-            <Puzzle className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
-              Nenhuma extensão encontrada
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
-              Nenhuma extensão corresponde aos critérios de busca ou filtros selecionados.
-            </p>
-            {(searchQuery || selectedCategory !== 'all' || statusFilter !== 'all') && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('all');
-                  setStatusFilter('all');
-                }}
-                className="mt-4 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
-              >
-                Limpar Filtros
-              </button>
-            )}
-          </div>
-        ) : viewLayout === 'grid' ? (
-          /* GRID VIEW */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredExtensions.map((ext) => (
+      {/* Extension Cards Grid */}
+      {viewLayout === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredExtensions.map((ext) => {
+            const hasSettings = ext.settingsSchema && ext.settingsSchema.length > 0;
+
+            return (
               <div
                 key={ext.name}
-                className={`rounded-2xl border transition-all duration-200 flex flex-col justify-between overflow-hidden shadow-xs ${
+                className={`rounded-2xl border p-4 transition-all flex flex-col justify-between group ${
                   ext.enabled
-                    ? 'bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md'
-                    : 'bg-slate-50/80 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800 opacity-80'
+                    ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700 shadow-xs'
+                    : 'bg-slate-50/70 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800/80 opacity-75'
                 }`}
               >
-                {/* Card Header */}
-                <div className="p-4 sm:p-5">
-                  <div className="flex items-start justify-between gap-3 mb-2.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                <div>
+                  {/* Top Bar with Category and Version */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="p-1 rounded-md bg-slate-100 dark:bg-slate-800 shrink-0">
                         {getCategoryIcon(ext.category)}
-                        <span>{getCategoryLabel(ext.category)}</span>
                       </span>
-
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        {getCategoryLabel(ext.category)}
+                      </span>
+                      <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                         v{ext.version}
                       </span>
-
                       {ext.isCore ? (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200/60 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-200/70 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                           Core
                         </span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                           Custom
                         </span>
                       )}
                     </div>
 
-                    {/* Status indicator */}
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Status Pill */}
+                    <div>
                       {ext.enabled ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                           Ativa
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
-                          Desativada
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                          Inativa
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Title & Author */}
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    {ext.name}
+                  {/* Extension Name & Description */}
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span>{ext.name}</span>
                   </h3>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Mantido por: <span className="font-medium text-slate-700 dark:text-slate-300">{ext.author}</span>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-3 line-clamp-3 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed line-clamp-3">
                     {ext.description}
                   </p>
 
-                  {/* Registered Hooks Tags */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
-                      <span>Pontos de Gancho (Hooks)</span>
-                      <span className="font-mono text-purple-600 dark:text-purple-400">{ext.hooks.length}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {ext.hooks.map((hook) => (
-                        <span
-                          key={hook}
-                          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                        >
-                          {hook}
-                        </span>
-                      ))}
-                    </div>
+                  {/* Meta Chips: Hooks & Tags */}
+                  <div className="flex items-center gap-1.5 flex-wrap mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {ext.hooks.length} {ext.hooks.length === 1 ? 'gancho' : 'ganchos'}:
+                    </span>
+                    {ext.hooks.slice(0, 2).map((h) => (
+                      <span
+                        key={h}
+                        className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                        title={h}
+                      >
+                        {h}
+                      </span>
+                    ))}
+                    {ext.hooks.length > 2 && (
+                      <span className="text-[9px] text-slate-400 font-mono">
+                        +{ext.hooks.length - 2}
+                      </span>
+                    )}
+
+                    {ext.customTags && ext.customTags.length > 0 && (
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        tag: &lt;{ext.customTags[0].tag}&gt;
+                      </span>
+                    )}
+                    {ext.customCss && (
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        CSS
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Card Actions Footer */}
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setInspectingExtension(ext)}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 px-2 py-1 rounded transition"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Detalhes</span>
-                  </button>
+                {/* Bottom Action Toolbar */}
+                <div className="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setInspectingExtension(ext)}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                      title="Ver detalhes técnicos e código"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
 
-                  <div className="flex items-center gap-1.5">
-                    {/* BUREAUCRAT ONLY: REMOVE BUTTON (Only for non-core extensions) */}
+                    {hasSettings && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenSettings(ext)}
+                        className="p-1.5 rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/60 transition"
+                        title="Configurar opções da extensão"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+                    )}
+
                     {!ext.isCore && (
                       <button
                         type="button"
                         disabled={!userIsBureaucrat || isProcessing}
-                        onClick={() => {
-                          if (!userIsBureaucrat) {
-                            setFeedback({
-                              type: 'error',
-                              message: 'Apenas Burocratas podem remover extensões instaladas.',
-                            });
-                            return;
-                          }
-                          setExtensionToDelete(ext);
-                        }}
-                        className={`p-1.5 rounded-lg text-xs transition ${
+                        onClick={() => setExtensionToDelete(ext)}
+                        className={`p-1.5 rounded-lg transition ${
                           userIsBureaucrat
-                            ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-700'
-                            : 'text-slate-400 opacity-50 cursor-not-allowed'
+                            ? 'text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer'
+                            : 'text-slate-300 dark:text-slate-700 cursor-not-allowed'
                         }`}
                         title={
                           userIsBureaucrat
                             ? 'Desinstalar e remover extensão'
-                            : 'Apenas Burocratas podem remover extensões'
+                            : 'Apenas burocratas podem desinstalar extensões'
                         }
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
-
-                    {/* BUREAUCRAT ONLY: TOGGLE SWITCH (ATIVAR / DESATIVAR) */}
-                    <button
-                      type="button"
-                      disabled={!userIsBureaucrat || isProcessing}
-                      onClick={() => handleToggleExtension(ext)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                        !userIsBureaucrat
-                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                          : ext.enabled
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
-                      }`}
-                      title={
-                        userIsBureaucrat
-                          ? ext.enabled
-                            ? 'Clique para desativar a extensão'
-                            : 'Clique para ativar a extensão'
-                          : 'Apenas Burocratas podem ativar/desativar extensões'
-                      }
-                    >
-                      {!userIsBureaucrat ? (
-                        <>
-                          <Lock className="w-3 h-3 text-amber-500" />
-                          <span>Bloqueado</span>
-                        </>
-                      ) : ext.enabled ? (
-                        <>
-                          <Power className="w-3.5 h-3.5" />
-                          <span>Ativa</span>
-                        </>
-                      ) : (
-                        <>
-                          <Power className="w-3.5 h-3.5 opacity-60" />
-                          <span>Ativar</span>
-                        </>
-                      )}
-                    </button>
                   </div>
+
+                  {/* Toggle Active Switch */}
+                  <button
+                    type="button"
+                    disabled={!userIsBureaucrat || isProcessing}
+                    onClick={() => handleToggleExtension(ext)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
+                      ext.enabled
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                        : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700'
+                    } ${!userIsBureaucrat ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-98'}`}
+                    title={
+                      !userIsBureaucrat
+                        ? 'Apenas burocratas podem alterar'
+                        : ext.enabled
+                        ? 'Clique para desativar esta extensão'
+                        : 'Clique para ativar esta extensão'
+                    }
+                  >
+                    <Power className="w-3.5 h-3.5" />
+                    <span>{ext.enabled ? 'Ativa' : 'Ativar'}</span>
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          /* TABLE VIEW */
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 uppercase tracking-wider text-[10px] font-mono">
-                  <tr>
-                    <th className="px-4 py-3 font-bold">Extensão</th>
-                    <th className="px-3 py-3 font-bold">Categoria</th>
-                    <th className="px-3 py-3 font-bold">Versão</th>
-                    <th className="px-3 py-3 font-bold">Autor</th>
-                    <th className="px-3 py-3 font-bold">Ganchos</th>
-                    <th className="px-3 py-3 font-bold">Status</th>
-                    <th className="px-4 py-3 font-bold text-right">Ação do Burocrata</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                  {filteredExtensions.map((ext) => (
-                    <tr
-                      key={ext.name}
-                      className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition"
-                    >
-                      <td className="px-4 py-3.5">
-                        <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                          {ext.name}
-                          {ext.isCore && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                              Core
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 max-w-sm mt-0.5">
-                          {ext.description}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3.5">
-                        <span className="inline-flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
-                          {getCategoryIcon(ext.category)}
-                          <span>{getCategoryLabel(ext.category)}</span>
-                        </span>
-                      </td>
-                      <td className="px-3 py-3.5 font-mono text-purple-700 dark:text-purple-300 font-bold">
-                        v{ext.version}
-                      </td>
-                      <td className="px-3 py-3.5 text-slate-600 dark:text-slate-400">
-                        {ext.author}
-                      </td>
-                      <td className="px-3 py-3.5">
-                        <span className="px-2 py-0.5 rounded-full font-mono text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                          {ext.hooks.length} ganchos
-                        </span>
-                      </td>
-                      <td className="px-3 py-3.5">
-                        {ext.enabled ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            Ativa
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500">
-                            Desativada
+            );
+          })}
+        </div>
+      ) : (
+        /* Table Layout */
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 font-mono uppercase text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Extensão</th>
+                  <th className="px-3 py-3">Categoria</th>
+                  <th className="px-3 py-3">Versão</th>
+                  <th className="px-3 py-3">Autor</th>
+                  <th className="px-3 py-3">Ganchos</th>
+                  <th className="px-3 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">Ações (Burocrata)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
+                {filteredExtensions.map((ext) => (
+                  <tr key={ext.name} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                    <td className="px-4 py-3.5">
+                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>{ext.name}</span>
+                        {ext.isCore && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">
+                            core
                           </span>
                         )}
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      </div>
+                      <p className="text-[11px] text-slate-500 truncate max-w-xs">{ext.description}</p>
+                    </td>
+                    <td className="px-3 py-3.5">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                        {getCategoryIcon(ext.category)}
+                        <span>{getCategoryLabel(ext.category)}</span>
+                      </span>
+                    </td>
+                    <td className="px-3 py-3.5 font-mono text-purple-700 dark:text-purple-300 font-bold">
+                      v{ext.version}
+                    </td>
+                    <td className="px-3 py-3.5 text-slate-600 dark:text-slate-400">{ext.author}</td>
+                    <td className="px-3 py-3.5">
+                      <span className="px-2 py-0.5 rounded-full font-mono text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        {ext.hooks.length} ganchos
+                      </span>
+                    </td>
+                    <td className="px-3 py-3.5">
+                      {ext.enabled ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          Ativa
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                          Inativa
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setInspectingExtension(ext)}
+                          className="p-1 rounded text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          title="Inspecionar"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        {ext.settingsSchema && (
                           <button
                             type="button"
-                            onClick={() => setInspectingExtension(ext)}
-                            className="p-1.5 rounded text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                            title="Ver detalhes"
+                            onClick={() => handleOpenSettings(ext)}
+                            className="p-1 rounded text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
+                            title="Configurações"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Settings className="w-3.5 h-3.5" />
                           </button>
-
-                          {!ext.isCore && (
-                            <button
-                              type="button"
-                              disabled={!userIsBureaucrat || isProcessing}
-                              onClick={() => {
-                                if (!userIsBureaucrat) {
-                                  setFeedback({
-                                    type: 'error',
-                                    message: 'Apenas Burocratas podem remover extensões instaladas.',
-                                  });
-                                  return;
-                                }
-                                setExtensionToDelete(ext);
-                              }}
-                              className={`p-1.5 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 ${
-                                !userIsBureaucrat ? 'opacity-40 cursor-not-allowed' : ''
-                              }`}
-                              title={
-                                userIsBureaucrat
-                                  ? 'Remover extensão'
-                                  : 'Apenas Burocratas podem remover extensões'
-                              }
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-
-                          <button
-                            type="button"
-                            disabled={!userIsBureaucrat || isProcessing}
-                            onClick={() => handleToggleExtension(ext)}
-                            className={`px-2.5 py-1 rounded text-xs font-bold transition inline-flex items-center gap-1 ${
-                              !userIsBureaucrat
-                                ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
-                                : ext.enabled
-                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
-                            }`}
-                          >
-                            {!userIsBureaucrat ? (
-                              <Lock className="w-3 h-3 text-amber-500" />
-                            ) : (
-                              <Power className="w-3 h-3" />
-                            )}
-                            <span>{ext.enabled ? 'Ativa' : 'Ativar'}</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        )}
+                        <button
+                          type="button"
+                          disabled={!userIsBureaucrat || isProcessing}
+                          onClick={() => handleToggleExtension(ext)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                            ext.enabled
+                              ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-200'
+                              : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300'
+                          } ${!userIsBureaucrat ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {ext.enabled ? 'Desativar' : 'Ativar'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* MODAL: ADD / INSTALL EXTENSION */}
+      {/* ======================================================== */}
+      {/* MODAL 1: ADICIONAR EXTENSÃO (CATÁLOGO, NO-CODE, CÓDIGO)   */}
+      {/* ======================================================== */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-6">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                <div className="p-2 rounded-xl bg-purple-600 text-white">
                   <Plus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    Instalar Nova Extensão na Wiki
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    Adicionar Nova Extensão à Wiki
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Prerrogativa exclusiva do Burocrata
+                    Instale pacotes certificados ou crie ferramentas, estilos e tags sem código.
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 ✕
               </button>
             </div>
 
-            {/* Mode Selector Tabs */}
-            <div className="grid grid-cols-3 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold bg-slate-50 dark:bg-slate-900/60">
+            {/* Navigation Tabs */}
+            <div className="grid grid-cols-4 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-center bg-slate-50/60 dark:bg-slate-900">
               <button
                 type="button"
                 onClick={() => setAddMode('catalog')}
-                className={`py-3 px-4 border-b-2 transition ${
+                className={`py-3 px-2 border-b-2 transition flex items-center justify-center gap-1.5 ${
                   addMode === 'catalog'
                     ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800'
                     : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
-                1. Catálogo Oficial
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>1. Catálogo Oficial ({catalogExtensions.length})</span>
               </button>
               <button
                 type="button"
-                onClick={() => setAddMode('form')}
-                className={`py-3 px-4 border-b-2 transition ${
-                  addMode === 'form'
+                onClick={() => setAddMode('visual')}
+                className={`py-3 px-2 border-b-2 transition flex items-center justify-center gap-1.5 ${
+                  addMode === 'visual'
                     ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800'
                     : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
-                2. Extensão Personalizada
+                <Palette className="w-3.5 h-3.5" />
+                <span>2. Construtor No-Code</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddMode('code')}
+                className={`py-3 px-2 border-b-2 transition flex items-center justify-center gap-1.5 ${
+                  addMode === 'code'
+                    ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800'
+                    : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100'
+                }`}
+              >
+                <Code className="w-3.5 h-3.5" />
+                <span>3. Código JavaScript</span>
               </button>
               <button
                 type="button"
                 onClick={() => setAddMode('json')}
-                className={`py-3 px-4 border-b-2 transition ${
+                className={`py-3 px-2 border-b-2 transition flex items-center justify-center gap-1.5 ${
                   addMode === 'json'
                     ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800'
                     : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
-                3. Importar JSON
+                <Upload className="w-3.5 h-3.5" />
+                <span>4. Importar / Backup</span>
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-5 overflow-y-auto flex-1 space-y-4">
+            <div className="p-6 overflow-y-auto flex-1">
+              {/* TAB 1: CATÁLOGO OFICIAL */}
               {addMode === 'catalog' && (
-                <div className="space-y-3">
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Selecione um pacote de extensão pré-validado pelo Conselho de Burocratas para instalação imediata:
-                  </p>
-                  <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-4">
+                  <div className="p-3.5 bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/80 rounded-2xl text-xs text-purple-900 dark:text-purple-300 leading-relaxed">
+                    Extensões validadas e otimizadas pelo ecossistema WikiZero. Instale com 1 clique para habilitar novas ferramentas, formatações e recursos de interface.
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {catalogExtensions.map((item) => {
                       const alreadyInstalled = extensions.some((e) => e.name === item.name);
+
                       return (
                         <div
                           key={item.name}
-                          className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 flex items-start justify-between gap-3"
+                          className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/40 flex flex-col justify-between hover:border-purple-300 dark:hover:border-purple-700 transition"
                         >
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
                               <span className="font-bold text-sm text-slate-900 dark:text-white">
                                 {item.name}
                               </span>
                               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
                                 v{item.version}
                               </span>
-                              <span className="text-[10px] font-semibold text-slate-500">
-                                {getCategoryLabel(item.category)}
-                              </span>
                             </div>
-                            <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
+                            <span className="text-[10px] font-semibold text-slate-500 mb-2 block">
+                              {getCategoryLabel(item.category)} • por {item.author}
+                            </span>
+                            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                               {item.description}
                             </p>
-                            <div className="flex items-center gap-1.5 mt-2">
-                              {item.hooks.map((h) => (
-                                <span
-                                  key={h}
-                                  className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400"
-                                >
-                                  {h}
-                                </span>
-                              ))}
-                            </div>
                           </div>
 
-                          <button
-                            type="button"
-                            disabled={alreadyInstalled || !userIsBureaucrat}
-                            onClick={() => handleInstallFromCatalog(item)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
-                              alreadyInstalled
-                                ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 cursor-not-allowed'
-                                : 'bg-purple-600 hover:bg-purple-700 text-white shadow-xs'
-                            }`}
-                          >
-                            {alreadyInstalled ? 'Já Instalada' : 'Instalar'}
-                          </button>
+                          <div className="pt-3 mt-3 border-t border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-2">
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {item.hooks.join(', ')}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={alreadyInstalled || !userIsBureaucrat}
+                              onClick={() => handleInstallFromCatalog(item)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+                                alreadyInstalled
+                                  ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 cursor-not-allowed'
+                                  : 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer active:scale-98'
+                              }`}
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>{alreadyInstalled ? 'Já Instalada' : 'Instalar'}</span>
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -1222,158 +1636,376 @@ hooks.addFilter('render:wikitext', function(text) {
                 </div>
               )}
 
-              {addMode === 'form' && (
-                <form onSubmit={handleCreateExtension} className="space-y-4 text-xs">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Nome da Extensão (Sem espaços) *
-                      </label>
-                      <input
-                        type="text"
-                        value={newExtName}
-                        onChange={(e) => setNewExtName(e.target.value.replace(/\s+/g, ''))}
-                        placeholder="Ex: CitationValidator"
-                        required
-                        className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Versão (SemVer)
-                      </label>
-                      <input
-                        type="text"
-                        value={newExtVersion}
-                        onChange={(e) => setNewExtVersion(e.target.value)}
-                        placeholder="1.0.0"
-                        className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono"
-                      />
-                    </div>
+              {/* TAB 2: CONSTRUTOR NO-CODE */}
+              {addMode === 'visual' && (
+                <form onSubmit={handleCreateVisualExtension} className="space-y-4">
+                  <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/80 rounded-2xl text-xs text-blue-900 dark:text-blue-300 leading-relaxed">
+                    Crie novas extensões sem escrever código TypeScript. Escolha o tipo de comportamento desejado e defina os parâmetros visuais.
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Visual Type Selector */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'tag', label: 'Tag Customizada', desc: '<spoiler>, <badge>, etc.' },
+                      { id: 'css', label: 'Estilo / Tema CSS', desc: 'Fontes, cores e visuais' },
+                      { id: 'banner', label: 'Aviso Editorial', desc: 'Banner no topo dos artigos' },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setVisualType(t.id as any)}
+                        className={`p-3 rounded-xl border text-left transition ${
+                          visualType === t.id
+                            ? 'border-purple-600 bg-purple-50 dark:bg-purple-950 text-purple-900 dark:text-purple-200 ring-2 ring-purple-500/20'
+                            : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <div className="font-bold text-xs">{t.label}</div>
+                        <div className="text-[10px] text-slate-500">{t.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Nome da Extensão *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={visName}
+                        onChange={(e) => setVisName(e.target.value)}
+                        placeholder="Ex: MinhaTagDestaque, TemaNoturnoNeon"
+                        className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                         Categoria
                       </label>
                       <select
-                        value={newExtCategory}
-                        onChange={(e) => setNewExtCategory(e.target.value as any)}
-                        className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                        value={visCategory}
+                        onChange={(e) => setVisCategory(e.target.value as any)}
+                        className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                       >
-                        <option value="utility">Utilitários & Métricas</option>
-                        <option value="formatting">Formatação & Sintaxe</option>
-                        <option value="content">Conteúdo & Citações</option>
-                        <option value="rendering">Renderização & LaTeX</option>
-                        <option value="interface">Interface</option>
-                        <option value="security">Segurança</option>
+                        <option value="formatting">Formatação & Tags</option>
+                        <option value="interface">Interface & CSS</option>
+                        <option value="content">Conteúdo & Avisos</option>
+                        <option value="utility">Utilitários</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Autor / Mantenedor
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                      Descrição
+                    </label>
+                    <input
+                      type="text"
+                      value={visDesc}
+                      onChange={(e) => setVisDesc(e.target.value)}
+                      placeholder="Breve descrição da função desta extensão na Wiki..."
+                      className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  {/* Configuração específica do tipo */}
+                  {visualType === 'tag' && (
+                    <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                          Nome da Tag (sem &lt;&gt;)
+                        </label>
+                        <input
+                          type="text"
+                          value={visTag}
+                          onChange={(e) => setVisTag(e.target.value)}
+                          placeholder="spoiler, destaque, blur, nota"
+                          className="w-full px-3 py-2 rounded-xl text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                          Template HTML de Substituição (use <code>{'{{content}}'}</code> e <code>{'{{attrs}}'}</code>)
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={visTagTemplate}
+                          onChange={(e) => setVisTagTemplate(e.target.value)}
+                          className="w-full p-3 rounded-xl text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {visualType === 'css' && (
+                    <div className="space-y-2 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                        Código CSS Customizado (aplicado isoladamente aos artigos)
                       </label>
-                      <input
-                        type="text"
-                        value={newExtAuthor}
-                        onChange={(e) => setNewExtAuthor(e.target.value)}
-                        placeholder={currentUser?.displayName || 'Burocrata'}
-                        className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      <textarea
+                        rows={6}
+                        value={visCss}
+                        onChange={(e) => setVisCss(e.target.value)}
+                        className="w-full p-3 rounded-xl text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                       />
                     </div>
-                  </div>
+                  )}
 
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Descrição da Funcionalidade *
-                    </label>
-                    <textarea
-                      value={newExtDesc}
-                      onChange={(e) => setNewExtDesc(e.target.value)}
-                      placeholder="Explique o propósito enciclopédico desta extensão..."
-                      rows={2}
-                      required
-                      className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
-                    />
-                  </div>
+                  {visualType === 'banner' && (
+                    <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                          Texto do Aviso Editorial
+                        </label>
+                        <input
+                          type="text"
+                          value={visBannerText}
+                          onChange={(e) => setVisBannerText(e.target.value)}
+                          placeholder="Mensagem exibida no topo dos artigos..."
+                          className="w-full px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                          Tipo de Aviso
+                        </label>
+                        <div className="flex gap-2">
+                          {(['info', 'warning', 'alert'] as const).map((bType) => (
+                            <button
+                              key={bType}
+                              type="button"
+                              onClick={() => setVisBannerType(bType)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize ${
+                                visBannerType === bType
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                              }`}
+                            >
+                              {bType}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-                  <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Código do Gancho / Script (Opcional - JavaScript)
-                    </label>
-                    <p className="text-[11px] text-slate-500 mb-1.5 font-mono">
-                      Recebe as variáveis: <code>hooks</code> (HookRegistry) e <code>extensionName</code>.
-                    </p>
-                    <textarea
-                      value={newExtScript}
-                      onChange={(e) => setNewExtScript(e.target.value)}
-                      placeholder={`hooks.addFilter('render:wikitext', function(text) {\n  return text;\n}, 10, extensionName);`}
-                      rows={4}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900 text-emerald-400 font-mono text-xs border border-slate-700 leading-relaxed"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="enabledCheck"
-                      checked={newExtEnabled}
-                      onChange={(e) => setNewExtEnabled(e.target.checked)}
-                      className="w-4 h-4 text-purple-600 rounded"
-                    />
-                    <label htmlFor="enabledCheck" className="text-slate-700 dark:text-slate-300 font-medium">
-                      Ativar extensão imediatamente após o registro
-                    </label>
-                  </div>
-
-                  <div className="pt-2 flex justify-end gap-2">
+                  <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <button
                       type="button"
                       onClick={() => setShowAddModal(false)}
-                      className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 font-semibold"
+                      className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
                       disabled={!userIsBureaucrat}
-                      className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-xs"
+                      className="px-5 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition"
                     >
-                      Registrar Extensão
+                      Criar Extensão Visual
                     </button>
                   </div>
                 </form>
               )}
 
-              {addMode === 'json' && (
-                <div className="space-y-3">
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Cole o manifesto JSON da extensão que deseja importar:
-                  </p>
-                  <textarea
-                    value={jsonManifest}
-                    onChange={(e) => setJsonManifest(e.target.value)}
-                    placeholder={`{\n  "name": "CustomHeaderBanner",\n  "version": "1.0.0",\n  "description": "Exibe aviso no cabeçalho dos artigos",\n  "category": "interface",\n  "author": "Equipe WikiZero",\n  "hooks": ["render:html"]\n}`}
-                    rows={8}
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900 text-purple-300 font-mono text-xs border border-slate-700 leading-relaxed"
-                  />
-                  <div className="flex justify-end gap-2 pt-2">
+              {/* TAB 3: CÓDIGO JAVASCRIPT AVANÇADO + SANDBOX */}
+              {addMode === 'code' && (
+                <form onSubmit={handleCreateCodeExtension} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Nome da Extensão (PascalCase) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newExtName}
+                        onChange={(e) => setNewExtName(e.target.value)}
+                        placeholder="Ex: CitationAutoFixer, LaTeXEnhancer"
+                        className="w-full px-3 py-2 rounded-xl text-xs font-mono bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        Categoria
+                      </label>
+                      <select
+                        value={newExtCategory}
+                        onChange={(e) => setNewExtCategory(e.target.value as any)}
+                        className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      >
+                        <option value="utility">Utilitário & Métricas</option>
+                        <option value="formatting">Formatação & Sintaxe</option>
+                        <option value="rendering">Renderização & LaTeX</option>
+                        <option value="content">Conteúdo & Referências</option>
+                        <option value="interface">Interface</option>
+                        <option value="tool">Ferramenta</option>
+                        <option value="security">Segurança</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                      Descrição Técnica
+                    </label>
+                    <input
+                      type="text"
+                      value={newExtDesc}
+                      onChange={(e) => setNewExtDesc(e.target.value)}
+                      placeholder="Explique o que a extensão executa no ciclo de renderização..."
+                      className="w-full px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  {/* Snippets Toolbar */}
+                  <div className="flex items-center gap-2 flex-wrap text-xs">
+                    <span className="font-bold text-slate-500 text-[11px]">Snippets:</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleInsertSnippet(
+                          `hooks.addFilter('render:wikitext', function(text) {\n  return text.replace(/\\\\b(NOTA)\\\\b/g, '📢 $1');\n}, 10, extensionName);`
+                        )
+                      }
+                      className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 text-slate-700 dark:text-slate-300 text-[10px] font-mono"
+                    >
+                      + Filtro de Texto
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleInsertSnippet(
+                          `hooks.addAction('article:viewed', function(art) {\n  console.log('Artigo lido:', art);\n}, 10, extensionName);`
+                        )
+                      }
+                      className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 text-slate-700 dark:text-slate-300 text-[10px] font-mono"
+                    >
+                      + Ação de Leitura
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleInsertSnippet(
+                          `utils.injectCss('.meu-estilo { color: #8b5cf6; font-weight: bold; }');`
+                        )
+                      }
+                      className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 text-slate-700 dark:text-slate-300 text-[10px] font-mono"
+                    >
+                      + Injetar CSS
+                    </button>
+                  </div>
+
+                  {/* Code Editor */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Código do Gancho <code>onRegister(hooks, extensionName, settings, utils)</code>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleRunSandbox}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-2xs"
+                      >
+                        <Play className="w-3 h-3" />
+                        <span>Testar no Sandbox</span>
+                      </button>
+                    </div>
+                    <textarea
+                      rows={8}
+                      value={newExtScript}
+                      onChange={(e) => setNewExtScript(e.target.value)}
+                      className="w-full p-3 rounded-xl text-xs font-mono bg-slate-950 text-emerald-300 border border-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  {/* Sandbox Output Preview */}
+                  {sandboxResult && (
+                    <div
+                      className={`p-3 rounded-xl border text-xs font-mono space-y-1 ${
+                        sandboxResult.success
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                          : 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200'
+                      }`}
+                    >
+                      <div className="font-bold uppercase text-[10px]">
+                        {sandboxResult.success ? '✓ Teste no Sandbox Executado com Sucesso' : '✕ Erro de Execução no Sandbox'}
+                      </div>
+                      {sandboxResult.success ? (
+                        <div className="bg-white dark:bg-slate-900 p-2 rounded border border-emerald-200 dark:border-emerald-900 text-[11px] whitespace-pre-wrap">
+                          {sandboxResult.output}
+                        </div>
+                      ) : (
+                        <div className="text-rose-600 dark:text-rose-400 text-xs">
+                          {sandboxResult.error}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <button
                       type="button"
                       onClick={() => setShowAddModal(false)}
-                      className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs"
+                      className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100"
                     >
                       Cancelar
                     </button>
                     <button
-                      type="button"
-                      disabled={!jsonManifest.trim() || !userIsBureaucrat}
-                      onClick={handleImportJson}
-                      className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs"
+                      type="submit"
+                      disabled={!userIsBureaucrat}
+                      className="px-5 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition"
                     >
-                      Importar e Instalar
+                      Instalar Extensão
                     </button>
+                  </div>
+                </form>
+              )}
+
+              {/* TAB 4: IMPORTAR / RESTAURAR JSON */}
+              {addMode === 'json' && (
+                <div className="space-y-4">
+                  <div className="p-3.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                    Cole o manifesto JSON ou pacote de backup para restaurar e instalar múltiplas extensões e seus respectivos parâmetros de uma só vez.
+                  </div>
+
+                  <textarea
+                    rows={10}
+                    value={jsonManifest}
+                    onChange={(e) => setJsonManifest(e.target.value)}
+                    placeholder='Cole aqui o JSON da extensão ou pacote de backup:&#10;{&#10;  "name": "CustomExtension",&#10;  "version": "1.0.0",&#10;  "category": "utility",&#10;  "description": "...",&#10;  "customScript": "..."&#10;}'
+                    className="w-full p-3 rounded-xl text-xs font-mono bg-slate-950 text-slate-200 border border-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={handleExportPackage}
+                      className="text-xs text-purple-600 dark:text-purple-400 font-bold hover:underline flex items-center gap-1"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Baixar Backup Atual</span>
+                    </button>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddModal(false)}
+                        className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!userIsBureaucrat || !jsonManifest.trim()}
+                        onClick={handleImportJson}
+                        className="px-5 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition disabled:opacity-50"
+                      >
+                        Importar Pacote
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1382,178 +2014,321 @@ hooks.addFilter('render:wikitext', function(text) {
         </div>
       )}
 
-      {/* MODAL: HOOKS INSPECTOR */}
-      {showHooksModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+      {/* ======================================================== */}
+      {/* MODAL 2: CONFIGURAÇÕES E AJUSTES DE PARÂMETROS           */}
+      {/* ======================================================== */}
+      {showSettingsModal && editingSettingsExtension && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden my-6">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
-                  <Activity className="w-5 h-5" />
+                <div className="p-2 rounded-xl bg-purple-600 text-white">
+                  <Settings className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    Inspeção do Barramento de Ganchos (HookRegistry)
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    Ajustes de {editingSettingsExtension.name}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Ouvintes ativos para filtros e ações em tempo de execução
+                    Calibre os parâmetros de funcionamento em tempo real.
                   </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setShowHooksModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
+                onClick={() => setShowSettingsModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto flex-1">
-              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-slate-50 dark:bg-slate-900/60 text-slate-500 uppercase text-[10px]">
-                    <tr>
-                      <th className="px-3 py-2.5">Tipo</th>
-                      <th className="px-3 py-2.5">Nome do Gancho</th>
-                      <th className="px-3 py-2.5">Extensão Proprietária</th>
-                      <th className="px-3 py-2.5">Prioridade</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {extensionManager.getHooksAudit().map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                        <td className="px-3 py-2">
-                          <span
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                              item.type === 'filter'
-                                ? 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300'
-                                : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
-                            }`}
-                          >
-                            {item.type}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 font-bold text-slate-900 dark:text-white">
-                          {item.hookName}
-                        </td>
-                        <td className="px-3 py-2 text-slate-700 dark:text-slate-300 font-sans">
-                          {item.extensionName}
-                        </td>
-                        <td className="px-3 py-2 text-slate-500">{item.priority}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <form onSubmit={handleSaveSettings} className="p-6 space-y-4">
+              {editingSettingsExtension.settingsSchema && editingSettingsExtension.settingsSchema.length > 0 ? (
+                editingSettingsExtension.settingsSchema.map((field) => {
+                  const currentValue =
+                    settingsFormData[field.key] !== undefined
+                      ? settingsFormData[field.key]
+                      : field.defaultValue;
+
+                  return (
+                    <div key={field.key} className="space-y-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          {field.label}
+                        </label>
+                        <span className="text-[10px] font-mono text-slate-400">{field.key}</span>
+                      </div>
+
+                      {field.type === 'boolean' ? (
+                        <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer pt-1">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(currentValue)}
+                            onChange={(e) =>
+                              setSettingsFormData({
+                                ...settingsFormData,
+                                [field.key]: e.target.checked,
+                              })
+                            }
+                            className="rounded accent-purple-600 w-4 h-4 cursor-pointer"
+                          />
+                          <span>Ativar este recurso na extensão</span>
+                        </label>
+                      ) : field.type === 'select' && field.options ? (
+                        <select
+                          value={String(currentValue)}
+                          onChange={(e) =>
+                            setSettingsFormData({
+                              ...settingsFormData,
+                              [field.key]: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                        >
+                          {field.options.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      ) : field.type === 'number' ? (
+                        <input
+                          type="number"
+                          value={currentValue}
+                          onChange={(e) =>
+                            setSettingsFormData({
+                              ...settingsFormData,
+                              [field.key]: parseFloat(e.target.value),
+                            })
+                          }
+                          className="w-full px-3 py-1.5 rounded-lg text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={String(currentValue || '')}
+                          onChange={(e) =>
+                            setSettingsFormData({
+                              ...settingsFormData,
+                              [field.key]: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                        />
+                      )}
+
+                      {field.description && (
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {field.description}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 text-center text-xs text-slate-500">
+                  Esta extensão não requer parâmetros adicionais configuráveis.
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowSettingsModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={!userIsBureaucrat}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition"
+                >
+                  Salvar Parâmetros
+                </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* MODAL: AUDIT LOGS */}
+      {/* ======================================================== */}
+      {/* MODAL 3: AUDITORIA DE AÇÕES DE EXTENSÕES                  */}
+      {/* ======================================================== */}
       {showAuditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden my-6">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-xs">
+                <div className="p-2 rounded-xl bg-purple-600 text-white">
                   <History className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    Histórico de Auditoria de Extensões
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    Histórico & Auditoria de Extensões
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Registro de ações tomadas por burocratas
+                    Registro permanente de todas as ativações, desativações e instalações por burocratas.
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAuditModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto flex-1">
-              {StorageService.getExtensionActionLogs().length === 0 ? (
-                <div className="text-center py-8 text-xs text-slate-500">
-                  Nenhuma alteração registrada até o momento.
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {StorageService.getExtensionActionLogs().map((log) => (
-                    <div
-                      key={log.id}
-                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/40 text-xs flex items-start justify-between gap-3"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase font-mono ${
-                              log.action === 'activated'
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                                : log.action === 'deactivated'
-                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                                : log.action === 'added'
-                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
-                                : 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
-                            }`}
-                          >
-                            {log.action}
-                          </span>
-                          <span className="font-bold text-slate-900 dark:text-white">
-                            {log.extensionName}
-                          </span>
-                        </div>
-                        {log.details && (
-                          <p className="text-slate-600 dark:text-slate-400 mt-1">
-                            {log.details}
-                          </p>
-                        )}
-                        <div className="text-[10px] text-slate-400 mt-1">
-                          Operador: <span className="font-semibold text-slate-600 dark:text-slate-300">{log.operatorUsername}</span> ({log.operatorRole})
-                        </div>
+            <div className="p-6 overflow-y-auto flex-1 space-y-3">
+              {(() => {
+                const logs = StorageService.getExtensionActionLogs();
+                if (logs.length === 0) {
+                  return (
+                    <div className="text-center py-12 text-slate-400 text-xs">
+                      Nenhum registro de alteração de extensões catalogado até o momento.
+                    </div>
+                  );
+                }
+
+                return logs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-start justify-between gap-3 text-xs"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${
+                            log.action === 'activated'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                              : log.action === 'deactivated'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                              : log.action === 'added'
+                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
+                              : log.action === 'configured'
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                              : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                          }`}
+                        >
+                          {log.action}
+                        </span>
+                        <strong className="text-slate-900 dark:text-white font-mono">
+                          {log.extensionName}
+                        </strong>
                       </div>
-                      <div className="text-[10px] text-slate-400 shrink-0 font-mono">
-                        {new Date(log.timestamp).toLocaleString('pt-BR')}
+                      <p className="text-slate-600 dark:text-slate-300 mt-1">{log.details}</p>
+                      <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-2">
+                        <span>Operador: <strong>{log.operatorUsername}</strong> ({log.operatorRole})</span>
+                        <span>•</span>
+                        <span>{new Date(log.timestamp).toLocaleString('pt-BR')}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL: DETAILS INSPECTOR */}
-      {inspectingExtension && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {getCategoryIcon(inspectingExtension.category)}
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  {inspectingExtension.name}
-                </h3>
-                <span className="text-xs font-mono font-bold text-purple-600 dark:text-purple-400">
-                  v{inspectingExtension.version}
-                </span>
+      {/* ======================================================== */}
+      {/* MODAL 4: INSPEÇÃO DE GANCHOS (HOOK REGISTRY AUDIT)        */}
+      {/* ======================================================== */}
+      {showHooksModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden my-6">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-purple-600 text-white">
+                  <Code className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    Inspeção do Barramento de Ganchos (HookRegistry)
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Filtros e ações ativamente registrados pelas extensões no pipeline da enciclopédia.
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setInspectingExtension(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
+                onClick={() => setShowHooksModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto flex-1 space-y-4 text-xs">
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="space-y-2">
+                {extensionManager.getHooksAudit().map((hook, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 flex items-center justify-between text-xs font-mono"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          hook.type === 'filter'
+                            ? 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+                            : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                        }`}
+                      >
+                        {hook.type}
+                      </span>
+                      <strong className="text-slate-900 dark:text-white truncate">
+                        {hook.hookName}
+                      </strong>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 text-slate-500 text-[11px]">
+                      <span>Extensão: <strong>{hook.extensionName}</strong></span>
+                      <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-purple-600 dark:text-purple-400 font-bold">
+                        P{hook.priority}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 5: INSPEÇÃO DETALHADA DE EXTENSÃO                  */}
+      {/* ======================================================== */}
+      {inspectingExtension && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden my-6">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-purple-600 text-white">
+                  <Eye className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    {inspectingExtension.name}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    v{inspectingExtension.version} • {getCategoryLabel(inspectingExtension.category)}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInspectingExtension(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
               <div>
                 <span className="font-bold text-slate-400 uppercase text-[10px] block mb-1">
                   Descrição
@@ -1563,122 +2338,79 @@ hooks.addFilter('render:wikitext', function(text) {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
                 <div>
-                  <span className="font-bold text-slate-400 uppercase text-[10px] block mb-1">
-                    Categoria
-                  </span>
-                  <span className="font-medium text-slate-800 dark:text-slate-200">
-                    {getCategoryLabel(inspectingExtension.category)}
+                  <span className="font-bold text-slate-400 uppercase text-[10px] block mb-0.5">Autor</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{inspectingExtension.author}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-400 uppercase text-[10px] block mb-0.5">Status</span>
+                  <span className={`font-bold ${inspectingExtension.enabled ? 'text-emerald-500' : 'text-slate-500'}`}>
+                    {inspectingExtension.enabled ? 'Ativa' : 'Inativa'}
                   </span>
                 </div>
                 <div>
-                  <span className="font-bold text-slate-400 uppercase text-[10px] block mb-1">
-                    Status
+                  <span className="font-bold text-slate-400 uppercase text-[10px] block mb-0.5">Tipo</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {inspectingExtension.isCore ? 'Nativa (Core)' : 'Personalizada'}
                   </span>
-                  <span
-                    className={`font-bold ${
-                      inspectingExtension.enabled
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-slate-500'
-                    }`}
-                  >
-                    {inspectingExtension.enabled ? 'Ativa no Barramento' : 'Desativada'}
-                  </span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-400 uppercase text-[10px] block mb-0.5">Ganchos</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{inspectingExtension.hooks.length}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2">
+              {inspectingExtension.customCss && (
                 <div>
                   <span className="font-bold text-slate-400 uppercase text-[10px] block mb-1">
-                    Autor
+                    CSS Injetado no DOM
                   </span>
-                  <span className="font-medium text-slate-800 dark:text-slate-200">
-                    {inspectingExtension.author}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-bold text-slate-400 uppercase text-[10px] block mb-1">
-                    Tipo de Componente
-                  </span>
-                  <span className="font-medium text-slate-800 dark:text-slate-200">
-                    {inspectingExtension.isCore ? 'Nativo do Sistema (Core)' : 'Personalizado'}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <span className="font-bold text-slate-400 uppercase text-[10px] block mb-1.5">
-                  Ganchos Conectados (Hooks)
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {inspectingExtension.hooks.map((h) => (
-                    <span
-                      key={h}
-                      className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-purple-700 dark:text-purple-300 font-bold"
-                    >
-                      {h}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {inspectingExtension.website && (
-                <div>
-                  <span className="font-bold text-slate-400 uppercase text-[10px] block mb-1">
-                    Documentação Externa
-                  </span>
-                  <a
-                    href={inspectingExtension.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                  >
-                    <span>{inspectingExtension.website}</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                  <pre className="p-3 rounded-xl bg-slate-950 text-sky-300 font-mono text-[11px] overflow-x-auto max-h-36">
+                    {inspectingExtension.customCss}
+                  </pre>
                 </div>
               )}
-            </div>
 
-            <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 flex justify-between items-center">
-              <span className="text-[11px] text-slate-400 font-mono">
-                ID: {inspectingExtension.id}
-              </span>
-              <button
-                type="button"
-                onClick={() => setInspectingExtension(null)}
-                className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs"
-              >
-                Fechar
-              </button>
+              {inspectingExtension.customScript && (
+                <div>
+                  <span className="font-bold text-slate-400 uppercase text-[10px] block mb-1">
+                    Código do Gancho
+                  </span>
+                  <pre className="p-3 rounded-xl bg-slate-950 text-emerald-300 font-mono text-[11px] overflow-x-auto max-h-48">
+                    {inspectingExtension.customScript}
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* CONFIRM DELETE MODAL */}
+      {/* ======================================================== */}
+      {/* MODAL 6: CONFIRMAR REMOÇÃO PERMANENTE                   */}
+      {/* ======================================================== */}
       {extensionToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-red-200 dark:border-red-800 shadow-2xl w-full max-w-md p-5">
-            <div className="flex items-center gap-3 text-red-600 mb-3">
-              <div className="p-2 rounded-xl bg-red-100 dark:bg-red-950">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Desinstalar Extensão
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Você tem certeza de que deseja remover a extensão{' '}
-              <strong className="text-slate-900 dark:text-white">{extensionToDelete.name}</strong>?
-              Todos os ganchos e configurações associados serão expurgados da Wiki.
-            </p>
-            <div className="flex justify-end gap-2.5 mt-5">
+
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Desinstalar "{extensionToDelete.name}"?
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Esta extensão personalizada será removida do sistema e seus ganchos serão permanentemente desvinculados do barramento da enciclopédia.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setExtensionToDelete(null)}
-                className="px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                className="flex-1 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
               >
                 Cancelar
               </button>
@@ -1686,9 +2418,9 @@ hooks.addFilter('render:wikitext', function(text) {
                 type="button"
                 disabled={isProcessing}
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs"
+                className="flex-1 py-2 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition"
               >
-                Confirmar Remoção
+                Desinstalar Agora
               </button>
             </div>
           </div>

@@ -172,6 +172,7 @@ const STORAGE_KEYS = {
   EXTENSIONS_STATES: 'wikizero_extensions_states_v1',
   CUSTOM_EXTENSIONS: 'wikizero_custom_extensions_v1',
   EXTENSION_ACTION_LOGS: 'wikizero_extension_action_logs_v1',
+  EXTENSION_SETTINGS: 'wikizero_extension_settings_v1',
   DAILY_EDITS_PREFIX: 'wikizero_daily_edits_',
   CHROME_PREFERENCE_NOTICED: 'wikizero_chrome_recommendation_noticed_v1',
 };
@@ -5038,6 +5039,23 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       localStorage.setItem(STORAGE_KEYS.CUSTOM_EXTENSIONS, JSON.stringify(extensions));
     } catch (e) {
       console.warn('Erro ao salvar extensões personalizadas:', e);
+    }
+  },
+
+  getSavedExtensionSettings(): Record<string, Record<string, any>> {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.EXTENSION_SETTINGS);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  },
+
+  saveExtensionSettings(allSettings: Record<string, Record<string, any>>): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.EXTENSION_SETTINGS, JSON.stringify(allSettings));
+    } catch (e) {
+      console.warn('Erro ao salvar configurações de extensões:', e);
     }
   },
 
