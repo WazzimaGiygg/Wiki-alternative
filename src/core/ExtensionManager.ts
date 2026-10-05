@@ -22,6 +22,9 @@ import DisambiguationNotice from '../extensions/disambiguation';
 import EditorialMetricsCollector from '../extensions/word-metrics';
 import QrCodeQuickShare from '../extensions/qr-code-share';
 import Android23GingerbreadTheme from '../extensions/android-23-theme';
+import CalculatorToolExtension from '../extensions/calculator-tool';
+import WorldClockToolExtension from '../extensions/world-clock-tool';
+import WeatherForecastToolExtension from '../extensions/weather-tool';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -82,6 +85,9 @@ export class ExtensionManager {
       EditorialMetricsCollector,
       QrCodeQuickShare,
       Android23GingerbreadTheme,
+      CalculatorToolExtension,
+      WorldClockToolExtension,
+      WeatherForecastToolExtension,
     ];
 
     for (const ExtensionClass of builtins) {

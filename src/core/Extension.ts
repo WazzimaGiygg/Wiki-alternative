@@ -366,7 +366,7 @@ export interface WikiExtension {
   /**
    * Categoria temática da extensão.
    */
-  getCategory?(): 'content' | 'rendering' | 'formatting' | 'utility' | 'interface' | 'security';
+  getCategory?(): 'content' | 'rendering' | 'formatting' | 'utility' | 'interface' | 'security' | 'tool';
 
   /**
    * Indica se é uma extensão nativa / essencial da Wiki.

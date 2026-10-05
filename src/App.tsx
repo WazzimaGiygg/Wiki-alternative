@@ -1911,6 +1911,7 @@ export default function App() {
               theme={theme}
               initialTab={toolsInitialTab}
               onNavigateHome={() => handleNavigate('hub')}
+              onNavigateToExtensions={() => handleNavigate('admin-extensions')}
               onOpenEditor={(title) => {
                 if (title) {
                   setEditingArticle({

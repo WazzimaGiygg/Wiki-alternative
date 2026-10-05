@@ -349,6 +349,39 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
   // Pre-configured catalog extensions for quick installation
   const catalogExtensions = [
     {
+      name: 'CalculatorToolExtension',
+      version: '1.2.0',
+      description: 'Calculadora interativa multiúso com modo padrão, científico (trigonometria, logaritmos, potências, raízes), constantes matemáticas e histórico persistente de cálculos.',
+      category: 'tool' as ExtensionCategory,
+      author: 'WikiZero Tools / Equipe WikiWorldWeb',
+      hooks: ['tool:calculator_available', 'tools:registered_tools'],
+      script: `// Registro de ferramenta da calculadora
+hooks.addFilter('tool:calculator_available', () => true, 10, extensionName);
+hooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'calculator'], 10, extensionName);`,
+    },
+    {
+      name: 'WorldClockToolExtension',
+      version: '1.3.0',
+      description: 'Painel de Horário Certo Mundial com catalogação completa de fusos horários do Brasil (Brasília, Fernando de Noronha, Manaus e Acre), capitais globais e simulador/conversor temporal.',
+      category: 'tool' as ExtensionCategory,
+      author: 'WikiZero Tools / Equipe WikiWorldWeb',
+      hooks: ['tool:world_clock_available', 'tools:registered_tools'],
+      script: `// Registro de ferramenta de horário mundial
+hooks.addFilter('tool:world_clock_available', () => true, 10, extensionName);
+hooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'world-clock'], 10, extensionName);`,
+    },
+    {
+      name: 'WeatherForecastToolExtension',
+      version: '1.4.0',
+      description: 'Estação meteorológica e previsão do tempo em tempo real com busca global de cidades, geolocalização, índice UV, umidade, vento e previsão estendida de 7 dias.',
+      category: 'tool' as ExtensionCategory,
+      author: 'WikiZero Meteorologia / Open-Meteo',
+      hooks: ['tool:weather_available', 'tools:registered_tools'],
+      script: `// Registro de ferramenta de previsão meteorológica
+hooks.addFilter('tool:weather_available', () => true, 10, extensionName);
+hooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'weather'], 10, extensionName);`,
+    },
+    {
       name: 'DynamicTableFilter',
       version: '1.0.4',
       description: 'Adiciona caixas de busca e ordenação instantânea por coluna em tabelas Wikitext ({| class="wikitable").',
@@ -414,6 +447,8 @@ hooks.addFilter('render:wikitext', function(text) {
         return <Sliders className="w-4 h-4 text-amber-500" />;
       case 'interface':
         return <Layout className="w-4 h-4 text-blue-500" />;
+      case 'tool':
+        return <Sliders className="w-4 h-4 text-cyan-500" />;
       case 'security':
         return <Shield className="w-4 h-4 text-red-500" />;
       default:
@@ -433,6 +468,8 @@ hooks.addFilter('render:wikitext', function(text) {
         return 'Utilitários & Métricas';
       case 'interface':
         return 'Interface';
+      case 'tool':
+        return 'Ferramenta';
       case 'security':
         return 'Segurança';
       default:
@@ -683,6 +720,7 @@ hooks.addFilter('render:wikitext', function(text) {
             className="px-2.5 py-2 rounded-lg text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="all">Todas as Categorias</option>
+            <option value="tool">Ferramentas & Utilitários</option>
             <option value="rendering">Renderização & LaTeX</option>
             <option value="formatting">Formatação & Sintaxe</option>
             <option value="content">Conteúdo & Citações</option>

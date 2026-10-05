@@ -1463,7 +1463,8 @@ export type ExtensionCategory =
   | 'formatting'
   | 'utility'
   | 'interface'
-  | 'security';
+  | 'security'
+  | 'tool';
 
 export interface InstalledExtensionMeta {
   id: string;
