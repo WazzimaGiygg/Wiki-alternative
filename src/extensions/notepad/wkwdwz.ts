@@ -31,3 +31,4 @@ export interface WkwdwzEnvelope {
   payload: WkwdwzNote;
   sync?: WkwdwzSync;   // ausente se nunca foi feito upload
 }
+//close
