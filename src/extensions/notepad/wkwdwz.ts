@@ -32,3 +32,7 @@ export interface WkwdwzEnvelope {
   sync?: WkwdwzSync;   // ausente se nunca foi feito upload
 }
 //close
+
+
+
+//errorcatch
