@@ -431,7 +431,24 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   };
 
   const handlePrint = () => {
-    window.print();
+    // Fecha popovers de índice se abertos
+    setShowReaderToc(false);
+    // Para leitura de áudio se estiver ativa
+    if (window.speechSynthesis && isPlayingAudio) {
+      window.speechSynthesis.cancel();
+      setIsPlayingAudio(false);
+    }
+    // Adiciona classe auxiliar temporária no document.body para garantia de renderização
+    document.body.classList.add('is-printing-article');
+    const handleAfterPrint = () => {
+      document.body.classList.remove('is-printing-article');
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+    window.addEventListener('afterprint', handleAfterPrint, { once: true });
+
+    setTimeout(() => {
+      window.print();
+    }, 60);
   };
 
   const handleCopySource = () => {
@@ -530,7 +547,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       <div
         ref={readerScrollRef}
         onScroll={handleReaderScroll}
-        className={`fixed inset-0 z-50 overflow-y-auto selection:bg-amber-200 selection:text-amber-950 transition-colors duration-200 animate-in fade-in ${
+        className={`reader-mode-container fixed inset-0 z-50 overflow-y-auto selection:bg-amber-200 selection:text-amber-950 transition-colors duration-200 animate-in fade-in ${
           readerTheme === 'sepia'
             ? 'theme-reader-sepia'
             : readerTheme === 'light'
@@ -541,7 +558,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         }`}
       >
         {/* Top Slim Scroll Progress Line */}
-        <div className="fixed top-0 left-0 right-0 h-1 z-50 bg-black/10 dark:bg-white/10 no-print pointer-events-none">
+        <div className="reader-scroll-progress-bar fixed top-0 left-0 right-0 h-1 z-50 bg-black/10 dark:bg-white/10 no-print pointer-events-none">
           <div
             className={`h-full transition-all duration-150 ease-out ${
               readerTheme === 'sepia'
@@ -555,7 +572,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         </div>
 
         {/* Minimalist Sticky Reader Toolbar */}
-        <header className="sticky top-0 z-40 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 sm:gap-3 shadow-2xs no-print transition-colors border-current/15 select-none bg-inherit/90">
+        <header className="reader-mode-toolbar sticky top-0 z-40 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 sm:gap-3 shadow-2xs no-print transition-colors border-current/15 select-none bg-inherit/90">
           {/* Left Controls: Exit Button & Article Title / Reading Progress */}
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <button
@@ -733,17 +750,18 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             {/* Clean Print / PDF Export */}
             <button
               onClick={handlePrint}
-              title="Imprimir ou Salvar PDF (Aplica folha de estilos limpa dedicada)"
-              className="p-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer hidden sm:block"
+              title="Imprimir Artigo (Oculta a barra superiora e imprime todo o documento separado por páginas)"
+              className="p-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer flex items-center gap-1"
             >
               <Printer size={15} />
+              <span className="hidden xl:inline text-[11px] font-semibold">Imprimir</span>
             </button>
           </div>
         </header>
 
         {/* Floating TableOfContents Popover in Reader Mode */}
         {showReaderToc && (
-          <div className="fixed top-14 right-4 sm:right-6 z-40 w-80 max-h-[75vh] overflow-y-auto rounded-xl border border-current/20 shadow-2xl p-3 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 no-print bg-inherit">
+          <div className="reader-toc-popover fixed top-14 right-4 sm:right-6 z-40 w-80 max-h-[75vh] overflow-y-auto rounded-xl border border-current/20 shadow-2xl p-3 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 no-print bg-inherit">
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-current/15">
               <h3 className="font-bold text-xs flex items-center gap-1.5 uppercase tracking-wide">
                 <List size={13} />
@@ -779,7 +797,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         {/* Central Article Canvas */}
         <main
-          className={`mx-auto px-5 sm:px-10 py-10 sm:py-16 transition-all duration-150 ${
+          className={`reader-mode-main mx-auto px-5 sm:px-10 py-10 sm:py-16 transition-all duration-150 ${
             readerWidth === 'narrow'
               ? 'max-w-2xl'
               : readerWidth === 'wide'
@@ -788,7 +806,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           }`}
         >
           {/* Article Title & Metadata Banner */}
-          <header className="mb-10 pb-6 border-b border-current/15 text-center sm:text-left">
+          <header className="reader-article-header mb-10 pb-6 border-b border-current/15 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2 mb-3 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider border border-current/25 bg-black/5 dark:bg-white/5">
                 {localArticle.categoria || 'Geral'}
@@ -868,7 +886,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           />
 
           {/* End-of-article Navigation & Licensing Footer */}
-          <footer className="mt-16 pt-8 border-t border-current/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-70">
+          <footer className="reader-mode-footer mt-16 pt-8 border-t border-current/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-70">
             <div>
               <p className="font-bold">WikiWorldWeb — Enciclopédia Livre e Aberta</p>
               <p className="text-[11px]">

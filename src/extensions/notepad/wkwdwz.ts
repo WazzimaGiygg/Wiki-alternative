@@ -31,9 +31,15 @@ export interface WkwdwzEnvelope {
   payload: WkwdwzNote;
   sync?: WkwdwzSync;   // ausente se nunca foi feito upload
 }
-//close
 
+export function encodeWkwdwz(envelope: WkwdwzEnvelope): string {
+  return JSON.stringify(envelope, null, 2);
+}
 
-
-//errorcatch
-//jooj
+export function decodeWkwdwz(raw: string): WkwdwzEnvelope {
+  const parsed = JSON.parse(raw);
+  if (!parsed || parsed.magic !== WKWDWZ_MAGIC) {
+    throw new Error("Formato inválido: identificador WKWDWZ não encontrado");
+  }
+  return parsed as WkwdwzEnvelope;
+}

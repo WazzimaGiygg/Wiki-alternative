@@ -1,5 +1,5 @@
 // src/extensions/notepad/storage.ts
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
 import { encodeWkwdwz, decodeWkwdwz, type WkwdwzEnvelope, type WkwdwzNote } from "./wkwdwz";
 

@@ -42,6 +42,7 @@ import CalculatorToolExtension from '../extensions/calculator-tool';
 import WorldClockToolExtension from '../extensions/world-clock-tool';
 import WeatherForecastToolExtension from '../extensions/weather-tool';
 import GeminiAssistantToolExtension from '../extensions/gemini-assistant-tool';
+import NotepadToolExtension from '../extensions/notepad';
 import WikiXssSanitizerSecurityLayer from '../extensions/security-layers/xss-sanitizer';
 import WikiVandalismGuardSecurityLayer from '../extensions/security-layers/vandalism-guard';
 import WikiRateLimiterSecurityLayer from '../extensions/security-layers/rate-limiter';
@@ -122,6 +123,7 @@ export class ExtensionManager {
       WorldClockToolExtension,
       WeatherForecastToolExtension,
       GeminiAssistantToolExtension,
+      NotepadToolExtension,
       WikiXssSanitizerSecurityLayer,
       WikiVandalismGuardSecurityLayer,
       WikiRateLimiterSecurityLayer,

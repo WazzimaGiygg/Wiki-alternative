@@ -84,10 +84,17 @@
   /* 3. Hide Navigation Bars, Sidebars, Footers & Non-Article UI Components     */
   /* ========================================================================== */
   /* Top site header, navigation bars, and micro-strips */
-  header,
   #header,
-  header.sticky,
+  #site-header,
   .site-header,
+  header.site-header,
+  header#site-header,
+  header#header,
+  header.sticky:not(.reader-article-header),
+  header.reader-mode-toolbar,
+  .reader-mode-toolbar,
+  .reader-scroll-progress-bar,
+  .reader-toc-popover,
   .google-gradient-bar,
   .genshin-accent-bar,
   .android-accent-bar,
@@ -110,7 +117,7 @@
   .sidebar,
 
   /* Global site footer */
-  footer,
+  footer:not(.reader-mode-footer),
   #site-footer,
   .site-footer,
 
@@ -146,16 +153,16 @@
   .cookie-banner,
   .offline-indicator,
 
-  /* Boot screens, overlays, and modals */
+  /* Boot screens, overlays, and modals (exceto container do modo de leitura) */
   .boot-screen,
   .modal-backdrop,
   div[role="dialog"],
-  .fixed.inset-0,
+  .fixed.inset-0:not(.reader-mode-container),
 
   /* Generic print hiding classes */
   .no-print,
   .print-hidden,
-  .print\\:hidden,
+  .print\:hidden,
   [data-print-hide] {
     display: none !important;
     visibility: hidden !important;
@@ -192,7 +199,10 @@
   main,
   article,
   .max-w-7xl,
-  .w-full {
+  .w-full,
+  .reader-mode-container,
+  div.reader-mode-container,
+  .reader-mode-main {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -204,12 +214,68 @@
     float: none !important;
     position: static !important;
     overflow: visible !important;
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  /* Reset dos temas do Modo de Leitura (Sépia, Escuro, Preto OLED) para papel branco */
+  .theme-reader-sepia,
+  .theme-reader-light,
+  .theme-reader-dark,
+  .theme-reader-black {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  .theme-reader-sepia *,
+  .theme-reader-light *,
+  .theme-reader-dark *,
+  .theme-reader-black * {
+    color: #111827 !important;
+    border-color: #e2e8f0 !important;
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Cabeçalho do artigo impresso no Modo Leitura (Título, Categoria, Autor, Data) */
+  .reader-article-header,
+  .reader-mode-main > header,
+  article > header {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    height: auto !important;
+    width: 100% !important;
+    margin: 0 0 14pt 0 !important;
+    padding: 0 0 8pt 0 !important;
+    border-bottom: 1.5pt solid #111827 !important;
+    overflow: visible !important;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Rodapé do artigo no Modo Leitura */
+  .reader-mode-footer {
+    display: block !important;
+    visibility: visible !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    border-top: 1pt solid #cbd5e1 !important;
+    margin-top: 16pt !important;
+    padding-top: 8pt !important;
   }
 
   /* Override grid layout in ArticleViewer (change 3 cols + 1 col aside into single full column) */
   .grid,
-  .lg\\:grid-cols-4,
-  .lg\\:col-span-3 {
+  .lg\:grid-cols-4,
+  .lg\:col-span-3 {
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -241,7 +307,8 @@
 
   /* Main Article Title */
   article > header h1,
-  .print-article-title {
+  .print-article-title,
+  .reader-article-header h1 {
     font-size: 22pt !important;
     font-weight: 700 !important;
     line-height: 1.25 !important;
@@ -254,6 +321,7 @@
 
   /* Article Headings */
   .wiki-rendered-content h1,
+  .reader-mode-content h1,
   article h1 {
     font-size: 17pt !important;
     font-weight: 600 !important;
@@ -262,26 +330,76 @@
     padding-bottom: 3pt !important;
     border-bottom: 1pt solid #cbd5e1 !important;
     color: #000000 !important;
+    page-break-after: avoid;
+    break-after: avoid;
   }
 
+  /* Cada seção principal (H2) inicia em uma nova página impressa (Separado por páginas) */
   .wiki-rendered-content h2,
+  .reader-mode-content h2,
   article h2 {
     font-size: 13.5pt !important;
     font-weight: 600 !important;
-    margin-top: 14pt !important;
-    margin-bottom: 4pt !important;
-    padding-bottom: 2pt !important;
-    border-bottom: 0.75pt solid #e2e8f0 !important;
-    color: #111827 !important;
+    margin-top: 16pt !important;
+    margin-bottom: 5pt !important;
+    padding-bottom: 3pt !important;
+    border-bottom: 0.75pt solid #cbd5e1 !important;
+    color: #000000 !important;
+    page-break-before: always;
+    break-before: page;
+    page-break-after: avoid;
+    break-after: avoid;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* A primeira seção (primeiro H2) não deve criar página vazia no topo */
+  .wiki-rendered-content h2:first-of-type,
+  .reader-mode-content h2:first-of-type,
+  article h2:first-of-type {
+    page-break-before: auto !important;
+    break-before: auto !important;
   }
 
   .wiki-rendered-content h3,
+  .reader-mode-content h3,
   article h3 {
     font-size: 11.5pt !important;
     font-weight: 700 !important;
     margin-top: 10pt !important;
     margin-bottom: 3pt !important;
     color: #1f2937 !important;
+    page-break-after: avoid;
+    break-after: avoid;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .wiki-rendered-content h4,
+  .reader-mode-content h4,
+  article h4,
+  .wiki-rendered-content h5,
+  .reader-mode-content h5,
+  article h5 {
+    page-break-after: avoid;
+    break-after: avoid;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Ocultar links de âncora '#' nas seções */
+  .wiki-rendered-content h2 a,
+  .reader-mode-content h2 a,
+  a[title="Link para esta seção"] {
+    display: none !important;
+  }
+
+  /* Quebras de páginas explícitas */
+  .print-page-break,
+  .page-break-before,
+  [data-print-page-break] {
+    page-break-before: always !important;
+    break-before: page !important;
   }
 
   /* Paragraphs and list items */
