@@ -42,6 +42,11 @@ import {
   Copy,
   ChevronRight,
   Maximize2,
+  Cloud,
+  CloudOff,
+  ShieldAlert,
+  FileCheck,
+  ArrowUpRight,
 } from 'lucide-react';
 import {
   UserProfile,
@@ -56,9 +61,15 @@ import {
   CustomContentFilterRule,
   CustomToolInputField,
   ExtensionSettingField,
+  ExtensionConflict,
+  ExtensionSyncStatus,
 } from '../types';
 import { ExtensionManager, isUserBureaucrat } from '../core/ExtensionManager';
 import { StorageService } from '../services/storageService';
+import {
+  FirebaseExtensionSyncService,
+  SyncStateStatus,
+} from '../services/firebaseExtensionSyncService';
 
 interface AdminExtensionsManagementViewProps {
   currentUser: UserProfile | null;
@@ -84,16 +95,30 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
   const [showHooksModal, setShowHooksModal] = useState<boolean>(false);
   const [showAuditModal, setShowAuditModal] = useState<boolean>(false);
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
+  const [showConflictsModal, setShowConflictsModal] = useState<boolean>(false);
+  const [showSecurityLayersModal, setShowSecurityLayersModal] = useState<boolean>(false);
   const [inspectingExtension, setInspectingExtension] = useState<InstalledExtensionMeta | null>(null);
   const [editingSettingsExtension, setEditingSettingsExtension] = useState<InstalledExtensionMeta | null>(null);
   const [extensionToDelete, setExtensionToDelete] = useState<InstalledExtensionMeta | null>(null);
+
+  // Sincronização em Nuvem Firebase (Versão 3.304)
+  const [syncStatus, setSyncStatus] = useState<SyncStateStatus>(() => extensionManager.getSyncStatus());
+  const [lastCloudSyncAt, setLastCloudSyncAt] = useState<string | null>(() => extensionManager.getLastCloudSyncAt());
+  const [cloudConflicts, setCloudConflicts] = useState<ExtensionConflict[]>(() => extensionManager.getCloudConflicts());
+  const [isSyncingAll, setIsSyncingAll] = useState<boolean>(false);
+
+  // Upload de Arquivo (index.js / index.ts) (304.4)
+  const [uploadedFileContent, setUploadedFileContent] = useState<string>('');
+  const [uploadedFileName, setUploadedFileName] = useState<string>('');
+  const [uploadedFileMeta, setUploadedFileMeta] = useState<Partial<InstalledExtensionMeta> | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Notificações e Feedback
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   // Modos de Adição de Extensões
-  const [addMode, setAddMode] = useState<'catalog' | 'visual' | 'code' | 'json'>('catalog');
+  const [addMode, setAddMode] = useState<'catalog' | 'visual' | 'code' | 'json' | 'upload'>('catalog');
 
   // Estado do Criador Visual (No-Code Builder com 7 tipos)
   const [visualType, setVisualType] = useState<'tool' | 'theme' | 'tag' | 'editor' | 'banner' | 'filter' | 'css'>('tool');
@@ -185,6 +210,9 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
   const refreshList = () => {
     const list = extensionManager.getAllInstalledExtensions();
     setExtensions(list);
+    setSyncStatus(extensionManager.getSyncStatus());
+    setLastCloudSyncAt(extensionManager.getLastCloudSyncAt());
+    setCloudConflicts(extensionManager.getCloudConflicts());
   };
 
   useEffect(() => {
@@ -254,6 +282,152 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       }
     } catch (err: any) {
       setFeedback({ type: 'error', message: `Erro ao remover extensão: ${err?.message || 'Desconhecido'}` });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 304.4 (segundo item): Sincronização em Massa de Todas as Extensões na Nuvem
+  const handleSyncAllToCloud = async () => {
+    if (!userIsBureaucrat) {
+      setFeedback({
+        type: 'error',
+        message: 'Apenas burocratas possuem autorização para sincronizar todas as extensões na nuvem.',
+      });
+      return;
+    }
+
+    setIsSyncingAll(true);
+    try {
+      const res = await extensionManager.syncAllToCloud(currentUser);
+      if (res.success) {
+        setFeedback({ type: 'success', message: res.message });
+      } else {
+        setFeedback({ type: 'error', message: res.message });
+      }
+      refreshList();
+    } catch (err: any) {
+      setFeedback({
+        type: 'error',
+        message: `Falha na sincronização em nuvem: ${err?.message || 'Erro de rede ou permissão'}`,
+      });
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
+
+  // 304.2: Força rechecagem de conexão com o Firebase
+  const handleForceRecheckSync = async () => {
+    setIsProcessing(true);
+    try {
+      const res = await extensionManager.forceRecheckSync();
+      if (res.success) {
+        setFeedback({
+          type: 'success',
+          message: 'Conexão e sincronia com o Firebase Firestore verificadas com sucesso!',
+        });
+      } else {
+        setFeedback({
+          type: 'error',
+          message: 'Não foi possível validar a sincronia em nuvem com o Firebase. Verifique sua conexão.',
+        });
+      }
+      refreshList();
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 304.3.1: Resolução de Conflitos e Extensões Órfãs na Nuvem
+  const handleResolveConflict = async (
+    conflict: ExtensionConflict,
+    resolution: 'keep_cloud' | 'overwrite_cloud_with_local' | 'delete_from_cloud' | 'sync_new_local'
+  ) => {
+    if (!userIsBureaucrat) {
+      setFeedback({ type: 'error', message: 'Apenas burocratas podem resolver conflitos de extensões.' });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const res = await extensionManager.resolveConflict(conflict, resolution, currentUser);
+      if (res.success) {
+        setFeedback({ type: 'success', message: res.message });
+        refreshList();
+      } else {
+        setFeedback({ type: 'error', message: res.message });
+      }
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: `Erro ao resolver conflito: ${err?.message || 'Falha desconhecida'}` });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // 304.4: Processamento do arquivo de extensão selecionado para Upload
+  const handleFileUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError(null);
+    setUploadedFileName(file.name);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      setUploadedFileContent(content);
+
+      const parsed = FirebaseExtensionSyncService.getInstance().parseUploadedExtensionFile(
+        content,
+        file.name
+      );
+
+      if (parsed.success && parsed.meta) {
+        setUploadedFileMeta(parsed.meta);
+        setUploadError(null);
+      } else {
+        setUploadedFileMeta(null);
+        setUploadError(parsed.error || 'Formato de arquivo inválido. Envie um arquivo index.js, index.ts ou .json válido.');
+      }
+    };
+    reader.onerror = () => {
+      setUploadError('Erro ao ler arquivo do computador.');
+    };
+    reader.readAsText(file);
+  };
+
+  // 304.4: Confirmação do Upload e Envio para a Nuvem Firebase
+  const handleConfirmUploadExtension = async () => {
+    if (!userIsBureaucrat) {
+      setFeedback({ type: 'error', message: 'Apenas burocratas podem enviar novas extensões para a nuvem.' });
+      return;
+    }
+
+    if (!uploadedFileContent || !uploadedFileName) {
+      setFeedback({ type: 'error', message: 'Nenhum arquivo válido selecionado para upload.' });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const res = await extensionManager.uploadExtensionFile(
+        uploadedFileContent,
+        uploadedFileName,
+        currentUser
+      );
+
+      if (res.success) {
+        setFeedback({ type: 'success', message: res.message });
+        setShowAddModal(false);
+        setUploadedFileContent('');
+        setUploadedFileName('');
+        setUploadedFileMeta(null);
+        refreshList();
+      } else {
+        setFeedback({ type: 'error', message: res.message });
+      }
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: `Erro ao fazer upload da extensão: ${err?.message || 'Falha inesperada'}` });
     } finally {
       setIsProcessing(false);
     }
@@ -593,6 +767,15 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       author: 'WikiZero Meteorologia / Open-Meteo',
       hooks: ['tool:weather_available', 'tools:registered_tools'],
       script: `// Registro de ferramenta meteorológica\nhooks.addFilter('tool:weather_available', () => true, 10, extensionName);\nhooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'weather'], 10, extensionName);`,
+    },
+    {
+      name: 'GeminiAssistantToolExtension',
+      version: '1.5.0',
+      description: 'Assistente inteligente oficial integrado do Google AI Studio para auxílio em pesquisa enciclopédica, geração e revisão de artigos em Wikitext, síntese de conhecimento e verificação factual.',
+      category: 'tool' as ExtensionCategory,
+      author: 'Google AI Studio / Equipe WikiZero',
+      hooks: ['tool:gemini-assistant_available', 'tools:registered_tools'],
+      script: `// Registro do assistente Gemini Studio na aba de ferramentas\nhooks.addFilter('tool:gemini-assistant_available', () => true, 10, extensionName);\nhooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'gemini-assistant'], 10, extensionName);`,
     },
     {
       name: 'SpoilerBlurTag',
@@ -1018,6 +1201,51 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
             </button>
           )}
 
+          {/* 304.4: Sincronia em Massa de Todas as Extensões na Nuvem */}
+          <button
+            type="button"
+            disabled={!userIsBureaucrat || isSyncingAll}
+            onClick={handleSyncAllToCloud}
+            className={`px-3 py-2 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 shadow-2xs ${
+              isSyncingAll
+                ? 'bg-purple-100 dark:bg-purple-950/60 border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 cursor-wait'
+                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer'
+            }`}
+            title="Sincronizar em massa todas as extensões locais e customizadas para a nuvem Firebase Firestore (304.4)"
+          >
+            <Cloud className={`w-3.5 h-3.5 ${isSyncingAll ? 'animate-bounce text-purple-600' : 'text-blue-500'}`} />
+            <span>{isSyncingAll ? 'Sincronizando...' : 'Sincronizar Nuvem'}</span>
+          </button>
+
+          {/* 304.3.1: Detecção e Resolução de Conflitos e Extensões Órfãs */}
+          <button
+            type="button"
+            onClick={() => setShowConflictsModal(true)}
+            className={`px-3 py-2 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 shadow-2xs relative ${
+              cloudConflicts.length > 0
+                ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 hover:bg-amber-100'
+                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
+            title="Gerenciar conflitos, colisões e extensões órfãs entre arquivos locais e a nuvem Firebase (304.3.1)"
+          >
+            <AlertTriangle className={`w-3.5 h-3.5 ${cloudConflicts.length > 0 ? 'text-amber-600 animate-pulse' : 'text-slate-500'}`} />
+            <span>Conflitos ({cloudConflicts.length})</span>
+            {cloudConflicts.length > 0 && (
+              <span className="w-2 h-2 rounded-full bg-amber-500 absolute -top-0.5 -right-0.5"></span>
+            )}
+          </button>
+
+          {/* 304.6: Camadas de Segurança Salvas em Nuvem */}
+          <button
+            type="button"
+            onClick={() => setShowSecurityLayersModal(true)}
+            className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 transition shadow-2xs"
+            title="Configurar camadas de segurança em nuvem (XSS, Anti-Vandalismo, Rate Limiter e Sentinela de Integridade) (304.6)"
+          >
+            <Shield className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Segurança (304.6)</span>
+          </button>
+
           <button
             type="button"
             onClick={handleExportPackage}
@@ -1136,9 +1364,47 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
+          {/* 304.2: Indicador de Sincronia em Nuvem com Firebase */}
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono text-xs ${
+              syncStatus === 'connected'
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+                : syncStatus === 'connecting'
+                ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-200'
+                : 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200'
+            }`}
+            title={`Status de conexão com o Firestore. Última sincronia: ${lastCloudSyncAt || 'Pendente'}`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                syncStatus === 'connected'
+                  ? 'bg-emerald-500 animate-pulse'
+                  : syncStatus === 'connecting'
+                  ? 'bg-blue-500 animate-ping'
+                  : 'bg-rose-500'
+              }`}
+            ></span>
+            <span>
+              {syncStatus === 'connected'
+                ? 'Firebase: Sincronizado (v3.304)'
+                : syncStatus === 'connecting'
+                ? 'Firebase: Conectando...'
+                : 'Firebase: Offline'}
+            </span>
+            <button
+              type="button"
+              onClick={handleForceRecheckSync}
+              disabled={isProcessing}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 ml-1 p-0.5 rounded cursor-pointer"
+              title="Testar conexão e sincronizar novamente com o Firebase"
+            >
+              <RefreshCw className={`w-3 h-3 ${isProcessing ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span>{stats.active} ativas</span>
             <span className="text-slate-400">/</span>
             <span className="text-slate-500">{stats.total} total</span>
@@ -1525,7 +1791,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
             </div>
 
             {/* Navigation Tabs */}
-            <div className="grid grid-cols-4 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-center bg-slate-50/60 dark:bg-slate-900">
+            <div className="grid grid-cols-2 sm:grid-cols-5 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-center bg-slate-50/60 dark:bg-slate-900">
               <button
                 type="button"
                 onClick={() => setAddMode('catalog')}
@@ -1536,7 +1802,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>1. Catálogo Oficial ({catalogExtensions.length})</span>
+                <span>1. Catálogo ({catalogExtensions.length})</span>
               </button>
               <button
                 type="button"
@@ -1548,7 +1814,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                 }`}
               >
                 <Palette className="w-3.5 h-3.5" />
-                <span>2. Construtor No-Code</span>
+                <span>2. No-Code</span>
               </button>
               <button
                 type="button"
@@ -1560,7 +1826,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                 }`}
               >
                 <Code className="w-3.5 h-3.5" />
-                <span>3. Código JavaScript</span>
+                <span>3. Código JS</span>
               </button>
               <button
                 type="button"
@@ -1571,8 +1837,20 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                     : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
+                <FileCode className="w-3.5 h-3.5" />
+                <span>4. JSON</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddMode('upload')}
+                className={`py-3 px-2 border-b-2 transition flex items-center justify-center gap-1.5 ${
+                  addMode === 'upload'
+                    ? 'border-purple-600 text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800'
+                    : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100'
+                }`}
+              >
                 <Upload className="w-3.5 h-3.5" />
-                <span>4. Importar / Backup</span>
+                <span>5. Upload (index.js)</span>
               </button>
             </div>
 
@@ -2009,6 +2287,342 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                   </div>
                 </div>
               )}
+
+              {/* TAB 5: UPLOAD DE ARQUIVO VÁLIDO (index.js / index.ts) (304.4) */}
+              {addMode === 'upload' && (
+                <div className="space-y-4">
+                  <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 rounded-2xl text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
+                    <strong>Upload de Extensão em Nuvem (Regra 304.4):</strong> Burocratas podem fazer upload de novos arquivos válidos (<code className="font-mono bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 rounded">index.js</code>, <code className="font-mono bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 rounded">index.ts</code> ou <code className="font-mono bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 rounded">.json</code>) para serem adicionados à nuvem Firebase Firestore e disponibilizados na enciclopédia.
+                  </div>
+
+                  {/* Dropzone / File Picker */}
+                  <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-400 rounded-3xl p-8 text-center bg-slate-50/50 dark:bg-slate-900/50 transition">
+                    <input
+                      type="file"
+                      id="extension-file-upload"
+                      accept=".js,.ts,.json"
+                      onChange={handleFileUploadChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="extension-file-upload"
+                      className="cursor-pointer flex flex-col items-center justify-center gap-3"
+                    >
+                      <div className="w-14 h-14 rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                        <Upload className="w-7 h-7" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                          {uploadedFileName ? uploadedFileName : 'Clique para selecionar ou arraste o arquivo index.js'}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Formatos aceitos: JavaScript (.js), TypeScript (.ts) ou Manifesto (.json)
+                        </p>
+                      </div>
+                      <span className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition">
+                        Selecionar Arquivo
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Erro de Validação */}
+                  {uploadError && (
+                    <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs flex items-center gap-2">
+                      <XCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                      <span>{uploadError}</span>
+                    </div>
+                  )}
+
+                  {/* Prévia da Extensão Analisada */}
+                  {uploadedFileMeta && (
+                    <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-purple-200 dark:border-purple-800/80 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                            {uploadedFileMeta.name}
+                          </h4>
+                          <span className="font-mono text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-semibold">
+                            v{uploadedFileMeta.version || '1.0.0'}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono text-slate-400">
+                          {uploadedFileMeta.category || 'tool'}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                        {uploadedFileMeta.description}
+                      </p>
+
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                        <span>Autor: <strong>{uploadedFileMeta.author}</strong></span>
+                        <span>•</span>
+                        <span>Ganchos: <strong>{uploadedFileMeta.hooks?.length || 0} detectados</strong></span>
+                      </div>
+
+                      {uploadedFileMeta.hooks && uploadedFileMeta.hooks.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {uploadedFileMeta.hooks.map((h) => (
+                            <span
+                              key={h}
+                              className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-[10px] font-mono"
+                            >
+                              {h}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Botões do Rodapé */}
+                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddModal(false)}
+                      className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!userIsBureaucrat || !uploadedFileMeta || isProcessing}
+                      onClick={handleConfirmUploadExtension}
+                      className="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-sm transition disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      <Cloud className="w-3.5 h-3.5" />
+                      <span>{isProcessing ? 'Enviando para Nuvem...' : 'Salvar no Firebase & Instalar'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: CONFLITOS E EXTENSÕES ÓRFÃS NA NUVEM (304.3.1)     */}
+      {/* ======================================================== */}
+      {showConflictsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-6">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500 text-white">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    Conflitos & Sincronia em Nuvem (Regra 304.3.1)
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Resolução de extensões órfãs no Firebase e divergências com o diretório local (index.ts)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConflictsModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {cloudConflicts.length === 0 ? (
+                <div className="text-center py-12 px-4 space-y-3">
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                    Nenhum Conflito Detectado!
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Todas as extensões do diretório local (index.ts) e as versões persistidas no banco de dados do Firebase Firestore estão sincronizadas em perfeita harmonia.
+                  </p>
+                </div>
+              ) : (
+                cloudConflicts.map((c) => (
+                  <div
+                    key={c.id}
+                    className="p-4 rounded-2xl border border-amber-300 dark:border-amber-800/80 bg-amber-50/50 dark:bg-amber-950/20 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 uppercase">
+                          {c.type === 'orphan_cloud' ? 'Órfã em Nuvem' : 'Colisão'}
+                        </span>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                          {c.title}
+                        </h4>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {new Date(c.detectedAt).toLocaleTimeString()}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      {c.description}
+                    </p>
+
+                    {/* Botões de Ação para o Burocrata */}
+                    <div className="pt-2 flex flex-wrap gap-2 justify-end border-t border-amber-200 dark:border-amber-900/60">
+                      {c.type === 'orphan_cloud' ? (
+                        <>
+                          <button
+                            type="button"
+                            disabled={!userIsBureaucrat || isProcessing}
+                            onClick={() => handleResolveConflict(c, 'keep_cloud')}
+                            className="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-xs font-semibold transition"
+                          >
+                            Deixar em Nuvem
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!userIsBureaucrat || isProcessing}
+                            onClick={() => handleResolveConflict(c, 'delete_from_cloud')}
+                            className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Remover por Completo da Nuvem</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            disabled={!userIsBureaucrat || isProcessing}
+                            onClick={() => handleResolveConflict(c, 'keep_cloud')}
+                            className="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-xs font-semibold transition"
+                          >
+                            Manter Versão da Nuvem
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!userIsBureaucrat || isProcessing}
+                            onClick={() => handleResolveConflict(c, 'overwrite_cloud_with_local')}
+                            className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition flex items-center gap-1"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Remover da Nuvem e Sincronizar Nova Extensão Local</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowConflictsModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: CAMADAS DE SEGURANÇA SALVAS EM NUVEM (304.6)      */}
+      {/* ======================================================== */}
+      {showSecurityLayersModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-6">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-600 text-white">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    Camadas de Segurança em Nuvem (Regra 304.6)
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Módulos de proteção salvos no Firebase Firestore, ativados ou desativados pelo burocrata
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSecurityLayersModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 rounded-2xl text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
+                <strong>Camadas de Segurança Ativas (Versão 3.304):</strong> As camadas abaixo operam como filtros de integridade em tempo real na Wiki, salvos e sincronizados com o banco de dados Firebase Firestore. O burocrata pode alternar cada camada individualmente.
+              </div>
+
+              <div className="grid grid-cols-1 gap-3.5">
+                {extensionManager.getSecurityLayers().map(({ meta: layer, isLoaded }) => (
+                  <div
+                    key={layer.name}
+                    className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
+                        <Shield className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                            {layer.name}
+                          </h4>
+                          <span className="font-mono text-[10px] px-2 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-bold">
+                            v{layer.version}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-400">
+                            Firebase: wiki_extensions
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                          {layer.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <button
+                        type="button"
+                        disabled={!userIsBureaucrat || isProcessing}
+                        onClick={() => handleToggleExtension(layer)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
+                          layer.enabled && isLoaded
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700'
+                        } ${!userIsBureaucrat ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
+                        <Power className="w-3.5 h-3.5" />
+                        <span>{layer.enabled && isLoaded ? 'Proteção Ativa' : 'Desativada'}</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+              <span className="text-[11px] font-mono text-slate-400">
+                Estados sincronizados com: wiki_extension_registry
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowSecurityLayersModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>

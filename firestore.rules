@@ -299,6 +299,21 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && (resource.data.reviewerUid == request.auth.uid || isAdmin());
     }
 
+    // ✅ Gerenciamento de Extensões da Wiki e Estados Sincronizados em Nuvem (Versão 3.304)
+    match /wiki_extensions/{extensionId} {
+      allow read: if true; // Leitura pública: todos os visitantes e usuários recebem extensões ativas para segurança da Wiki (304.5)
+      allow create, update, delete: if isAdmin(); // Apenas burocratas/administradores gerenciam extensões
+    }
+    match /wiki_extension_registry/{docId} {
+      allow read: if true; // Leitura pública dos estados globais de ativação
+      allow write: if isAdmin(); // Apenas administradores salvam alterações de ativação/desativação
+    }
+    match /wiki_extension_logs/{logId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isNotBanned();
+      allow update, delete: if isAdmin();
+    }
+
     // ✅ Telemetria e métricas de uso do Firestore em tempo real
     match /system_telemetry/{docId} {
       allow read: if true;

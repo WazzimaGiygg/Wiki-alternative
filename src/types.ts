@@ -1577,13 +1577,45 @@ export interface InstalledExtensionMeta {
   settings?: Record<string, any>;
   permissions?: string[];
   tags?: string[];
+  syncStatus?: ExtensionSyncStatus;
+  originFile?: string;
+  uploadedFile?: string;
+  securityLayer?: boolean;
+  syncedAt?: string;
+  syncedBy?: string;
+}
+
+export type ExtensionSyncStatus = 'synced' | 'local_only' | 'cloud_only' | 'conflict' | 'pending';
+
+export interface ExtensionConflict {
+  id: string;
+  extensionName: string;
+  type: 'orphan_cloud' | 'orphan_local' | 'collision_name' | 'collision_function';
+  title: string;
+  description: string;
+  localVersion?: string;
+  cloudVersion?: string;
+  localMeta?: InstalledExtensionMeta;
+  cloudMeta?: InstalledExtensionMeta;
+  detectedAt: string;
+}
+
+export interface FirebaseExtensionRegistryDoc {
+  id: string;
+  states: Record<string, boolean>;
+  version: string;
+  updatedAt: string;
+  updatedBy: string;
+  securityHash?: string;
+  totalExtensions?: number;
+  activeCount?: number;
 }
 
 export interface ExtensionActionLog {
   id: string;
   extensionId: string;
   extensionName: string;
-  action: 'activated' | 'deactivated' | 'added' | 'removed' | 'configured';
+  action: 'activated' | 'deactivated' | 'added' | 'removed' | 'configured' | 'synced_cloud' | 'cloud_removed' | 'conflict_resolved';
   operatorUid: string;
   operatorUsername: string;
   operatorRole: string;

@@ -20,8 +20,13 @@ import {
   CustomArticleBannerConfig,
   CustomContentFilterRule,
   ExtensionSettingField,
+  ExtensionConflict,
 } from '../types';
 import { StorageService } from '../services/storageService';
+import {
+  FirebaseExtensionSyncService,
+  SyncStateStatus,
+} from '../services/firebaseExtensionSyncService';
 
 // Extensões nativas instaladas no núcleo
 import ReadingTimeEnhancer from '../extensions/reading-time';
@@ -36,6 +41,11 @@ import Android23GingerbreadTheme from '../extensions/android-23-theme';
 import CalculatorToolExtension from '../extensions/calculator-tool';
 import WorldClockToolExtension from '../extensions/world-clock-tool';
 import WeatherForecastToolExtension from '../extensions/weather-tool';
+import GeminiAssistantToolExtension from '../extensions/gemini-assistant-tool';
+import WikiXssSanitizerSecurityLayer from '../extensions/security-layers/xss-sanitizer';
+import WikiVandalismGuardSecurityLayer from '../extensions/security-layers/vandalism-guard';
+import WikiRateLimiterSecurityLayer from '../extensions/security-layers/rate-limiter';
+import WikiIntegritySentinelSecurityLayer from '../extensions/security-layers/integrity-sentinel';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -70,6 +80,15 @@ export class ExtensionManager {
   /** Extensões personalizadas adicionadas em tempo de execução pelos burocratas */
   private customExtensions: InstalledExtensionMeta[] = [];
 
+  /** Extensões sincronizadas da nuvem Firebase */
+  private cloudExtensions: InstalledExtensionMeta[] = [];
+
+  /** Status de conexão e sincronia com o Firebase Firestore */
+  private syncStatus: SyncStateStatus = 'connecting';
+
+  /** Timestamp da última sincronização com o Firebase */
+  private lastCloudSyncAt: string | null = null;
+
   /** Ouvintes reativos para atualizar a UI do React em tempo real */
   private listeners: Set<() => void> = new Set();
 
@@ -82,6 +101,7 @@ export class ExtensionManager {
     this.hookRegistry = new HookRegistry();
     this.loadPersistedData();
     this.registerBuiltinExtensions();
+    this.initCloudSync();
   }
 
   /**
@@ -101,6 +121,11 @@ export class ExtensionManager {
       CalculatorToolExtension,
       WorldClockToolExtension,
       WeatherForecastToolExtension,
+      GeminiAssistantToolExtension,
+      WikiXssSanitizerSecurityLayer,
+      WikiVandalismGuardSecurityLayer,
+      WikiRateLimiterSecurityLayer,
+      WikiIntegritySentinelSecurityLayer,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -218,6 +243,114 @@ export class ExtensionManager {
    */
   private persistCustomExtensions(): void {
     StorageService.saveCustomExtensions(this.customExtensions);
+  }
+
+  /**
+   * 304.2 & 304.5: Inicializa a sincronização em tempo real com o Firebase Firestore.
+   * Conecta ouvintes para refletir imediatamente estados ativados/desativados mesmo para visitantes não autenticados.
+   */
+  public initCloudSync(): void {
+    const syncService = FirebaseExtensionSyncService.getInstance();
+    syncService.subscribeStatus((status) => {
+      this.syncStatus = status;
+      this.lastCloudSyncAt = syncService.getLastSyncedAt();
+      this.notifyListeners();
+    });
+
+    syncService.startRealtimeSync(
+      (cloudStates) => {
+        this.applyCloudStates(cloudStates);
+      },
+      (cloudExts) => {
+        this.applyCloudExtensions(cloudExts);
+      }
+    );
+  }
+
+  public getSyncStatus(): SyncStateStatus {
+    return this.syncStatus;
+  }
+
+  public getLastCloudSyncAt(): string | null {
+    return this.lastCloudSyncAt;
+  }
+
+  /**
+   * Aplica os estados globais recebidos do Firebase Firestore.
+   */
+  private applyCloudStates(cloudStates: Record<string, boolean>): void {
+    let hasChanged = false;
+
+    for (const [name, isEnabled] of Object.entries(cloudStates)) {
+      if (this.extensionStates[name] !== isEnabled) {
+        this.extensionStates[name] = isEnabled;
+        hasChanged = true;
+
+        const ext = this.findExtension(name);
+        if (ext) {
+          if (isEnabled && !this.loadedExtensions.has(name)) {
+            try {
+              const settings = this.extensionSettings[name] || {};
+              ext.onRegister(this.hookRegistry, { settings, manager: this });
+              this.loadedExtensions.set(name, ext);
+              if (typeof ext.getCustomCss === 'function') {
+                const css = ext.getCustomCss();
+                if (css) this.injectExtensionCss(name, css);
+              }
+            } catch (err) {
+              console.error(`[ExtensionManager] Erro ao carregar '${name}' via nuvem:`, err);
+            }
+          } else if (!isEnabled && this.loadedExtensions.has(name)) {
+            try {
+              ext.onUnregister(this.hookRegistry);
+              this.loadedExtensions.delete(name);
+              this.removeExtensionCss(name);
+            } catch (err) {
+              console.error(`[ExtensionManager] Erro ao descarregar '${name}' via nuvem:`, err);
+            }
+          }
+        }
+      }
+    }
+
+    if (hasChanged) {
+      this.persistStates();
+      this.notifyListeners();
+    }
+  }
+
+  /**
+   * Sincroniza a lista de extensões recebidas do Firebase Firestore.
+   */
+  private applyCloudExtensions(cloudExts: InstalledExtensionMeta[]): void {
+    this.cloudExtensions = cloudExts;
+    let hasNewCustom = false;
+
+    for (const cExt of cloudExts) {
+      // Se não for uma extensão local compilada
+      if (!this.registeredExtensions.has(cExt.name)) {
+        const existingIdx = this.customExtensions.findIndex((c) => c.name === cExt.name || c.id === cExt.id);
+        if (existingIdx === -1) {
+          this.customExtensions.push({
+            ...cExt,
+            syncStatus: 'synced',
+          });
+          hasNewCustom = true;
+        } else {
+          this.customExtensions[existingIdx] = {
+            ...this.customExtensions[existingIdx],
+            ...cExt,
+            syncStatus: 'synced',
+          };
+        }
+      }
+    }
+
+    if (hasNewCustom) {
+      this.persistCustomExtensions();
+      this.mountCustomExtensions();
+    }
+    this.notifyListeners();
   }
 
   /**
@@ -819,6 +952,17 @@ ${tc.customCss || ''}
         details: `Extensão ativada com sucesso pelo burocrata.`,
       });
 
+      // 304.1 / 304.2: Sincroniza estado de ativação imediatamente na nuvem Firebase
+      FirebaseExtensionSyncService.getInstance()
+        .syncStatesToCloud(this.extensionStates, currentUser)
+        .catch((err) => console.warn('[ExtensionManager] Falha ao sincronizar ativação com Firebase:', err));
+
+      if (customIdx >= 0) {
+        FirebaseExtensionSyncService.getInstance()
+          .saveExtensionToCloud(this.customExtensions[customIdx], currentUser)
+          .catch((err) => console.warn('[ExtensionManager] Falha ao atualizar extensão customizada no Firestore:', err));
+      }
+
       this.hookRegistry.doAction('extension:activated', ext);
       this.notifyListeners();
 
@@ -888,6 +1032,17 @@ ${tc.customCss || ''}
         operatorRole: currentUser?.role || 'admin',
         details: `Extensão desativada pelo burocrata. Todos os ganchos e estilos foram suspensos.`,
       });
+
+      // 304.1 / 304.2: Sincroniza estado de desativação imediatamente na nuvem Firebase
+      FirebaseExtensionSyncService.getInstance()
+        .syncStatesToCloud(this.extensionStates, currentUser)
+        .catch((err) => console.warn('[ExtensionManager] Falha ao sincronizar desativação com Firebase:', err));
+
+      if (customIdx >= 0) {
+        FirebaseExtensionSyncService.getInstance()
+          .saveExtensionToCloud(this.customExtensions[customIdx], currentUser)
+          .catch((err) => console.warn('[ExtensionManager] Falha ao atualizar extensão customizada no Firestore:', err));
+      }
 
       this.hookRegistry.doAction('extension:deactivated', name);
       this.notifyListeners();
@@ -1046,6 +1201,14 @@ ${tc.customCss || ''}
       details: `Nova extensão "${cleanName}" v${newMeta.version} (${newMeta.category}) adicionada e instalada pelo burocrata.`,
     });
 
+    // 304.4: Sincroniza imediatamente a nova extensão com o Firebase Firestore
+    FirebaseExtensionSyncService.getInstance()
+      .saveExtensionToCloud(newMeta, currentUser)
+      .catch((err) => console.warn('[ExtensionManager] Falha ao salvar nova extensão no Firebase:', err));
+    FirebaseExtensionSyncService.getInstance()
+      .syncStatesToCloud(this.extensionStates, currentUser)
+      .catch((err) => console.warn('[ExtensionManager] Falha ao sincronizar estados após adicionar:', err));
+
     this.notifyListeners();
 
     return {
@@ -1115,6 +1278,14 @@ ${tc.customCss || ''}
         operatorRole: currentUser?.role || 'admin',
         details: `Extensão "${name}" desinstalada e removida permanentemente do sistema pelo burocrata.`,
       });
+
+      // 304.3.1: Remove da nuvem Firebase se o burocrata desinstalou a extensão
+      FirebaseExtensionSyncService.getInstance()
+        .deleteExtensionFromCloud(name, currentUser)
+        .catch((err) => console.warn('[ExtensionManager] Falha ao remover extensão no Firebase:', err));
+      FirebaseExtensionSyncService.getInstance()
+        .syncStatesToCloud(this.extensionStates, currentUser)
+        .catch((err) => console.warn('[ExtensionManager] Falha ao sincronizar estados após remover:', err));
 
       this.notifyListeners();
 
@@ -1475,6 +1646,138 @@ ${tc.customCss || ''}
   }
 
   /**
+   * 304.4 (segundo item): Sincroniza em lote TODAS as extensões locais e customizadas para o Firebase Firestore.
+   */
+  public async syncAllToCloud(
+    currentUser: UserProfile | null
+  ): Promise<{ success: boolean; totalSynced: number; message: string }> {
+    if (!isUserBureaucrat(currentUser)) {
+      return {
+        success: false,
+        totalSynced: 0,
+        message: 'Apenas burocratas possuem autorização para sincronizar todas as extensões na nuvem.',
+      };
+    }
+    const all = this.getAllInstalledExtensions();
+    const res = await FirebaseExtensionSyncService.getInstance().syncAllExtensionsToCloud(
+      all,
+      this.extensionStates,
+      currentUser
+    );
+    if (res.success) {
+      this.lastCloudSyncAt = new Date().toISOString();
+      this.notifyListeners();
+    }
+    return res;
+  }
+
+  /**
+   * 304.3.1: Identifica colisões e divergências entre extensões do código local e o banco de dados Firebase.
+   */
+  public getCloudConflicts(): ExtensionConflict[] {
+    return FirebaseExtensionSyncService.getInstance().detectConflicts(
+      this.getAllInstalledExtensions(),
+      this.cloudExtensions
+    );
+  }
+
+  /**
+   * 304.3.1: Permite ao burocrata resolver colisões ou remover extensões órfãs da nuvem.
+   */
+  public async resolveConflict(
+    conflict: ExtensionConflict,
+    resolution: 'keep_cloud' | 'overwrite_cloud_with_local' | 'delete_from_cloud' | 'sync_new_local',
+    currentUser: UserProfile | null
+  ): Promise<{ success: boolean; message: string }> {
+    if (!isUserBureaucrat(currentUser)) {
+      return { success: false, message: 'Apenas burocratas podem resolver conflitos de extensões.' };
+    }
+
+    try {
+      if (resolution === 'delete_from_cloud') {
+        const res = await FirebaseExtensionSyncService.getInstance().deleteExtensionFromCloud(
+          conflict.cloudMeta?.name || conflict.extensionName,
+          currentUser
+        );
+        this.cloudExtensions = this.cloudExtensions.filter((c) => c.name !== conflict.extensionName);
+        this.notifyListeners();
+        return res;
+      }
+
+      if (resolution === 'overwrite_cloud_with_local' || resolution === 'sync_new_local') {
+        const localExt = this.getAllInstalledExtensions().find((e) => e.name === conflict.extensionName);
+        if (localExt) {
+          const res = await FirebaseExtensionSyncService.getInstance().saveExtensionToCloud(
+            localExt,
+            currentUser
+          );
+          await FirebaseExtensionSyncService.getInstance().syncStatesToCloud(this.extensionStates, currentUser);
+          this.notifyListeners();
+          return res;
+        }
+      }
+
+      if (resolution === 'keep_cloud') {
+        if (conflict.cloudMeta) {
+          const idx = this.customExtensions.findIndex((c) => c.name === conflict.cloudMeta!.name);
+          if (idx >= 0) {
+            this.customExtensions[idx] = conflict.cloudMeta;
+          } else {
+            this.customExtensions.push(conflict.cloudMeta);
+          }
+          this.persistCustomExtensions();
+          this.mountCustomExtensions();
+          this.notifyListeners();
+          return {
+            success: true,
+            message: `Versão da nuvem de '${conflict.extensionName}' preservada e sincronizada localmente.`,
+          };
+        }
+      }
+
+      return { success: false, message: 'Resolução não executada.' };
+    } catch (err: any) {
+      return { success: false, message: `Erro ao resolver conflito: ${err?.message || 'Falha desconhecida'}` };
+    }
+  }
+
+  /**
+   * 304.4: Processa o upload de um arquivo de extensão válido (index.js, index.ts ou .json)
+   * e adiciona à nuvem Firebase e ao catálogo do sistema.
+   */
+  public async uploadExtensionFile(
+    fileContent: string,
+    fileName: string,
+    currentUser: UserProfile | null
+  ): Promise<{ success: boolean; message: string; meta?: InstalledExtensionMeta }> {
+    if (!isUserBureaucrat(currentUser)) {
+      return {
+        success: false,
+        message: 'Acesso negado: Apenas burocratas do Conselho podem fazer upload de novas extensões.',
+      };
+    }
+
+    const parseRes = FirebaseExtensionSyncService.getInstance().parseUploadedExtensionFile(
+      fileContent,
+      fileName
+    );
+
+    if (!parseRes.success || !parseRes.meta) {
+      return {
+        success: false,
+        message: parseRes.error || 'O arquivo enviado não contém uma extensão válida.',
+      };
+    }
+
+    const addRes = this.addExtension(parseRes.meta as any, currentUser);
+    return {
+      success: addRes.success,
+      message: addRes.message,
+      meta: addRes.extension,
+    };
+  }
+
+  /**
    * Retorna os ganchos ativos para auditoria.
    */
   public getHooksAudit(): {
@@ -1499,6 +1802,73 @@ ${tc.customCss || ''}
 
   public getExtension(name: string): WikiExtension | undefined {
     return this.findExtension(name);
+  }
+
+  /**
+   * 304.6: Retorna todas as camadas de segurança (ativas ou inativas)
+   */
+  public getSecurityLayers(): { meta: InstalledExtensionMeta; isLoaded: boolean }[] {
+    const all = this.getAllInstalledExtensions();
+    return all
+      .filter((e) => e.category === 'security')
+      .map((meta) => ({
+        meta,
+        isLoaded: this.loadedExtensions.has(meta.name),
+      }));
+  }
+
+  /**
+   * 304.5: Retorna o status de integridade da Porta de Entrada de Segurança da Wiki
+   */
+  public getSecurityGateStatus(): {
+    isUnlocked: boolean;
+    syncStatus: SyncStateStatus;
+    lastSyncedAt: string | null;
+    securityHash: string;
+    activeCount: number;
+    totalCount: number;
+  } {
+    const activeCount = Object.values(this.extensionStates).filter(Boolean).length;
+    const totalCount = Object.keys(this.extensionStates).length;
+
+    const keys = Object.keys(this.extensionStates).sort();
+    let str = '';
+    for (const k of keys) {
+      str += `${k}:${this.extensionStates[k]};`;
+    }
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    const securityHash = `sec304-${Math.abs(hash).toString(16)}`;
+
+    const isUnlocked = this.syncStatus === 'connected';
+
+    return {
+      isUnlocked,
+      syncStatus: this.syncStatus,
+      lastSyncedAt: this.lastCloudSyncAt,
+      securityHash,
+      activeCount,
+      totalCount,
+    };
+  }
+
+  /**
+   * 304.5: Força a reinicialização e teste de sincronia com o Firebase
+   */
+  public async forceRecheckSync(): Promise<{ success: boolean; status: SyncStateStatus }> {
+    this.syncStatus = 'connecting';
+    this.notifyListeners();
+    this.initCloudSync();
+
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    const current = this.syncStatus as SyncStateStatus;
+    return {
+      success: current === 'connected',
+      status: current,
+    };
   }
 }
 

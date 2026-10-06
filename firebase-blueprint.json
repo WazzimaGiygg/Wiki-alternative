@@ -294,6 +294,36 @@
         "createdAt": { "type": "string" }
       },
       "required": ["id", "publicationId", "reviewerUid", "reviewerName", "tituloParecer", "parecerTexto", "parecerDecisao", "createdAt"]
+    },
+    "WikiExtension": {
+      "title": "WikiExtension",
+      "description": "Definição completa de extensão instalada, ferramentas, temas e ganchos em nuvem",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "description": { "type": "string" },
+        "author": { "type": "string" },
+        "category": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "isCore": { "type": "boolean" },
+        "hooks": { "type": "array" },
+        "customScript": { "type": "string" },
+        "customCss": { "type": "string" },
+        "customTags": { "type": "array" },
+        "toolConfig": { "type": "object" },
+        "themeConfig": { "type": "object" },
+        "editorPluginConfig": { "type": "object" },
+        "bannerConfig": { "type": "object" },
+        "filterRules": { "type": "array" },
+        "dependencies": { "type": "array" },
+        "settingsSchema": { "type": "array" },
+        "settings": { "type": "object" },
+        "syncedAt": { "type": "string" },
+        "syncedBy": { "type": "string" }
+      },
+      "required": ["id", "name", "version", "category", "enabled"]
     }
   },
   "firestore": {
@@ -380,6 +410,14 @@
     "/academic_peer_reviews/{reviewId}": {
       "schema": "AcademicPeerReview",
       "description": "Pareceres de revisão por pares aberta para produções científicas"
+    },
+    "/wiki_extensions/{extensionId}": {
+      "schema": "WikiExtension",
+      "description": "Extensões, ferramentas e módulos modulares sincronizados na nuvem pelo Firebase"
+    },
+    "/wiki_extension_registry/{docId}": {
+      "schema": "object",
+      "description": "Registro global de estados de ativação/desativação de extensões e hash de segurança"
     }
   }
 }

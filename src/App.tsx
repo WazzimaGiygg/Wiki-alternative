@@ -74,6 +74,7 @@ import { updateSEO } from './utils/seoManager';
 import { RecentlyReadService } from './utils/recentlyReadService';
 import { StorageService } from './services/storageService';
 import { ExtensionManager } from './core/ExtensionManager';
+import { WikiSecurityGatekeeper } from './components/WikiSecurityGatekeeper';
 import {
   WikiPage,
   WikiArticle,
@@ -118,6 +119,18 @@ export default function App() {
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [showSmartTVModal, setShowSmartTVModal] = useState<boolean>(false);
   const [showGeminiChatbot, setShowGeminiChatbot] = useState<boolean>(false);
+  const [isGeminiExtensionActive, setIsGeminiExtensionActive] = useState<boolean>(() =>
+    ExtensionManager.getInstance().isExtensionLoaded('GeminiAssistantToolExtension')
+  );
+
+  useEffect(() => {
+    const unsub = ExtensionManager.getInstance().subscribe(() => {
+      setIsGeminiExtensionActive(
+        ExtensionManager.getInstance().isExtensionLoaded('GeminiAssistantToolExtension')
+      );
+    });
+    return unsub;
+  }, []);
   const [showPremiumModal, setShowPremiumModal] = useState<boolean>(false);
   const [premiumQuotaType, setPremiumQuotaType] = useState<'chats' | 'images' | 'notebook' | undefined>();
   const [showNotebookModal, setShowNotebookModal] = useState<boolean>(false);
@@ -1286,7 +1299,12 @@ export default function App() {
   }, [currentView, activeArticle?.id, activeArticle?.titulo]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors w-full max-w-full overflow-x-clip">
+    <WikiSecurityGatekeeper
+      currentUser={user}
+      onOpenExtensionsPanel={() => handleNavigate('admin-extensions')}
+      onOpenLogin={() => handleLoginClick()}
+    >
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors w-full max-w-full overflow-x-clip">
       {/* 1. Top Header */}
       <Header
         user={user}
@@ -1973,15 +1991,24 @@ export default function App() {
             <ToolsView
               theme={theme}
               initialTab={toolsInitialTab}
+              currentUser={user}
               onNavigateHome={() => handleNavigate('hub')}
               onNavigateToExtensions={() => handleNavigate('admin-extensions')}
-              onOpenEditor={(title) => {
-                if (title) {
+              onOpenNotebook={handleOpenNotebookModal}
+              onOpenPremiumModal={handleOpenPremiumModal}
+              onOpenEditor={(contentOrTitle) => {
+                if (contentOrTitle) {
+                  const isWikitext = contentOrTitle.startsWith('=') || contentOrTitle.includes('\n');
+                  const title = isWikitext ? 'Novo Artigo Gemini' : contentOrTitle;
+                  const content = isWikitext
+                    ? contentOrTitle
+                    : `= ${contentOrTitle} =\nArtigo criado através do painel de ferramentas da WikiWorldWeb.`;
+
                   setEditingArticle({
                     id: '',
                     pageUid: pages[0]?.uid || 'wikizero_info',
                     titulo: title,
-                    descricao: `= ${title} =\nArtigo criado através do painel de ferramentas da WikiWorldWeb.`,
+                    descricao: content,
                     categoria: 'Geral',
                     idioma: 'Português',
                     dataCriacao: new Date().toISOString(),
@@ -2409,5 +2436,6 @@ export default function App() {
         />
       )}
     </div>
+    </WikiSecurityGatekeeper>
   );
 };
