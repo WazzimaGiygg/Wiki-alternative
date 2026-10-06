@@ -83,7 +83,8 @@
   /* ========================================================================== */
   /* 3. Hide Navigation Bars, Sidebars, Footers & Non-Article UI Components     */
   /* ========================================================================== */
-  /* Top site header, navigation bars, and micro-strips */
+  /* Top site header, navigation bars, and micro-strips (Barra Superior) */
+  header:not(.reader-article-header),
   #header,
   #site-header,
   .site-header,
@@ -111,7 +112,8 @@
   .win95-titlebar,
   .android-statusbar,
 
-  /* Navigation sidebars */
+  /* Navigation sidebars (Barra Lateral) */
+  aside,
   aside#desktop-sidebar,
   aside.sidebar,
   .sidebar,

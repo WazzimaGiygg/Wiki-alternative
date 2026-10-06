@@ -1101,12 +1101,14 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             {copied ? <Check size={13} className="text-emerald-600" /> : <Share2 size={13} />}
           </button>
 
+          {/* Botão 'Imprimir' na barra de ferramentas */}
           <button
             onClick={handlePrint}
-            title="Imprimir artigo"
-            className="p-1.5 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition hidden sm:block"
+            title="Imprimir artigo (oculta barra superior, lateral e rodapé através do print.css e imprime o conteúdo do verbete)"
+            className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-semibold text-xs transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
-            <Printer size={13} />
+            <Printer size={13} className="text-slate-600 dark:text-slate-300" />
+            <span>Imprimir</span>
           </button>
 
           <button
