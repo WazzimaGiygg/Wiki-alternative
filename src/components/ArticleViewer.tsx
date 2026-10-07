@@ -157,6 +157,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const [showReaderSettings, setShowReaderSettings] = useState<boolean>(false);
   const [readerProgress, setReaderProgress] = useState<number>(0);
   const [activeSectionId, setActiveSectionId] = useState<string | undefined>(undefined);
+  const [isPrinting, setIsPrinting] = useState<boolean>(false);
 
   const readerScrollRef = useRef<HTMLDivElement>(null);
   const readerContentRef = useRef<HTMLDivElement>(null);
@@ -431,24 +432,39 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   };
 
   const handlePrint = () => {
-    // Fecha popovers de índice se abertos
+    // Fecha popovers de índice e configurações se abertos
     setShowReaderToc(false);
+    setShowReaderSettings(false);
     // Para leitura de áudio se estiver ativa
     if (window.speechSynthesis && isPlayingAudio) {
       window.speechSynthesis.cancel();
       setIsPlayingAudio(false);
     }
-    // Adiciona classe auxiliar temporária no document.body para garantia de renderização
+
+    // Sinaliza estado de impressão para ocultar a barra superior e abrir layout contínuo de páginas
+    setIsPrinting(true);
     document.body.classList.add('is-printing-article');
+    document.documentElement.classList.add('is-printing-article');
+
     const handleAfterPrint = () => {
+      setIsPrinting(false);
       document.body.classList.remove('is-printing-article');
+      document.documentElement.classList.remove('is-printing-article');
       window.removeEventListener('afterprint', handleAfterPrint);
     };
     window.addEventListener('afterprint', handleAfterPrint, { once: true });
 
+    // Pequeno atraso para garantir ciclo de renderização antes do diálogo de impressão
     setTimeout(() => {
       window.print();
-    }, 60);
+    }, 80);
+
+    // Timeout de segurança caso afterprint não seja disparado
+    setTimeout(() => {
+      setIsPrinting(false);
+      document.body.classList.remove('is-printing-article');
+      document.documentElement.classList.remove('is-printing-article');
+    }, 6000);
   };
 
   const handleCopySource = () => {
@@ -547,7 +563,11 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       <div
         ref={readerScrollRef}
         onScroll={handleReaderScroll}
-        className={`reader-mode-container fixed inset-0 z-50 overflow-y-auto selection:bg-amber-200 selection:text-amber-950 transition-colors duration-200 animate-in fade-in ${
+        className={`reader-mode-container ${
+          isPrinting
+            ? 'relative w-full min-h-screen overflow-visible'
+            : 'fixed inset-0 z-50 overflow-y-auto'
+        } selection:bg-amber-200 selection:text-amber-950 transition-colors duration-200 animate-in fade-in ${
           readerTheme === 'sepia'
             ? 'theme-reader-sepia'
             : readerTheme === 'light'
@@ -557,22 +577,25 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             : 'theme-reader-black'
         }`}
       >
-        {/* Top Slim Scroll Progress Line */}
-        <div className="reader-scroll-progress-bar fixed top-0 left-0 right-0 h-1 z-50 bg-black/10 dark:bg-white/10 no-print pointer-events-none">
-          <div
-            className={`h-full transition-all duration-150 ease-out ${
-              readerTheme === 'sepia'
-                ? 'bg-[#8c531b]'
-                : readerTheme === 'dark' || readerTheme === 'black'
-                ? 'bg-blue-500'
-                : 'bg-blue-600'
-            }`}
-            style={{ width: `${readerProgress}%` }}
-          />
-        </div>
+        {/* Top Slim Scroll Progress Line — Ocultado na impressão */}
+        {!isPrinting && (
+          <div className="reader-scroll-progress-bar fixed top-0 left-0 right-0 h-1 z-50 bg-black/10 dark:bg-white/10 no-print pointer-events-none">
+            <div
+              className={`h-full transition-all duration-150 ease-out ${
+                readerTheme === 'sepia'
+                  ? 'bg-[#8c531b]'
+                  : readerTheme === 'dark' || readerTheme === 'black'
+                  ? 'bg-blue-500'
+                  : 'bg-blue-600'
+              }`}
+              style={{ width: `${readerProgress}%` }}
+            />
+          </div>
+        )}
 
-        {/* Minimalist Sticky Reader Toolbar */}
-        <header className="reader-mode-toolbar sticky top-0 z-40 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 sm:gap-3 shadow-2xs no-print transition-colors border-current/15 select-none bg-inherit/90">
+        {/* Minimalist Sticky Reader Toolbar — Ocultada na impressão */}
+        {!isPrinting && (
+          <header className="reader-mode-toolbar sticky top-0 z-40 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 sm:gap-3 shadow-2xs no-print transition-colors border-current/15 select-none bg-inherit/90">
           {/* Left Controls: Exit Button & Article Title / Reading Progress */}
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <button
@@ -750,14 +773,15 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             {/* Clean Print / PDF Export */}
             <button
               onClick={handlePrint}
-              title="Imprimir Artigo (Oculta a barra superiora e imprime todo o documento separado por páginas)"
-              className="p-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer flex items-center gap-1"
+              title="Imprimir Artigo — Oculta a barra superiora e imprime todo o documento separado por páginas"
+              className="px-2.5 py-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer flex items-center gap-1.5 shadow-2xs text-xs font-semibold"
             >
-              <Printer size={15} />
-              <span className="hidden xl:inline text-[11px] font-semibold">Imprimir</span>
+              <Printer size={14} />
+              <span className="hidden sm:inline">Imprimir</span>
             </button>
           </div>
         </header>
+        )}
 
         {/* Floating TableOfContents Popover in Reader Mode */}
         {showReaderToc && (
@@ -894,7 +918,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 no-print">
               <button
                 type="button"
                 onClick={() => {

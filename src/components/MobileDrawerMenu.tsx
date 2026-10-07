@@ -43,7 +43,12 @@ import {
 } from 'lucide-react';
 import { UserProfile, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
-import { formatExternalUrl } from '../utils/linkUtils';
+import {
+  formatExternalUrl,
+  isSupportTicketsEnabled,
+  getSupportTicketsUrl,
+  getSupportTicketsButtonLabel,
+} from '../utils/linkUtils';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 
 interface MobileDrawerMenuProps {
@@ -821,18 +826,20 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               Suporte & Destaques
             </span>
             <div className="space-y-1">
-              <a
-                href={formatExternalUrl("https://support.wazzimagiygg.com/")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/70 text-indigo-700 dark:text-indigo-300 font-bold hover:bg-indigo-100 transition"
-              >
-                <div className="flex items-center gap-2">
-                  <LifeBuoy size={16} className="text-indigo-600 dark:text-indigo-400" />
-                  <span>Suporte & Tickets WazzimaGiygg</span>
-                </div>
-                <ExternalLink size={12} />
-              </a>
+              {isSupportTicketsEnabled() && (
+                <a
+                  href={formatExternalUrl(getSupportTicketsUrl())}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/70 text-indigo-700 dark:text-indigo-300 font-bold hover:bg-indigo-100 transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <LifeBuoy size={16} className="text-indigo-600 dark:text-indigo-400" />
+                    <span>{getSupportTicketsButtonLabel()}</span>
+                  </div>
+                  <ExternalLink size={12} />
+                </a>
+              )}
 
               <a
                 href={formatExternalUrl("https://wazzimagiygg.com/averdade/")}
@@ -990,7 +997,7 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
         {/* Drawer Footer with Wiki Stats */}
         <div className="p-3 bg-slate-100 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div>
-            <span className="font-bold text-slate-700 dark:text-slate-300">WikiWorldWeb v3.0</span>
+            <span className="font-bold text-slate-700 dark:text-slate-300">WikiWorldWeb v3.05</span>
             <p className="text-[10px] text-slate-400">{totalArticles} artigos • {totalPages} portais</p>
           </div>
           <span className="text-[10px] font-mono bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold">

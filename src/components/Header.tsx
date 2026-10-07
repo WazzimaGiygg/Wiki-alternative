@@ -836,14 +836,14 @@ export const Header: React.FC<HeaderProps> = ({
             ) : isGoogleTheme ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#4285F4] text-white">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
-                GOOGLE THEME v3.0
+                GOOGLE THEME v3.05
               </span>
             ) : isWikidiota ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#eaecf0] text-[#202122] border border-[#a2a9b1] font-serif">
                 <span>🌐</span> WIKIDIOTA • WIKIOMITE FOUNDATION
               </span>
             ) : (
-              <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold shrink-0">WIKIZERO v3.0</span>
+              <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold shrink-0">WIKIZERO v3.05</span>
             )}
             {!isWin95 && <span className={`${isRepo ? "text-[#22d3ee]/80" : isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : isStardew ? "text-[#fed88b]" : "text-slate-400"} hidden md:inline truncate`}>{t('header.open_encyclopedia')}</span>}
           </div>

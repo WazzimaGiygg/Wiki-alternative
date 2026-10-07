@@ -47,6 +47,12 @@ import WikiXssSanitizerSecurityLayer from '../extensions/security-layers/xss-san
 import WikiVandalismGuardSecurityLayer from '../extensions/security-layers/vandalism-guard';
 import WikiRateLimiterSecurityLayer from '../extensions/security-layers/rate-limiter';
 import WikiIntegritySentinelSecurityLayer from '../extensions/security-layers/integrity-sentinel';
+import SupportTicketsExtension from '../extensions/support-tickets';
+import ExternalLinkRedirectorExtension from '../extensions/external-redirector';
+import WikiMaintenanceModeExtension from '../extensions/maintenance-mode';
+import WikiBooksExtension from '../extensions/wiki-books';
+import WikiUniversityExtension from '../extensions/wiki-university';
+import WazzimaGiyggNewsExtension from '../extensions/wazzimagiygg-news';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -128,6 +134,12 @@ export class ExtensionManager {
       WikiVandalismGuardSecurityLayer,
       WikiRateLimiterSecurityLayer,
       WikiIntegritySentinelSecurityLayer,
+      SupportTicketsExtension,
+      ExternalLinkRedirectorExtension,
+      WikiMaintenanceModeExtension,
+      WikiBooksExtension,
+      WikiUniversityExtension,
+      WazzimaGiyggNewsExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -1796,6 +1808,24 @@ ${tc.customCss || ''}
    */
   public isExtensionLoaded(name: string): boolean {
     return this.loadedExtensions.has(name);
+  }
+
+  /**
+   * 3.05: Retorna se a extensão está ativa (pelo nome, classe ou ID).
+   */
+  public isExtensionEnabled(nameOrId: string): boolean {
+    const ext = this.findExtension(nameOrId);
+    const name = ext ? ext.getName() : nameOrId;
+    return this.loadedExtensions.has(name);
+  }
+
+  /**
+   * 3.05: Retorna as configurações ativas de uma extensão.
+   */
+  public getExtensionSettings(nameOrId: string): Record<string, any> {
+    const ext = this.findExtension(nameOrId);
+    const name = ext ? ext.getName() : nameOrId;
+    return this.extensionSettings[name] || {};
   }
 
   public getLoadedExtensions(): WikiExtension[] {

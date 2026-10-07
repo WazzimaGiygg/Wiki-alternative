@@ -30,7 +30,11 @@ import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { playHalfLifeHEVBeep, playHalfLifeGeiger } from '../utils/halfLifeAudio';
 import { FooterBadges } from './FooterBadges';
-import { formatExternalUrl } from '../utils/linkUtils';
+import {
+  formatExternalUrl,
+  isSupportTicketsEnabled,
+  getSupportTicketsUrl,
+} from '../utils/linkUtils';
 import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
 
 interface FooterProps {
@@ -594,15 +598,19 @@ export const Footer: React.FC<FooterProps> = ({
               >
                 GoDaddy
               </a>
-              {' '}• Central de Suporte & Tickets:{' '}
-              <a
-                href={formatExternalUrl("https://support.wazzimagiygg.com/")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
-              >
-                support.wazzimagiygg.com
-              </a>
+              {isSupportTicketsEnabled() && (
+                <>
+                  {' '}• Central de Suporte & Tickets:{' '}
+                  <a
+                    href={formatExternalUrl(getSupportTicketsUrl())}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
+                  >
+                    {getSupportTicketsUrl().replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                  </a>
+                </>
+              )}
               {' '}• Em conformidade com a <strong>LGPD (Lei nº 13.709/2018)</strong> e o <strong>Marco Civil (Lei nº 12.965/2014)</strong>. DPO: pedrohenriquecardonaperes@gmail.com
             </p>
           </div>

@@ -47,7 +47,17 @@ import {
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
-import { formatExternalUrl } from '../utils/linkUtils';
+import {
+  formatExternalUrl,
+  isSupportTicketsEnabled,
+  getSupportTicketsUrl,
+  getSupportTicketsButtonLabel,
+} from '../utils/linkUtils';
+import {
+  isBooksModuleEnabled,
+  isAcademicModuleEnabled,
+  isNewsModuleEnabled,
+} from '../utils/subWikiHelpers';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { RecentlyReadService, RecentlyReadItem } from '../utils/recentlyReadService';
 
@@ -322,68 +332,74 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {!isCollapsed && <span className="truncate">Páginas Especiais</span>}
             </button>
 
-            <button
-              id="btn-sidebar-library"
-              onClick={() => onNavigate('library')}
-              title="Wiki dos Livros e Periódicos (Acervo Bibliográfico)"
-              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
-                currentView === 'library'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
-                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-              }`}
-            >
-              <BookOpen size={15} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-              {!isCollapsed && (
-                <div className="flex items-center justify-between w-full truncate">
-                  <span className="truncate">Wiki dos Livros</span>
-                  <span className="text-[8px] bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-mono font-bold px-1 rounded-xs">
-                    LIVROS
-                  </span>
-                </div>
-              )}
-            </button>
+            {isBooksModuleEnabled() && (
+              <button
+                id="btn-sidebar-library"
+                onClick={() => onNavigate('library')}
+                title="Wiki dos Livros e Periódicos (Acervo Bibliográfico)"
+                className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                  currentView === 'library'
+                    ? 'bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <BookOpen size={15} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                {!isCollapsed && (
+                  <div className="flex items-center justify-between w-full truncate">
+                    <span className="truncate">Wiki dos Livros</span>
+                    <span className="text-[8px] bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-mono font-bold px-1 rounded-xs">
+                      LIVROS
+                    </span>
+                  </div>
+                )}
+              </button>
+            )}
 
-            <button
-              id="btn-sidebar-academic"
-              onClick={() => onNavigate('academic')}
-              title="Wiki Universitário (Repositório Acadêmico, Google Acadêmico, Teses, Artigos e Citações)"
-              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
-                currentView === 'academic'
-                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
-                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-              }`}
-            >
-              <GraduationCap size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
-              {!isCollapsed && (
-                <div className="flex items-center justify-between w-full truncate">
-                  <span className="truncate">Wiki Universitário</span>
-                  <span className="text-[8px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono font-bold px-1 rounded-xs">
-                    ACADÊMICO
-                  </span>
-                </div>
-              )}
-            </button>
+            {isAcademicModuleEnabled() && (
+              <button
+                id="btn-sidebar-academic"
+                onClick={() => onNavigate('academic')}
+                title="Wiki Universitário (Repositório Acadêmico, Google Acadêmico, Teses, Artigos e Citações)"
+                className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                  currentView === 'academic'
+                    ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <GraduationCap size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                {!isCollapsed && (
+                  <div className="flex items-center justify-between w-full truncate">
+                    <span className="truncate">Wiki Universitário</span>
+                    <span className="text-[8px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-mono font-bold px-1 rounded-xs">
+                      ACADÊMICO
+                    </span>
+                  </div>
+                )}
+              </button>
+            )}
 
-            <button
-              id="btn-sidebar-news"
-              onClick={() => onNavigate('news')}
-              title="Jornal WazzimaGiygg (Notícias, Investigações e Edição Digital)"
-              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
-                currentView === 'news'
-                  ? 'bg-white dark:bg-slate-800 text-rose-700 dark:text-rose-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
-                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-              }`}
-            >
-              <Newspaper size={15} className="text-rose-600 dark:text-rose-400 flex-shrink-0" />
-              {!isCollapsed && (
-                <div className="flex items-center justify-between w-full truncate">
-                  <span className="truncate">Jornal WazzimaGiygg</span>
-                  <span className="text-[8px] bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-mono font-bold px-1 rounded-xs">
-                    NOTÍCIAS
-                  </span>
-                </div>
-              )}
-            </button>
+            {isNewsModuleEnabled() && (
+              <button
+                id="btn-sidebar-news"
+                onClick={() => onNavigate('news')}
+                title="Jornal WazzimaGiygg (Notícias, Investigações e Edição Digital)"
+                className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                  currentView === 'news'
+                    ? 'bg-white dark:bg-slate-800 text-rose-700 dark:text-rose-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <Newspaper size={15} className="text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                {!isCollapsed && (
+                  <div className="flex items-center justify-between w-full truncate">
+                    <span className="truncate">Jornal WazzimaGiygg</span>
+                    <span className="text-[8px] bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-mono font-bold px-1 rounded-xs">
+                      NOTÍCIAS
+                    </span>
+                  </div>
+                )}
+              </button>
+            )}
 
             <button
               id="btn-sidebar-tools"
@@ -1049,19 +1065,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {!isCollapsed && <span className="truncate">{t('sidebar.my_data')}</span>}
             </button>
 
-            <a
-              href={formatExternalUrl("https://support.wazzimagiygg.com/")}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Central de Suporte e Abertura de Tickets WazzimaGiygg: https://support.wazzimagiygg.com/"
-              className="w-full flex items-center justify-between px-2 py-1.5 rounded text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 hover:bg-indigo-100/80 dark:hover:bg-indigo-900/60 border border-indigo-200/80 dark:border-indigo-800/60 font-semibold transition group"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <LifeBuoy size={15} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                {!isCollapsed && <span className="truncate">Suporte & Tickets</span>}
-              </div>
-              {!isCollapsed && <ExternalLink size={11} className="text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-200 flex-shrink-0 ml-1" />}
-            </a>
+            {isSupportTicketsEnabled() && (
+              <a
+                href={formatExternalUrl(getSupportTicketsUrl())}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Central de Suporte e Abertura de Tickets: ${getSupportTicketsUrl()}`}
+                className="w-full flex items-center justify-between px-2 py-1.5 rounded text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40 hover:bg-indigo-100/80 dark:hover:bg-indigo-900/60 border border-indigo-200/80 dark:border-indigo-800/60 font-semibold transition group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <LifeBuoy size={15} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                  {!isCollapsed && <span className="truncate">{getSupportTicketsButtonLabel()}</span>}
+                </div>
+                {!isCollapsed && <ExternalLink size={11} className="text-indigo-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-200 flex-shrink-0 ml-1" />}
+              </a>
+            )}
           </nav>
         </div>
 

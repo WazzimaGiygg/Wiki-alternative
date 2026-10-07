@@ -9,6 +9,20 @@
  * - Formats infoboxes, tables, blockquotes, and code blocks for clean pagination
  */
 
+/* Ocultação imediata de barras e elementos durante disparo programático de impressão */
+body.is-printing-article header:not(.reader-article-header),
+body.is-printing-article .reader-mode-toolbar,
+body.is-printing-article .reader-scroll-progress-bar,
+body.is-printing-article .reader-toc-popover,
+body.is-printing-article #site-header,
+body.is-printing-article .site-header,
+body.is-printing-article aside,
+body.is-printing-article footer:not(.reader-mode-footer),
+body.is-printing-article .wikidiota-vector-header,
+body.is-printing-article .wikidiota-notice-box {
+  display: none !important;
+}
+
 @media print {
   /* ========================================================================== */
   /* 1. Page Configuration & Margins                                            */
@@ -196,12 +210,17 @@
   /* ========================================================================== */
   /* 4. Article Layout Optimization (100% Full Width, Clean Canvas)            */
   /* ========================================================================== */
+  html,
+  body,
   #root,
+  #root > div,
   .min-h-screen,
   main,
   article,
   .max-w-7xl,
   .w-full,
+  .flex-1,
+  div.flex-1,
   .reader-mode-container,
   div.reader-mode-container,
   .reader-mode-main {
@@ -216,6 +235,8 @@
     float: none !important;
     position: static !important;
     overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
     display: block !important;
     visibility: visible !important;
     height: auto !important;
@@ -347,12 +368,12 @@
     padding-bottom: 3pt !important;
     border-bottom: 0.75pt solid #cbd5e1 !important;
     color: #000000 !important;
-    page-break-before: always;
-    break-before: page;
-    page-break-after: avoid;
-    break-after: avoid;
-    page-break-inside: avoid;
-    break-inside: avoid;
+    page-break-before: always !important;
+    break-before: page !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   /* A primeira seção (primeiro H2) não deve criar página vazia no topo */
@@ -498,6 +519,15 @@
   .article-top-toc button,
   .article-top-toc input {
     display: none !important;
+  }
+
+  .article-top-toc h2 {
+    page-break-before: auto !important;
+    break-before: auto !important;
+    border-bottom: none !important;
+    margin: 0 0 4pt 0 !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
   }
 
   .article-top-toc ol {
