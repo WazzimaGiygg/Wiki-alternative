@@ -96,9 +96,19 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
   }, [fontScale, fontFamily]);
 
   const handleSelectTheme = (newTheme: AppTheme) => {
-    if (newTheme === 'android23' && !isAndroid23Active) {
+    // 3.05.3.l: Verifica se a mudança de aparência foi desativada pelo burocrata
+    if (!extensionManager.isAppearanceCustomizationAllowed()) {
       setExtensionNotice(
-        'O tema Android 2.3 Gingerbread faz parte de uma extensão e está atualmente DESATIVADA pelo Conselho de Burocratas. Apenas burocratas podem reativar a extensão no Painel de Administração.'
+        'A mudança de aparência está desabilitada pelo burocrata nas extensões. A aparência padrão do Wiki está fixada.'
+      );
+      setTimeout(() => setExtensionNotice(null), 6000);
+      return;
+    }
+
+    // 3.05.3.l.I: Verifica se o tema específico está disponível / ativado como extensão
+    if (!extensionManager.isThemeAvailable(newTheme)) {
+      setExtensionNotice(
+        `O tema selecionado faz parte de uma extensão e está atualmente DESATIVADA pelo Conselho de Burocratas. Apenas burocratas podem reativar a extensão no Painel de Administração.`
       );
       setTimeout(() => setExtensionNotice(null), 6000);
       return;
@@ -510,6 +520,27 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
 
       {/* 2. Theme Selection Cards Grid */}
       <div className="space-y-3">
+        {/* Banner de Bloqueio de Aparência pelo Burocrata (3.05.3.l) */}
+        {!extensionManager.isAppearanceCustomizationAllowed() && (
+          <div className="p-4 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/50 text-rose-900 dark:text-rose-200 flex items-start justify-between gap-3 animate-in fade-in">
+            <div className="flex items-start gap-2.5">
+              <Lock size={18} className="text-rose-600 dark:text-rose-400 mt-0.5 shrink-0" />
+              <div className="text-xs leading-relaxed">
+                <span className="font-bold block text-sm">Mudança de Aparência Bloqueada pelo Burocrata</span>
+                A extensão <strong>AppearanceLockExtension</strong> está desativada. As opções de personalização de temas foram fixadas na aparência padrão do Wiki com alto contraste adaptado.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigate('admin-extensions')}
+              className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0 flex items-center gap-1 transition shadow-xs"
+            >
+              <Puzzle size={13} />
+              <span>Painel de Extensões</span>
+            </button>
+          </div>
+        )}
+
         {extensionNotice && (
           <div className="p-3.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 flex items-start justify-between gap-3 animate-in fade-in duration-200">
             <div className="flex items-start gap-2.5">
@@ -545,6 +576,8 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {allThemesList.map((t) => {
             const isSelected = currentTheme === t.id;
+            const isAvailable = extensionManager.isThemeAvailable(t.id);
+            const isLockedGlobal = !extensionManager.isAppearanceCustomizationAllowed() && t.id !== 'light';
 
             return (
               <div
@@ -554,6 +587,8 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                 className={`relative rounded-xl border p-4 transition-all duration-200 cursor-pointer flex flex-col justify-between group ${
                   isSelected
                     ? 'border-blue-500 dark:border-blue-400 bg-blue-50/40 dark:bg-blue-950/20 ring-2 ring-blue-500/20 shadow-md'
+                    : !isAvailable || isLockedGlobal
+                    ? 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 opacity-70 cursor-not-allowed'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs'
                 }`}
               >
@@ -581,17 +616,12 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
                         </p>
                       </div>
                     </div>
-                    {t.id === 'android23' && (
+                    {/* Status da Extensão do Tema (3.05.3.l.I) */}
+                    {(!isAvailable || isLockedGlobal) && (
                       <div className="shrink-0">
-                        {isAndroid23Active ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#A4C639]/20 text-[#558b2f] dark:text-[#A4C639] border border-[#A4C639]/40 flex items-center gap-1">
-                            <Puzzle size={10} /> Extensão Ativa
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1">
-                            <Lock size={10} /> Desativada
-                          </span>
-                        )}
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1">
+                          <Lock size={10} /> {isLockedGlobal ? 'Bloqueado' : 'Desativado'}
+                        </span>
                       </div>
                     )}
                   </div>

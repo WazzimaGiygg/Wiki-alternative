@@ -633,7 +633,8 @@ export type ViewMode =
   | 'tools'
   | 'library'
   | 'academic'
-  | 'news';
+  | 'news'
+  | 'other-rules';
 
 // ==========================================
 // SISTEMA DE CONSELHO DE ARBITRAGEM (ARBCOM)
@@ -1603,6 +1604,7 @@ export interface ExtensionConflict {
 export interface FirebaseExtensionRegistryDoc {
   id: string;
   states: Record<string, boolean>;
+  settings?: Record<string, Record<string, any>>;
   version: string;
   updatedAt: string;
   updatedBy: string;

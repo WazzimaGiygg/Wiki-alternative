@@ -116,7 +116,7 @@ export class FirebaseExtensionSyncService {
    * ativações/desativações e extensões da nuvem mesmo para visitantes não autenticados.
    */
   public startRealtimeSync(
-    onStatesUpdate: (states: Record<string, boolean>) => void,
+    onStatesUpdate: (states: Record<string, boolean>, settings?: Record<string, Record<string, any>>) => void,
     onCloudExtensionsUpdate: (extensions: InstalledExtensionMeta[]) => void
   ): void {
     const db = getDbSafe();
@@ -141,7 +141,7 @@ export class FirebaseExtensionSyncService {
             if (data && data.states && typeof data.states === 'object') {
               this.lastSyncedAt = data.updatedAt || new Date().toISOString();
               this.setStatus('connected');
-              onStatesUpdate(data.states);
+              onStatesUpdate(data.states, data.settings);
             }
           } else {
             // Documento ainda não inicializado na nuvem
@@ -204,11 +204,12 @@ export class FirebaseExtensionSyncService {
   }
 
   /**
-   * 304.1 & 304.3: Persiste o estado global de ativação/desativação no Firestore.
+   * 304.1 & 304.3 & 3.05.3.q.3: Persiste o estado global de ativação/desativação e configurações no Firestore.
    */
   public async syncStatesToCloud(
     states: Record<string, boolean>,
-    user: UserProfile | null
+    user: UserProfile | null,
+    settings?: Record<string, Record<string, any>>
   ): Promise<{ success: boolean; message: string }> {
     const db = getDbSafe();
     if (!db) {
@@ -225,7 +226,8 @@ export class FirebaseExtensionSyncService {
       const payload: FirebaseExtensionRegistryDoc = {
         id: EXTENSION_FIREBASE_COLLECTIONS.REGISTRY_DOC,
         states,
-        version: '3.304',
+        settings: settings || undefined,
+        version: '3.05',
         updatedAt: new Date().toISOString(),
         updatedBy: user?.displayName || user?.username || user?.email || 'Burocrata Administrador',
         securityHash: this.generateSecurityHash(states),
@@ -235,6 +237,31 @@ export class FirebaseExtensionSyncService {
 
       const docRef = doc(db, EXTENSION_FIREBASE_COLLECTIONS.REGISTRY, EXTENSION_FIREBASE_COLLECTIONS.REGISTRY_DOC);
       await setDoc(docRef, payload, { merge: true });
+
+      // 3.05.3.q.3: Garante que cada extensão tenha seu estado gravado individualmente na coleção wiki_extensions
+      // para que outras janelas e computadores vejam a alteração imediatamente
+      const writePromises = Object.entries(states).map(async ([name, isEnabled]) => {
+        try {
+          const extDocId = this.sanitizeDocId(name);
+          const extDocRef = doc(db, EXTENSION_FIREBASE_COLLECTIONS.EXTENSIONS, extDocId);
+          const extSettings = settings ? settings[name] : undefined;
+          await setDoc(
+            extDocRef,
+            {
+              name,
+              enabled: isEnabled,
+              ...(extSettings ? { settings: extSettings } : {}),
+              updatedAt: payload.updatedAt,
+              updatedBy: payload.updatedBy,
+            },
+            { merge: true }
+          );
+        } catch (e) {
+          console.warn(`[FirebaseExtensionSyncService] Falha ao sincronizar documento individual '${name}':`, e);
+        }
+      });
+      await Promise.allSettled(writePromises);
+
       this.lastSyncedAt = payload.updatedAt;
       this.setStatus('connected');
 

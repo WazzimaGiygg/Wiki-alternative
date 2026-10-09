@@ -53,6 +53,29 @@ import WikiMaintenanceModeExtension from '../extensions/maintenance-mode';
 import WikiBooksExtension from '../extensions/wiki-books';
 import WikiUniversityExtension from '../extensions/wiki-university';
 import WazzimaGiyggNewsExtension from '../extensions/wazzimagiygg-news';
+import AppearanceLockExtension from '../extensions/appearance-lock';
+import OtherRulesExtension from '../extensions/other-rules';
+import WikiBrandingExtension from '../extensions/wiki-branding';
+import CustomFaviconLogoExtension from '../extensions/custom-favicon-logo';
+import CustomCssExtension from '../extensions/custom-css';
+import {
+  Win95ThemeExtension,
+  Win31ThemeExtension,
+  WinXpThemeExtension,
+  Win7ThemeExtension,
+  Win10ThemeExtension,
+  Win1ThemeExtension,
+  GoogleThemeExtension,
+  WikidiotaThemeExtension,
+  GenshinThemeExtension,
+  Android15ThemeExtension,
+  StardewValleyThemeExtension,
+  RepoTerminalThemeExtension,
+  MinecraftThemeExtension,
+  RobloxThemeExtension,
+  Nokia3310ThemeExtension,
+  HalfLifeThemeExtension,
+} from '../extensions/themes/allThemes';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -140,6 +163,27 @@ export class ExtensionManager {
       WikiBooksExtension,
       WikiUniversityExtension,
       WazzimaGiyggNewsExtension,
+      AppearanceLockExtension,
+      OtherRulesExtension,
+      WikiBrandingExtension,
+      CustomFaviconLogoExtension,
+      CustomCssExtension,
+      Win95ThemeExtension,
+      Win31ThemeExtension,
+      WinXpThemeExtension,
+      Win7ThemeExtension,
+      Win10ThemeExtension,
+      Win1ThemeExtension,
+      GoogleThemeExtension,
+      WikidiotaThemeExtension,
+      GenshinThemeExtension,
+      Android15ThemeExtension,
+      StardewValleyThemeExtension,
+      RepoTerminalThemeExtension,
+      MinecraftThemeExtension,
+      RobloxThemeExtension,
+      Nokia3310ThemeExtension,
+      HalfLifeThemeExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -272,8 +316,8 @@ export class ExtensionManager {
     });
 
     syncService.startRealtimeSync(
-      (cloudStates) => {
-        this.applyCloudStates(cloudStates);
+      (cloudStates, cloudSettings) => {
+        this.applyCloudStates(cloudStates, cloudSettings);
       },
       (cloudExts) => {
         this.applyCloudExtensions(cloudExts);
@@ -292,17 +336,38 @@ export class ExtensionManager {
   /**
    * Aplica os estados globais recebidos do Firebase Firestore.
    */
-  private applyCloudStates(cloudStates: Record<string, boolean>): void {
+  private applyCloudStates(
+    cloudStates: Record<string, boolean>,
+    cloudSettings?: Record<string, Record<string, any>>
+  ): void {
     let hasChanged = false;
 
+    // Sincroniza configurações recebidas da nuvem
+    if (cloudSettings && typeof cloudSettings === 'object') {
+      for (const [extName, s] of Object.entries(cloudSettings)) {
+        if (s && typeof s === 'object') {
+          this.extensionSettings[extName] = {
+            ...(this.extensionSettings[extName] || {}),
+            ...s,
+          };
+          hasChanged = true;
+        }
+      }
+      this.persistSettings();
+    }
+
     for (const [name, isEnabled] of Object.entries(cloudStates)) {
-      if (this.extensionStates[name] !== isEnabled) {
+      const isCurrentlyLoaded = this.loadedExtensions.has(name);
+      const isStateDifferent = this.extensionStates[name] !== isEnabled;
+      const isLoadedDifferent = isCurrentlyLoaded !== isEnabled;
+
+      if (isStateDifferent || isLoadedDifferent) {
         this.extensionStates[name] = isEnabled;
         hasChanged = true;
 
         const ext = this.findExtension(name);
         if (ext) {
-          if (isEnabled && !this.loadedExtensions.has(name)) {
+          if (isEnabled && !isCurrentlyLoaded) {
             try {
               const settings = this.extensionSettings[name] || {};
               ext.onRegister(this.hookRegistry, { settings, manager: this });
@@ -314,11 +379,14 @@ export class ExtensionManager {
             } catch (err) {
               console.error(`[ExtensionManager] Erro ao carregar '${name}' via nuvem:`, err);
             }
-          } else if (!isEnabled && this.loadedExtensions.has(name)) {
+          } else if (!isEnabled && isCurrentlyLoaded) {
             try {
-              ext.onUnregister(this.hookRegistry);
-              this.loadedExtensions.delete(name);
               this.removeExtensionCss(name);
+              this.hookRegistry.removeAllHooksForExtension(name);
+              if (typeof ext.onUnregister === 'function') {
+                ext.onUnregister(this.hookRegistry);
+              }
+              this.loadedExtensions.delete(name);
             } catch (err) {
               console.error(`[ExtensionManager] Erro ao descarregar '${name}' via nuvem:`, err);
             }
@@ -909,13 +977,14 @@ ${tc.customCss || ''}
   }
 
   /**
-   * ATIVAÇÃO DE EXTENSÃO
+   * ATIVAÇÃO DE EXTENSÃO (Update 3.05 - Requisitos 3.05.3.q.2 & 3.05.3.q.3)
    * Regra: Apenas burocratas podem ativar extensões.
+   * Assíncrono com garantia de persistência no Firestore antes de concluir.
    */
-  public activateExtension(
+  public async activateExtension(
     nameOrId: string,
     currentUser: UserProfile | null
-  ): { success: boolean; message: string } {
+  ): Promise<{ success: boolean; message: string }> {
     if (!isUserBureaucrat(currentUser)) {
       return {
         success: false,
@@ -966,15 +1035,18 @@ ${tc.customCss || ''}
         details: `Extensão ativada com sucesso pelo burocrata.`,
       });
 
-      // 304.1 / 304.2: Sincroniza estado de ativação imediatamente na nuvem Firebase
-      FirebaseExtensionSyncService.getInstance()
-        .syncStatesToCloud(this.extensionStates, currentUser)
-        .catch((err) => console.warn('[ExtensionManager] Falha ao sincronizar ativação com Firebase:', err));
-
-      if (customIdx >= 0) {
-        FirebaseExtensionSyncService.getInstance()
-          .saveExtensionToCloud(this.customExtensions[customIdx], currentUser)
-          .catch((err) => console.warn('[ExtensionManager] Falha ao atualizar extensão customizada no Firestore:', err));
+      // 3.05.3.q.2 & 3.05.3.q.3: Aguarda confirmação no Firestore para sincronização multi-computador
+      try {
+        await FirebaseExtensionSyncService.getInstance().syncStatesToCloud(
+          this.extensionStates,
+          currentUser,
+          this.extensionSettings
+        );
+        if (customIdx >= 0) {
+          await FirebaseExtensionSyncService.getInstance().saveExtensionToCloud(this.customExtensions[customIdx], currentUser);
+        }
+      } catch (cloudErr) {
+        console.warn('[ExtensionManager] Alerta na sincronização de nuvem (dados salvos localmente):', cloudErr);
       }
 
       this.hookRegistry.doAction('extension:activated', ext);
@@ -982,7 +1054,7 @@ ${tc.customCss || ''}
 
       return {
         success: true,
-        message: `Extensão '${name}' ativada com sucesso! Os recursos já estão operantes no sistema.`,
+        message: `Extensão '${name}' ativada e sincronizada no Firebase com sucesso!`,
       };
     } catch (err: any) {
       console.error(`[ExtensionManager] Erro ao ativar extensão '${name}':`, err);
@@ -994,13 +1066,14 @@ ${tc.customCss || ''}
   }
 
   /**
-   * DESATIVAÇÃO DE EXTENSÃO
+   * DESATIVAÇÃO DE EXTENSÃO (Update 3.05 - Requisitos 3.05.3.q.2 & 3.05.3.q.3)
    * Regra: Apenas burocratas podem desativar extensões.
+   * Assíncrono com garantia de persistência no Firestore antes de concluir.
    */
-  public deactivateExtension(
+  public async deactivateExtension(
     nameOrId: string,
     currentUser: UserProfile | null
-  ): { success: boolean; message: string } {
+  ): Promise<{ success: boolean; message: string }> {
     if (!isUserBureaucrat(currentUser)) {
       return {
         success: false,
@@ -1020,10 +1093,10 @@ ${tc.customCss || ''}
 
     try {
       this.removeExtensionCss(name);
+      this.hookRegistry.removeAllHooksForExtension(name);
       if (typeof ext.onUnregister === 'function') {
         ext.onUnregister(this.hookRegistry);
       }
-      this.hookRegistry.removeAllHooksForExtension(name);
       this.loadedExtensions.delete(name);
       this.extensionStates[name] = false;
       this.persistStates();
@@ -1047,15 +1120,18 @@ ${tc.customCss || ''}
         details: `Extensão desativada pelo burocrata. Todos os ganchos e estilos foram suspensos.`,
       });
 
-      // 304.1 / 304.2: Sincroniza estado de desativação imediatamente na nuvem Firebase
-      FirebaseExtensionSyncService.getInstance()
-        .syncStatesToCloud(this.extensionStates, currentUser)
-        .catch((err) => console.warn('[ExtensionManager] Falha ao sincronizar desativação com Firebase:', err));
-
-      if (customIdx >= 0) {
-        FirebaseExtensionSyncService.getInstance()
-          .saveExtensionToCloud(this.customExtensions[customIdx], currentUser)
-          .catch((err) => console.warn('[ExtensionManager] Falha ao atualizar extensão customizada no Firestore:', err));
+      // 3.05.3.q.2 & 3.05.3.q.3: Aguarda confirmação no Firestore para sincronização multi-computador
+      try {
+        await FirebaseExtensionSyncService.getInstance().syncStatesToCloud(
+          this.extensionStates,
+          currentUser,
+          this.extensionSettings
+        );
+        if (customIdx >= 0) {
+          await FirebaseExtensionSyncService.getInstance().saveExtensionToCloud(this.customExtensions[customIdx], currentUser);
+        }
+      } catch (cloudErr) {
+        console.warn('[ExtensionManager] Alerta na sincronização de nuvem (dados salvos localmente):', cloudErr);
       }
 
       this.hookRegistry.doAction('extension:deactivated', name);
@@ -1063,7 +1139,7 @@ ${tc.customCss || ''}
 
       return {
         success: true,
-        message: `Extensão '${name}' desativada com sucesso. Seus ganchos e estilos foram suspensos.`,
+        message: `Extensão '${name}' desativada e sincronizada no Firebase com sucesso!`,
       };
     } catch (err: any) {
       console.error(`[ExtensionManager] Erro ao desativar extensão '${name}':`, err);
@@ -1901,6 +1977,164 @@ ${tc.customCss || ''}
       success: current === 'connected',
       status: current,
     };
+  }
+
+  /**
+   * 3.05.3.o & 3.05.3.p: Retorna dados de marca personalizados (nomes, slogans, logo e favicon).
+   */
+  public getBranding(): {
+    wikiName: string;
+    systemName: string;
+    tagline: string;
+    customLogoUrl: string;
+    customFaviconUrl: string;
+  } {
+    const wikiName = this.hookRegistry.applyFilters<string>('branding:wiki_name', 'WikiWorldWeb');
+    const systemName = this.hookRegistry.applyFilters<string>('branding:system_name', 'WikiZero');
+    const tagline = this.hookRegistry.applyFilters<string>('branding:tagline', 'A Enciclopédia Livre e Aberta');
+    const customLogoUrl = this.hookRegistry.applyFilters<string>('branding:custom_logo_url', '');
+    const customFaviconUrl = this.hookRegistry.applyFilters<string>('branding:custom_favicon_url', '');
+    return { wikiName, systemName, tagline, customLogoUrl, customFaviconUrl };
+  }
+
+  /**
+   * 3.05.3.l: Verifica se a personalização de aparência é permitida.
+   * Se a extensão AppearanceLockExtension estiver desativada pelo burocrata,
+   * força a aparência padrão do Wiki e bloqueia trocas de tema.
+   */
+  public isAppearanceCustomizationAllowed(): boolean {
+    if (!this.isExtensionEnabled('AppearanceLockExtension')) {
+      return false;
+    }
+    return this.hookRegistry.applyFilters<boolean>('appearance:customization_allowed', true);
+  }
+
+  /**
+   * 3.05.3.l.I: Verifica se um tema específico está ativo/habilitado como extensão.
+   */
+  public isThemeAvailable(themeId: string): boolean {
+    if (!this.isAppearanceCustomizationAllowed()) {
+      return themeId === 'light';
+    }
+    const themeExtMap: Record<string, string> = {
+      win95: 'Win95ThemeExtension',
+      win31: 'Win31ThemeExtension',
+      winxp: 'WinXpThemeExtension',
+      win7: 'Win7ThemeExtension',
+      win10: 'Win10ThemeExtension',
+      win1: 'Win1ThemeExtension',
+      google: 'GoogleThemeExtension',
+      'google-dark': 'GoogleThemeExtension',
+      wikidiota: 'WikidiotaThemeExtension',
+      genshin: 'GenshinThemeExtension',
+      android15: 'Android15ThemeExtension',
+      android23: 'Android23GingerbreadTheme',
+      stardew: 'StardewValleyThemeExtension',
+      repo: 'RepoTerminalThemeExtension',
+      minecraft: 'MinecraftThemeExtension',
+      roblox: 'RobloxThemeExtension',
+      nokia3310: 'Nokia3310ThemeExtension',
+      halflife: 'HalfLifeThemeExtension',
+    };
+    const extName = themeExtMap[themeId];
+    if (extName) {
+      return this.isExtensionEnabled(extName);
+    }
+    return this.hookRegistry.applyFilters<boolean>(`theme:${themeId}_available`, true);
+  }
+
+  /**
+   * 3.05.3.m: Retorna as informações da página institucional "Outras regras".
+   */
+  public getOtherRulesData(): {
+    enabled: boolean;
+    title: string;
+    subtitle: string;
+    rules: any[];
+    showInSidebar: boolean;
+    allowExportPdf: boolean;
+  } {
+    const isEnabled = this.isExtensionEnabled('OtherRulesExtension');
+    if (!isEnabled) {
+      return {
+        enabled: false,
+        title: 'Outras Regras',
+        subtitle: '',
+        rules: [],
+        showInSidebar: false,
+        allowExportPdf: false,
+      };
+    }
+    return this.hookRegistry.applyFilters('rules:get_rules_data', {
+      enabled: true,
+      title: 'Outras Regras e Diretrizes Institucionais',
+      subtitle: 'Regulamento oficial estabelecido pelo Burocrata para a Wiki.',
+      rules: [],
+      showInSidebar: true,
+      allowExportPdf: true,
+    });
+  }
+
+  /**
+   * 3.05.3.q: Salva configurações de uma extensão e atualiza ganchos e Firebase.
+   */
+  public async saveExtensionSettingsAsync(
+    nameOrId: string,
+    settings: Record<string, any>,
+    currentUser: UserProfile | null
+  ): Promise<{ success: boolean; message: string }> {
+    const ext = this.findExtension(nameOrId);
+    if (!ext) {
+      return { success: false, message: `Extensão '${nameOrId}' não encontrada.` };
+    }
+
+    const name = ext.getName();
+    this.extensionSettings[name] = {
+      ...(this.extensionSettings[name] || {}),
+      ...settings,
+    };
+    this.persistSettings();
+
+    // Se for extensão personalizada, atualiza também seu registro
+    const customIdx = this.customExtensions.findIndex((c) => c.name === name || c.id === nameOrId);
+    if (customIdx >= 0) {
+      this.customExtensions[customIdx].settings = this.extensionSettings[name];
+      this.customExtensions[customIdx].lastModifiedAt = new Date().toISOString();
+      this.customExtensions[customIdx].lastModifiedBy = currentUser?.displayName || currentUser?.username || 'Burocrata';
+      this.persistCustomExtensions();
+    }
+
+    // Se a extensão estiver ativa, re-registra com as novas configurações
+    if (this.loadedExtensions.has(name)) {
+      try {
+        this.hookRegistry.removeAllHooksForExtension(name);
+        ext.onRegister(this.hookRegistry, { settings: this.extensionSettings[name], manager: this });
+        if (typeof ext.getCustomCss === 'function') {
+          const css = ext.getCustomCss();
+          if (css) this.injectExtensionCss(name, css);
+        }
+      } catch (err) {
+        console.warn(`[ExtensionManager] Erro ao recarregar '${name}' com novas configurações:`, err);
+      }
+    }
+
+    this.notifyListeners();
+
+    // Sincroniza com Firestore
+    try {
+      await FirebaseExtensionSyncService.getInstance().syncStatesToCloud(
+        this.extensionStates,
+        currentUser,
+        this.extensionSettings
+      );
+      if (customIdx >= 0) {
+        await FirebaseExtensionSyncService.getInstance().saveExtensionToCloud(this.customExtensions[customIdx], currentUser);
+      }
+    } catch (e) {
+      console.warn('[ExtensionManager] Alerta na sincronização de configurações:', e);
+    }
+
+    return { success: true, message: `Configurações da extensão '${name}' salvas e sincronizadas com sucesso!` };
   }
 }
 

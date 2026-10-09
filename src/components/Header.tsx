@@ -35,6 +35,7 @@ import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '.
 import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { StorageService } from '../services/storageService';
+import { ExtensionManager } from '../core/ExtensionManager';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -127,6 +128,17 @@ export const Header: React.FC<HeaderProps> = ({
   const isNokia = theme === 'nokia3310';
   const isHalfLife = theme === 'halflife';
   const unreadCount = (notifications || []).filter((n) => !n.read).length;
+
+  const [, setHeaderExtTick] = useState(0);
+  useEffect(() => {
+    const unsub = ExtensionManager.getInstance().subscribe(() => {
+      setHeaderExtTick((prev) => prev + 1);
+    });
+    return unsub;
+  }, []);
+
+  const branding = ExtensionManager.getInstance().getBranding();
+  const isCustomizationAllowed = ExtensionManager.getInstance().isAppearanceCustomizationAllowed();
 
   useEffect(() => {
     StorageService.getOnlineUsers().then((users) => setOnlineUsers(users));
@@ -767,7 +779,7 @@ export const Header: React.FC<HeaderProps> = ({
       )}
 
       {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isHalfLife ? 'bg-[#121512] text-[#ff9900] border-b border-[#ff9900]/40' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isAndroid23 ? 'bg-[#0f1013] text-[#A4C639] border-b border-[#22242a]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-[#1e293b] dark:bg-[#090d16] text-slate-300 border-b border-slate-800'} text-[11px] py-1 px-2.5 sm:px-4 font-mono w-full max-w-full overflow-hidden`}>
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isHalfLife ? 'bg-[#121512] text-[#ff9900] border-b border-[#ff9900]/40' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isAndroid23 ? 'bg-[#0f1013] text-[#A4C639] border-b border-[#22242a]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-slate-100 dark:bg-[#090d16] text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800'} text-[11px] py-1 px-2.5 sm:px-4 font-mono w-full max-w-full overflow-hidden`}>
         <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full min-w-0">
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 truncate">
             {isWin95 ? (
@@ -843,7 +855,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>🌐</span> WIKIDIOTA • WIKIOMITE FOUNDATION
               </span>
             ) : (
-              <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold shrink-0">WIKIZERO v3.05</span>
+              <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold shrink-0">{branding.systemName.toUpperCase()} v3.05</span>
             )}
             {!isWin95 && <span className={`${isRepo ? "text-[#22d3ee]/80" : isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : isStardew ? "text-[#fed88b]" : "text-slate-400"} hidden md:inline truncate`}>{t('header.open_encyclopedia')}</span>}
           </div>
@@ -860,14 +872,14 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={onToggleTheme}
-              className="hover:text-amber-300 text-slate-300 flex items-center gap-1 transition cursor-pointer select-none"
+              className="hover:text-blue-600 dark:hover:text-amber-300 text-slate-700 dark:text-slate-300 flex items-center gap-1 transition cursor-pointer select-none font-medium"
               title={isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
               aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
             >
               {isDark ? (
                 <Sun size={11} className="text-amber-400 animate-pulse" />
               ) : (
-                <Moon size={11} className="text-slate-300" />
+                <Moon size={11} className="text-slate-700 dark:text-slate-300" />
               )}
               <span className="hidden sm:inline font-sans">{isDark ? 'Tema Claro' : 'Tema Escuro'}</span>
             </button>
@@ -1195,17 +1207,23 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               onClick={() => onNavigate('hub')}
               className="flex items-center gap-2.5 cursor-pointer group flex-shrink-0"
-              title="WikiZero - Página Principal"
+              title={`${branding.wikiName} (${branding.systemName}) - Página Principal`}
             >
               <img
-                src="/logo.png"
-                alt="Logotipo WikiZero"
+                src={branding.customLogoUrl || "/logo.png"}
+                alt={`Logotipo ${branding.wikiName}`}
+                onError={(e) => {
+                  // 3.05.3.p: Acaso a URL for inválida, o logo volta a ser o padrão
+                  if (e.currentTarget.src !== window.location.origin + '/logo.png') {
+                    e.currentTarget.src = '/logo.png';
+                  }
+                }}
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded object-contain drop-shadow-xs group-hover:scale-105 transition"
               />
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-serif-heading font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
-                    WikiZero
+                    {branding.systemName}
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-1 py-0.2 rounded-xs">
                     Wiki
@@ -1215,7 +1233,7 @@ export const Header: React.FC<HeaderProps> = ({
                   className="text-[10.5px] text-blue-700 dark:text-blue-300 font-serif italic font-medium leading-none mt-0.5 hidden xs:block tracking-wide"
                   title="Frase Principal da Wiki: 'Não, o Tempo não é o senhor do conhecimento!'"
                 >
-                  «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
+                  {branding.tagline || '«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»'}
                 </p>
               </div>
             </div>
@@ -1876,15 +1894,21 @@ export const Header: React.FC<HeaderProps> = ({
             className={`p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 min-w-[32px] min-h-[32px] justify-center ${
               isDark
                 ? 'bg-slate-800/90 hover:bg-slate-700/90 text-amber-300 border-slate-700 ring-1 ring-amber-400/30'
-                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                : 'bg-white hover:bg-slate-100 text-slate-900 border-slate-300 shadow-2xs'
             }`}
-            title={isDark ? 'Mudar para tema claro (Light Mode)' : 'Mudar para tema escuro (Dark Mode)'}
+            title={
+              !isCustomizationAllowed
+                ? 'Mudança de aparência fixada no tema padrão com contraste adaptado pelo burocrata'
+                : isDark
+                ? 'Alternar para tema claro adaptado (Light Mode)'
+                : 'Alternar para tema escuro (Dark Mode)'
+            }
             aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
           >
             {isDark ? (
               <Sun size={14} className="text-amber-400 transition-transform duration-300 hover:rotate-45" />
             ) : (
-              <Moon size={14} className="text-slate-600 transition-transform duration-300 hover:-rotate-12" />
+              <Moon size={14} className="text-slate-800 transition-transform duration-300 hover:-rotate-12" />
             )}
             <span className="hidden xl:inline text-[11px] font-sans">
               {isDark ? 'Modo Claro' : 'Modo Escuro'}

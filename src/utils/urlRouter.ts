@@ -232,6 +232,9 @@ export function getCanonicalUid(
     case 'editing-ethics':
       return 'Special:EditingEthics';
 
+    case 'other-rules':
+      return 'Special:OtherRules';
+
     case 'security':
       return 'Special:Security';
 
@@ -515,6 +518,15 @@ export function resolveNavigationUid(
     'free-expression': { view: 'editing-ethics', initialTab: 'free_expression' },
     'liberdade-de-expressao': { view: 'editing-ethics', initialTab: 'free_expression' },
     'artigo-19': { view: 'editing-ethics', initialTab: 'free_expression' },
+
+    'special:otherrules': { view: 'other-rules' },
+    'special:other-rules': { view: 'other-rules' },
+    'special:outrasregras': { view: 'other-rules' },
+    'special:outras-regras': { view: 'other-rules' },
+    'other-rules': { view: 'other-rules' },
+    'otherrules': { view: 'other-rules' },
+    'outras-regras': { view: 'other-rules' },
+    'outrasregras': { view: 'other-rules' },
 
     'special:security': { view: 'security' },
     'security': { view: 'security' },

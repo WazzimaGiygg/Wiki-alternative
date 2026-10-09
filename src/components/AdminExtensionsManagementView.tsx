@@ -44,6 +44,7 @@ import {
   Maximize2,
   Cloud,
   CloudOff,
+  Loader2,
   ShieldAlert,
   FileCheck,
   ArrowUpRight,
@@ -116,6 +117,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
   // Notificações e Feedback
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [syncProgressModal, setSyncProgressModal] = useState<{ isOpen: boolean; title: string; step: string; success?: boolean } | null>(null);
 
   // Modos de Adição de Extensões
   const [addMode, setAddMode] = useState<'catalog' | 'visual' | 'code' | 'json' | 'upload'>('catalog');
@@ -232,7 +234,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     }
   }, [feedback]);
 
-  // Alterna Ativação / Desativação de Extensão
+  // Alterna Ativação / Desativação de Extensão (Update 3.05 - Requisitos 3.05.3.q.2 & 3.05.3.q.3)
   const handleToggleExtension = async (ext: InstalledExtensionMeta) => {
     if (!userIsBureaucrat) {
       setFeedback({
@@ -242,20 +244,52 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       return;
     }
 
+    const actionText = ext.enabled ? 'Desativando' : 'Ativando';
+    setSyncProgressModal({
+      isOpen: true,
+      title: `${actionText} "${ext.name}"...`,
+      step: 'Aguarde: Gravando alterações no Firebase Firestore e sincronizando com servidores da nuvem...',
+    });
     setIsProcessing(true);
+
     try {
+      let res: { success: boolean; message: string };
       if (ext.enabled) {
-        const res = extensionManager.deactivateExtension(ext.name, currentUser);
-        setFeedback({ type: res.success ? 'success' : 'error', message: res.message });
+        res = await extensionManager.deactivateExtension(ext.name, currentUser);
       } else {
-        const res = extensionManager.activateExtension(ext.name, currentUser);
-        setFeedback({ type: res.success ? 'success' : 'error', message: res.message });
+        res = await extensionManager.activateExtension(ext.name, currentUser);
       }
-      refreshList();
+
+      setSyncProgressModal({
+        isOpen: true,
+        title: res.success ? 'Sincronizado no Firebase com Sucesso!' : 'Falha na Gravação',
+        step: res.success
+          ? 'Alteração confirmada e gravada no Firebase Firestore. Atualizando o Wiki-site automaticamente...'
+          : res.message,
+        success: res.success,
+      });
+
+      if (res.success) {
+        // Aguarda confirmação visual para que o burocrata veja que as alterações foram feitas
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        // Guarda contexto para restaurar view após recarga limpa do Wiki-site
+        try {
+          sessionStorage.setItem('wikizero_last_view', 'admin-extensions');
+          sessionStorage.setItem('wikizero_flash_msg', res.message);
+        } catch (_) {}
+
+        // Atualiza a página automaticamente garantindo atualização em todas as instâncias
+        window.location.reload();
+      } else {
+        setFeedback({ type: 'error', message: res.message });
+        refreshList();
+      }
     } catch (err: any) {
       setFeedback({ type: 'error', message: `Erro ao alterar estado: ${err?.message || 'Desconhecido'}` });
     } finally {
       setIsProcessing(false);
+      setSyncProgressModal(null);
     }
   };
 
@@ -685,23 +719,30 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     setShowSettingsModal(true);
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSettingsExtension) return;
 
-    const res = extensionManager.updateExtensionSettings(
-      editingSettingsExtension.name,
-      settingsFormData,
-      currentUser
-    );
+    setIsProcessing(true);
+    try {
+      const res = await extensionManager.saveExtensionSettingsAsync(
+        editingSettingsExtension.name,
+        settingsFormData,
+        currentUser
+      );
 
-    if (res.success) {
-      setFeedback({ type: 'success', message: res.message });
-      setShowSettingsModal(false);
-      setEditingSettingsExtension(null);
-      refreshList();
-    } else {
-      setFeedback({ type: 'error', message: res.message });
+      if (res.success) {
+        setFeedback({ type: 'success', message: res.message });
+        setShowSettingsModal(false);
+        setEditingSettingsExtension(null);
+        refreshList();
+      } else {
+        setFeedback({ type: 'error', message: res.message });
+      }
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: `Erro ao salvar configurações: ${err?.message || 'Falha inesperada'}` });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -3036,6 +3077,41 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
               >
                 Desinstalar Agora
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 7: AGUARDANDO SINCRONIZAÇÃO EM NUVEM (3.05.3.q.2)  */}
+      {/* ======================================================== */}
+      {syncProgressModal?.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-blue-500/30 rounded-3xl w-full max-w-md p-6 shadow-2xl text-center space-y-4">
+            <div className="w-14 h-14 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
+              {syncProgressModal.success ? (
+                <Check className="w-7 h-7 text-emerald-500 animate-in zoom-in" />
+              ) : (
+                <Loader2 className="w-7 h-7 animate-spin text-blue-600 dark:text-blue-400" />
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                {syncProgressModal.title}
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-mono">
+                {syncProgressModal.step}
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className={`h-full ${syncProgressModal.success ? 'bg-emerald-500 w-full' : 'bg-blue-600 animate-pulse w-3/4'} transition-all duration-300`} />
+              </div>
+              <span className="text-[10px] text-slate-400 mt-2 block">
+                Gravando na nuvem Firestore para persistir em todas as janelas e computadores...
+              </span>
             </div>
           </div>
         </div>

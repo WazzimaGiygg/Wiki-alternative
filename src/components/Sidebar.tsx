@@ -60,6 +60,7 @@ import {
 } from '../utils/subWikiHelpers';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { RecentlyReadService, RecentlyReadItem } from '../utils/recentlyReadService';
+import { ExtensionManager } from '../core/ExtensionManager';
 
 interface SidebarProps {
   currentView: ViewMode;
@@ -121,6 +122,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
       window.removeEventListener('storage', handleUpdate);
     };
   }, []);
+
+  const [, setSidebarExtensionTick] = React.useState(0);
+  React.useEffect(() => {
+    const unsub = ExtensionManager.getInstance().subscribe(() => {
+      setSidebarExtensionTick((prev) => prev + 1);
+    });
+    return unsub;
+  }, []);
+
+  const otherRulesData = ExtensionManager.getInstance().getOtherRulesData();
+  const isOtherRulesActive = ExtensionManager.getInstance().isExtensionEnabled('OtherRulesExtension') && otherRulesData.showInSidebar;
 
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
   const isWin1 = theme === 'win1';
@@ -1064,6 +1076,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <UserCheck size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
               {!isCollapsed && <span className="truncate">{t('sidebar.my_data')}</span>}
             </button>
+
+            {/* 3.05.3.m: Link de "Outras Regras" da extensão */}
+            {isOtherRulesActive && (
+              <button
+                onClick={() => onNavigate('other-rules')}
+                title={otherRulesData.title || 'Outras Regras Institucionais'}
+                className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                  currentView === 'other-rules'
+                    ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <Scale size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                {!isCollapsed && <span className="truncate">Outras Regras</span>}
+              </button>
+            )}
 
             {isSupportTicketsEnabled() && (
               <a

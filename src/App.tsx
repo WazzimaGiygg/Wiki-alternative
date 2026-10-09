@@ -54,6 +54,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { SmartTVView } from './components/SmartTVView';
 import { SmartTVInstallModal } from './components/SmartTVInstallModal';
 import { AppearanceSettingsView } from './components/AppearanceSettingsView';
+import { OtherRulesView } from './components/OtherRulesView';
 import { WindowsXPBootScreen } from './components/WindowsXPBootScreen';
 import { Windows7BootScreen } from './components/Windows7BootScreen';
 import { Windows10BootScreen } from './components/Windows10BootScreen';
@@ -123,19 +124,21 @@ export default function App() {
     ExtensionManager.getInstance().isExtensionLoaded('GeminiAssistantToolExtension')
   );
 
-  useEffect(() => {
-    const unsub = ExtensionManager.getInstance().subscribe(() => {
-      setIsGeminiExtensionActive(
-        ExtensionManager.getInstance().isExtensionLoaded('GeminiAssistantToolExtension')
-      );
-    });
-    return unsub;
-  }, []);
+  const [currentView, setCurrentView] = useState<ViewMode>(() => {
+    try {
+      const saved = sessionStorage.getItem('wikizero_last_view') as ViewMode | null;
+      if (saved) {
+        sessionStorage.removeItem('wikizero_last_view');
+        return saved;
+      }
+    } catch (_) {}
+    return 'hub';
+  });
+
   const [showPremiumModal, setShowPremiumModal] = useState<boolean>(false);
   const [premiumQuotaType, setPremiumQuotaType] = useState<'chats' | 'images' | 'notebook' | undefined>();
   const [showNotebookModal, setShowNotebookModal] = useState<boolean>(false);
 
-  const [currentView, setCurrentView] = useState<ViewMode>('hub');
   const [isVectorTabTransitioning, setIsVectorTabTransitioning] = useState<boolean>(false);
 
   useEffect(() => {
@@ -209,12 +212,52 @@ export default function App() {
 
   // Multi-theme state supporting light, dark, google, google-dark, win95, winxp, win7, win10, win31, genshin, android15, android23, stardew, repo, minecraft, roblox, nokia3310, win1, halflife
   const [theme, setTheme] = useState<AppTheme>(() => {
+    // 3.05.3.l: Se a personalização de aparência estiver desativada pelo burocrata, força tema claro com contraste adaptado
+    if (!ExtensionManager.getInstance().isAppearanceCustomizationAllowed()) {
+      return 'light';
+    }
     const saved = localStorage.getItem('wikizero_theme_v3') as AppTheme | null;
-    if (saved && (saved === 'light' || saved === 'dark' || saved === 'google' || saved === 'google-dark' || saved === 'win95' || saved === 'winxp' || saved === 'win7' || saved === 'win10' || saved === 'win31' || saved === 'wikidiota' || saved === 'genshin' || saved === 'android15' || saved === 'android23' || saved === 'stardew' || saved === 'repo' || saved === 'minecraft' || saved === 'roblox' || saved === 'nokia3310' || saved === 'win1' || saved === 'halflife')) {
+    if (saved && ExtensionManager.getInstance().isThemeAvailable(saved)) {
       return saved;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
+
+  const [, setAppExtensionTick] = useState(0);
+
+  useEffect(() => {
+    const unsub = ExtensionManager.getInstance().subscribe(() => {
+      setIsGeminiExtensionActive(
+        ExtensionManager.getInstance().isExtensionLoaded('GeminiAssistantToolExtension')
+      );
+      setAppExtensionTick((prev) => prev + 1);
+
+      // 3.05.3.l: Se aparência foi bloqueada na nuvem ou desativada, força a aparência padrão do Wiki
+      if (!ExtensionManager.getInstance().isAppearanceCustomizationAllowed()) {
+        setTheme('light');
+      } else {
+        // 3.05.3.l.I: Se o tema atual foi desativado nas extensões, volta para o padrão claro
+        setTheme((current) => {
+          if (!ExtensionManager.getInstance().isThemeAvailable(current)) {
+            return 'light';
+          }
+          return current;
+        });
+      }
+    });
+    return unsub;
+  }, []);
+
+  // Flash message após recarga automática
+  useEffect(() => {
+    try {
+      const flash = sessionStorage.getItem('wikizero_flash_msg');
+      if (flash) {
+        sessionStorage.removeItem('wikizero_flash_msg');
+        handleNotify(flash, 'success');
+      }
+    } catch (_) {}
+  }, []);
 
   // Controls classic Windows 3.1 boot startup animation
   const [showWin31Boot, setShowWin31Boot] = useState<boolean>(() => {
@@ -712,6 +755,17 @@ export default function App() {
 
   // === HANDLERS ===
   const handleSetTheme = (newTheme: AppTheme) => {
+    // 3.05.3.l: Bloqueio de mudança de aparência pelo burocrata
+    if (!ExtensionManager.getInstance().isAppearanceCustomizationAllowed()) {
+      handleNotify('A mudança de aparência está desabilitada pelo burocrata. A aparência padrão do Wiki está fixada.', 'warning');
+      setTheme('light');
+      return;
+    }
+    // 3.05.3.l.I: Se o tema específico estiver desativado como extensão
+    if (!ExtensionManager.getInstance().isThemeAvailable(newTheme)) {
+      handleNotify(`O tema "${newTheme}" faz parte de uma extensão desativada pelo Conselho de Burocratas.`, 'warning');
+      return;
+    }
     if (newTheme === 'win31') {
       setShowWin31Boot(true);
     } else if (newTheme === 'win95') {
@@ -727,11 +781,17 @@ export default function App() {
   };
 
   const handleToggleTheme = () => {
+    // 3.05.3.l: Se personalização de aparência estiver desativada pelo burocrata, bloqueia e mantém claro padrão
+    if (!ExtensionManager.getInstance().isAppearanceCustomizationAllowed()) {
+      handleNotify('A mudança de aparência está desabilitada pelo burocrata. A aparência padrão do Wiki está fixada.', 'warning');
+      setTheme('light');
+      return;
+    }
     if (theme === 'google') {
       setTheme('google-dark');
     } else if (theme === 'google-dark') {
       setTheme('google');
-    } else if (theme === 'dark') {
+    } else if (theme === 'dark' || isDark) {
       setTheme('light');
     } else {
       setTheme('dark');
@@ -1869,6 +1929,14 @@ export default function App() {
               onNavigate={handleNavigate}
               onOpenEditor={() => handleOpenNewEditor()}
               initialTab={editingEthicsInitialTab}
+            />
+          )}
+
+          {currentView === 'other-rules' && (
+            <OtherRulesView
+              currentUser={user}
+              onNavigate={handleNavigate}
+              onNotify={handleNotify}
             />
           )}
 
