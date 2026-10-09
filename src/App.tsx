@@ -341,6 +341,13 @@ export default function App() {
     root.style.removeProperty('--theme-text');
     root.style.removeProperty('--theme-font');
 
+    // 3.05.3.l.1: Garante aplicação explícita do contraste adaptado para o modo claro
+    root.classList.toggle('dark', isDark);
+    root.classList.toggle('light', !isDark);
+    root.classList.toggle('theme-light', theme === 'light');
+    root.setAttribute('data-theme', theme);
+    root.setAttribute('data-color-mode', isDark ? 'dark' : 'light');
+
     if (theme === 'dark') {
       root.classList.add('dark');
     } else if (theme === 'google') {
@@ -793,8 +800,10 @@ export default function App() {
       setTheme('google');
     } else if (theme === 'dark' || isDark) {
       setTheme('light');
+      handleNotify('Tema Claro (Contraste Adaptado) ativado.', 'info');
     } else {
       setTheme('dark');
+      handleNotify('Tema Escuro ativado.', 'info');
     }
   };
 

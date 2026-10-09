@@ -40,9 +40,32 @@
   }
 
   /* Modo Claro com Contraste Adaptado (Requisito 3.05.3.l.1) */
-  html:not(.dark) body {
+  html:not(.dark) body, html.light body {
     color: #0f172a;
     background-color: #f8fafc;
+  }
+
+  html:not(.dark) .font-wiki-body, html.light .font-wiki-body {
+    color: #0f172a;
+  }
+
+  html:not(.dark) .wiki-rendered-content, html.light .wiki-rendered-content {
+    color: #0f172a;
+  }
+
+  html:not(.dark) .wiki-rendered-content p, html.light .wiki-rendered-content p {
+    color: #1e293b;
+    line-height: 1.65;
+  }
+
+  html:not(.dark) .wiki-rendered-content a, html.light .wiki-rendered-content a {
+    color: #1d4ed8;
+    text-decoration-color: #93c5fd;
+  }
+
+  html:not(.dark) .wiki-rendered-content a:hover, html.light .wiki-rendered-content a:hover {
+    color: #1e40af;
+    text-decoration: underline;
   }
 
   .dark body {

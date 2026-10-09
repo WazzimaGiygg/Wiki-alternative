@@ -1223,10 +1223,10 @@ export const Header: React.FC<HeaderProps> = ({
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <h1 className="font-serif-heading font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
-                    {branding.systemName}
+                    {branding.wikiName}
                   </h1>
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-1 py-0.2 rounded-xs">
-                    Wiki
+                    {branding.systemName}
                   </span>
                 </div>
                 <p

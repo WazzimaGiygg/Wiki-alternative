@@ -1037,11 +1037,14 @@ ${tc.customCss || ''}
 
       // 3.05.3.q.2 & 3.05.3.q.3: Aguarda confirmação no Firestore para sincronização multi-computador
       try {
-        await FirebaseExtensionSyncService.getInstance().syncStatesToCloud(
+        const syncRes = await FirebaseExtensionSyncService.getInstance().syncStatesToCloud(
           this.extensionStates,
           currentUser,
           this.extensionSettings
         );
+        if (!syncRes.success) {
+          console.warn('[ExtensionManager] Aviso na sincronização do Firestore:', syncRes.message);
+        }
         if (customIdx >= 0) {
           await FirebaseExtensionSyncService.getInstance().saveExtensionToCloud(this.customExtensions[customIdx], currentUser);
         }
@@ -1122,11 +1125,14 @@ ${tc.customCss || ''}
 
       // 3.05.3.q.2 & 3.05.3.q.3: Aguarda confirmação no Firestore para sincronização multi-computador
       try {
-        await FirebaseExtensionSyncService.getInstance().syncStatesToCloud(
+        const syncRes = await FirebaseExtensionSyncService.getInstance().syncStatesToCloud(
           this.extensionStates,
           currentUser,
           this.extensionSettings
         );
+        if (!syncRes.success) {
+          console.warn('[ExtensionManager] Aviso na sincronização do Firestore:', syncRes.message);
+        }
         if (customIdx >= 0) {
           await FirebaseExtensionSyncService.getInstance().saveExtensionToCloud(this.customExtensions[customIdx], currentUser);
         }

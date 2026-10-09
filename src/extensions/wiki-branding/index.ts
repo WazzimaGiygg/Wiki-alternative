@@ -26,7 +26,7 @@ export default class WikiBrandingExtension implements WikiExtension {
   }
 
   getCategory(): ExtensionCategory {
-    return 'feature';
+    return 'interface';
   }
 
   isCore(): boolean {

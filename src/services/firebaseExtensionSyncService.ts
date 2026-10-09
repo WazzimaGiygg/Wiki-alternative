@@ -29,6 +29,23 @@ export const EXTENSION_FIREBASE_COLLECTIONS = {
 
 export type SyncStateStatus = 'connected' | 'connecting' | 'offline' | 'error';
 
+function cleanFirestorePayload<T>(obj: T): T {
+  if (obj === null || obj === undefined) return null as any;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    return obj
+      .filter((item) => item !== undefined)
+      .map((item) => cleanFirestorePayload(item)) as any;
+  }
+  const clean: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      clean[key] = cleanFirestorePayload(value);
+    }
+  }
+  return clean as T;
+}
+
 /**
  * Serviço de Sincronização de Extensões em Nuvem via Firebase Firestore.
  * Atende às especificações da Versão 3.304:
@@ -125,13 +142,29 @@ export class FirebaseExtensionSyncService {
       return;
     }
 
-    // 1. Escuta do Registro Global de Estados (global_states)
+    // 1. Escuta e Busca Imediata do Registro Global de Estados (global_states)
     try {
       const regDocRef = doc(
         db,
         EXTENSION_FIREBASE_COLLECTIONS.REGISTRY,
         EXTENSION_FIREBASE_COLLECTIONS.REGISTRY_DOC
       );
+
+      // 3.05.3.q.3: Busca inicial imediata com getDoc para carregar estados em novas janelas/computadores
+      getDoc(regDocRef)
+        .then((snap) => {
+          if (snap.exists()) {
+            const data = snap.data() as FirebaseExtensionRegistryDoc;
+            if (data && data.states && typeof data.states === 'object') {
+              this.lastSyncedAt = data.updatedAt || new Date().toISOString();
+              this.setStatus('connected');
+              onStatesUpdate(data.states, data.settings);
+            }
+          }
+        })
+        .catch((e) => {
+          console.warn('[FirebaseExtensionSyncService] Aviso na busca inicial getDoc de estados:', e);
+        });
 
       this.registryUnsubscribe = onSnapshot(
         regDocRef,
@@ -223,10 +256,9 @@ export class FirebaseExtensionSyncService {
     try {
       const activeCount = Object.values(states).filter(Boolean).length;
       const totalCount = Object.keys(states).length;
-      const payload: FirebaseExtensionRegistryDoc = {
+      const rawPayload: FirebaseExtensionRegistryDoc = {
         id: EXTENSION_FIREBASE_COLLECTIONS.REGISTRY_DOC,
         states,
-        settings: settings || undefined,
         version: '3.05',
         updatedAt: new Date().toISOString(),
         updatedBy: user?.displayName || user?.username || user?.email || 'Burocrata Administrador',
@@ -234,6 +266,12 @@ export class FirebaseExtensionSyncService {
         activeCount,
         totalExtensions: totalCount,
       };
+
+      if (settings && Object.keys(settings).length > 0) {
+        rawPayload.settings = settings;
+      }
+
+      const payload = cleanFirestorePayload(rawPayload);
 
       const docRef = doc(db, EXTENSION_FIREBASE_COLLECTIONS.REGISTRY, EXTENSION_FIREBASE_COLLECTIONS.REGISTRY_DOC);
       await setDoc(docRef, payload, { merge: true });
@@ -245,17 +283,14 @@ export class FirebaseExtensionSyncService {
           const extDocId = this.sanitizeDocId(name);
           const extDocRef = doc(db, EXTENSION_FIREBASE_COLLECTIONS.EXTENSIONS, extDocId);
           const extSettings = settings ? settings[name] : undefined;
-          await setDoc(
-            extDocRef,
-            {
-              name,
-              enabled: isEnabled,
-              ...(extSettings ? { settings: extSettings } : {}),
-              updatedAt: payload.updatedAt,
-              updatedBy: payload.updatedBy,
-            },
-            { merge: true }
-          );
+          const individualData = cleanFirestorePayload({
+            name,
+            enabled: isEnabled,
+            ...(extSettings ? { settings: extSettings } : {}),
+            updatedAt: payload.updatedAt,
+            updatedBy: payload.updatedBy,
+          });
+          await setDoc(extDocRef, individualData, { merge: true });
         } catch (e) {
           console.warn(`[FirebaseExtensionSyncService] Falha ao sincronizar documento individual '${name}':`, e);
         }
