@@ -54,6 +54,11 @@ import {
   GITHUB_REPO_CONFIG,
 } from '../services/githubDiffService';
 import { GitHubDiffViewer } from './GitHubDiffViewer';
+import {
+  exportGitHubUpdatesToPdf,
+  sortCommitsByClassification,
+  GitHubPdfClassificationMode,
+} from '../utils/githubUpdatesPdfExport';
 
 interface SiteUpdatesViewProps {
   currentUser: UserProfile | null;
@@ -97,6 +102,40 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
   const [compareResult, setCompareResult] = useState<GitHubCompareResult | null>(null);
   const [isComparing, setIsComparing] = useState(false);
   const [compareError, setCompareError] = useState<string | null>(null);
+
+  // Estados de Classificação e Exportação em PDF de Mudanças do GitHub
+  const [gitSortMode, setGitSortMode] = useState<GitHubPdfClassificationMode>('date-desc');
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfClassification, setPdfClassification] = useState<GitHubPdfClassificationMode>('date-desc');
+  const [pdfIncludeFiles, setPdfIncludeFiles] = useState(true);
+  const [pdfIncludeStats, setPdfIncludeStats] = useState(true);
+  const [pdfIncludeReleases, setPdfIncludeReleases] = useState(true);
+  const [pdfOrientation, setPdfOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  // Exporta as mudanças do GitHub e atualizações em PDF
+  const handleExportPdf = async (customClassification?: GitHubPdfClassificationMode) => {
+    setIsExportingPdf(true);
+    try {
+      const mode = customClassification || pdfClassification;
+      await exportGitHubUpdatesToPdf(gitCommits, updates, {
+        classification: mode,
+        includeFiles: pdfIncludeFiles,
+        includeStats: pdfIncludeStats,
+        includeReleases: pdfIncludeReleases,
+        orientation: pdfOrientation,
+        generatedBy: currentUser?.displayName || currentUser?.username || 'WikiZero Usuário',
+        filterQuery: gitSearchQuery,
+      });
+      showToast('✅ Relatório em PDF gerado e baixado com sucesso!');
+      setShowPdfModal(false);
+    } catch (err: any) {
+      console.error('Erro ao exportar PDF de atualizações:', err);
+      showToast('Falha ao gerar o relatório em PDF. Tente novamente.');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   // New Update Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -504,9 +543,9 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
     });
   }, [updates, selectedCategory, searchQuery]);
 
-  // Commits filtrados para a aba de Diffs do GitHub
+  // Commits filtrados e ordenados de acordo com a classificação selecionada
   const filteredGitCommits = useMemo(() => {
-    return (gitCommits || []).filter((c) => {
+    const list = (gitCommits || []).filter((c) => {
       if (!c) return false;
       const q = gitSearchQuery.toLowerCase().trim();
       if (!q) return true;
@@ -520,7 +559,9 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
         c.files && c.files.some((f) => f && f.filename && f.filename.toLowerCase().includes(q));
       return matchMessage || matchAuthor || matchSha || matchFiles;
     });
-  }, [gitCommits, gitSearchQuery]);
+
+    return sortCommitsByClassification(list, gitSortMode);
+  }, [gitCommits, gitSearchQuery, gitSortMode]);
 
   const latestVersion = updates.length > 0 ? updates[0].version : 'v3.3.0';
 
@@ -648,6 +689,15 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
               <GitBranch size={12} />
               {GITHUB_REPO_CONFIG.branch}
             </span>
+            <button
+              type="button"
+              onClick={() => setShowPdfModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-400/40 transition cursor-pointer shadow-xs"
+              title="Exportar recentes atualizações e mudanças no GitHub em PDF"
+            >
+              <Download size={12} className="text-red-300" />
+              <span>Exportar PDF</span>
+            </button>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-serif-heading font-bold text-white tracking-tight">
@@ -806,6 +856,16 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
                   <span>{isRefreshingGitHub ? 'Sincronizando...' : 'Atualizar do GitHub'}</span>
                 </button>
 
+                <button
+                  type="button"
+                  onClick={() => setShowPdfModal(true)}
+                  className="px-3.5 py-2 text-xs font-bold rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                  title="Exportar recentes atualizações e mudanças no GitHub em PDF classificados por data ou atualização"
+                >
+                  <Download size={14} />
+                  <span>Exportar em PDF</span>
+                </button>
+
                 <a
                   href={GITHUB_REPO_CONFIG.repoUrl}
                   target="_blank"
@@ -819,8 +879,8 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
               </div>
             </div>
 
-            {/* Barra de Busca de Commits */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            {/* Barra de Busca de Commits e Classificação */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
               <div className="relative flex-1">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -838,6 +898,30 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
                     Limpar
                   </button>
                 )}
+              </div>
+
+              {/* Seletor de Classificação / Ordenação das Mudanças */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs">
+                  <SlidersHorizontal size={13} className="text-blue-500 shrink-0" />
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Classificar:</span>
+                  <select
+                    value={gitSortMode}
+                    onChange={(e) => {
+                      const mode = e.target.value as GitHubPdfClassificationMode;
+                      setGitSortMode(mode);
+                      setPdfClassification(mode);
+                    }}
+                    className="bg-transparent border-none text-slate-800 dark:text-slate-200 font-semibold focus:outline-hidden cursor-pointer text-xs"
+                    title="Selecione o critério de classificação para exibição e exportação"
+                  >
+                    <option value="date-desc">📅 Por Data (Mais Recente Primeiro)</option>
+                    <option value="date-asc">⏳ Por Data (Mais Antiga Primeiro)</option>
+                    <option value="update-type">🏷️ Por Atualização (Tipo / Categoria)</option>
+                    <option value="update-impact">⚡ Por Atualização (Maior Impacto / Diffs)</option>
+                    <option value="update-title">🔤 Por Atualização (Título A-Z)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
@@ -1954,6 +2038,262 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+      {/* ========================================================================= */}
+      {/* MODAL: EXPORTAR ATUALIZAÇÕES E MUDANÇAS NO GITHUB EM PDF                 */}
+      {/* ========================================================================= */}
+      {showPdfModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-7 space-y-6 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center border border-red-200 dark:border-red-800/60 shadow-xs">
+                  <Download size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    Exportar Mudanças do GitHub em PDF
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Gere um documento PDF profissional classificado por atualização ou data.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPdfModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Repositório & Branch Info */}
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between text-xs font-mono">
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                <Terminal size={14} className="text-blue-500" />
+                <span>{GITHUB_REPO_CONFIG.owner}/{GITHUB_REPO_CONFIG.repo}</span>
+              </div>
+              <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                branch: {GITHUB_REPO_CONFIG.branch}
+              </span>
+            </div>
+
+            {/* SEÇÃO 1: MODO DE CLASSIFICAÇÃO */}
+            <div className="space-y-3">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                1. Critério de Classificação
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Opção A: Por Data (Recente) */}
+                <button
+                  type="button"
+                  onClick={() => setPdfClassification('date-desc')}
+                  className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                    pdfClassification === 'date-desc'
+                      ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-500 ring-2 ring-blue-500/20'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      📅 Por Data (Recente)
+                    </span>
+                    {pdfClassification === 'date-desc' && (
+                      <CheckCircle2 size={14} className="text-blue-600 dark:text-blue-400" />
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Do commit mais recente para o mais antigo (ordem cronológica padrão).
+                  </span>
+                </button>
+
+                {/* Opção B: Por Data (Antiga) */}
+                <button
+                  type="button"
+                  onClick={() => setPdfClassification('date-asc')}
+                  className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                    pdfClassification === 'date-asc'
+                      ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-500 ring-2 ring-blue-500/20'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      ⏳ Por Data (Antiga)
+                    </span>
+                    {pdfClassification === 'date-asc' && (
+                      <CheckCircle2 size={14} className="text-blue-600 dark:text-blue-400" />
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Do commit mais antigo ao mais novo (evolução histórica crescente).
+                  </span>
+                </button>
+
+                {/* Opção C: Por Atualização (Tipo / Categoria) */}
+                <button
+                  type="button"
+                  onClick={() => setPdfClassification('update-type')}
+                  className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                    pdfClassification === 'update-type'
+                      ? 'bg-purple-50/80 dark:bg-purple-950/40 border-purple-500 ring-2 ring-purple-500/20'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      🏷️ Por Atualização (Tipo)
+                    </span>
+                    {pdfClassification === 'update-type' && (
+                      <CheckCircle2 size={14} className="text-purple-600 dark:text-purple-400" />
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Agrupado em Novidades, Correções, Melhorias, Segurança e Design.
+                  </span>
+                </button>
+
+                {/* Opção D: Por Atualização (Impacto / Diffs) */}
+                <button
+                  type="button"
+                  onClick={() => setPdfClassification('update-impact')}
+                  className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                    pdfClassification === 'update-impact'
+                      ? 'bg-purple-50/80 dark:bg-purple-950/40 border-purple-500 ring-2 ring-purple-500/20'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      ⚡ Por Atualização (Impacto)
+                    </span>
+                    {pdfClassification === 'update-impact' && (
+                      <CheckCircle2 size={14} className="text-purple-600 dark:text-purple-400" />
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Classificado por maior volume de diffs (+ adições / - deleções).
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* SEÇÃO 2: OPÇÕES DE CONTEÚDO E PÁGINA */}
+            <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                2. Opções do Relatório
+              </label>
+
+              <div className="space-y-2 text-xs">
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={pdfIncludeStats}
+                    onChange={(e) => setPdfIncludeStats(e.target.checked)}
+                    className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span>Incluir estatísticas de diff (+ adições / - deleções)</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={pdfIncludeFiles}
+                    onChange={(e) => setPdfIncludeFiles(e.target.checked)}
+                    className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span>Incluir lista de arquivos impactados por commit</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={pdfIncludeReleases}
+                    onChange={(e) => setPdfIncludeReleases(e.target.checked)}
+                    className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span>Incluir notas de release oficiais do sistema</span>
+                </label>
+              </div>
+
+              {/* Orientação da página */}
+              <div className="flex items-center gap-3 pt-2 text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold">Orientação:</span>
+                <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                  <input
+                    type="radio"
+                    name="pdf-orientation"
+                    checked={pdfOrientation === 'portrait'}
+                    onChange={() => setPdfOrientation('portrait')}
+                    className="text-blue-600"
+                  />
+                  <span>Retrato (A4 Vertical)</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                  <input
+                    type="radio"
+                    name="pdf-orientation"
+                    checked={pdfOrientation === 'landscape'}
+                    onChange={() => setPdfOrientation('landscape')}
+                    className="text-blue-600"
+                  />
+                  <span>Paisagem (A4 Horizontal)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* SEÇÃO 3: AÇÕES DE EXPORTAÇÃO */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPdfModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                >
+                  Cancelar
+                </button>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Atalho Rápido por Data */}
+                  <button
+                    type="button"
+                    onClick={() => handleExportPdf('date-desc')}
+                    disabled={isExportingPdf}
+                    className="px-3 py-2 text-xs font-bold rounded-xl border border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer disabled:opacity-50"
+                    title="Exportar imediatamente com classificação por data recente"
+                  >
+                    <span>📅 Baixar por Data</span>
+                  </button>
+
+                  {/* Atalho Rápido por Atualização */}
+                  <button
+                    type="button"
+                    onClick={() => handleExportPdf('update-type')}
+                    disabled={isExportingPdf}
+                    className="px-3 py-2 text-xs font-bold rounded-xl border border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50 transition cursor-pointer disabled:opacity-50"
+                    title="Exportar imediatamente com classificação por tipo de atualização"
+                  >
+                    <span>🏷️ Baixar por Atualização</span>
+                  </button>
+
+                  {/* Botão de Exportação Principal */}
+                  <button
+                    type="button"
+                    onClick={() => handleExportPdf()}
+                    disabled={isExportingPdf}
+                    className="px-4 py-2 text-xs font-bold rounded-xl bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 shadow-md transition cursor-pointer disabled:opacity-50"
+                  >
+                    <Download size={14} className={isExportingPdf ? 'animate-bounce' : ''} />
+                    <span>{isExportingPdf ? 'Gerando PDF...' : 'Gerar e Baixar PDF'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
