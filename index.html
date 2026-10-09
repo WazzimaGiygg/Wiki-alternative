@@ -4,9 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WikiWorldWeb - Enciclopédia Livre</title>
-    <!-- Filter benign Vite websocket disconnection logs in sandboxed dev environment -->
+    <!-- Filter benign Vite websocket disconnection logs and purge stale dev service workers -->
     <script>
       (function () {
+        // Prevent stale service workers and cached pre-bundled Vite chunks in dev mode
+        if (typeof window !== 'undefined' && (window.location.hostname.includes('ais-dev') || window.location.port === '3000')) {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
+              for (var i = 0; i < registrations.length; i++) {
+                registrations[i].unregister();
+              }
+            });
+          }
+          if ('caches' in window) {
+            caches.keys().then(function (keys) {
+              for (var j = 0; j < keys.length; j++) {
+                caches.delete(keys[j]);
+              }
+            });
+          }
+        }
+
         // Intercept Vite development WebSockets to prevent connection refused errors in sandboxed containers
         if (typeof window !== 'undefined' && window.WebSocket) {
           var NativeWebSocket = window.WebSocket;

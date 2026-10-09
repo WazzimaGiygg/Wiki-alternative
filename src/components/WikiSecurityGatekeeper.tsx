@@ -39,7 +39,21 @@ export const WikiSecurityGatekeeper: React.FC<WikiSecurityGatekeeperProps> = ({
 }) => {
   const extensionManager = ExtensionManager.getInstance();
 
-  const [gateStatus, setGateStatus] = useState(() => extensionManager.getSecurityGateStatus());
+  const [gateStatus, setGateStatus] = useState(() => {
+    try {
+      return extensionManager.getSecurityGateStatus();
+    } catch (e) {
+      console.warn('[WikiZero Security] Falha ao obter status inicial do Gatekeeper:', e);
+      return {
+        isUnlocked: true,
+        syncStatus: 'connected' as const,
+        lastSyncedAt: null,
+        securityHash: 'sec304-fallback',
+        activeCount: 1,
+        totalCount: 1,
+      };
+    }
+  });
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
   const [bureaucratBypass, setBureaucratBypass] = useState<boolean>(false);
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);

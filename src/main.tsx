@@ -122,7 +122,34 @@ function showUpdateNotificationToast(onApplyUpdate: () => void): void {
 function setupServiceWorkerUpdateMonitoring(): void {
   if (typeof window === 'undefined') return;
 
-  // 1. Registro inteligente e monitoramento via vite-plugin-pwa
+  // Em ambiente de desenvolvimento do Vite (AI Studio Sandbox), o Service Worker não deve
+  // interceptar chunks pré-empacotados para prevenir conflitos de múltiplas instâncias do React
+  if (import.meta.env.DEV) {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const reg of registrations) {
+          reg.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then((keys) => {
+        for (const key of keys) {
+          caches.delete(key);
+        }
+      });
+    }
+
+    // Expõe método global para permitir testes manuais do banner de atualização mesmo no ambiente dev
+    (window as any).simulateWikiZeroUpdate = () => {
+      showUpdateNotificationToast(() => {
+        window.location.reload();
+      });
+    };
+    return;
+  }
+
+  // 1. Registro inteligente e monitoramento via vite-plugin-pwa (Ambiente de Produção / PWA Instalado)
   try {
     const updateSW = registerSW({
       immediate: true,
