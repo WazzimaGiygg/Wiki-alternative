@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, LgpdAccountDeletionRequest } from '../types';
 import { StorageService } from '../services/storageService';
+import { generateLgpdRemovalPdf } from '../utils/lgpdRemovalPdfExport';
 
 interface AdminDataRemovalRequestsViewProps {
   currentUser: UserProfile | null;
@@ -291,6 +292,21 @@ export const AdminDataRemovalRequestsView: React.FC<AdminDataRemovalRequestsView
     setTimeout(() => setExportFeedback(null), 3000);
   };
 
+  const handleExportPdf = async () => {
+    try {
+      await generateLgpdRemovalPdf(requests, {
+        generatedBy: currentUser?.displayName || 'Encarregado DPO',
+        statusFilter: statusFilter,
+      });
+      setExportFeedback('Relatório oficial LGPD em PDF gerado com sucesso!');
+      setTimeout(() => setExportFeedback(null), 3000);
+    } catch (err) {
+      console.error('Erro ao gerar PDF da auditoria LGPD:', err);
+      setExportFeedback('Falha ao gerar o relatório em PDF.');
+      setTimeout(() => setExportFeedback(null), 3000);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-16">
       {/* Breadcrumb & Navigation */}
@@ -377,6 +393,14 @@ export const AdminDataRemovalRequestsView: React.FC<AdminDataRemovalRequestsView
             >
               <FileSpreadsheet size={13} className="text-emerald-600" />
               <span>CSV (DPO)</span>
+            </button>
+            <button
+              onClick={handleExportPdf}
+              title="Exportar relatório oficial de auditoria LGPD em PDF"
+              className="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+            >
+              <Download size={13} />
+              <span>PDF Oficial (DPO)</span>
             </button>
           </div>
         </div>

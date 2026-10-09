@@ -257,7 +257,6 @@ export async function exportGitHubUpdatesToPdf(
   const contentWidth = pageWidth - margin * 2;
 
   let currentY = margin;
-  let pageNumber = 1;
 
   const formatDatePtBr = (dateStr: string) => {
     try {
@@ -274,63 +273,37 @@ export async function exportGitHubUpdatesToPdf(
     }
   };
 
-  const drawHeader = () => {
+  const drawMiniHeader = () => {
     doc.saveGraphicsState();
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(30, 64, 175); // Royal blue
-    doc.text('WIKIZERO / WIKIWORLDWEB', margin, 9);
+    doc.text('WIKIZERO • CHANGELOG & DIFFS DO GITHUB', margin, 10);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139);
     doc.text(
-      `Repositório Oficial: ${GITHUB_REPO_CONFIG.owner}/${GITHUB_REPO_CONFIG.repo} (branch ${GITHUB_REPO_CONFIG.branch})`,
-      margin + 52,
-      9
+      `${GITHUB_REPO_CONFIG.owner}/${GITHUB_REPO_CONFIG.repo} (${GITHUB_REPO_CONFIG.branch})`,
+      pageWidth - margin,
+      10,
+      { align: 'right' }
     );
 
     // Linha divisória de cabeçalho
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.3);
-    doc.line(margin, 11, pageWidth - margin, 11);
+    doc.line(margin, 12, pageWidth - margin, 12);
     doc.restoreGraphicsState();
-  };
-
-  const drawFooter = () => {
-    doc.saveGraphicsState();
-    const footerY = pageHeight - 8;
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
-    doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.8);
-    doc.setTextColor(148, 163, 184);
-    doc.text(
-      `Código Aberto sob licença pública GPLv3 • https://github.com/${GITHUB_REPO_CONFIG.owner}/${GITHUB_REPO_CONFIG.repo}`,
-      margin,
-      footerY
-    );
-
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Página ${pageNumber}`, pageWidth - margin, footerY, { align: 'right' });
-    doc.restoreGraphicsState();
+    currentY = 16;
   };
 
   const checkPageBreak = (neededHeight: number) => {
-    if (currentY + neededHeight > pageHeight - margin - 8) {
-      drawFooter();
+    if (currentY + neededHeight > pageHeight - margin - 12) {
       doc.addPage();
-      pageNumber++;
-      currentY = margin + 4;
-      drawHeader();
+      drawMiniHeader();
     }
   };
-
-  // Desenha o cabeçalho na primeira página
-  drawHeader();
-  currentY += 4;
 
   // =========================================================================
   // 1. HERO BANNER DO RELATÓRIO
@@ -704,8 +677,71 @@ export async function exportGitHubUpdatesToPdf(
     currentY += cardHeight + 2.5;
   }
 
-  // Finaliza a última página desenhando o rodapé
-  drawFooter();
+  // =========================================================================
+  // 5. CAIXA DE GOVERNANÇA, CÓDIGO ABERTO & AUDITORIA
+  // =========================================================================
+  checkPageBreak(28);
+
+  doc.setFillColor(248, 250, 252); // slate-50
+  doc.setDrawColor(226, 232, 240); // slate-200
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, currentY, contentWidth, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(30, 41, 59);
+  doc.text('Governança, Código Aberto & Rastreabilidade Técnica', margin + 4, currentY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.2);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `• Repositório público versionado sob a licença pública GPLv3 • https://github.com/${GITHUB_REPO_CONFIG.owner}/${GITHUB_REPO_CONFIG.repo}`,
+    margin + 4,
+    currentY + 11
+  );
+  doc.text(
+    `• Rastreabilidade total de commits, integridade criptográfica SHA-1 e autoria auditável de código.`,
+    margin + 4,
+    currentY + 16
+  );
+  doc.text(
+    `• Em conformidade com o Marco Civil da Internet (Lei 12.965/2014) e governança de dados da LGPD (Lei 13.709/2018).`,
+    margin + 4,
+    currentY + 21
+  );
+
+  currentY += 28;
+
+  // =========================================================================
+  // 6. RODAPÉ UNIFICADO EM TODAS AS PÁGINAS (DOIS PASSOS)
+  // =========================================================================
+  const drawPageFooter = (pageNum: number, totalPages: number) => {
+    doc.saveGraphicsState();
+    const footerY = pageHeight - 8;
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(148, 163, 184);
+    doc.text(
+      `WikiZero • Changelog Oficial do GitHub • Relatório Gerado Automaticamente`,
+      margin,
+      footerY
+    );
+
+    doc.setFont('courier', 'bold');
+    doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - margin, footerY, { align: 'right' });
+    doc.restoreGraphicsState();
+  };
+
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    drawPageFooter(p, totalPages);
+  }
 
   // Nome do arquivo gerado para download
   const dateSlug = new Date().toISOString().slice(0, 10);

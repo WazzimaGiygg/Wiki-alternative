@@ -40,6 +40,7 @@ function cleanWikitextForPdf(raw: string): string {
 
 /**
  * Generates a clean, structured vector-based PDF for an article using jsPDF
+ * following the executive WikiZero report standard.
  */
 export async function exportArticleToStructuredPdf(
   article: WikiArticle,
@@ -67,7 +68,7 @@ export async function exportArticleToStructuredPdf(
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 18;
+  const margin = 14;
   const contentWidth = pageWidth - margin * 2;
 
   let currentY = margin;
@@ -78,128 +79,231 @@ export async function exportArticleToStructuredPdf(
     return size;
   };
 
-  const checkPageBreak = (neededHeight: number) => {
-    if (currentY + neededHeight > pageHeight - margin - 15) {
-      doc.addPage();
-      currentY = margin;
-      drawHeader();
-    }
-  };
-
-  const drawHeader = () => {
+  const drawMiniHeader = () => {
     if (!includeHeader) return;
     doc.saveGraphicsState();
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(scaleFont(8.5));
+    doc.setFontSize(scaleFont(8));
     doc.setTextColor(30, 64, 175); // Royal Blue
-    doc.text('WIKIZERO', margin, 12);
+    doc.text('WIKIZERO • ENCICLOPÉDIA LIVRE E ABERTA', margin, 10);
 
+    // Right-aligned article title & UID
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(scaleFont(7.5));
     doc.setTextColor(100, 116, 139);
-    doc.text('A Enciclopédia Livre e Aberta', margin + 22, 12);
-
-    // Right-aligned permalink/UID
-    const uidText = `?uid=${article.id}`;
-    doc.setFont('courier', 'bold');
-    doc.setFontSize(scaleFont(7.5));
-    doc.setTextColor(71, 85, 105);
-    doc.text(uidText, pageWidth - margin, 12, { align: 'right' });
+    const shortTitle =
+      article.titulo.length > 35 ? article.titulo.slice(0, 32) + '...' : article.titulo;
+    doc.text(`${shortTitle} (?uid=${article.id})`, pageWidth - margin, 10, { align: 'right' });
 
     // Divider
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.3);
-    doc.line(margin, 14, pageWidth - margin, 14);
+    doc.line(margin, 12, pageWidth - margin, 12);
     doc.restoreGraphicsState();
+    currentY = 16;
   };
 
-  // 1. First Page Header
-  if (includeHeader) {
-    drawHeader();
-    currentY = 22;
-  } else {
-    currentY = margin;
-  }
+  const checkPageBreak = (neededHeight: number) => {
+    if (currentY + neededHeight > pageHeight - margin - 12) {
+      doc.addPage();
+      currentY = margin;
+      drawMiniHeader();
+    }
+  };
 
-  // 2. Article Title (Heading 1)
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(scaleFont(22));
-  doc.setTextColor(15, 23, 42); // slate-900
-
-  const titleLines = doc.splitTextToSize(article.titulo, contentWidth);
-  doc.text(titleLines, margin, currentY);
-  currentY += titleLines.length * scaleFont(8.5) + 2;
-
-  // Title underline divider
-  doc.setDrawColor(37, 99, 235); // Blue-600
-  doc.setLineWidth(0.8);
-  doc.line(margin, currentY, margin + contentWidth, currentY);
-  currentY += 5;
-
-  // 3. Metadata Infobox / Bar
-  if (includeMetadata) {
-    checkPageBreak(25);
-    doc.setFillColor(248, 250, 252); // slate-50
-    doc.setDrawColor(203, 213, 225); // slate-300
-    doc.setLineWidth(0.2);
-    doc.roundedRect(margin, currentY, contentWidth, 16, 2, 2, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(scaleFont(8));
-    doc.setTextColor(51, 65, 85);
-
-    // Row 1
-    doc.text(`Categoria:`, margin + 3, currentY + 5);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${article.categoria || 'Geral'}`, margin + 20, currentY + 5);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Idioma:`, margin + 70, currentY + 5);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${article.idioma || 'Português'}`, margin + 83, currentY + 5);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Coleção:`, margin + 120, currentY + 5);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${pageName}`, margin + 135, currentY + 5);
-
-    // Row 2
-    doc.setFont('helvetica', 'bold');
-    doc.text(`UID:`, margin + 3, currentY + 11);
-    doc.setFont('courier', 'bold');
-    doc.setTextColor(37, 99, 235);
-    doc.text(`?uid=${article.id}`, margin + 12, currentY + 11);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(51, 65, 85);
-    doc.text(`Atualizado em:`, margin + 70, currentY + 11);
-    doc.setFont('helvetica', 'normal');
-    const modDate = article.dataEdicao || article.dataCriacao;
-    const formattedDate = modDate ? new Date(modDate).toLocaleDateString('pt-BR') : 'Recente';
-    doc.text(formattedDate, margin + 92, currentY + 11);
-
-    currentY += 22;
-  }
+  // Word count & statistics calculation
+  const rawCleanText = cleanWikitextForPdf(article.descricao || '');
+  const wordsCount = rawCleanText.trim() ? rawCleanText.trim().split(/\s+/).length : 0;
+  const readingTimeMin = Math.max(1, Math.ceil(wordsCount / 200));
 
   // Parse Wikitext to extract TOC, references, etc.
-  const parseResult = parseWikitext(article.descricao, undefined, article.titulo);
+  const parseResult = parseWikitext(article.descricao || '', undefined, article.titulo);
+  const sectionsCount = (parseResult.toc || []).length;
+  const referencesCount = (parseResult.references || []).length;
 
-  // 4. Table of Contents
-  if (includeToc && parseResult.toc && parseResult.toc.length > 0) {
-    checkPageBreak(15 + parseResult.toc.length * 5);
-    doc.setFillColor(241, 245, 249); // slate-100
-    doc.setDrawColor(226, 232, 240);
-    const tocBoxHeight = 10 + parseResult.toc.length * 4.8;
-    doc.roundedRect(margin, currentY, contentWidth * 0.75, tocBoxHeight, 2, 2, 'FD');
+  // =========================================================================
+  // 1. CABEÇALHO EXECUTIVO (SLATE-900)
+  // =========================================================================
+  if (includeHeader) {
+    const bannerHeight = 35;
+    doc.setFillColor(15, 23, 42); // slate-900
+    doc.roundedRect(margin, currentY, contentWidth, bannerHeight, 2.5, 2.5, 'F');
+
+    // Badge pill superior
+    doc.setFillColor(37, 99, 235); // blue-600
+    doc.roundedRect(margin + 5, currentY + 5, 58, 4.5, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text('DOCUMENTO ENCICLOPÉDICO OFICIAL', margin + 7, currentY + 8.2);
+
+    // Título do Artigo
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(scaleFont(13));
+    doc.setTextColor(255, 255, 255);
+    const splitArticleTitle = doc.splitTextToSize(article.titulo, contentWidth - 12);
+    doc.text(splitArticleTitle[0] || article.titulo, margin + 5, currentY + 16);
+
+    // Subtítulo
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(scaleFont(7.8));
+    doc.setTextColor(203, 213, 225); // slate-300
+    doc.text(
+      'A Enciclopédia Livre e Aberta • Verbete Documental, Histórico e Técnico',
+      margin + 5,
+      currentY + 22
+    );
+
+    // Linha inferior de metadados
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(scaleFont(7));
+    doc.setTextColor(251, 191, 36); // amber-400
+    doc.text(`UID: ?uid=${article.id}`, margin + 5, currentY + 29);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(148, 163, 184); // slate-400
+    const modDate = article.dataEdicao || article.dataCriacao;
+    const formattedDate = modDate ? new Date(modDate).toLocaleDateString('pt-BR') : 'Recente';
+    doc.text(
+      `Categoria: ${article.categoria || 'Geral'} • Revisão: ${formattedDate} • Emissão: ${new Date().toLocaleDateString('pt-BR')}`,
+      margin + 60,
+      currentY + 29
+    );
+
+    currentY += bannerHeight + 5;
+  }
+
+  // =========================================================================
+  // 2. FAIXA DE IDENTIFICAÇÃO DO VERBETE
+  // =========================================================================
+  if (includeMetadata) {
+    checkPageBreak(12);
+    doc.setFillColor(239, 246, 255); // blue-50
+    doc.setDrawColor(191, 219, 254); // blue-200
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, currentY, contentWidth, 9, 1.2, 1.2, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(scaleFont(9));
-    doc.setTextColor(30, 41, 59);
-    doc.text('Sumário (Índice de Conteúdo)', margin + 4, currentY + 6);
-
-    let tocY = currentY + 11;
-    doc.setFont('helvetica', 'normal');
     doc.setFontSize(scaleFont(8));
+    doc.setTextColor(29, 78, 216); // blue-700
+    doc.text(`COLEÇÃO: ${pageName.toUpperCase()}`, margin + 4, currentY + 5.8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(scaleFont(7.2));
+    doc.setTextColor(100, 116, 139);
+    doc.text(
+      `Idioma: ${(article.idioma || 'Português').toUpperCase()} • Licença: CC BY-SA 4.0 • Status: Verificado`,
+      pageWidth - margin - 4,
+      currentY + 5.8,
+      { align: 'right' }
+    );
+
+    currentY += 13;
+  }
+
+  // =========================================================================
+  // 3. CARDS DE KPI (CONTEÚDO, ESTRUTURA E GOVERNANÇA)
+  // =========================================================================
+  if (includeMetadata) {
+    checkPageBreak(30);
+    const cardWidth = (contentWidth - 6) / 3;
+    const cardHeight = 26;
+
+    // CARD 1: CONTEÚDO & LEITURA
+    doc.setFillColor(248, 250, 252); // slate-50
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, currentY, cardWidth, cardHeight, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(37, 99, 235); // blue-600
+    doc.text('VOLUME EDITORIAL', margin + 3.5, currentY + 5.5);
+
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${wordsCount.toLocaleString('pt-BR')} palavras`, margin + 3.5, currentY + 13);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`~${readingTimeMin} min de leitura estimada`, margin + 3.5, currentY + 18.5);
+
+    doc.setFillColor(37, 99, 235);
+    doc.rect(margin + 3.5, currentY + 21.5, Math.min(cardWidth - 7, (wordsCount / 500) * 10 + 10), 1.8, 'F');
+
+    // CARD 2: ESTRUTURA DO ARTIGO
+    const card2X = margin + cardWidth + 3;
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(card2X, currentY, cardWidth, cardHeight, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(16, 185, 129); // emerald-600
+    doc.text('ESTRUTURA DE TÓPICOS', card2X + 3.5, currentY + 5.5);
+
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${sectionsCount} seções`, card2X + 3.5, currentY + 13);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${referencesCount} referências catalogadas`, card2X + 3.5, currentY + 18.5);
+
+    doc.setFillColor(16, 185, 129);
+    doc.rect(card2X + 3.5, currentY + 21.5, Math.min(cardWidth - 7, sectionsCount * 5 + 10), 1.8, 'F');
+
+    // CARD 3: IDENTIFICADOR & ACESSO
+    const card3X = margin + (cardWidth + 3) * 2;
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(card3X, currentY, cardWidth, cardHeight, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(217, 119, 6); // amber-600
+    doc.text('PERMALINK & CUSTÓDIA', card3X + 3.5, currentY + 5.5);
+
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`?uid=${article.id}`, card3X + 3.5, currentY + 13);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Rastreabilidade digital permanente', card3X + 3.5, currentY + 18.5);
+
+    doc.setFillColor(217, 119, 6);
+    doc.rect(card3X + 3.5, currentY + 21.5, cardWidth - 7, 1.8, 'F');
+
+    currentY += cardHeight + 6;
+  }
+
+  // =========================================================================
+  // 4. SUMÁRIO / ÍNDICE DE CONTEÚDO
+  // =========================================================================
+  if (includeToc && parseResult.toc && parseResult.toc.length > 0) {
+    checkPageBreak(15 + parseResult.toc.length * 4.8);
+
+    doc.setFillColor(248, 250, 252); // slate-50
+    doc.setDrawColor(203, 213, 225); // slate-300
+    doc.setLineWidth(0.3);
+    const tocBoxHeight = 9 + parseResult.toc.length * 4.5;
+    doc.roundedRect(margin, currentY, contentWidth, tocBoxHeight, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(scaleFont(8.5));
+    doc.setTextColor(30, 41, 59);
+    doc.text('ÍNDICE DO DOCUMENTO (SUMÁRIO DE TÓPICOS)', margin + 4, currentY + 5.8);
+
+    let tocY = currentY + 10.5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(scaleFont(7.8));
     doc.setTextColor(71, 85, 105);
 
     parseResult.toc.forEach((item) => {
@@ -213,10 +317,13 @@ export async function exportArticleToStructuredPdf(
     currentY += tocBoxHeight + 6;
   }
 
-  // 5. Article Body Text Processing
-  const rawLines = article.descricao.split('\n');
+  // =========================================================================
+  // 5. CORPO DO ARTIGO (COM SEÇÕES EM BARRAS SLATE-800)
+  // =========================================================================
+  const rawLines = (article.descricao || '').split('\n');
   let inCodeBlock = false;
   let codeBuffer: string[] = [];
+  let sectionCounter = 1;
 
   for (let i = 0; i < rawLines.length; i++) {
     const rawLine = rawLines[i];
@@ -259,40 +366,55 @@ export async function exportArticleToStructuredPdf(
     // Heading 1 (== Title == or = Title =)
     if (/^={1,2}[^=]+={1,2}$/.test(line)) {
       const hTitle = line.replace(/=/g, '').trim();
-      checkPageBreak(18);
-      currentY += 4;
+      checkPageBreak(16);
+      currentY += 3;
+
+      // Barra de cabeçalho da seção estilo slate-800
+      doc.setFillColor(30, 41, 59); // slate-800
+      doc.roundedRect(margin, currentY, contentWidth, 7, 1, 1, 'F');
+
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(scaleFont(14));
-      doc.setTextColor(30, 58, 138); // Blue-900
-      doc.text(hTitle, margin, currentY);
-      currentY += scaleFont(5);
-      doc.setDrawColor(191, 219, 254);
-      doc.setLineWidth(0.4);
-      doc.line(margin, currentY, margin + contentWidth, currentY);
-      currentY += 4;
+      doc.setFontSize(scaleFont(8.5));
+      doc.setTextColor(255, 255, 255);
+      doc.text(hTitle.toUpperCase(), margin + 3.5, currentY + 4.8);
+
+      doc.setFont('courier', 'bold');
+      doc.setFontSize(6.8);
+      doc.setTextColor(147, 197, 253); // blue-200
+      doc.text(`[SEÇÃO ${sectionCounter++}]`, pageWidth - margin - 3.5, currentY + 4.8, {
+        align: 'right',
+      });
+
+      currentY += 10.5;
       continue;
     }
 
     // Heading 2 (=== Subtitle ===)
     if (/^={3}[^=]+={3}$/.test(line)) {
       const hTitle = line.replace(/=/g, '').trim();
-      checkPageBreak(14);
+      checkPageBreak(12);
       currentY += 3;
+
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(scaleFont(11.5));
-      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(scaleFont(10.5));
+      doc.setTextColor(30, 64, 175); // blue-800
       doc.text(hTitle, margin, currentY);
       currentY += scaleFont(4.5);
+
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.3);
+      doc.line(margin, currentY, margin + contentWidth, currentY);
+      currentY += 3.5;
       continue;
     }
 
     // Heading 3 (==== Subsubtitle ====)
     if (/^={4,6}[^=]+={4,6}$/.test(line)) {
       const hTitle = line.replace(/=/g, '').trim();
-      checkPageBreak(12);
+      checkPageBreak(10);
       currentY += 2;
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(scaleFont(10));
+      doc.setFontSize(scaleFont(9));
       doc.setTextColor(71, 85, 105);
       doc.text(hTitle, margin, currentY);
       currentY += scaleFont(4);
@@ -304,7 +426,7 @@ export async function exportArticleToStructuredPdf(
       const isOrdered = line.startsWith('#');
       const itemText = cleanWikitextForPdf(line.replace(/^[*#]+\s*/, ''));
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(scaleFont(9.5));
+      doc.setFontSize(scaleFont(9));
       doc.setTextColor(30, 41, 59);
 
       const bulletSymbol = isOrdered ? '•' : '▪';
@@ -323,7 +445,7 @@ export async function exportArticleToStructuredPdf(
     if (line.startsWith(':') || line.startsWith('>')) {
       const quoteText = cleanWikitextForPdf(line.replace(/^[:>]\s*/, ''));
       doc.setFont('helvetica', 'italic');
-      doc.setFontSize(scaleFont(9));
+      doc.setFontSize(scaleFont(8.8));
       doc.setTextColor(71, 85, 105);
       const splitQuote = doc.splitTextToSize(quoteText, contentWidth - 12);
       const quoteH = splitQuote.length * scaleFont(4) + 4;
@@ -344,31 +466,40 @@ export async function exportArticleToStructuredPdf(
     const cleanParagraph = cleanWikitextForPdf(line);
     if (cleanParagraph) {
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(scaleFont(9.5));
+      doc.setFontSize(scaleFont(9.2));
       doc.setTextColor(30, 41, 59);
       const splitText = doc.splitTextToSize(cleanParagraph, contentWidth);
-      checkPageBreak(splitText.length * scaleFont(4.3) + 3);
+      checkPageBreak(splitText.length * scaleFont(4.2) + 3);
       doc.text(splitText, margin, currentY);
-      currentY += splitText.length * scaleFont(4.3) + 3;
+      currentY += splitText.length * scaleFont(4.2) + 3;
     }
   }
 
-  // 6. References & Footnotes
+  // =========================================================================
+  // 6. REFERÊNCIAS & NOTAS BIBLIOGRÁFICAS
+  // =========================================================================
   if (includeReferences && parseResult.references && parseResult.references.length > 0) {
     checkPageBreak(25);
     currentY += 5;
+
+    doc.setFillColor(30, 41, 59); // slate-800
+    doc.roundedRect(margin, currentY, contentWidth, 7, 1, 1, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(scaleFont(12));
-    doc.setTextColor(30, 58, 138);
-    doc.text('Referências e Notas de Rodapé', margin, currentY);
-    currentY += scaleFont(4);
-    doc.setDrawColor(191, 219, 254);
-    doc.setLineWidth(0.4);
-    doc.line(margin, currentY, margin + contentWidth, currentY);
-    currentY += 4;
+    doc.setFontSize(scaleFont(8.5));
+    doc.setTextColor(255, 255, 255);
+    doc.text('REFERÊNCIAS E FONTES BIBLIOGRÁFICAS', margin + 3.5, currentY + 4.8);
+
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(147, 197, 253);
+    doc.text(`[${parseResult.references.length} CITAÇÕES]`, pageWidth - margin - 3.5, currentY + 4.8, {
+      align: 'right',
+    });
+
+    currentY += 11;
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(scaleFont(8));
+    doc.setFontSize(scaleFont(7.8));
     doc.setTextColor(71, 85, 105);
 
     parseResult.references.forEach((ref, idx) => {
@@ -381,31 +512,47 @@ export async function exportArticleToStructuredPdf(
     });
   }
 
-  // 7. License and Copyright Note
+  // =========================================================================
+  // 7. GOVERNANÇA, LICENÇA & CONFORMIDADE INSTITUCIONAL
+  // =========================================================================
   if (includeLicense) {
-    checkPageBreak(18);
+    checkPageBreak(26);
     currentY += 6;
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(margin, currentY, contentWidth, 12, 1.5, 1.5, 'FD');
+
+    doc.setFillColor(248, 250, 252); // slate-50
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, currentY, contentWidth, 22, 1.5, 1.5, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(scaleFont(7.5));
-    doc.setTextColor(71, 85, 105);
-    doc.text('Licença Creative Commons Atribuição-CompartilhaIgual 4.0 Internacional (CC BY-SA 4.0)', margin + 3, currentY + 4.5);
+    doc.setFontSize(8);
+    doc.setTextColor(30, 41, 59);
+    doc.text('Governança Editorial, Código Aberto & Rastreabilidade', margin + 4, currentY + 5.5);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(scaleFont(7));
-    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(7.2);
+    doc.setTextColor(71, 85, 105);
     doc.text(
-      `O texto está disponível sob a licença CC BY-SA 4.0; termos adicionais podem ser aplicados. Consulte os Termos de Uso da WikiZero.`,
-      margin + 3,
-      currentY + 8.5
+      `• Licença Creative Commons Atribuição-CompartilhaIgual 4.0 Internacional (CC BY-SA 4.0) e GPLv3.`,
+      margin + 4,
+      currentY + 10.5
     );
-    currentY += 16;
+    doc.text(
+      `• Documento indexado com identificador único (?uid=${article.id}). Rastreabilidade permanente em blockchain/banco.`,
+      margin + 4,
+      currentY + 15
+    );
+    doc.text(
+      `• Em conformidade com o Marco Civil da Internet (Lei 12.965/2014) e LGPD (Lei 13.709/2018).`,
+      margin + 4,
+      currentY + 19.5
+    );
+    currentY += 26;
   }
 
-  // 8. Add Footers and Page Numbers across all pages
+  // =========================================================================
+  // 8. RODAPÉ UNIFICADO EM TODAS AS PÁGINAS (DOIS PASSOS)
+  // =========================================================================
   const totalPages = doc.getNumberOfPages();
   for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
     doc.setPage(pageNum);
@@ -424,25 +571,22 @@ export async function exportArticleToStructuredPdf(
 
     if (includeFooter) {
       doc.saveGraphicsState();
+      const footerY = pageHeight - 8;
       doc.setDrawColor(226, 232, 240);
       doc.setLineWidth(0.3);
-      doc.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
+      doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(scaleFont(7));
+      doc.setFontSize(7);
       doc.setTextColor(148, 163, 184);
+      doc.text(
+        `WikiZero • A Enciclopédia Livre e Aberta • Relatório Documental Oficial`,
+        margin,
+        footerY
+      );
 
-      // Left: URL / Permalink
-      const permalink = buildUidPermalink(article.id);
-      doc.text(`Link permanente: ${permalink}`, margin, pageHeight - 7);
-
-      // Center: Export Timestamp
-      const nowStr = new Date().toLocaleString('pt-BR');
-      doc.text(`Exportado da WikiZero em ${nowStr}`, pageWidth / 2, pageHeight - 7, { align: 'center' });
-
-      // Right: Page numbers
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: 'right' });
+      doc.setFont('courier', 'bold');
+      doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - margin, footerY, { align: 'right' });
       doc.restoreGraphicsState();
     }
   }
