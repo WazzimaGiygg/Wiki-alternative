@@ -36,6 +36,7 @@ import {
   getSupportTicketsUrl,
 } from '../utils/linkUtils';
 import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
+import { ExtensionManager } from '../core/ExtensionManager';
 
 interface FooterProps {
   onNavigate: (view: ViewMode) => void;
@@ -65,6 +66,9 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenChromeRecommendation,
 }) => {
   const { currentLanguage, t } = useLanguage();
+  const hooks = ExtensionManager.getInstance().getHooks();
+  const isMobileAllowed = hooks.applyFilters<boolean>('mobile:is_enabled', true);
+  const showMobileFooterToggle = hooks.applyFilters<boolean>('mobile:show_footer_toggle', true);
 
   return (
     <footer className="mt-12 bg-[#f8f9fa] dark:bg-[#0b0f17] border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 py-6 pb-24 md:pb-6 transition-colors select-none font-sans no-print print:hidden w-full max-w-full overflow-x-clip">
@@ -475,20 +479,22 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <button
-              id="btn-footer-mobile-view"
-              onClick={() => onToggleDeviceMode?.('mobile')}
-              className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
-                deviceMode === 'mobile'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700'
-              }`}
-              title="Ativar layout e navegação otimizados para smartphones e telas touch"
-            >
-              <Smartphone size={13} />
-              <span>Versão móvel</span>
-              {deviceMode === 'mobile' && <span className="text-[9px] bg-blue-500 text-white px-1 rounded-xs uppercase">Ativo</span>}
-            </button>
+            {isMobileAllowed && showMobileFooterToggle && (
+              <button
+                id="btn-footer-mobile-view"
+                onClick={() => onToggleDeviceMode?.('mobile')}
+                className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition ${
+                  deviceMode === 'mobile'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700'
+                }`}
+                title="Ativar layout e navegação otimizados para smartphones e telas touch"
+              >
+                <Smartphone size={13} />
+                <span>Versão móvel</span>
+                {deviceMode === 'mobile' && <span className="text-[9px] bg-blue-500 text-white px-1 rounded-xs uppercase">Ativo</span>}
+              </button>
+            )}
 
             <button
               id="btn-footer-desktop-view"

@@ -61,6 +61,7 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
 
   const extensionManager = ExtensionManager.getInstance();
   const [, setExtensionUpdateTick] = useState<number>(0);
+  const isMobileAllowed = extensionManager.getHooks().applyFilters<boolean>('mobile:is_enabled', true);
 
   // Monitora em tempo real se a extensão do Android 2.3 está ativa no ExtensionManager
   const [isAndroid23Active, setIsAndroid23Active] = useState<boolean>(() =>
@@ -1004,22 +1005,24 @@ export const AppearanceSettingsView: React.FC<AppearanceSettingsViewProps> = ({
             </div>
           </button>
 
-          <button
-            onClick={() => onToggleDeviceMode('mobile')}
-            className={`p-3 rounded-lg border text-left transition flex items-center gap-3 ${
-              deviceMode === 'mobile'
-                ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 font-bold'
-                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 dark:text-slate-300'
-            }`}
-          >
-            <div className="p-2 rounded-md bg-slate-100 dark:bg-slate-800 shrink-0">
-              <Smartphone size={16} />
-            </div>
-            <div>
-              <div className="text-xs font-bold">Versão Móvel</div>
-              <div className="text-[10px] text-slate-400">Otimizado touch</div>
-            </div>
-          </button>
+          {isMobileAllowed && (
+            <button
+              onClick={() => onToggleDeviceMode('mobile')}
+              className={`p-3 rounded-lg border text-left transition flex items-center gap-3 ${
+                deviceMode === 'mobile'
+                  ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 font-bold'
+                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <div className="p-2 rounded-md bg-slate-100 dark:bg-slate-800 shrink-0">
+                <Smartphone size={16} />
+              </div>
+              <div>
+                <div className="text-xs font-bold">Versão Móvel</div>
+                <div className="text-[10px] text-slate-400">Otimizado touch</div>
+              </div>
+            </button>
+          )}
 
           <button
             onClick={() => {

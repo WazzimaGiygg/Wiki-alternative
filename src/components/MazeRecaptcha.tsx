@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   X,
 } from 'lucide-react';
+import { ExtensionManager } from '../core/ExtensionManager';
 
 export interface MazeRecaptchaProps {
   onSuccess: (token: string) => void;
@@ -103,8 +104,12 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
   actionButtonText = 'Entrar com a Conta Google',
   isGoogleAction = true,
 }) => {
-  // Configuração de tempo mínimo de segurança anti-robô
-  const MIN_REQUIRED_SECONDS = 15;
+  // Configuração de tempo mínimo de segurança anti-robô e extensões do Burocrata
+  const hooks = ExtensionManager.getInstance().getHooks();
+  const isMinTimeEnabled = hooks.applyFilters<boolean>('login:maze_min_time_enabled', true);
+  const MIN_REQUIRED_SECONDS = isMinTimeEnabled
+    ? Math.max(0, hooks.applyFilters<number>('login:maze_min_seconds', 15))
+    : 0;
 
   // Grid settings: 11 rows x 17 columns (odd numbers required for DFS)
   const rows = compact ? 9 : 11;
@@ -322,13 +327,13 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
 
         // Check victory!
         if (newX === endPos.x && newY === endPos.y) {
-          // Bloqueio de segurança estrito: se concluído em menos de 15 segundos, bloqueia por comportamento automatizado/bot
-          if (elapsedSeconds < MIN_REQUIRED_SECONDS) {
+          // Bloqueio de segurança: se concluído em menos do tempo mínimo estipulado pelo Burocrata
+          if (MIN_REQUIRED_SECONDS > 0 && elapsedSeconds < MIN_REQUIRED_SECONDS) {
             playSound('bump');
             const secondsSpent = elapsedSeconds;
-            setBlockedNotice(
-              `⚠️ Bloqueio de Segurança Anti-Robô: O labirinto foi completado em apenas ${secondsSpent}s! Para assegurar a resolução por um operador humano autêntico e repelir scripts automatizados, o teste exige no mínimo ${MIN_REQUIRED_SECONDS} segundos. O labirinto foi reiniciado.`
-            );
+            const defaultMsg = `⚠️ Bloqueio de Segurança Anti-Robô: O labirinto foi completado em apenas ${secondsSpent}s! Para assegurar a resolução por um operador humano autêntico e repelir scripts automatizados, o teste exige no mínimo ${MIN_REQUIRED_SECONDS} segundos. O labirinto foi reiniciado.`;
+            const customMsg = hooks.applyFilters<string>('login:maze_min_time_message', defaultMsg);
+            setBlockedNotice(customMsg || defaultMsg);
             // Reinicia o labirinto e o cronômetro para exigir um teste humano completo
             initGame();
             return;
@@ -486,23 +491,27 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
         <div className="flex items-center gap-2 sm:gap-3">
           <div
             className={`flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded border transition-colors ${
-              elapsedSeconds < MIN_REQUIRED_SECONDS
-                ? 'text-amber-300 bg-amber-950/40 border-amber-400/30'
-                : 'text-emerald-300 bg-emerald-950/40 border-emerald-400/30 font-bold'
+              MIN_REQUIRED_SECONDS === 0 || elapsedSeconds >= MIN_REQUIRED_SECONDS
+                ? 'text-emerald-300 bg-emerald-950/40 border-emerald-400/30 font-bold'
+                : 'text-amber-300 bg-amber-950/40 border-amber-400/30'
             }`}
             title={
-              elapsedSeconds < MIN_REQUIRED_SECONDS
+              MIN_REQUIRED_SECONDS === 0
+                ? 'Sem tempo mínimo exigido pelo Burocrata! Validação imediata ao alcançar o ponto final.'
+                : elapsedSeconds < MIN_REQUIRED_SECONDS
                 ? `Regra Anti-Robô: faltam ${MIN_REQUIRED_SECONDS - elapsedSeconds}s para autorizar a validação humana`
-                : 'Tempo mínimo de 15s alcançado! Você já pode alcançar o ponto final (F).'
+                : `Tempo mínimo de ${MIN_REQUIRED_SECONDS}s alcançado! Você já pode alcançar o ponto final (F).`
             }
           >
             <Clock size={12} />
             <span>{formatTime(elapsedSeconds)}</span>
-            <span className="text-[10px] opacity-70">/ {MIN_REQUIRED_SECONDS}s</span>
-            {elapsedSeconds < MIN_REQUIRED_SECONDS ? (
-              <Lock size={11} className="text-amber-400" />
-            ) : (
+            {MIN_REQUIRED_SECONDS > 0 && (
+              <span className="text-[10px] opacity-70">/ {MIN_REQUIRED_SECONDS}s</span>
+            )}
+            {MIN_REQUIRED_SECONDS === 0 || elapsedSeconds >= MIN_REQUIRED_SECONDS ? (
               <Unlock size={11} className="text-emerald-400" />
+            ) : (
+              <Lock size={11} className="text-amber-400" />
             )}
           </div>
 
@@ -672,12 +681,19 @@ export const MazeRecaptcha: React.FC<MazeRecaptchaProps> = ({
         {/* Anti-Bot Security Status Bar */}
         <div className="w-full mt-2 px-2.5 py-1.5 rounded-lg bg-black/60 border border-slate-700/80 flex items-center justify-between text-[10px] shadow-xs">
           <div className="flex items-center gap-1.5">
-            <ShieldCheck size={13} className={elapsedSeconds >= MIN_REQUIRED_SECONDS ? 'text-emerald-400' : 'text-amber-400'} />
+            <ShieldCheck size={13} className={MIN_REQUIRED_SECONDS === 0 || elapsedSeconds >= MIN_REQUIRED_SECONDS ? 'text-emerald-400' : 'text-amber-400'} />
             <span className="text-slate-300 font-medium">Anti-Robô:</span>
-            <span className="font-mono text-slate-100 font-semibold">Mínimo 15 segundos</span>
+            <span className="font-mono text-slate-100 font-semibold">
+              {MIN_REQUIRED_SECONDS === 0 ? 'Sem tempo mínimo (Instantâneo)' : `Mínimo ${MIN_REQUIRED_SECONDS} segundos`}
+            </span>
           </div>
 
-          {elapsedSeconds < MIN_REQUIRED_SECONDS ? (
+          {MIN_REQUIRED_SECONDS === 0 ? (
+            <span className="text-emerald-400 font-mono font-bold flex items-center gap-1">
+              <Unlock size={10} />
+              Validação imediata liberada ✓
+            </span>
+          ) : elapsedSeconds < MIN_REQUIRED_SECONDS ? (
             <span className="text-amber-300 font-mono font-medium flex items-center gap-1">
               <Lock size={10} />
               Aguarde {MIN_REQUIRED_SECONDS - elapsedSeconds}s para validar

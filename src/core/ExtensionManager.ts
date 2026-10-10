@@ -58,6 +58,12 @@ import OtherRulesExtension from '../extensions/other-rules';
 import WikiBrandingExtension from '../extensions/wiki-branding';
 import CustomFaviconLogoExtension from '../extensions/custom-favicon-logo';
 import CustomCssExtension from '../extensions/custom-css';
+import SidebarMenuCustomizerExtension from '../extensions/sidebar-menu-customizer';
+import MobileVersionControlExtension from '../extensions/mobile-version-control';
+import MazeRecaptchaControlExtension from '../extensions/maze-recaptcha-control';
+import WmfNoticeControlExtension from '../extensions/wmf-notice-control';
+import WelcomeMessageCustomizerExtension from '../extensions/welcome-message-customizer';
+import DefaultLanguageExtension from '../extensions/default-language';
 import {
   Win95ThemeExtension,
   Win31ThemeExtension,
@@ -168,6 +174,12 @@ export class ExtensionManager {
       WikiBrandingExtension,
       CustomFaviconLogoExtension,
       CustomCssExtension,
+      SidebarMenuCustomizerExtension,
+      MobileVersionControlExtension,
+      MazeRecaptchaControlExtension,
+      WmfNoticeControlExtension,
+      WelcomeMessageCustomizerExtension,
+      DefaultLanguageExtension,
       Win95ThemeExtension,
       Win31ThemeExtension,
       WinXpThemeExtension,

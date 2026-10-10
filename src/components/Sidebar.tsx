@@ -61,6 +61,10 @@ import {
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { RecentlyReadService, RecentlyReadItem } from '../utils/recentlyReadService';
 import { ExtensionManager } from '../core/ExtensionManager';
+import {
+  SidebarSectionKey,
+  DEFAULT_SIDEBAR_SECTIONS_ORDER,
+} from '../extensions/sidebar-menu-customizer';
 
 interface SidebarProps {
   currentView: ViewMode;
@@ -158,6 +162,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ? 'flex'
       : 'hidden md:flex';
 
+  const hooks = ExtensionManager.getInstance().getHooks();
+  const orderedSections = hooks.applyFilters<SidebarSectionKey[]>(
+    'sidebar:sections_order',
+    DEFAULT_SIDEBAR_SECTIONS_ORDER
+  );
+  const isSectionVisible = (key: SidebarSectionKey) =>
+    hooks.applyFilters<boolean>('sidebar:section_visible', true, key);
+
   return (
     <aside
       id="desktop-sidebar"
@@ -219,9 +231,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-2.5 px-2 space-y-4">
+      <div className="flex-1 overflow-y-auto py-2.5 px-2 flex flex-col gap-4">
         {/* Navigation Section: Principal */}
-        <div>
+        {isSectionVisible('navigation') && (
+        <div style={{ order: orderedSections.indexOf('navigation') }}>
           <nav className="space-y-0.5">
             <button
               onClick={() => onNavigate('hub')}
@@ -476,9 +489,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </nav>
         </div>
+        )}
 
         {/* Section: Recently Read (Lidos Recentemente - Últimos 5 artigos via localStorage) */}
-        <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+        {isSectionVisible('recently_read') && (
+        <div style={{ order: orderedSections.indexOf('recently_read') }} className="pt-2 border-t border-slate-200 dark:border-slate-800">
           <div className="flex items-center justify-between px-2 mb-1.5">
             {!isCollapsed ? (
               <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5 font-mono">
@@ -570,9 +585,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )
           )}
         </div>
+        )}
 
         {/* Section: Ficheiros & Mídias */}
-        <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+        {isSectionVisible('media') && (
+        <div style={{ order: orderedSections.indexOf('media') }} className="pt-2 border-t border-slate-200 dark:border-slate-800">
           {!isCollapsed && (
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center gap-1 font-mono">
               <span>Ficheiros & Mídias</span>
@@ -606,9 +623,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </nav>
         </div>
+        )}
 
         {/* Section: Comunidade & Usuários */}
-        <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+        {isSectionVisible('community') && (
+        <div style={{ order: orderedSections.indexOf('community') }} className="pt-2 border-t border-slate-200 dark:border-slate-800">
           {!isCollapsed && (
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center gap-1 font-mono">
               <span>Comunidade & Usuários</span>
@@ -627,7 +646,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <UserCheck size={15} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               {!isCollapsed && <span className="truncate">Página do Usuário</span>}
             </button>
+          </nav>
+        </div>
+        )}
 
+        {/* Section: Governança & Administração */}
+        {isSectionVisible('admin_governance') && (
+        <div style={{ order: orderedSections.indexOf('admin_governance') }} className="pt-2 border-t border-slate-200 dark:border-slate-800">
+          {!isCollapsed && (
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300 px-2 mb-1.5 flex items-center gap-1 font-mono">
+              <Shield size={11} className="text-purple-600 dark:text-purple-400" />
+              <span>Governança & Administração</span>
+            </h3>
+          )}
+          <nav className="space-y-0.5">
             <button
               onClick={() => onNavigate('admin-dashboard')}
               title="Painel Unificado de Administração (Special:AdminDashboard)"
@@ -908,9 +940,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </nav>
         </div>
+        )}
 
-        {/* Section: Inteligência Artificial (Google Gemini AI Studio) */}
-        <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+        {/* Section: Extensões, IA Gemini & Institucional */}
+        {isSectionVisible('extensions') && (
+        <div style={{ order: orderedSections.indexOf('extensions') }} className="space-y-4">
+          {/* Section: Inteligência Artificial (Google Gemini AI Studio) */}
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
           {!isCollapsed && (
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center justify-between font-mono">
               <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
@@ -1110,9 +1146,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </nav>
         </div>
+        </div>
+        )}
 
         {/* Section: Modos */}
-        <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+        {isSectionVisible('footer_stats') && (
+        <div style={{ order: orderedSections.indexOf('footer_stats') }} className="pt-2 border-t border-slate-200 dark:border-slate-800">
           {!isCollapsed && (
             <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1.5 flex items-center gap-1 font-mono">
               <span>{t('sidebar.layouts')}</span>
@@ -1205,10 +1244,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </nav>
         </div>
+        )}
       </div>
 
       {/* High Density Sidebar Footer Stats */}
-      {!isCollapsed && (
+      {!isCollapsed && isSectionVisible('footer_stats') && (
         <div className="p-2.5 border-t border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/70 text-[11px] text-slate-500 dark:text-slate-400 font-mono space-y-1">
           <div className="flex justify-between items-center">
             <span>{t('sidebar.stats_collections')}</span>

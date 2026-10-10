@@ -177,7 +177,17 @@ export default function App() {
     return 'auto';
   });
 
+  const hooks = ExtensionManager.getInstance().getHooks();
+  const isMobileAllowed = hooks.applyFilters<boolean>('mobile:is_enabled', true);
+  const effectiveDeviceMode = hooks.applyFilters<DeviceMode>('mobile:forced_device_mode', deviceMode);
+
   const handleToggleDeviceMode = (mode: DeviceMode) => {
+    const isAllowed = ExtensionManager.getInstance().getHooks().applyFilters<boolean>('mobile:is_enabled', true);
+    if (!isAllowed && mode === 'mobile') {
+      setDeviceMode('desktop');
+      localStorage.setItem('wikizero_device_mode', 'desktop');
+      return;
+    }
     setDeviceMode(mode);
     localStorage.setItem('wikizero_device_mode', mode);
     if (mode === 'tv') {
@@ -1382,7 +1392,7 @@ export default function App() {
         searchQuery={searchQuery}
         isDark={isDark}
         theme={theme}
-        deviceMode={deviceMode}
+        deviceMode={effectiveDeviceMode}
         onSearchChange={setSearchQuery}
         onSearchSubmit={handleSearchSubmit}
         onRandomPage={handleRandomPage}
@@ -1414,7 +1424,7 @@ export default function App() {
           isCollapsed={isSidebarCollapsed}
           theme={theme}
           isDark={isDark}
-          deviceMode={deviceMode}
+          deviceMode={effectiveDeviceMode}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           onNavigate={handleNavigate}
           onRandomPage={handleRandomPage}
@@ -1982,7 +1992,7 @@ export default function App() {
             <AppearanceSettingsView
               currentTheme={theme}
               onSetTheme={handleSetTheme}
-              deviceMode={deviceMode}
+              deviceMode={effectiveDeviceMode}
               onToggleDeviceMode={handleToggleDeviceMode}
               onNavigate={handleNavigate}
             />
@@ -2192,7 +2202,7 @@ export default function App() {
       <Footer
         onNavigate={handleNavigate}
         theme={theme}
-        deviceMode={deviceMode}
+        deviceMode={effectiveDeviceMode}
         onToggleDeviceMode={handleToggleDeviceMode}
         onSetTheme={handleSetTheme}
         onRebootWin7={() => setShowWin7Boot(true)}
@@ -2244,7 +2254,7 @@ export default function App() {
         user={user}
         isDark={isDark}
         theme={theme}
-        deviceMode={deviceMode}
+        deviceMode={effectiveDeviceMode}
         totalPages={pages.length}
         totalArticles={articles.length}
         onNavigate={handleNavigate}

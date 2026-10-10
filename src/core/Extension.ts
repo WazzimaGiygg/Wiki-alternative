@@ -258,6 +258,13 @@ export class HookRegistry {
   }
 
   /**
+   * Remove filtros associados a uma extensão específica (alias para compatibilidade).
+   */
+  public removeFiltersForExtension(extensionName: string): void {
+    this.removeAllHooksForExtension(extensionName);
+  }
+
+  /**
    * Retorna os hooks registrados por uma determinada extensão.
    */
   public getHooksForExtension(extensionName: string): { filters: string[]; actions: string[] } {

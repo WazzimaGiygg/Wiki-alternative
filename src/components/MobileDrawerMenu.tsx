@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { ExtensionManager } from '../core/ExtensionManager';
 import {
   formatExternalUrl,
   isSupportTicketsEnabled,
@@ -187,18 +188,20 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
         <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
           {/* Device View Mode Toggle */}
           <div className="flex items-center gap-1 bg-slate-200 dark:bg-slate-700/80 p-0.5 rounded-lg">
-            <button
-              onClick={() => onToggleDeviceMode('mobile')}
-              className={`px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition ${
-                deviceMode === 'mobile' || deviceMode === 'auto'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-              }`}
-              title="Exibir layout otimizado para dispositivos móveis"
-            >
-              <Smartphone size={12} />
-              <span>Móvel</span>
-            </button>
+            {ExtensionManager.getInstance().getHooks().applyFilters<boolean>('mobile:is_enabled', true) && (
+              <button
+                onClick={() => onToggleDeviceMode('mobile')}
+                className={`px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition ${
+                  deviceMode === 'mobile' || deviceMode === 'auto'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                }`}
+                title="Exibir layout otimizado para dispositivos móveis"
+              >
+                <Smartphone size={12} />
+                <span>Móvel</span>
+              </button>
+            )}
             <button
               onClick={() => onToggleDeviceMode('desktop')}
               className={`px-2 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1 transition ${

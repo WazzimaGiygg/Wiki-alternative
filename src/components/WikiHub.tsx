@@ -27,6 +27,7 @@ import { StorageService } from '../services/storageService';
 import { WikiStatisticsPanel } from './WikiStatisticsPanel';
 import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
 import { WikiFeaturedArticle } from './WikiFeaturedArticle';
+import { ExtensionManager } from '../core/ExtensionManager';
 
 interface WikiHubProps {
   pages: WikiPage[];
@@ -119,6 +120,12 @@ export const WikiHub: React.FC<WikiHubProps> = ({
 
   const totalViews = safeArticles.reduce((acc, a) => acc + (a?.visualizacoes || 0), 0);
 
+  const hooks = ExtensionManager.getInstance().getHooks();
+  const welcomeBadge = hooks.applyFilters<string>('mainpage:welcome_badge', t('hub.welcome_badge'));
+  const welcomeTitle = hooks.applyFilters<string>('mainpage:welcome_title', t('hub.welcome_title'));
+  const welcomeDesc = hooks.applyFilters<string>('mainpage:welcome_description', t('hub.welcome_desc'));
+  const welcomeMotto = hooks.applyFilters<string>('mainpage:welcome_motto', '«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»');
+
   return (
     <div className="space-y-5 animate-in fade-in select-none font-sans">
       {/* High Density Portal Header / Welcome Banner */}
@@ -133,7 +140,7 @@ export const WikiHub: React.FC<WikiHubProps> = ({
             <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white px-2 py-0.5 rounded-xs font-mono">
-                  {t('hub.welcome_badge')}
+                  {welcomeBadge}
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <Globe2 size={12} className="text-blue-500" />
@@ -142,7 +149,7 @@ export const WikiHub: React.FC<WikiHubProps> = ({
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-bold font-serif-heading text-slate-900 dark:text-white tracking-tight leading-tight">
-                {t('hub.welcome_title')}
+                {welcomeTitle}
               </h1>
 
               {/* Frase Principal da Wiki (Lema Oficial) */}
@@ -150,7 +157,7 @@ export const WikiHub: React.FC<WikiHubProps> = ({
                 <span className="text-xl select-none" role="img" aria-label="Conhecimento">🏛️</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-serif italic font-bold text-sm sm:text-base text-blue-950 dark:text-blue-200 tracking-wide">
-                    «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
+                    {welcomeMotto}
                   </p>
                   <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-0.5">
                     <strong className="text-blue-700 dark:text-blue-400 font-semibold">Frase Principal da Wiki</strong> • "Não, o Tempo não é o senhor do conhecimento!"
@@ -159,7 +166,7 @@ export const WikiHub: React.FC<WikiHubProps> = ({
               </div>
 
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
-                {t('hub.welcome_desc')}
+                {welcomeDesc}
               </p>
             </div>
           </div>
