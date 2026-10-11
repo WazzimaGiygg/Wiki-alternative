@@ -122,13 +122,15 @@ function showUpdateNotificationToast(onApplyUpdate: () => void): void {
 function setupServiceWorkerUpdateMonitoring(): void {
   if (typeof window === 'undefined') return;
 
-  // Em ambiente de desenvolvimento do Vite (AI Studio Sandbox), o Service Worker não deve
-  // interceptar chunks pré-empacotados para prevenir conflitos de múltiplas instâncias do React
+  // Em ambiente de desenvolvimento do Vite (AI Studio Sandbox), preserva apenas o SW de notificações push
   if (import.meta.env.DEV) {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         for (const reg of registrations) {
-          reg.unregister();
+          const scriptUrl = reg.active?.scriptURL || '';
+          if (!scriptUrl.includes('sw-push.js')) {
+            reg.unregister();
+          }
         }
       });
     }
@@ -138,6 +140,11 @@ function setupServiceWorkerUpdateMonitoring(): void {
           caches.delete(key);
         }
       });
+    }
+
+    // Registra o SW de push nativo caso o usuário tenha concedido permissão
+    if ('serviceWorker' in navigator && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      navigator.serviceWorker.register('/sw-push.js', { scope: '/' }).catch(() => {});
     }
 
     // Expõe método global para permitir testes manuais do banner de atualização mesmo no ambiente dev
@@ -238,6 +245,16 @@ function setupServiceWorkerUpdateMonitoring(): void {
         refreshing = true;
         console.info('[WikiZero SW] Controlador atualizado. Recarregando para aplicar nova versão...');
         window.location.reload();
+      }
+    });
+
+    // Trata cliques em notificações encaminhadas pelo Service Worker
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'WIKI_NOTIFICATION_CLICKED') {
+        const url = event.data?.data?.url;
+        if (url && url !== '/' && !window.location.href.includes(url)) {
+          window.location.href = url;
+        }
       }
     });
   }

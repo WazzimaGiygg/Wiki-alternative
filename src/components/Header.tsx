@@ -37,6 +37,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { StorageService } from '../services/storageService';
 import { ExtensionManager } from '../core/ExtensionManager';
+import { PushNotificationService, PushPreferences } from '../services/pushNotificationService';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -105,6 +106,62 @@ export const Header: React.FC<HeaderProps> = ({
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showOnlineMenu, setShowOnlineMenu] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<UserProfile[]>([]);
+
+  // Notificações Push no Navegador (Service Worker - Requisito 6)
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>(
+    PushNotificationService.getPermission()
+  );
+  const [pushPrefs, setPushPrefs] = useState<PushPreferences>(
+    PushNotificationService.getPreferences()
+  );
+  const [isTestingPush, setIsTestingPush] = useState(false);
+  const [pushFeedback, setPushFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPushPermission(PushNotificationService.getPermission());
+    setPushPrefs(PushNotificationService.getPreferences());
+    const unsub = PushNotificationService.subscribeToPreferences((prefs) => {
+      setPushPrefs(prefs);
+    });
+    return unsub;
+  }, []);
+
+  const handleTogglePushNotifications = async () => {
+    if (pushPermission !== 'granted') {
+      const perm = await PushNotificationService.requestPermission();
+      setPushPermission(perm);
+      if (perm === 'granted') {
+        const updated = PushNotificationService.savePreferences({ enabled: true });
+        setPushPrefs(updated);
+        setPushFeedback('✅ Notificações push nativas autorizadas!');
+        setTimeout(() => setPushFeedback(null), 4000);
+      } else {
+        setPushFeedback('⚠️ Permissão negada nas configurações do navegador.');
+        setTimeout(() => setPushFeedback(null), 4000);
+      }
+    } else {
+      const updated = PushNotificationService.savePreferences({ enabled: !pushPrefs.enabled });
+      setPushPrefs(updated);
+    }
+  };
+
+  const handleTestPushNotification = async () => {
+    setIsTestingPush(true);
+    setPushFeedback('Disparando alerta push via Service Worker...');
+    try {
+      const success = await PushNotificationService.sendTestNotification();
+      if (success) {
+        setPushFeedback('✅ Notificação nativa disparada no navegador!');
+      } else {
+        setPushFeedback('⚠️ Falha ao disparar. Verifique permissões do navegador.');
+      }
+    } catch (e: any) {
+      setPushFeedback('Erro: ' + (e?.message || 'Falha ao emitir notificação.'));
+    } finally {
+      setIsTestingPush(false);
+      setTimeout(() => setPushFeedback(null), 4500);
+    }
+  };
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -2214,6 +2271,112 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
                   )}
                 </div>
+
+                {/* Painel de Notificações Push no Navegador via Service Worker (Requisito 6) */}
+                <div className="p-3 bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 text-[11px]">
+                      <Radio size={12} className={pushPermission === 'granted' && pushPrefs.enabled ? 'text-emerald-500 animate-pulse' : 'text-slate-400'} />
+                      <span>Alertas Push (Service Worker)</span>
+                    </div>
+                    <span
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-mono ${
+                        pushPermission === 'granted' && pushPrefs.enabled
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                          : pushPermission === 'denied'
+                          ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                          : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                      }`}
+                    >
+                      {pushPermission === 'granted' && pushPrefs.enabled
+                        ? 'Ativo'
+                        : pushPermission === 'denied'
+                        ? 'Bloqueado'
+                        : 'Desativado'}
+                    </span>
+                  </div>
+
+                  {/* Switch Principal */}
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Notificar na área de trabalho / celular:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleTogglePushNotifications}
+                      className={`relative inline-flex h-4.5 w-8.5 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                        pushPermission === 'granted' && pushPrefs.enabled
+                          ? 'bg-blue-600'
+                          : 'bg-slate-300 dark:bg-slate-700'
+                      }`}
+                      role="switch"
+                      aria-checked={pushPermission === 'granted' && pushPrefs.enabled}
+                      title="Ativar/Desativar notificações nativas do navegador"
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                          pushPermission === 'granted' && pushPrefs.enabled ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Filtros Específicos: Comentários e Edições Pendentes (Requisito 6) */}
+                  {pushPermission === 'granted' && pushPrefs.enabled && (
+                    <div className="pt-1.5 space-y-1 text-[10px] text-slate-600 dark:text-slate-400 border-t border-slate-200/60 dark:border-slate-700/60">
+                      <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={pushPrefs.notifyOnComments}
+                          onChange={(e) =>
+                            setPushPrefs(
+                              PushNotificationService.savePreferences({
+                                notifyOnComments: e.target.checked,
+                              })
+                            )
+                          }
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
+                        />
+                        <span>💬 Novos comentários em discussões</span>
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={pushPrefs.notifyOnPendingEdits}
+                          onChange={(e) =>
+                            setPushPrefs(
+                              PushNotificationService.savePreferences({
+                                notifyOnPendingEdits: e.target.checked,
+                              })
+                            )
+                          }
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
+                        />
+                        <span>📝 Edições pendentes de revisão</span>
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Botão de Teste & Feedback */}
+                  <div className="pt-1 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      disabled={isTestingPush}
+                      onClick={handleTestPushNotification}
+                      className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 py-0.5 px-1.5 rounded bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 transition cursor-pointer disabled:opacity-50"
+                      title="Disparar notificação de teste push via Service Worker"
+                    >
+                      <Bell size={10} />
+                      <span>{isTestingPush ? 'Disparando...' : 'Testar Notificação Push'}</span>
+                    </button>
+                    {pushFeedback && (
+                      <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium truncate">
+                        {pushFeedback}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
                   {notifications.length === 0 ? (
                     <div className="py-8 text-center text-slate-400 text-xs px-4">

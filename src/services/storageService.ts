@@ -89,6 +89,7 @@ import { checkClientVpnConnection, logVpnBlockAttempt } from '../utils/vpnChecke
 import { validateUserIdentifiersAgainstWikimediaAdmins, checkIfWikimediaAdmin } from '../utils/wikimediaAdminChecker';
 import { ACTIVE_FIREBASE_CONFIG, getActiveFirebaseConfig } from '../config/firebaseCustomConfig';
 import { FirebaseUsageMetricsService } from './firebaseUsageMetricsService';
+import { PushNotificationService } from './pushNotificationService';
 
 // Configuração ativa do Firebase derivada do arquivo de configuração do desenvolvedor (src/config/firebaseCustomConfig.ts)
 export const firebaseConfig = {
@@ -1023,6 +1024,24 @@ export const StorageService = {
     } catch (limitErr) {
       console.warn('[StorageService] Error updating daily edits counter on saveArticle:', limitErr);
     }
+
+    // Dispara alerta nativo de edição pendente / nova revisão no Service Worker (Requisito 6)
+    try {
+      PushNotificationService.notifyPendingEdit({
+        articleTitle: article.titulo,
+        editorName:
+          effectiveUser.displayName ||
+          effectiveUser.username ||
+          effectiveUser.email?.split('@')[0] ||
+          'Editor',
+        summary: editSummary || (existingIndex >= 0 ? 'Edição no verbete' : 'Criação do verbete'),
+        articleId: article.id,
+        diffBytes:
+          existingIndex >= 0
+            ? articleData.descricao.length - (articles[existingIndex]?.descricao?.length || 0)
+            : articleData.descricao.length,
+      }).catch(() => {});
+    } catch (_) {}
 
     return article;
   },
@@ -2452,6 +2471,21 @@ export const StorageService = {
       }
     }
 
+    // Dispara alerta nativo no Service Worker (Requisito 6 - Novos tópicos/comentários em discussões)
+    try {
+      this.getArticles().then((articles) => {
+        const article = articles.find((a) => a.id === articleId);
+        PushNotificationService.notifyNewComment({
+          articleTitle: article?.titulo || 'Artigo',
+          commenterName: newThread.autor,
+          threadTitle: titulo,
+          commentSnippet: conteudo,
+          articleId,
+          threadId: newThread.id,
+        }).catch(() => {});
+      });
+    } catch (_) {}
+
     return newThread;
   },
 
@@ -2513,6 +2547,21 @@ export const StorageService = {
         console.warn('[StorageService] Erro ao sincronizar resposta no Firestore:', err);
       }
     }
+
+    // Dispara alerta nativo no Service Worker (Requisito 6 - Novos comentários em discussões)
+    try {
+      this.getArticles().then((articles) => {
+        const article = articles.find((a) => a.id === thread.articleId);
+        PushNotificationService.notifyNewComment({
+          articleTitle: article?.titulo || 'Artigo',
+          commenterName: newReply.autor,
+          threadTitle: thread.titulo,
+          commentSnippet: conteudo,
+          articleId: thread.articleId,
+          threadId: thread.id,
+        }).catch(() => {});
+      });
+    } catch (_) {}
 
     return newReply;
   },

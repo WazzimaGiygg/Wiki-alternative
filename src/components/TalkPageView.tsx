@@ -12,10 +12,13 @@ import {
   Lock,
   ChevronDown,
   ChevronUp,
+  Bell,
+  Radio,
 } from 'lucide-react';
 import { WikiArticle, UserProfile, TalkThread, TalkReply } from '../types';
 import { StorageService } from '../services/storageService';
 import { formatInline } from '../utils/wikitextParser';
+import { PushNotificationService } from '../services/pushNotificationService';
 
 interface TalkPageViewProps {
   article: WikiArticle;
@@ -31,6 +34,34 @@ export const TalkPageView: React.FC<TalkPageViewProps> = ({ article, user }) => 
   const [replyingToThreadId, setReplyingToThreadId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [expandedThreads, setExpandedThreads] = useState<Record<string, boolean>>({});
+
+  // Notificações Push para Discussões (Requisito 6)
+  const [pushEnabled, setPushEnabled] = useState(
+    PushNotificationService.isSupported() &&
+      PushNotificationService.getPermission() === 'granted' &&
+      PushNotificationService.getPreferences().enabled &&
+      PushNotificationService.getPreferences().notifyOnComments
+  );
+  const [pushStatusMessage, setPushStatusMessage] = useState<string | null>(null);
+
+  const handleToggleDiscussionPush = async () => {
+    if (PushNotificationService.getPermission() !== 'granted') {
+      const perm = await PushNotificationService.requestPermission();
+      if (perm === 'granted') {
+        PushNotificationService.savePreferences({ enabled: true, notifyOnComments: true });
+        setPushEnabled(true);
+        setPushStatusMessage('✅ Notificações push ativadas para respostas em discussões!');
+      } else {
+        setPushStatusMessage('⚠️ Permissão negada no navegador.');
+      }
+    } else {
+      const current = PushNotificationService.getPreferences().notifyOnComments;
+      PushNotificationService.savePreferences({ notifyOnComments: !current });
+      setPushEnabled(!current);
+      setPushStatusMessage(!current ? '✅ Alertas push ativados para discussões.' : 'Alertas desativados.');
+    }
+    setTimeout(() => setPushStatusMessage(null), 3500);
+  };
 
   useEffect(() => {
     loadThreads();
@@ -159,6 +190,49 @@ export const TalkPageView: React.FC<TalkPageViewProps> = ({ article, user }) => 
           <PlusCircle size={13} />
           Novo Tópico
         </button>
+      </div>
+
+      {/* Banner de Notificações Push no Service Worker (Requisito 6) */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 flex flex-wrap items-center justify-between text-xs gap-3">
+        <div className="flex items-center gap-2">
+          <div
+            className={`p-1.5 rounded-full ${
+              pushEnabled
+                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+            }`}
+          >
+            <Bell size={13} />
+          </div>
+          <div>
+            <span className="font-bold text-slate-800 dark:text-slate-200">
+              Alertas Push de Discussões (Service Worker):
+            </span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 ml-1.5 hidden sm:inline">
+              Receba avisos instantâneos na área de trabalho quando alguém responder nesta página.
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {pushStatusMessage && (
+            <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 animate-in fade-in">
+              {pushStatusMessage}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleToggleDiscussionPush}
+            className={`px-2.5 py-1 rounded text-[11px] font-semibold transition cursor-pointer flex items-center gap-1 ${
+              pushEnabled
+                ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+            }`}
+          >
+            <Radio size={11} className={pushEnabled ? 'text-emerald-500 animate-pulse' : 'text-white'} />
+            <span>{pushEnabled ? 'Alertas Ativos' : 'Ativar Notificações Push'}</span>
+          </button>
+        </div>
       </div>
 
       {/* New Thread Modal / Form */}
