@@ -2398,7 +2398,9 @@ export default function App() {
       <OfflineIndicator />
 
       {/* Floating Assistant Launcher: Windows 95 Clippy Bot vs Standard Gemini Trigger */}
-      {currentView !== 'smart-tv' && (
+      {currentView !== 'smart-tv' &&
+        ExtensionManager.getInstance().getHooks().applyFilters<boolean>('mainpage:show_gemini_floating_button', true) &&
+        ExtensionManager.getInstance().getHooks().applyFilters<boolean>('gemini:show_floating_button', true) && (
         theme === 'win95' ? (
           <Windows95Bot
             onRandomArticle={handleRandomPage}

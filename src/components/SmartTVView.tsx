@@ -27,9 +27,16 @@ import {
   Sliders,
   Type,
   HelpCircle,
-  X
+  X,
+  Settings,
+  Shield,
+  Moon,
+  Sun,
+  Eye,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, UserProfile } from '../types';
+import { ExtensionManager } from '../core/ExtensionManager';
+import { SmartTvConfigData } from '../extensions/smartv-config';
 
 interface SmartTVViewProps {
   articles: WikiArticle[];
@@ -39,6 +46,14 @@ interface SmartTVViewProps {
   onSelectArticleInDesktop?: (articleId: string) => void;
 }
 
+const SCREENSAVER_QUOTES = [
+  { quote: '«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»', author: 'Lema Oficial WikiWorldWeb' },
+  { quote: 'O conhecimento humano livre pertence à humanidade inteira.', author: 'Filosofia WikiZero' },
+  { quote: 'A verdade documental e a integridade de dados superam o arbítrio burocrático.', author: 'Dossiê WazzimaGiygg' },
+  { quote: 'Mais de 400.000 rolos de papiro catalogados pelo pioneiro Calímaco nos Pinakes de Alexandria.', author: 'História do Saber' },
+  { quote: 'Uma enciclopédia rápida, livre de anúncios invasivos e sem monopólio de panelas burocráticas.', author: 'Manifesto Aberto' },
+];
+
 export const SmartTVView: React.FC<SmartTVViewProps> = ({
   articles,
   pages,
@@ -46,20 +61,51 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
   onExitTVMode,
   onSelectArticleInDesktop,
 }) => {
+  // 3.05.4.d: Integração com SmartTvConfigExtension
+  const [extTick, setExtTick] = useState(0);
+  useEffect(() => {
+    const unsub = ExtensionManager.getInstance().subscribe(() => {
+      setExtTick((v) => v + 1);
+    });
+    return unsub;
+  }, []);
+
+  const tvConfig = useMemo(() => {
+    return ExtensionManager.getInstance()
+      .getHooks()
+      .applyFilters<SmartTvConfigData>('smartv:config', {
+        defaultTvTheme: 'cinema',
+        defaultFontSize: 'grande',
+        defaultAutoScrollSpeed: 'lento',
+        enableSoundEffects: true,
+        enableVoiceNarration: true,
+        overscanMargin: 'small',
+        enableScreensaver: true,
+        screensaverTimeout: 180,
+        showRemoteLegend: true,
+        ambientBacklight: true,
+      });
+  }, [extTick]);
+
   // Navigation State
   const [currentSection, setCurrentSection] = useState<'home' | 'reader' | 'search' | 'categories' | 'guide'>('home');
   const [selectedArticle, setSelectedArticle] = useState<WikiArticle | null>(articles[0] || null);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
-  // TV Reader State
+  // TV Reader State & Settings (com defaults da extensão 3.05.4.d)
   const [isNarrating, setIsNarrating] = useState<boolean>(false);
   const [narrationRate, setNarrationRate] = useState<number>(1.0);
   const [isAutoScroll, setIsAutoScroll] = useState<boolean>(false);
-  const [autoScrollSpeed, setAutoScrollSpeed] = useState<'lento' | 'medio' | 'rapido'>('lento');
-  const [tvTheme, setTvTheme] = useState<'cinema' | 'midnight' | 'oled'>('cinema');
-  const [tvFontSize, setTvFontSize] = useState<'normal' | 'grande' | 'extra'>('grande');
-  const [audioFeedback, setAudioFeedback] = useState<boolean>(true);
+  const [autoScrollSpeed, setAutoScrollSpeed] = useState<'lento' | 'medio' | 'rapido'>(() => tvConfig.defaultAutoScrollSpeed || 'lento');
+  const [tvTheme, setTvTheme] = useState<'cinema' | 'midnight' | 'oled'>(() => tvConfig.defaultTvTheme || 'cinema');
+  const [tvFontSize, setTvFontSize] = useState<'normal' | 'grande' | 'extra'>(() => tvConfig.defaultFontSize || 'grande');
+  const [overscanMargin, setOverscanMargin] = useState<'none' | 'small' | 'standard'>(() => tvConfig.overscanMargin || 'small');
+  const [audioFeedback, setAudioFeedback] = useState<boolean>(() => tvConfig.enableSoundEffects ?? true);
+  const [showTvConfigModal, setShowTvConfigModal] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isScreensaverActive, setIsScreensaverActive] = useState<boolean>(false);
+  const [screensaverQuoteIdx, setScreensaverQuoteIdx] = useState<number>(0);
   
   // Real-time TV Clock
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -216,9 +262,69 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
     return ['Todas', ...Array.from(set)];
   }, [articles]);
 
-  // Remote Control Keyboard Event Handler (D-Pad, Arrows, Enter, Back, Media keys)
+  // Protetor de tela OLED anti-burn-in (3.05.4.a & 3.05.4.d)
+  useEffect(() => {
+    if (!tvConfig.enableScreensaver) return;
+    let timer: NodeJS.Timeout;
+
+    const resetIdleTimer = () => {
+      if (isScreensaverActive) {
+        setIsScreensaverActive(false);
+        playAudioCue('select');
+      }
+      clearTimeout(timer);
+      const timeoutSec = Math.max(30, tvConfig.screensaverTimeout || 180);
+      timer = setTimeout(() => {
+        setIsScreensaverActive(true);
+        setScreensaverQuoteIdx((prev) => (prev + 1) % SCREENSAVER_QUOTES.length);
+      }, timeoutSec * 1000);
+    };
+
+    resetIdleTimer();
+    window.addEventListener('keydown', resetIdleTimer);
+    window.addEventListener('mousemove', resetIdleTimer);
+    window.addEventListener('touchstart', resetIdleTimer);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', resetIdleTimer);
+      window.removeEventListener('mousemove', resetIdleTimer);
+      window.removeEventListener('touchstart', resetIdleTimer);
+    };
+  }, [tvConfig.enableScreensaver, tvConfig.screensaverTimeout, isScreensaverActive]);
+
+  const toggleFullscreen = () => {
+    if (typeof document === 'undefined') return;
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+      setIsFullscreen(false);
+    }
+  };
+
+  // Remote Control Keyboard Event Handler (D-Pad, Arrows, Enter, Back, Media keys, Hotkeys)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Se protetor de tela estiver ativo, qualquer tecla desativa e cancela evento
+      if (isScreensaverActive) {
+        setIsScreensaverActive(false);
+        playAudioCue('select');
+        e.preventDefault();
+        return;
+      }
+
+      // Se modal de configuração estiver aberto, ESC fecha o modal
+      if (showTvConfigModal) {
+        if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
+          e.preventDefault();
+          playAudioCue('back');
+          setShowTvConfigModal(false);
+        }
+        return;
+      }
+
       // Ignore if user is actively typing in the search box
       if (document.activeElement?.tagName === 'INPUT') {
         if (e.key === 'Escape') {
@@ -286,6 +392,24 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
             toggleNarration();
           }
           break;
+        case 'c':
+        case 'C':
+          e.preventDefault();
+          playAudioCue('select');
+          setShowTvConfigModal((prev) => !prev);
+          break;
+        case 'f':
+        case 'F':
+          e.preventDefault();
+          playAudioCue('move');
+          toggleFullscreen();
+          break;
+        case 't':
+        case 'T':
+          e.preventDefault();
+          playAudioCue('move');
+          setTvTheme((curr) => (curr === 'cinema' ? 'midnight' : curr === 'midnight' ? 'oled' : 'cinema'));
+          break;
         default:
           break;
       }
@@ -293,7 +417,7 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSection, focusedIndex, filteredArticles, isNarrating, selectedArticle, audioFeedback]);
+  }, [currentSection, focusedIndex, filteredArticles, isNarrating, selectedArticle, audioFeedback, isScreensaverActive, showTvConfigModal]);
 
   // Clean article preview text
   const cleanSummary = (text: string, maxChars = 220) => {
@@ -318,13 +442,19 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
     oled: 'bg-black text-white',
   }[tvTheme];
 
+  const overscanPadding = {
+    none: 'px-6 lg:px-10',
+    small: 'px-8 lg:px-14',
+    standard: 'px-12 lg:px-20',
+  }[overscanMargin];
+
   return (
     <div 
       id="smart-tv-app-root" 
       className={`fixed inset-0 z-[999] overflow-hidden select-none flex flex-col font-sans ${themeClasses} transition-colors duration-300`}
     >
       {/* 1. TV 10-Foot Top Navigation & Ambient Bar */}
-      <header className="shrink-0 px-8 lg:px-14 py-4 flex items-center justify-between border-b border-white/10 bg-black/40 backdrop-blur-md">
+      <header className={`shrink-0 ${overscanPadding} py-4 flex items-center justify-between border-b border-white/10 bg-black/40 backdrop-blur-md`}>
         {/* Brand & Mode Badges */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
@@ -407,6 +537,31 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
             <span>{currentTime}</span>
           </div>
 
+          {/* TV Settings Modal Trigger */}
+          <button
+            onClick={() => {
+              playAudioCue('select');
+              setShowTvConfigModal(true);
+            }}
+            title="Configurações da TV (Atalho: C)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition text-xs font-semibold cursor-pointer"
+          >
+            <Sliders className="w-4 h-4 text-blue-400" />
+            <span className="hidden lg:inline">Configurar TV (C)</span>
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={() => {
+              playAudioCue('move');
+              toggleFullscreen();
+            }}
+            title="Alternar Tela Cheia (Atalho: F)"
+            className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition cursor-pointer"
+          >
+            {isFullscreen ? <Minimize2 className="w-5 h-5 text-blue-400" /> : <Maximize2 className="w-5 h-5 text-slate-300" />}
+          </button>
+
           {/* Sound Toggle */}
           <button
             onClick={() => setAudioFeedback(!audioFeedback)}
@@ -432,7 +587,7 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
       </header>
 
       {/* 2. Main TV Body Content */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-8 lg:px-14 py-6 scroll-smooth">
+      <main className={`flex-1 overflow-y-auto overflow-x-hidden ${overscanPadding} py-6 scroll-smooth`}>
         {/* ===================================================================== */}
         {/* SECTION: HOME / VITRINE                                               */}
         {/* ===================================================================== */}
@@ -945,33 +1100,273 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
         )}
       </main>
 
-      {/* 3. TV Bottom Remote Control Helper Bar (Fixed on Screen) */}
-      <footer className="shrink-0 px-8 lg:px-14 py-3 bg-black/70 border-t border-white/10 flex flex-wrap items-center justify-between text-xs text-slate-400">
-        <div className="flex items-center gap-5 flex-wrap">
-          <span className="flex items-center gap-1.5 text-slate-300">
-            <kbd className="px-1.5 py-0.5 rounded-sm bg-white/10 text-white font-mono text-[10px] border border-white/20">▲ ▼ ◄ ►</kbd>
-            <span>Navegar</span>
-          </span>
-          <span className="flex items-center gap-1.5 text-slate-300">
-            <kbd className="px-2 py-0.5 rounded-sm bg-blue-600 text-white font-mono text-[10px] font-bold">OK / Enter</kbd>
-            <span>Selecionar / Abrir</span>
-          </span>
-          <span className="flex items-center gap-1.5 text-slate-300">
-            <kbd className="px-1.5 py-0.5 rounded-sm bg-white/10 text-white font-mono text-[10px] border border-white/20">Voltar / Esc</kbd>
-            <span>Retornar</span>
-          </span>
-          <span className="flex items-center gap-1.5 text-slate-300">
-            <kbd className="px-2 py-0.5 rounded-sm bg-white/10 text-white font-mono text-[10px] border border-white/20">Espaço</kbd>
-            <span>Narrar por Voz</span>
-          </span>
-        </div>
+        {/* 3. TV Bottom Remote Control Helper Bar (Fixed on Screen) */}
+        {tvConfig.showRemoteLegend && (
+          <footer className="shrink-0 px-8 lg:px-14 py-3 bg-black/70 border-t border-white/10 flex flex-wrap items-center justify-between text-xs text-slate-400">
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <kbd className="px-1.5 py-0.5 rounded-sm bg-white/10 text-white font-mono text-[10px] border border-white/20">▲ ▼ ◄ ►</kbd>
+                <span>Navegar</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <kbd className="px-2 py-0.5 rounded-sm bg-blue-600 text-white font-mono text-[10px] font-bold">OK / Enter</kbd>
+                <span>Selecionar / Ler</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <kbd className="px-1.5 py-0.5 rounded-sm bg-white/10 text-white font-mono text-[10px] border border-white/20">Voltar / Esc</kbd>
+                <span>Retornar</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <kbd className="px-2 py-0.5 rounded-sm bg-white/10 text-white font-mono text-[10px] border border-white/20">Espaço</kbd>
+                <span>Narrar TTS</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <kbd className="px-1.5 py-0.5 rounded-sm bg-blue-500/20 text-blue-300 font-mono text-[10px] border border-blue-400/30">C</kbd>
+                <span>Configurar TV</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <kbd className="px-1.5 py-0.5 rounded-sm bg-white/10 text-white font-mono text-[10px] border border-white/20">F</kbd>
+                <span>Tela Cheia</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <kbd className="px-1.5 py-0.5 rounded-sm bg-white/10 text-white font-mono text-[10px] border border-white/20">T</kbd>
+                <span>Tema</span>
+              </span>
+            </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-[11px] text-blue-400 font-medium">
-            WikiWorldWeb Smart TV Edition v3.3
-          </span>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-blue-400 font-medium">
+                WikiWorldWeb Smart TV Edition v3.3
+              </span>
+            </div>
+          </footer>
+        )}
+
+      {/* 4. MODAL DE CONFIGURAÇÕES DA SMART TV (Update 3.05 - Requisito 3.05.4.a / 3.05.4.d) */}
+      {showTvConfigModal && (
+        <div className="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-in fade-in">
+          <div className="max-w-xl w-full bg-slate-900 border border-blue-500/40 rounded-3xl p-6 lg:p-8 shadow-2xl space-y-6 text-white">
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-blue-600 text-white">
+                  <Sliders className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black">Configurações da Smart TV</h3>
+                  <p className="text-xs text-slate-400">Personalização 10-Foot UI & Parâmetros do Burocrata (Extensão 3.05.4.d)</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  playAudioCue('back');
+                  setShowTvConfigModal(false);
+                }}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition cursor-pointer"
+                title="Fechar (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1 text-sm">
+              {/* Tema Visual */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
+                  <Moon className="w-3.5 h-3.5 text-blue-400" /> Tema Visual da TV
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['cinema', 'midnight', 'oled'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        playAudioCue('select');
+                        setTvTheme(t);
+                      }}
+                      className={`p-3 rounded-xl border font-bold text-xs capitalize transition cursor-pointer ${
+                        tvTheme === t
+                          ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
+                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {t === 'cinema' ? '🎬 Cinema' : t === 'midnight' ? '🌌 Midnight' : '🖤 OLED Black'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tamanho da Fonte */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
+                  <Type className="w-3.5 h-3.5 text-blue-400" /> Tamanho da Fonte (Distância do Sofá)
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['normal', 'grande', 'extra'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => {
+                        playAudioCue('select');
+                        setTvFontSize(f);
+                      }}
+                      className={`p-3 rounded-xl border font-bold text-xs capitalize transition cursor-pointer ${
+                        tvFontSize === f
+                          ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
+                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {f === 'normal' ? 'Normal (2m)' : f === 'grande' ? 'Grande (3-4m)' : 'Extra (5m+)'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Margem Anti-Overscan */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
+                  <Monitor className="w-3.5 h-3.5 text-blue-400" /> Margem de Segurança Anti-Overscan
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['none', 'small', 'standard'] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => {
+                        playAudioCue('select');
+                        setOverscanMargin(m);
+                      }}
+                      className={`p-3 rounded-xl border font-bold text-xs capitalize transition cursor-pointer ${
+                        overscanMargin === m
+                          ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
+                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {m === 'none' ? '0% (Sem Margem)' : m === 'small' ? '3% (Padrão TV)' : '5% (Telas Antigas)'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Velocidade Teleprompter */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono flex items-center gap-1.5">
+                  <Play className="w-3.5 h-3.5 text-blue-400" /> Velocidade do Auto-Scroll (Teleprompter)
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['lento', 'medio', 'rapido'] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        playAudioCue('select');
+                        setAutoScrollSpeed(s);
+                      }}
+                      className={`p-3 rounded-xl border font-bold text-xs capitalize transition cursor-pointer ${
+                        autoScrollSpeed === s
+                          ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
+                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      {s === 'lento' ? 'Lento' : s === 'medio' ? 'Médio' : 'Rápido'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Toggles Rápidos */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div
+                  onClick={() => {
+                    playAudioCue('select');
+                    setAudioFeedback(!audioFeedback);
+                  }}
+                  className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between cursor-pointer hover:bg-white/10"
+                >
+                  <span className="text-xs font-semibold">Efeitos Sonoros</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${audioFeedback ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
+                    {audioFeedback ? 'Ativo' : 'Mudo'}
+                  </span>
+                </div>
+
+                <div
+                  onClick={() => {
+                    playAudioCue('move');
+                    toggleFullscreen();
+                  }}
+                  className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between cursor-pointer hover:bg-white/10"
+                >
+                  <span className="text-xs font-semibold">Tela Cheia</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${isFullscreen ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-700 text-slate-400'}`}>
+                    {isFullscreen ? 'Ativa' : 'Janela'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+              <button
+                onClick={() => {
+                  playAudioCue('select');
+                  setTvTheme(tvConfig.defaultTvTheme || 'cinema');
+                  setTvFontSize(tvConfig.defaultFontSize || 'grande');
+                  setOverscanMargin(tvConfig.overscanMargin || 'small');
+                  setAutoScrollSpeed(tvConfig.defaultAutoScrollSpeed || 'lento');
+                  setAudioFeedback(tvConfig.enableSoundEffects ?? true);
+                }}
+                className="text-slate-400 hover:text-white underline cursor-pointer"
+              >
+                Restaurar Padrões da Extensão
+              </button>
+
+              <button
+                onClick={() => {
+                  playAudioCue('select');
+                  setShowTvConfigModal(false);
+                }}
+                className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition cursor-pointer"
+              >
+                Concluir & Aplicar
+              </button>
+            </div>
+          </div>
         </div>
-      </footer>
+      )}
+
+      {/* 5. PROTETOR DE TELA AMBIENTE OLED ANTI BURN-IN (3.05.4.a & 3.05.4.d) */}
+      {isScreensaverActive && (
+        <div
+          onClick={() => {
+            setIsScreensaverActive(false);
+            playAudioCue('select');
+          }}
+          className="fixed inset-0 z-[1001] bg-black flex flex-col items-center justify-center p-8 select-none cursor-pointer animate-in fade-in duration-700"
+        >
+          <div className="text-center space-y-6 max-w-2xl animate-pulse duration-1000">
+            <div className="flex items-center justify-center gap-3">
+              <div className="p-3 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-2xl">
+                <Tv className="w-10 h-10 text-white" />
+              </div>
+              <span className="text-3xl font-black text-white tracking-tight">WikiWorldWeb TV</span>
+            </div>
+
+            <div className="text-6xl lg:text-7xl font-mono font-black text-blue-400 tracking-wider">
+              {currentTime}
+            </div>
+
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md space-y-3">
+              <p className="text-lg lg:text-xl font-serif italic text-slate-200">
+                "{SCREENSAVER_QUOTES[screensaverQuoteIdx]?.quote}"
+              </p>
+              <p className="text-xs text-blue-300 font-mono">
+                — {SCREENSAVER_QUOTES[screensaverQuoteIdx]?.author}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+              <Shield className="w-4 h-4 text-emerald-500" />
+              <span>Modo Protetor de Tela OLED Ativo • Pressione qualquer botão no controle para retornar</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

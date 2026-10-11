@@ -48,6 +48,7 @@ import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
 import { buildUidPermalink } from '../utils/urlRouter';
 import { PdfExportModal } from './PdfExportModal';
+import { WikiStatisticsPanel } from './WikiStatisticsPanel';
 
 interface SpecialPagesViewProps {
   articles: WikiArticle[];
@@ -1247,46 +1248,15 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
 
       {/* Tab 6: Statistics */}
       {activeTab === 'stats' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-2xl font-bold font-mono text-blue-600 dark:text-blue-400">
-                {stats.totalArticles}
-              </span>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 uppercase font-mono font-bold">
-                Artigos Totais
-              </p>
-            </div>
+        <div className="space-y-6">
+          <WikiStatisticsPanel
+            pages={pages}
+            articles={articles}
+            currentUser={user}
+            onSelectArticle={onNavigateToArticle}
+          />
 
-            <div className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                {stats.totalRevisions}
-              </span>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 uppercase font-mono font-bold">
-                Revisões Salvas
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-2xl font-bold font-mono text-purple-600 dark:text-purple-400">
-                {stats.totalWords.toLocaleString('pt-BR')}
-              </span>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 uppercase font-mono font-bold">
-                Palavras Totais
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400">
-                {(stats.totalBytes / 1024).toFixed(1)} KB
-              </span>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 uppercase font-mono font-bold">
-                Volume de Texto
-              </p>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 font-sans">
             <h4 className="font-bold text-xs text-slate-900 dark:text-white uppercase font-mono tracking-wider flex items-center gap-1.5">
               <BarChart2 size={14} className="text-blue-600" />
               Principais Contribuidores da Enciclopédia

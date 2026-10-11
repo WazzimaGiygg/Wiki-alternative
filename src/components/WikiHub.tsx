@@ -118,6 +118,14 @@ export const WikiHub: React.FC<WikiHubProps> = ({
     });
   }, [safeArticles, selectedLanguageFilter, searchQuery]);
 
+  const [, setExtTick] = useState(0);
+  React.useEffect(() => {
+    const unsub = ExtensionManager.getInstance().subscribe(() => {
+      setExtTick((v) => v + 1);
+    });
+    return unsub;
+  }, []);
+
   const totalViews = safeArticles.reduce((acc, a) => acc + (a?.visualizacoes || 0), 0);
 
   const hooks = ExtensionManager.getInstance().getHooks();
@@ -125,6 +133,13 @@ export const WikiHub: React.FC<WikiHubProps> = ({
   const welcomeTitle = hooks.applyFilters<string>('mainpage:welcome_title', t('hub.welcome_title'));
   const welcomeDesc = hooks.applyFilters<string>('mainpage:welcome_description', t('hub.welcome_desc'));
   const welcomeMotto = hooks.applyFilters<string>('mainpage:welcome_motto', '«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»');
+
+  // Filtros de Personalização da Página Principal (Update 3.05 - Requisito 3.05.3.y)
+  const showFeaturedArticle = hooks.applyFilters<boolean>('mainpage:show_featured_article', true);
+  const showStatisticsPanel = hooks.applyFilters<boolean>('mainpage:show_statistics_panel', true);
+  const showCollections = hooks.applyFilters<boolean>('mainpage:show_collections', true);
+  const showCompetitorComparison = hooks.applyFilters<boolean>('mainpage:show_competitor_comparison', true);
+  const showGoogleReaderDonation = hooks.applyFilters<boolean>('mainpage:show_google_reader_donation', true);
 
   return (
     <div className="space-y-5 animate-in fade-in select-none font-sans">
@@ -212,22 +227,27 @@ export const WikiHub: React.FC<WikiHubProps> = ({
       </div>
 
       {/* Componente de Artigo em Destaque do Dia (Alta Qualidade com Rotação Diária) */}
-      <WikiFeaturedArticle
-        articles={safeArticles}
-        pages={safePages}
-        onSelectArticle={onSelectArticle}
-        onSelectPage={onSelectPage}
-        onCreateArticleClick={onCreateArticleClick}
-      />
+      {showFeaturedArticle && (
+        <WikiFeaturedArticle
+          articles={safeArticles}
+          pages={safePages}
+          onSelectArticle={onSelectArticle}
+          onSelectPage={onSelectPage}
+          onCreateArticleClick={onCreateArticleClick}
+        />
+      )}
 
       {/* Painel Interativo de Estatísticas com Gráfico Recharts */}
-      <WikiStatisticsPanel
-        pages={pages}
-        articles={articles}
-        currentUser={user}
-        onNavigate={onNavigate}
-        onCreateArticleClick={() => onCreateArticleClick()}
-      />
+      {showStatisticsPanel && (
+        <WikiStatisticsPanel
+          pages={pages}
+          articles={articles}
+          currentUser={user}
+          onNavigate={onNavigate}
+          onCreateArticleClick={() => onCreateArticleClick()}
+          onSelectArticle={onSelectArticle}
+        />
+      )}
 
       {/* Matching Search Articles results (if searching) */}
       {searchQuery && (
@@ -324,184 +344,186 @@ export const WikiHub: React.FC<WikiHubProps> = ({
       </div>
 
       {/* High Density Collections Grid */}
-      <div>
-        <div className="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-2">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white font-serif-heading">
-              {t('hub.collections_title')}
-            </h2>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Coleções persistentes no banco de dados Firestore (`documentos`)
-            </p>
-          </div>
-          <button
-            onClick={onCreatePageClick}
-            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-          >
-            <Plus size={13} /> Nova Coleção
-          </button>
-        </div>
-
-        {filteredPages.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center my-4 space-y-3">
-            <div className="text-3xl text-slate-400">📚</div>
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              Nenhuma coleção cadastrada no banco de dados
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              O banco de dados Firestore está pronto para receber seus documentos e tópicos de enciclopédia.
-            </p>
+      {showCollections && (
+        <div>
+          <div className="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white font-serif-heading">
+                {t('hub.collections_title')}
+              </h2>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Coleções persistentes no banco de dados Firestore (`documentos`)
+              </p>
+            </div>
             <button
               onClick={onCreatePageClick}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
             >
-              <Plus size={13} /> Criar Primeira Coleção
+              <Plus size={13} /> Nova Coleção
             </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {filteredPages.map((page) => {
-              const pageArticles = safeArticles.filter((a) => {
-                if (!a) return false;
-                const matchesUid = a.pageUid === page.uid;
-                const matchesLang =
-                  selectedLanguageFilter === 'all' ||
-                  (a.idioma || 'pt').toLowerCase().startsWith(selectedLanguageFilter.toLowerCase());
-                return matchesUid && matchesLang;
-              });
 
-              return (
-                <div
-                  key={page.uid}
-                  className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded p-3.5 shadow-xs hover:border-blue-500 dark:hover:border-blue-600 transition flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-lg">{page.icon || '📄'}</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
-                          {page.categoria}
+          {filteredPages.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center my-4 space-y-3">
+              <div className="text-3xl text-slate-400">📚</div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                Nenhuma coleção cadastrada no banco de dados
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                O banco de dados Firestore está pronto para receber seus documentos e tópicos de enciclopédia.
+              </p>
+              <button
+                onClick={onCreatePageClick}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
+              >
+                <Plus size={13} /> Criar Primeira Coleção
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {filteredPages.map((page) => {
+                const pageArticles = safeArticles.filter((a) => {
+                  if (!a) return false;
+                  const matchesUid = a.pageUid === page.uid;
+                  const matchesLang =
+                    selectedLanguageFilter === 'all' ||
+                    (a.idioma || 'pt').toLowerCase().startsWith(selectedLanguageFilter.toLowerCase());
+                  return matchesUid && matchesLang;
+                });
+
+                return (
+                  <div
+                    key={page.uid}
+                    className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded p-3.5 shadow-xs hover:border-blue-500 dark:hover:border-blue-600 transition flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-lg">{page.icon || '📄'}</span>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
+                            {page.categoria}
+                          </span>
+                          {page.isLocked && (
+                            <span
+                              className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1"
+                              title={`Coleção Protegida: ${page.lockReason || 'Apenas moderadores podem editar'}`}
+                            >
+                              <Lock size={10} /> Protegida
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {isModeratorOrAdmin && (
+                            <button
+                              onClick={() => setLockModalPage(page)}
+                              title={
+                                page.isLocked
+                                  ? 'Desbloquear Coleção (Moderação)'
+                                  : 'Bloquear Coleção (Moderação)'
+                              }
+                              className={`p-1 rounded text-xs transition border ${
+                                page.isLocked
+                                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600'
+                                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-600 dark:text-slate-300 hover:text-amber-700 border-slate-200 dark:border-slate-700'
+                              }`}
+                            >
+                              {page.isLocked ? <Lock size={11} /> : <Unlock size={11} />}
+                            </button>
+                          )}
+                          <span className="text-[10px] font-mono text-slate-400">
+                            uid: {page.uid}
+                          </span>
+                        </div>
+                      </div>
+
+                      <h3
+                        onClick={() => onSelectPage(page.uid)}
+                        className="text-sm font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer font-serif-heading transition leading-snug"
+                      >
+                        {page.titulo}
+                      </h3>
+
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed font-sans">
+                        {page.descricao}
+                      </p>
+
+                      {/* Subcollection articles preview list */}
+                      <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block font-mono">
+                          {t('hub.articles_count')} ({pageArticles.length}):
                         </span>
-                        {page.isLocked && (
-                          <span
-                            className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1"
-                            title={`Coleção Protegida: ${page.lockReason || 'Apenas moderadores podem editar'}`}
-                          >
-                            <Lock size={10} /> Protegida
+                        {pageArticles.slice(0, 3).map((art) => {
+                          const artLang = getLanguageByCode(art.idioma || 'pt');
+                          return (
+                            <div
+                              key={art.id}
+                              onClick={() => onSelectArticle(art.id)}
+                              className="text-[11px] text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer flex items-center justify-between gap-1.5 py-0.5 truncate group"
+                            >
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span className="text-blue-600 text-[9px]">▪</span>
+                                <span className="truncate">{art.titulo}</span>
+                              </div>
+                              <span className="text-[9px] px-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-blue-500 flex-shrink-0 font-mono">
+                                {artLang.flag} {artLang.code}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {pageArticles.length === 0 && (
+                          <span className="text-[11px] text-slate-400 italic">
+                            {t('hub.empty_collection')}
                           </span>
                         )}
                       </div>
+                    </div>
+
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-slate-400">
+                        {pageArticles.length} {t('hub.articles_count')}
+                      </span>
                       <div className="flex items-center gap-1">
-                        {isModeratorOrAdmin && (
+                        {page.isLocked && !isModeratorOrAdmin ? (
                           <button
-                            onClick={() => setLockModalPage(page)}
-                            title={
-                              page.isLocked
-                                ? 'Desbloquear Coleção (Moderação)'
-                                : 'Bloquear Coleção (Moderação)'
+                            onClick={() =>
+                              alert(
+                                `🔒 Coleção Protegida pela Moderação.\n\nMotivo: ${
+                                  page.lockReason || 'Proteção contra alterações por usuários comuns'
+                                }\nBloqueado por: ${page.lockedBy || 'Moderação'}\n\nNão é permitido criar novos artigos nesta coleção.`
+                              )
                             }
-                            className={`p-1 rounded text-xs transition border ${
-                              page.isLocked
-                                ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600'
-                                : 'bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-600 dark:text-slate-300 hover:text-amber-700 border-slate-200 dark:border-slate-700'
-                            }`}
+                            title="Coleção bloqueada pela moderação"
+                            className="px-2 py-1 rounded text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 transition flex items-center gap-1 cursor-pointer"
                           >
-                            {page.isLocked ? <Lock size={11} /> : <Unlock size={11} />}
+                            <Lock size={11} className="text-amber-600" /> Protegida
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => onCreateArticleClick(page.uid)}
+                            title="Adicionar artigo nesta coleção"
+                            className="px-2 py-1 rounded text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1 border border-slate-200 dark:border-slate-700"
+                          >
+                            <Plus size={11} /> Artigo
                           </button>
                         )}
-                        <span className="text-[10px] font-mono text-slate-400">
-                          uid: {page.uid}
-                        </span>
+                        <button
+                          onClick={() => onSelectPage(page.uid)}
+                          className="p-1 rounded bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition border border-blue-200 dark:border-blue-800"
+                        >
+                          <ArrowRight size={13} />
+                        </button>
                       </div>
                     </div>
-
-                    <h3
-                      onClick={() => onSelectPage(page.uid)}
-                      className="text-sm font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer font-serif-heading transition leading-snug"
-                    >
-                      {page.titulo}
-                    </h3>
-
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed font-sans">
-                      {page.descricao}
-                    </p>
-
-                    {/* Subcollection articles preview list */}
-                    <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block font-mono">
-                        {t('hub.articles_count')} ({pageArticles.length}):
-                      </span>
-                      {pageArticles.slice(0, 3).map((art) => {
-                        const artLang = getLanguageByCode(art.idioma || 'pt');
-                        return (
-                          <div
-                            key={art.id}
-                            onClick={() => onSelectArticle(art.id)}
-                            className="text-[11px] text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer flex items-center justify-between gap-1.5 py-0.5 truncate group"
-                          >
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span className="text-blue-600 text-[9px]">▪</span>
-                              <span className="truncate">{art.titulo}</span>
-                            </div>
-                            <span className="text-[9px] px-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-blue-500 flex-shrink-0 font-mono">
-                              {artLang.flag} {artLang.code}
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {pageArticles.length === 0 && (
-                        <span className="text-[11px] text-slate-400 italic">
-                          {t('hub.empty_collection')}
-                        </span>
-                      )}
-                    </div>
                   </div>
-
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-slate-400">
-                      {pageArticles.length} {t('hub.articles_count')}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      {page.isLocked && !isModeratorOrAdmin ? (
-                        <button
-                          onClick={() =>
-                            alert(
-                              `🔒 Coleção Protegida pela Moderação.\n\nMotivo: ${
-                                page.lockReason || 'Proteção contra alterações por usuários comuns'
-                              }\nBloqueado por: ${page.lockedBy || 'Moderação'}\n\nNão é permitido criar novos artigos nesta coleção.`
-                            )
-                          }
-                          title="Coleção bloqueada pela moderação"
-                          className="px-2 py-1 rounded text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 transition flex items-center gap-1 cursor-pointer"
-                        >
-                          <Lock size={11} className="text-amber-600" /> Protegida
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => onCreateArticleClick(page.uid)}
-                          title="Adicionar artigo nesta coleção"
-                          className="px-2 py-1 rounded text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1 border border-slate-200 dark:border-slate-700"
-                        >
-                          <Plus size={11} /> Artigo
-                        </button>
-                      )}
-                      <button
-                        onClick={() => onSelectPage(page.uid)}
-                        className="p-1 rounded bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition border border-blue-200 dark:border-blue-800"
-                      >
-                        <ArrowRight size={13} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Direct Competitor Comparison Section (SEO & Value proposition) */}
-      {onNavigate && (
+      {showCompetitorComparison && onNavigate && (
         <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 text-white rounded-xl p-4 sm:p-5 border border-blue-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1.5 max-w-2xl">
             <div className="flex items-center gap-2 flex-wrap">
@@ -593,13 +615,15 @@ export const WikiHub: React.FC<WikiHubProps> = ({
       )}
 
       {/* Google Reader Revenue Manager Donation CTA Section */}
-      <div className="pt-1">
-        <GoogleReaderRevenueDonation
-          variant="card"
-          title="Apoie a WikiWorldWeb via Google Reader Revenue Manager"
-          description="Sua doação garante a continuidade da enciclopédia livre, sem censura e sem anúncios comerciais. Clique no botão de chamada para ação para abrir o botão de doação oficial do Google."
-        />
-      </div>
+      {showGoogleReaderDonation && (
+        <div className="pt-1">
+          <GoogleReaderRevenueDonation
+            variant="card"
+            title="Apoie a WikiWorldWeb via Google Reader Revenue Manager"
+            description="Sua doação garante a continuidade da enciclopédia livre, sem censura e sem anúncios comerciais. Clique no botão de chamada para ação para abrir o botão de doação oficial do Google."
+          />
+        </div>
+      )}
 
       {/* Moderation Lock Modal for Collections */}
       {lockModalPage && (

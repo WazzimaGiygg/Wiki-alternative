@@ -5191,12 +5191,16 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   },
 
   // === USUÁRIOS ONLINE / CONECTADOS ===
+  // 3.05.5.b: Correção - Usuários banidos não podem ser considerados como usuários logados
   async getOnlineUsers(): Promise<UserProfile[]> {
     const users = await this.getCommunityUsers();
     const now = Date.now();
-    // Consider online if marked as online or active in the last 45 minutes
+    // Consider online only if non-guest, strictly NOT banned, and active in the last 45 minutes
     return users.filter((u) => {
-      if (u.isGuest) return false;
+      if (!u || u.isGuest) return false;
+      if (u.isBanned) return false;
+      if (u.banExpiresAt && new Date(u.banExpiresAt).getTime() > now) return false;
+      if (u.role === 'leitor' && u.banReason) return false;
       if (u.isOnline) return true;
       if (u.lastActive) {
         const diff = now - new Date(u.lastActive).getTime();
@@ -5209,8 +5213,12 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
   subscribeToOnlineUsers(callback: (onlineUsers: UserProfile[]) => void): () => void {
     return StorageService.subscribeToCommunityUsers((allUsers) => {
       const now = Date.now();
+      // 3.05.5.b: Usuários banidos não podem ser considerados como usuários logados
       const online = (allUsers || []).filter((u) => {
         if (!u || u.isGuest) return false;
+        if (u.isBanned) return false;
+        if (u.banExpiresAt && new Date(u.banExpiresAt).getTime() > now) return false;
+        if (u.role === 'leitor' && u.banReason) return false;
         if (u.isOnline) return true;
         if (u.lastActive) {
           const diff = now - new Date(u.lastActive).getTime();

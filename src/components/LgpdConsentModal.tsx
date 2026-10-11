@@ -36,6 +36,96 @@ export const LgpdConsentModal: React.FC<LgpdConsentModalProps> = ({
   const [isDeclinedView, setIsDeclinedView] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // 3.05.4.b: Múltiplas opções de entrada de data de nascimento
+  const [inputMode, setInputMode] = useState<'calendar' | 'selectors' | 'text'>('calendar');
+
+  // Inicialização dos campos individuais e formatados
+  const initialParts = useMemo(() => {
+    if (existingAgeInfo.birthdate && existingAgeInfo.birthdate.includes('-')) {
+      const [y, m, d] = existingAgeInfo.birthdate.split('-');
+      return { year: y || '', month: m || '', day: d || '' };
+    }
+    return { year: '', month: '', day: '' };
+  }, [existingAgeInfo.birthdate]);
+
+  const [selDay, setSelDay] = useState(initialParts.day);
+  const [selMonth, setSelMonth] = useState(initialParts.month);
+  const [selYear, setSelYear] = useState(initialParts.year);
+  const [rawTextDate, setRawTextDate] = useState(() => {
+    if (initialParts.day && initialParts.month && initialParts.year) {
+      return `${initialParts.day}/${initialParts.month}/${initialParts.year}`;
+    }
+    return '';
+  });
+
+  // Atualizar data a partir dos dropdowns (Dia, Mês, Ano)
+  const handleDropdownChange = (d: string, m: string, y: string) => {
+    setSelDay(d);
+    setSelMonth(m);
+    setSelYear(y);
+    setErrorMessage(null);
+
+    if (d && m && y) {
+      const paddedD = d.padStart(2, '0');
+      const paddedM = m.padStart(2, '0');
+      const formatted = `${y}-${paddedM}-${paddedD}`;
+      setBirthdate(formatted);
+      setRawTextDate(`${paddedD}/${paddedM}/${y}`);
+    } else {
+      setBirthdate('');
+    }
+  };
+
+  // Atualizar data a partir do campo de texto com máscara DD/MM/AAAA
+  const handleTextInputChange = (val: string) => {
+    // Mantém apenas dígitos
+    const digits = val.replace(/\D/g, '').slice(0, 8);
+    let formatted = digits;
+    if (digits.length >= 5) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    } else if (digits.length >= 3) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+    setRawTextDate(formatted);
+    setErrorMessage(null);
+
+    if (digits.length === 8) {
+      const d = digits.slice(0, 2);
+      const m = digits.slice(2, 4);
+      const y = digits.slice(4, 8);
+      const dayNum = parseInt(d, 10);
+      const monthNum = parseInt(m, 10);
+      const yearNum = parseInt(y, 10);
+      const currentYear = new Date().getFullYear();
+
+      if (dayNum >= 1 && dayNum <= 31 && monthNum >= 1 && monthNum <= 12 && yearNum >= 1900 && yearNum <= currentYear) {
+        setSelDay(d);
+        setSelMonth(m);
+        setSelYear(y);
+        setBirthdate(`${y}-${m}-${d}`);
+      } else {
+        setBirthdate('');
+      }
+    } else {
+      setBirthdate('');
+    }
+  };
+
+  // Atualizar a partir do calendário nativo
+  const handleCalendarChange = (val: string) => {
+    setBirthdate(val);
+    setErrorMessage(null);
+    if (val && val.includes('-')) {
+      const [y, m, d] = val.split('-');
+      setSelDay(d || '');
+      setSelMonth(m || '');
+      setSelYear(y || '');
+      if (d && m && y) {
+        setRawTextDate(`${d}/${m}/${y}`);
+      }
+    }
+  };
+
   // Calculate age based on birthdate - must be defined before any early returns to satisfy React Hook rules
   const calculatedAge = useMemo(() => {
     if (!birthdate) return null;
@@ -213,17 +303,149 @@ export const LgpdConsentModal: React.FC<LgpdConsentModalProps> = ({
                   )}
                 </label>
 
-                <input
-                  type="date"
-                  value={birthdate}
-                  max={new Date().toISOString().split('T')[0]}
-                  onChange={(e) => {
-                    setBirthdate(e.target.value);
-                    setErrorMessage(null);
-                  }}
-                  className="w-full px-3 py-1.5 text-xs rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-hidden font-mono"
-                  required
-                />
+                {/* Seletor de Modo de Entrada (3.05.4.b) */}
+                <div className="flex items-center gap-1 mb-2 bg-slate-100 dark:bg-slate-800/90 p-1 rounded-md border border-slate-200 dark:border-slate-700/60">
+                  <button
+                    type="button"
+                    onClick={() => setInputMode('calendar')}
+                    className={`flex-1 py-1 px-2 rounded text-[10px] font-semibold transition flex items-center justify-center gap-1 ${
+                      inputMode === 'calendar'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Calendar size={12} />
+                    <span>Calendário</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInputMode('selectors')}
+                    className={`flex-1 py-1 px-2 rounded text-[10px] font-semibold transition flex items-center justify-center gap-1 ${
+                      inputMode === 'selectors'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <span>🔢</span>
+                    <span>Dia / Mês / Ano</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInputMode('text')}
+                    className={`flex-1 py-1 px-2 rounded text-[10px] font-semibold transition flex items-center justify-center gap-1 ${
+                      inputMode === 'text'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <span>⌨️</span>
+                    <span>Digitação Rápida</span>
+                  </button>
+                </div>
+
+                {/* Modo 1: Calendário Nativo HTML5 */}
+                {inputMode === 'calendar' && (
+                  <input
+                    type="date"
+                    value={birthdate}
+                    max={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => handleCalendarChange(e.target.value)}
+                    className="w-full px-3 py-1.5 text-xs rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-hidden font-mono"
+                    required
+                  />
+                )}
+
+                {/* Modo 2: Dropdowns Separados (Dia, Mês, Ano) */}
+                {inputMode === 'selectors' && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Dia */}
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase font-mono mb-1">
+                        Dia
+                      </label>
+                      <select
+                        value={selDay}
+                        onChange={(e) => handleDropdownChange(e.target.value, selMonth, selYear)}
+                        className="w-full px-2 py-1.5 text-xs rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Dia</option>
+                        {Array.from({ length: 31 }, (_, i) => {
+                          const d = String(i + 1).padStart(2, '0');
+                          return (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    {/* Mês */}
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase font-mono mb-1">
+                        Mês
+                      </label>
+                      <select
+                        value={selMonth}
+                        onChange={(e) => handleDropdownChange(selDay, e.target.value, selYear)}
+                        className="w-full px-2 py-1.5 text-xs rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Mês</option>
+                        <option value="01">01 - Jan</option>
+                        <option value="02">02 - Fev</option>
+                        <option value="03">03 - Mar</option>
+                        <option value="04">04 - Abr</option>
+                        <option value="05">05 - Mai</option>
+                        <option value="06">06 - Jun</option>
+                        <option value="07">07 - Jul</option>
+                        <option value="08">08 - Ago</option>
+                        <option value="09">09 - Set</option>
+                        <option value="10">10 - Out</option>
+                        <option value="11">11 - Nov</option>
+                        <option value="12">12 - Dez</option>
+                      </select>
+                    </div>
+
+                    {/* Ano */}
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase font-mono mb-1">
+                        Ano
+                      </label>
+                      <select
+                        value={selYear}
+                        onChange={(e) => handleDropdownChange(selDay, selMonth, e.target.value)}
+                        className="w-full px-2 py-1.5 text-xs rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-mono focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Ano</option>
+                        {Array.from({ length: new Date().getFullYear() - 1920 + 1 }, (_, i) => {
+                          const y = String(new Date().getFullYear() - i);
+                          return (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Modo 3: Digitação Rápida Formatada com Máscara DD/MM/AAAA */}
+                {inputMode === 'text' && (
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="DD/MM/AAAA (ex: 15/08/2000)"
+                      value={rawTextDate}
+                      maxLength={10}
+                      onChange={(e) => handleTextInputChange(e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-hidden font-mono"
+                    />
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+                      Digite os 8 números consecutivamente (ex: 20051998) para auto-formatação.
+                    </p>
+                  </div>
+                )}
 
                 {/* Age Feedback Banner */}
                 {isUnderAge && (

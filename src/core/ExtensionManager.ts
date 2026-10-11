@@ -64,6 +64,8 @@ import MazeRecaptchaControlExtension from '../extensions/maze-recaptcha-control'
 import WmfNoticeControlExtension from '../extensions/wmf-notice-control';
 import WelcomeMessageCustomizerExtension from '../extensions/welcome-message-customizer';
 import DefaultLanguageExtension from '../extensions/default-language';
+import MainPageCustomizerExtension from '../extensions/mainpage-customizer';
+import SmartTvConfigExtension from '../extensions/smartv-config';
 import {
   Win95ThemeExtension,
   Win31ThemeExtension,
@@ -180,6 +182,8 @@ export class ExtensionManager {
       WmfNoticeControlExtension,
       WelcomeMessageCustomizerExtension,
       DefaultLanguageExtension,
+      MainPageCustomizerExtension,
+      SmartTvConfigExtension,
       Win95ThemeExtension,
       Win31ThemeExtension,
       WinXpThemeExtension,
