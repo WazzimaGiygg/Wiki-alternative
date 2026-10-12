@@ -51,6 +51,8 @@ import {
   ArrowUpRight,
   Database,
   HardDrive,
+  Globe,
+  FileDown,
 } from 'lucide-react';
 import {
   getSqlDatabaseBackupConfig,
@@ -59,6 +61,16 @@ import {
   downloadSqlBackupFile,
   SqlDatabaseBackupConfig,
 } from '../extensions/sql-database-backup/config';
+import {
+  getFirebaseAppletImporterConfig,
+  updateFirebaseAppletImporterConfig,
+  fetchFirebaseAppletConfigFromRegisteredSite,
+  triggerDownloadAppletConfigFile,
+  applyImportedFirebaseConfig,
+  FIREBASE_APPLET_CONFIG_IMPORTER_FILE_CONFIG,
+  ImportFetchResult,
+  FirebaseAppletConfigImporterSettings,
+} from '../extensions/firebase-applet-config-importer/config';
 import ExtensionsSecurityAuditorExtension, {
   SecurityAuditReport,
 } from '../extensions/extensions-security-auditor';
@@ -129,6 +141,16 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     const auditorExt = extensionManager.getExtension('ExtensionsSecurityAuditorExtension') as ExtensionsSecurityAuditorExtension | undefined;
     return auditorExt ? auditorExt.getMemoryUsage() : { usedBytes: 74 * 1024 * 1024, usedMB: 74, limitMB: 200, isExceeded: false, formatted: '74 MB / 200 MB' };
   });
+
+  // 3.05.3.ad: Modal de Importação e Download do JSON firebase-applet-config em Site Cadastrado
+  const [showConfigImporterModal, setShowConfigImporterModal] = useState<boolean>(false);
+  const [importerConfig, setImporterConfig] = useState<FirebaseAppletConfigImporterSettings>(() => getFirebaseAppletImporterConfig());
+  const [importerResult, setImporterResult] = useState<ImportFetchResult | null>(null);
+  const [isFetchingConfig, setIsFetchingConfig] = useState<boolean>(false);
+  const [importerStatusMsg, setImporterStatusMsg] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<boolean>(false);
+  const [copiedUid, setCopiedUid] = useState<boolean>(false);
+  const [copiedJson, setCopiedJson] = useState<boolean>(false);
 
   // Sincronização em Nuvem Firebase (Versão 3.304)
   const [syncStatus, setSyncStatus] = useState<SyncStateStatus>(() => extensionManager.getSyncStatus());
@@ -365,6 +387,71 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
           message: `ALERTA DE MEMÓRIA: Consumo superior a 200 MB disparado (${mem.usedMB} MB)!`,
         });
       }
+    }
+  };
+
+  // 3.05.3.ad: Manipuladores de Importação do firebase-applet-config em Site Cadastrado
+  const handleFetchImporterConfig = async (customUrlOrUid?: string) => {
+    setIsFetchingConfig(true);
+    setImporterStatusMsg({ type: 'info', text: 'Consultando registro no Firebase (coleção wikizerikey)...' });
+    try {
+      const res = await fetchFirebaseAppletConfigFromRegisteredSite(
+        customUrlOrUid || importerConfig.registeredSiteUrl || importerConfig.uid
+      );
+      setImporterResult(res);
+      if (res.success) {
+        setImporterStatusMsg({
+          type: 'success',
+          text: `Arquivo ${res.fileName} carregado com sucesso via UID [${res.uid}]!`,
+        });
+      } else {
+        setImporterStatusMsg({
+          type: 'error',
+          text: res.error || 'Falha ao recuperar arquivo do Firebase.',
+        });
+      }
+    } catch (err: any) {
+      setImporterStatusMsg({
+        type: 'error',
+        text: `Erro na consulta: ${err?.message || 'Falha de conexão.'}`,
+      });
+    } finally {
+      setIsFetchingConfig(false);
+    }
+  };
+
+  const handleDownloadImporterJson = () => {
+    const content = importerResult?.rawJson || importerResult?.data;
+    if (!content) {
+      handleFetchImporterConfig().then(() => {
+        if (importerResult?.rawJson || importerResult?.data) {
+          triggerDownloadAppletConfigFile(
+            importerResult.rawJson || importerResult.data,
+            importerConfig.fileName
+          );
+        }
+      });
+      return;
+    }
+    triggerDownloadAppletConfigFile(content, importerConfig.fileName);
+    setImporterStatusMsg({
+      type: 'success',
+      text: `Download do ${importerConfig.fileName} disparado com sucesso!`,
+    });
+  };
+
+  const handleApplyImporterJson = () => {
+    if (!importerResult?.data) {
+      setImporterStatusMsg({ type: 'error', text: 'Nenhum dado baixado disponível para aplicar.' });
+      return;
+    }
+    const applyRes = applyImportedFirebaseConfig(importerResult.data);
+    if (applyRes.success) {
+      setImporterStatusMsg({ type: 'success', text: applyRes.message });
+      setFeedback({ type: 'success', message: applyRes.message });
+    } else {
+      setImporterStatusMsg({ type: 'error', text: applyRes.message });
+      setFeedback({ type: 'error', message: applyRes.message });
     }
   };
 
@@ -1898,10 +1985,10 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                           Custom
                         </span>
                       )}
-                      {(ext.noCloudSync || ext.syncStatus === 'local_only' || ext.name === 'SqlDatabaseBackupExtension') && (
+                      {(ext.noCloudSync || ext.syncStatus === 'local_only' || ext.name === 'SqlDatabaseBackupExtension' || ext.name === 'FirebaseAppletConfigImporterExtension') && (
                         <span
                           className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-0.5"
-                          title="Extensão nativa local não sincronizável com a nuvem (Requisito 3.05.3.aa)"
+                          title="Extensão nativa local não sincronizável com a nuvem (Requisitos 3.05.3.aa & 3.05.3.ad)"
                         >
                           <HardDrive className="w-2.5 h-2.5" />
                           Local (Não-Nuvem)
@@ -2007,6 +2094,20 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                         title="Auditoria de Segurança, Atualizações e Memória > 200 MB (3.05.3.ac)"
                       >
                         <ShieldAlert className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {ext.name === 'FirebaseAppletConfigImporterExtension' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowConfigImporterModal(true);
+                          handleFetchImporterConfig();
+                        }}
+                        className="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/60 transition"
+                        title="Importar e Baixar JSON do firebase-applet-config em Site Cadastrado (3.05.3.ad)"
+                      >
+                        <FileDown className="w-4 h-4" />
                       </button>
                     )}
 
@@ -3962,6 +4063,244 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                   })}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3.05.3.ad: Modal de Importação do firebase-applet-config.json em Site Cadastrado */}
+      {showConfigImporterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-950/40">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400">
+                  <FileDown className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Importador de firebase-applet-config.json</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                      Nativa • Não Sincronizável
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">
+                    Arquivo de Configuração: <code className="text-amber-700 dark:text-amber-300 font-bold">src/extensions/firebase-applet-config-importer/config.ts</code>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfigImporterModal(false);
+                  setImporterStatusMsg(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
+              {/* Informativo de Diretriz 3.05.3.ad */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2 leading-relaxed">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                  <Globe className="w-4 h-4 text-amber-600" />
+                  <span>Requisito 3.05.3.ad: Link Nativo por Arquivo & Não Sincronizável com a Nuvem</span>
+                </div>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Esta extensão recupera o arquivo oficial <code>firebase-applet-config.json</code> do site cadastrado.
+                  O link padrão está registrado diretamente no código do arquivo da extensão (sem sincronização com o Firestore de extensões).
+                  O download e a importação utilizam a mesma lógica de recuperação do Firebase (coleção <code>wikizerikey</code>).
+                </p>
+              </div>
+
+              {/* Status Message Feedback */}
+              {importerStatusMsg && (
+                <div
+                  className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
+                    importerStatusMsg.type === 'success'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+                      : importerStatusMsg.type === 'error'
+                      ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200'
+                      : 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {importerStatusMsg.type === 'success' ? (
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <Info className="w-4 h-4 shrink-0" />
+                    )}
+                    <span>{importerStatusMsg.text}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setImporterStatusMsg(null)}
+                    className="text-slate-400 hover:text-slate-600 cursor-pointer font-bold text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* URL Padrão do Site Cadastrado */}
+              <div className="space-y-2">
+                <label className="font-bold text-slate-700 dark:text-slate-300 block">
+                  Link Padrão do Site Cadastrado (Requisito 3.05.3.ad):
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={importerConfig.registeredSiteUrl}
+                    readOnly
+                    className="flex-1 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-[11px] text-amber-700 dark:text-amber-300 select-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(importerConfig.registeredSiteUrl);
+                      setCopiedUrl(true);
+                      setTimeout(() => setCopiedUrl(false), 2000);
+                    }}
+                    className="px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-bold text-slate-700 dark:text-slate-300 transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                  >
+                    {copiedUrl ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedUrl ? 'Copiado' : 'Copiar'}</span>
+                  </button>
+                  <a
+                    href={importerConfig.registeredSiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Abrir Site</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* UID e Metadados do Firebase Remoto */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                  <div className="text-[10px] text-slate-400 font-semibold uppercase">UID de Acesso</div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs">
+                      {importerConfig.uid}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(importerConfig.uid);
+                        setCopiedUid(true);
+                        setTimeout(() => setCopiedUid(false), 2000);
+                      }}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      {copiedUid ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                  <div className="text-[10px] text-slate-400 font-semibold uppercase">Coleção Firestore</div>
+                  <div className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs">
+                    {importerConfig.collectionName}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                  <div className="text-[10px] text-slate-400 font-semibold uppercase">Arquivo de Saída</div>
+                  <div className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                    {importerConfig.fileName}
+                  </div>
+                </div>
+              </div>
+
+              {/* Botões de Ação Principal */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isFetchingConfig}
+                  onClick={() => handleFetchImporterConfig()}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition flex items-center gap-2 cursor-pointer"
+                >
+                  {isFetchingConfig ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+                  <span>Consultar Registro Firebase</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadImporterJson}
+                  className="px-5 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition flex items-center gap-2 cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Baixar firebase-applet-config.json</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleApplyImporterJson}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition flex items-center gap-2 cursor-pointer"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>Aplicar na Wiki Agora</span>
+                </button>
+              </div>
+
+              {/* Pré-visualização do Arquivo JSON */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block">
+                    Pré-visualização do JSON (firebase-applet-config.json):
+                  </label>
+                  {importerResult?.rawJson && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(importerResult.rawJson || '');
+                        setCopiedJson(true);
+                        setTimeout(() => setCopiedJson(false), 2000);
+                      }}
+                      className="text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedJson ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedJson ? 'Copiado' : 'Copiar Conteúdo'}</span>
+                    </button>
+                  )}
+                </div>
+
+                <pre className="p-4 rounded-2xl bg-slate-950 text-slate-100 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto border border-slate-800 select-all">
+                  {importerResult?.rawJson ||
+                    JSON.stringify(
+                      {
+                        status: 'Aguardando consulta...',
+                        registeredSiteUrl: importerConfig.registeredSiteUrl,
+                        uid: importerConfig.uid,
+                        collection: importerConfig.collectionName,
+                        fileName: importerConfig.fileName,
+                      },
+                      null,
+                      2
+                    )}
+                </pre>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center justify-between shrink-0">
+              <span className="text-[11px] text-slate-500">
+                Extensão Nativa e Não Sincronizável • Padrão 3.05.3.ad
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowConfigImporterModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer"
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>

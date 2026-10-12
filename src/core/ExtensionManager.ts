@@ -87,6 +87,7 @@ import {
 import SqlDatabaseBackupExtension from '../extensions/sql-database-backup';
 import HideOnlineUsersExtension from '../extensions/hide-online-users';
 import ExtensionsSecurityAuditorExtension from '../extensions/extensions-security-auditor';
+import FirebaseAppletConfigImporterExtension from '../extensions/firebase-applet-config-importer';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -206,6 +207,7 @@ export class ExtensionManager {
       SqlDatabaseBackupExtension,
       HideOnlineUsersExtension,
       ExtensionsSecurityAuditorExtension,
+      FirebaseAppletConfigImporterExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -965,7 +967,7 @@ ${tc.customCss || ''}
       const isCloudSyncable =
         typeof (ext as any).isSyncableWithCloud === 'function'
           ? (ext as any).isSyncableWithCloud()
-          : name !== 'SqlDatabaseBackupExtension';
+          : name !== 'SqlDatabaseBackupExtension' && name !== 'FirebaseAppletConfigImporterExtension';
 
       list.push({
         id: customMatch?.id || `ext-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
@@ -1002,6 +1004,8 @@ ${tc.customCss || ''}
         originFile:
           name === 'SqlDatabaseBackupExtension'
             ? 'src/extensions/sql-database-backup/config.ts'
+            : name === 'FirebaseAppletConfigImporterExtension'
+            ? 'src/extensions/firebase-applet-config-importer/config.ts'
             : customMatch?.originFile,
       });
     }

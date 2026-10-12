@@ -14,6 +14,11 @@ import {
   Info,
 } from 'lucide-react';
 import { CustomToolConfig, AppTheme } from '../types';
+import {
+  fetchFirebaseAppletConfigFromRegisteredSite,
+  triggerDownloadAppletConfigFile,
+  applyImportedFirebaseConfig,
+} from '../extensions/firebase-applet-config-importer/config';
 
 interface CustomInteractiveToolRunnerProps {
   tool: CustomToolConfig;
@@ -55,6 +60,30 @@ export const CustomInteractiveToolRunner: React.FC<CustomInteractiveToolRunnerPr
   const handleExecuteCalculation = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError(null);
+
+    if (tool.toolId === 'firebase-applet-importer') {
+      const urlOrUid = formValues.urlOrUid || '';
+      fetchFirebaseAppletConfigFromRegisteredSite(urlOrUid)
+        .then((res) => {
+          if (res.success && res.rawJson) {
+            setResult(res.rawJson);
+            setHistory((prev) => [
+              {
+                query: `UID: ${res.uid}`,
+                result: `firebase-applet-config.json recuperado (${res.source})`,
+                timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+              },
+              ...prev.slice(0, 9),
+            ]);
+          } else {
+            setError(res.error || 'Erro ao recuperar configuração');
+          }
+        })
+        .catch((err) => {
+          setError(`Erro: ${err?.message || err}`);
+        });
+      return;
+    }
 
     if (!tool.calculationFormula) {
       setResult('Ferramenta executada com sucesso.');
@@ -245,28 +274,70 @@ export const CustomInteractiveToolRunner: React.FC<CustomInteractiveToolRunnerPr
 
         {/* Cartão de Resultado */}
         {result !== null && (
-          <div className="mt-6 p-5 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-300 mb-1">
-                {tool.resultLabel || 'Resultado Calculado'}
-              </div>
-              <div className="text-2xl font-mono font-bold text-slate-900 dark:text-white flex items-baseline gap-2">
-                <span>{result}</span>
-                {tool.unitSuffix && (
-                  <span className="text-sm font-sans font-medium text-slate-500 dark:text-slate-400">
-                    {tool.unitSuffix}
+          <div className="mt-6 p-5 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 space-y-4 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-300 mb-1">
+                  {tool.resultLabel || 'Resultado Calculado'}
+                </div>
+                {tool.toolId !== 'firebase-applet-importer' ? (
+                  <div className="text-2xl font-mono font-bold text-slate-900 dark:text-white flex items-baseline gap-2">
+                    <span>{result}</span>
+                    {tool.unitSuffix && (
+                      <span className="text-sm font-sans font-medium text-slate-500 dark:text-slate-400">
+                        {tool.unitSuffix}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                    Configuração <code>firebase-applet-config.json</code> recuperada com sucesso!
                   </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleCopyResult}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-cyan-100 dark:hover:bg-slate-700 border border-cyan-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+                >
+                  {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                  <span>{copied ? 'Copiado!' : 'Copiar Resultado'}</span>
+                </button>
+
+                {tool.toolId === 'firebase-applet-importer' && (
+                  <>
+                    <button
+                      onClick={() => triggerDownloadAppletConfigFile(result)}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+                    >
+                      <Check size={14} />
+                      <span>Baixar JSON</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        try {
+                          applyImportedFirebaseConfig(JSON.parse(result));
+                          alert('Configuração aplicada à Wiki com sucesso!');
+                        } catch {
+                          // ignore
+                        }
+                      }}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+                    >
+                      <Sparkles size={14} />
+                      <span>Aplicar na Wiki</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
 
-            <button
-              onClick={handleCopyResult}
-              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-cyan-100 dark:hover:bg-slate-700 border border-cyan-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
-            >
-              {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-              <span>{copied ? 'Copiado!' : 'Copiar Resultado'}</span>
-            </button>
+            {tool.toolId === 'firebase-applet-importer' && (
+              <pre className="p-3.5 rounded-xl bg-slate-950 text-slate-100 font-mono text-[11px] max-h-60 overflow-y-auto border border-slate-800">
+                {result}
+              </pre>
+            )}
           </div>
         )}
 

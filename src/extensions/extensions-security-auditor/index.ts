@@ -87,6 +87,7 @@ export default class ExtensionsSecurityAuditorExtension implements WikiExtension
     SqlDatabaseBackupExtension: '3.05.3',
     HideOnlineUsersExtension: '1.0.0',
     ExtensionsSecurityAuditorExtension: '1.0.0',
+    FirebaseAppletConfigImporterExtension: '3.05.3',
   };
 
   private memoryAlertTriggered: boolean = false;
