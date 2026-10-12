@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   AlertOctagon,
   UserCheck,
+  ExternalLink,
+  BookOpen,
 } from 'lucide-react';
 import { StorageService } from '../services/storageService';
 
@@ -280,6 +282,24 @@ export const LgpdConsentModal: React.FC<LgpdConsentModalProps> = ({
                 <li><strong>Identificação e Atribuição:</strong> registro público de autoria e histórico de revisões.</li>
                 <li><strong>Direitos do Titular (Art. 18):</strong> portabilidade, retificação e anonimização disponíveis na Central "Meus Dados".</li>
               </ul>
+
+              {/* Link para o Artigo Enciclopédico de Regras da LGPD na Wiki */}
+              <div className="mt-2 p-2 rounded-md bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 flex items-center justify-between text-[11px] gap-2">
+                <div className="flex items-center gap-1.5 text-blue-900 dark:text-blue-300">
+                  <BookOpen size={13} className="text-blue-600 shrink-0" />
+                  <span>Consulte o verbete completo sobre as regras e direitos:</span>
+                </div>
+                <a
+                  href="/?uid=curated-regras-lgpd-wiki"
+                  onClick={() => {
+                    if (onClose) onClose();
+                  }}
+                  className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 shrink-0"
+                >
+                  <span>Regras da LGPD na Wiki</span>
+                  <ExternalLink size={10} />
+                </a>
+              </div>
             </div>
 
             {/* Verificação Rigorosa de Idade */}

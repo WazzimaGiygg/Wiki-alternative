@@ -391,6 +391,12 @@ export interface WikiExtension {
   isCore?(): boolean;
 
   /**
+   * 3.05.3.aa: Indica se a extensão pode ser sincronizada com a nuvem (Firebase).
+   * Retorne false para extensões locais/nativas que não devem sincronizar.
+   */
+  isSyncableWithCloud?(): boolean;
+
+  /**
    * Link da documentação oficial da extensão.
    */
   getWebsite?(): string;

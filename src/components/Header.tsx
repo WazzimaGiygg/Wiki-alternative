@@ -197,6 +197,9 @@ export const Header: React.FC<HeaderProps> = ({
 
   const branding = ExtensionManager.getInstance().getBranding();
   const isCustomizationAllowed = ExtensionManager.getInstance().isAppearanceCustomizationAllowed();
+  const isHideOnlineUsersActive =
+    ExtensionManager.getInstance().isExtensionEnabled('HideOnlineUsersExtension') ||
+    !ExtensionManager.getInstance().getHooks().applyFilters<boolean>('header:show_online_users', true);
 
   useEffect(() => {
     StorageService.getOnlineUsers().then((users) => setOnlineUsers(users));
@@ -2093,8 +2096,9 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Online Users Trigger & Modal/Dropdown */}
-          <div className="relative" ref={onlineMenuRef}>
+          {/* Online Users Trigger & Modal/Dropdown (Ocultado se a extensão HideOnlineUsersExtension estiver ativa) */}
+          {!isHideOnlineUsersActive && (
+          <div className="relative" ref={onlineMenuRef} data-online-users-trigger="true">
             <button
               id="btn-header-online-users"
               onClick={() => setShowOnlineMenu(!showOnlineMenu)}
@@ -2225,6 +2229,7 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             )}
           </div>
+          )}
 
           {/* Notification Bell */}
           <div className="relative shrink-0" ref={notifRef}>

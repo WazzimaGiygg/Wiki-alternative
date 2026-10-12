@@ -337,6 +337,11 @@ export class FirebaseExtensionSyncService {
       const operatorName = user?.displayName || user?.username || user?.email || 'Burocrata Administrador';
 
       for (const ext of extensions) {
+        // Requisito 3.05.3.aa: Ignora extensões não sincronizáveis com a nuvem (nativas locais)
+        if (ext.noCloudSync || ext.syncStatus === 'local_only' || ext.name === 'SqlDatabaseBackupExtension') {
+          continue;
+        }
+
         const docId = this.sanitizeDocId(ext.name);
         const docRef = doc(db, EXTENSION_FIREBASE_COLLECTIONS.EXTENSIONS, docId);
 
@@ -380,6 +385,13 @@ export class FirebaseExtensionSyncService {
     extension: InstalledExtensionMeta,
     user: UserProfile | null
   ): Promise<{ success: boolean; message: string }> {
+    if (extension.noCloudSync || extension.syncStatus === 'local_only' || extension.name === 'SqlDatabaseBackupExtension') {
+      return {
+        success: false,
+        message: `A extensão '${extension.name}' é nativa e não sincronizável com a nuvem (Requisito 3.05.3.aa).`,
+      };
+    }
+
     const db = getDbSafe();
     if (!db) {
       return { success: false, message: 'Banco de dados do Firebase offline.' };
@@ -486,6 +498,9 @@ export class FirebaseExtensionSyncService {
 
     // 2. Verifica extensões com o mesmo nome ou funções colidentes
     for (const localExt of localExtensions) {
+      if (localExt.noCloudSync || localExt.syncStatus === 'local_only' || localExt.name === 'SqlDatabaseBackupExtension') {
+        continue;
+      }
       const cloudExt = cloudMap.get(localExt.name.toLowerCase().trim());
       if (cloudExt) {
         // Colisão de versão ou código

@@ -84,6 +84,9 @@ import {
   Nokia3310ThemeExtension,
   HalfLifeThemeExtension,
 } from '../extensions/themes/allThemes';
+import SqlDatabaseBackupExtension from '../extensions/sql-database-backup';
+import HideOnlineUsersExtension from '../extensions/hide-online-users';
+import ExtensionsSecurityAuditorExtension from '../extensions/extensions-security-auditor';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -200,6 +203,9 @@ export class ExtensionManager {
       RobloxThemeExtension,
       Nokia3310ThemeExtension,
       HalfLifeThemeExtension,
+      SqlDatabaseBackupExtension,
+      HideOnlineUsersExtension,
+      ExtensionsSecurityAuditorExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -956,6 +962,11 @@ ${tc.customCss || ''}
           ? ext.getDependencies()
           : customMatch?.dependencies;
 
+      const isCloudSyncable =
+        typeof (ext as any).isSyncableWithCloud === 'function'
+          ? (ext as any).isSyncableWithCloud()
+          : name !== 'SqlDatabaseBackupExtension';
+
       list.push({
         id: customMatch?.id || `ext-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
         name,
@@ -986,6 +997,12 @@ ${tc.customCss || ''}
         settings: activeSettings,
         permissions,
         tags: customMatch?.tags,
+        noCloudSync: !isCloudSyncable,
+        syncStatus: !isCloudSyncable ? 'local_only' : undefined,
+        originFile:
+          name === 'SqlDatabaseBackupExtension'
+            ? 'src/extensions/sql-database-backup/config.ts'
+            : customMatch?.originFile,
       });
     }
 
@@ -1794,7 +1811,7 @@ ${tc.customCss || ''}
   }
 
   /**
-   * 304.3.1: Permite ao burocrata resolver colisões ou remover extensões órfãs da nuvem.
+   * 304.3.1: Permite exclusivamente ao burocrata resolver colisões ou confirmar em manter entre sincronia e nuvem das extensões.
    */
   public async resolveConflict(
     conflict: ExtensionConflict,
@@ -1802,7 +1819,7 @@ ${tc.customCss || ''}
     currentUser: UserProfile | null
   ): Promise<{ success: boolean; message: string }> {
     if (!isUserBureaucrat(currentUser)) {
-      return { success: false, message: 'Apenas burocratas podem resolver conflitos de extensões.' };
+      return { success: false, message: 'Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões.' };
     }
 
     try {
@@ -1842,7 +1859,7 @@ ${tc.customCss || ''}
           this.notifyListeners();
           return {
             success: true,
-            message: `Versão da nuvem de '${conflict.extensionName}' preservada e sincronizada localmente.`,
+            message: `Versão da nuvem de '${conflict.extensionName}' mantida e sincronizada localmente com sucesso pelo burocrata.`,
           };
         }
       }
@@ -1850,6 +1867,41 @@ ${tc.customCss || ''}
       return { success: false, message: 'Resolução não executada.' };
     } catch (err: any) {
       return { success: false, message: `Erro ao resolver conflito: ${err?.message || 'Falha desconhecida'}` };
+    }
+  }
+
+  /**
+   * Confirma explicitamente a manutenção da sincronização entre o estado local e a nuvem Firebase das extensões.
+   * Regra estrita de Governança: Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões.
+   */
+  public async confirmKeepSyncBetweenLocalAndCloud(
+    currentUser: UserProfile | null
+  ): Promise<{ success: boolean; message: string; activeCount?: number; totalCount?: number }> {
+    if (!isUserBureaucrat(currentUser)) {
+      return {
+        success: false,
+        message: 'Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões.',
+      };
+    }
+
+    try {
+      const syncService = FirebaseExtensionSyncService.getInstance();
+      const res = await syncService.syncStatesToCloud(this.extensionStates, currentUser);
+      this.lastCloudSyncAt = new Date().toISOString();
+      this.notifyListeners();
+      return {
+        success: res.success,
+        message: res.success
+          ? 'Sincronia e nuvem de extensões confirmadas e mantidas com sucesso pelo burocrata!'
+          : res.message,
+        activeCount: Object.values(this.extensionStates).filter(Boolean).length,
+        totalCount: Object.keys(this.extensionStates).length,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: `Falha ao manter sincronia e nuvem: ${err?.message || 'Erro inesperado'}`,
+      };
     }
   }
 

@@ -90,6 +90,7 @@ import { validateUserIdentifiersAgainstWikimediaAdmins, checkIfWikimediaAdmin } 
 import { ACTIVE_FIREBASE_CONFIG, getActiveFirebaseConfig } from '../config/firebaseCustomConfig';
 import { FirebaseUsageMetricsService } from './firebaseUsageMetricsService';
 import { PushNotificationService } from './pushNotificationService';
+import { CURATED_FEATURED_ARTICLES } from '../data/curatedArticles';
 
 // Configuração ativa do Firebase derivada do arquivo de configuração do desenvolvedor (src/config/firebaseCustomConfig.ts)
 export const firebaseConfig = {
@@ -470,6 +471,13 @@ export const StorageService = {
           return localArticles;
         }
 
+        // Incluir artigos canônicos e o artigo sobre as regras da LGPD na Wiki
+        for (const c of CURATED_FEATURED_ARTICLES) {
+          if (!remoteArticles.some((a) => a.id.toLowerCase() === c.id.toLowerCase())) {
+            remoteArticles.push(c);
+          }
+        }
+
         // Ordenar cronologicamente decrescente por edição/criação
         remoteArticles.sort((a, b) => {
           const timeA = new Date(a.dataEdicao || a.dataCriacao).getTime();
@@ -485,11 +493,23 @@ export const StorageService = {
         return remoteArticles;
       } catch (err) {
         console.warn('[StorageService] Erro ao carregar artigos do Firestore, usando cache local:', err);
-        return localArticles;
+        const fallbackList = [...localArticles];
+        for (const c of CURATED_FEATURED_ARTICLES) {
+          if (!fallbackList.some((a) => a.id.toLowerCase() === c.id.toLowerCase())) {
+            fallbackList.push(c);
+          }
+        }
+        return fallbackList;
       }
     }
 
-    return localArticles;
+    const fallbackList = [...localArticles];
+    for (const c of CURATED_FEATURED_ARTICLES) {
+      if (!fallbackList.some((a) => a.id.toLowerCase() === c.id.toLowerCase())) {
+        fallbackList.push(c);
+      }
+    }
+    return fallbackList;
   },
 
   // Inscrições em tempo real para sincronização instantânea com o Firestore
@@ -524,6 +544,12 @@ export const StorageService = {
               comiteEtica: data.comiteEtica || undefined,
             });
           });
+
+          for (const c of CURATED_FEATURED_ARTICLES) {
+            if (!list.some((a) => a.id.toLowerCase() === c.id.toLowerCase())) {
+              list.push(c);
+            }
+          }
           list.sort((a, b) => {
             const timeA = new Date(a.dataEdicao || a.dataCriacao).getTime();
             const timeB = new Date(b.dataEdicao || b.dataCriacao).getTime();

@@ -331,4 +331,128 @@ WazzimaGiygg provou que o modelo da Wikipédia tradicional — fundado na concen
       'Disponibilização da Linha do Tempo Visual interativa com os 9 marcos cronológicos do dossiê A Verdade.',
     ],
   },
+  {
+    id: 'curated-regras-lgpd-wiki',
+    pageUid: 'direito-digital',
+    titulo: 'Regras da LGPD na Wiki: Diretrizes, Proteção de Dados e Direitos dos Usuários',
+    categoria: 'Direito & Governança Digital',
+    idioma: 'pt',
+    autor: 'Comissão de Privacidade e Governança Digital da WikiWorldWeb',
+    dataCriacao: '2026-06-15T10:00:00Z',
+    dataEdicao: '2026-10-11T12:00:00Z',
+    visualizacoes: 5820,
+    versao: 10,
+    tags: [
+      'LGPD',
+      'Lei 13.709/2018',
+      'Privacidade',
+      'Direito Digital',
+      'Proteção de Dados',
+      'Wiki',
+      'CheckUser',
+      'Anonimização',
+      'DPO',
+      'Due Process',
+      'Biografias de Pessoas Vivas',
+    ],
+    resumo:
+      'Guia enciclopédico e prático sobre as normas da Lei Geral de Proteção de Dados Pessoais (LGPD - Lei nº 13.709/2018) aplicadas ao ecossistema wiki: catálogo de direitos dos titulares (Art. 18), minimização de dados, sigilo constitucional de IPs, vedação ao doxxing, due process em moderação e salvaguardas para editores e biografias de pessoas vivas.',
+    descricao: `== Introdução: A LGPD e as Enciclopédias Digitais ==
+A '''Lei Geral de Proteção de Dados Pessoais (LGPD - Lei nº 13.709/2018)''' redefiniu a governança de dados e os direitos fundamentais no Brasil. Longe de ser um entrave burocrático, suas normas constituem um conjunto de garantias indispensáveis para proteger a dignidade humana, a autodeterminação informacional, a privacidade e a própria liberdade editorial em ambientes colaborativos na internet.
+
+=== O Fim da Falácia da Imunidade Territorial ===
+Durante anos, certas fundações estrangeiras e administradores de enciclopédias sustentaram o mito de que plataformas sediadas no exterior estariam isentas da legislação brasileira. Esse argumento é juridicamente insustentável:
+* '''Artigo 3º da LGPD:''' Aplica-se a qualquer operação de tratamento realizada por pessoa natural ou jurídica, independentemente do país de sua sede ou do país onde estejam localizados os servidores, desde que a operação inclua dados coletados em território nacional ou tenha por objetivo a oferta de bens ou serviços a indivíduos localizados no Brasil.
+* '''Artigo 11 do Marco Civil da Internet (Lei nº 12.965/2014):''' Estabelece expressamente que a legislação brasileira e os direitos à privacidade aplicam-se obrigatoriamente a qualquer ato de coleta, armazenamento, guarda e tratamento de registros de conexão e de dados pessoais no Brasil.
+
+Portanto, toda enciclopédia acessível a internautas brasileiros deve plena obediência ao ordenamento jurídico nacional.
+
+== 1. Princípios da LGPD Mais Úteis no Dia a Dia da Wiki ==
+O '''Artigo 6º da LGPD''' enumera princípios que servem como guia prático direto para arquitetos de software, moderadores e colaboradores da enciclopédia:
+
+=== A. Finalidade e Adequação (Art. 6º, I e II) ===
+O tratamento de dados pessoais deve ter propósitos legítimos, específicos e informados ao titular. Na wiki:
+* Os dados fornecidos em cadastros (como e-mail) destinam-se exclusivamente à autenticação de segurança e notificações operacionais autorizadas.
+* É proibido desviar dados comunitários para monitoramento ideológico, rastreamento comercial não consentido ou formação de dossiês contra editores.
+
+=== B. Necessidade e Minimização de Dados (Art. 6º, III) ===
+A wiki deve limitar a coleta ao mínimo indispensável para a realização de suas finalidades (''data minimization''):
+* Não se exige nome civil, CPF, endereço físico ou telefone para ler ou colaborar em artigos.
+* A atribuição autoral pode ser exercida via pseudônimo público, preservando a identidade civil do colaborador contra perseguições.
+
+=== C. Livre Acesso e Transparência (Art. 6º, IV e VI) ===
+Garantia aos titulares de consulta facilitada e gratuita sobre a forma e a duração do tratamento de seus dados:
+* A plataforma deve fornecer um painel acessível (como a Central "Meus Dados") onde o usuário visualiza seus logs de atividade, metadados cadastrais e preferências de privacidade.
+
+=== D. Segurança e Prevenção (Art. 6º, VII e VIII) ===
+Utilização de medidas técnicas e organizacionais aptas a proteger os dados pessoais contra acessos não autorizados:
+* Anonimização de ponta a ponta de endereços IP de leitura.
+* Armazenamento seguro de senhas com algoritmos de hash modernos (bcrypt / Argon2) e autenticação segura (Firebase Auth).
+* Regras rígidas de segurança no banco de dados (''Firestore Security Rules'') impedindo que usuários leiam ou modifiquem perfis alheios.
+
+=== E. Não Discriminação (Art. 6º, IX) ===
+Impossibilidade de realização do tratamento para fins discriminatórios ilícitos ou abusivos:
+* Proibição de utilizar ferramentas administrativas para perseguir editores por convicções filosóficas, acadêmicas ou políticas legítimas.
+
+== 2. Catálogo de Direitos dos Titulares Aplicados à Wiki (Artigo 18) ==
+O '''Artigo 18 da LGPD''' confere aos editores e usuários direitos subjetivos imediatos que a infraestrutura da wiki deve assegurar:
+
+=== A. Acesso e Confirmação de Tratamento (Art. 18, I e II) ===
+O usuário tem o direito de saber se a wiki trata seus dados pessoais e de obter uma cópia integral das informações armazenadas a seu respeito.
+
+=== B. Retificação de Dados Inexatos (Art. 18, III) ===
+Correção imediata de dados incompletos, inexatos ou desatualizados, tanto em seu perfil de usuário quanto em verbetes enciclopédicos que versem sobre sua pessoa.
+
+=== C. O Direito à Anonimização e Eliminação de Contas (Art. 18, IV e VI) ===
+Um dos temas mais relevantes em wikis é o direito do editor de encerrar sua participação e exigir a eliminação de seus dados pessoais.
+* '''A Harmonização entre LGPD e Licença Livre:''' Ao editar uma enciclopédia colaborativa, o autor licencia seu texto sob licença aberta (como CC BY-SA ou GPLv3). O texto do artigo pertence ao patrimônio público do conhecimento.
+* '''A Solução Ética da WikiWorldWeb:''' Conforme o '''Artigo 16, inciso I da LGPD''', dados pessoais podem ser conservados pelo controlador após a solicitação se forem '''anonimizados'''. A plataforma desassocia e exclui definitivamente o nome de usuário, e-mail, foto e dados identificáveis, atribuindo as edições a um pseudônimo genérico padronizado (ex.: ''"Usuário Anonimizado (LGPD)"'').
+* Isso preserva simultaneamente a integridade histórica do verbete e a privacidade plena do ex-editor, sem violar a lei nem desestruturar a enciclopédia.
+
+=== D. Portabilidade dos Dados (Art. 18, V) ===
+O titular pode solicitar a exportação de seu histórico de contribuições e dados cadastrais em formato aberto e estruturado (JSON, CSV ou XML) para reutilização independente.
+
+=== E. Revogação do Consentimento (Art. 18, IX) ===
+O usuário tem o direito de revogar consentimentos concedidos anteriormente (por exemplo, telemetria de navegação opcional ou notificações push no navegador) a qualquer tempo, de forma gratuita e simplificada.
+
+== 3. Proteção Reforçada a Crianças e Adolescentes (Artigo 14 da LGPD) ==
+O tratamento de dados pessoais de crianças e adolescentes deve ser realizado em seu melhor interesse.
+* '''Controle de Faixa Etária:''' A WikiWorldWeb estabelece como requisito obrigatório a comprovação de idade maior que 14 anos no modal de entrada da plataforma, com opções múltiplas e acessíveis de inserção de data de nascimento.
+* '''Vedação ao Condicionamento Excessivo:''' É proibido condicionar a navegação ou leitura enciclopédica ao fornecimento de dados pessoais além do estritamente necessário.
+
+== 4. Regras da LGPD para Moderação, CheckUser e Sysops ==
+O papel dos administradores, moderadores e operadores de ferramentas técnicas de auditoria (CheckUser) deve ser pautado por limites jurídicos estritos:
+
+=== A. O Estatuto Jurídico do Endereço IP ===
+Na doutrina e na jurisprudência consolidada do Superior Tribunal de Justiça (STJ) e da Autoridade Nacional de Proteção de Dados (ANPD), o '''endereço de IP (Internet Protocol) é dado pessoal''', pois permite a identificação direta ou indireta do indivíduo através de cruzamento com registros de conexão do provedor.
+* '''Sigilo Absoluto dos Registros de Conexão:''' Os artigos 10 e 15 do Marco Civil da Internet impõem sigilo legal rigoroso aos logs telemáticos. Seu fornecimento exige expressa autorização ou ordem judicial específica (Art. 10, § 1º).
+* '''Proibição de Exposição Pública:''' É expressamente ilegal e abusivo publicar endereços de IP de editores em páginas comunitárias abertas, sumários de reversão ou relatórios de bloqueio, expondo o cidadão a ataques cibernéticos, geolocalização forçada e constrangimento público.
+
+=== B. Vedação Absoluta ao Doxxing e Cyberstalking ===
+* O cruzamento malicioso de dados técnicos de rede com informações pessoais para expor a identidade civil de um editor dissidente (prática conhecida como ''doxxing'') é ilícito civil sob a LGPD e tipifica crimes contra a honra ('''Calúnia''' - Art. 138 CP, '''Difamação''' - Art. 139 CP) e o crime de '''Perseguição / Cyberstalking''' (Art. 147-A do Código Penal, com pena de reclusão agravada quando cometido pela internet).
+* Ferramentas de CheckUser não podem ser usadas de forma discricionária ou inquisitorial para satisfazer disputas pessoais ou feudos de moderação.
+
+=== C. Devido Processo Legal (*Due Process*) e Ampla Defesa ===
+* Qualquer restrição a contas de usuários (como suspensões ou perda de privilégios) deve ser acompanhada de fundamentação técnica transparente, aviso prévio e canal legítimo de recurso e contraditório perante comitês arbitrais independentes.
+
+== 5. Diretrizes para Redação de Biografias de Pessoas Vivas (BLP) ==
+Ao redigir artigos sobre pessoas vivas, editores devem conjugar o direito de informar (Art. 220 da CF/88) com a tutela da honra e privacidade (Art. 5º, X da CF/88 e LGPD):
+* '''Verificabilidade Rigorosa:''' Afirmações sobre a vida privada de indivíduos devem ser respaldadas por fontes secundárias de alta reputação jornalística ou acadêmica.
+* '''Dados Pessoais Sensíveis (Art. 11 da LGPD):''' Informações relativas a origem racial, convicção religiosa, opinião política, filiação sindical, saúde, vida sexual ou dados genéticos/biométricos não devem ser inseridas a menos que sejam estritamente pertinentes ao debate público de relevância histórica e já tenham sido tornadas manifestamente públicas pelo próprio titular.
+* '''Direito de Resposta e Correção de Erros:''' Qualquer titular retratado em artigo biográfico pode solicitar retificação de informações falsas ou desatualizadas diretamente ao canal de DPO da wiki.
+
+== 6. O Canal Oficial do Encarregado de Proteção de Dados (DPO) ==
+Em cumprimento ao '''Artigo 41 da LGPD''', a plataforma disponibiliza canal direto com o Encarregado pelo Tratamento de Dados Pessoais (DPO):
+* O DPO atua de forma independente para acolher comunicações de usuários, prestar esclarecimentos, receber pedidos do Artigo 18 e interagir com a Autoridade Nacional de Proteção de Dados (ANPD).
+* Na WikiWorldWeb, o titular pode acionar os canais institucionais através do portal de suporte oficial (<nowiki>support.wazzimagiygg.com</nowiki>) ou da Central "Meus Dados" integrada ao cabeçalho.
+
+== Conclusão ==
+A aplicação transparente e corajosa da LGPD na wiki transforma o ambiente colaborativo em um espaço seguro, ético e confiável. Ao repudiar a espionagem, o doxxing e a tirania burocrática de moderadores, a enciclopédia reafirma que a democratização do conhecimento humano só é verdadeiramente livre quando alicerçada no respeito intransigente aos direitos fundamentais de quem o constrói.`,
+    highlights: [
+      'Aplicação obrigatória da LGPD (Lei nº 13.709/2018) a qualquer wiki acessível no Brasil, superando o mito da imunidade territorial.',
+      'Direito à anonimização e exclusão definitiva de conta (Art. 18, VI) sem corromper a licença livre e o histórico de revisões coletivo.',
+      'Classificação de endereços de IP como dados pessoais sigilosos: proibição absoluta de doxxing e abuso de CheckUser em disputas editoriais.',
+      'Salvaguardas constitucionais de due process, canal oficial de DPO e conformidade estrita na redação de biografias de pessoas vivas (BLP).',
+    ],
+  },
 ];

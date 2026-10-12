@@ -46,9 +46,22 @@ import {
   CloudOff,
   Loader2,
   ShieldAlert,
+  ShieldCheck,
   FileCheck,
   ArrowUpRight,
+  Database,
+  HardDrive,
 } from 'lucide-react';
+import {
+  getSqlDatabaseBackupConfig,
+  updateSqlDatabaseBackupConfig,
+  generateSqlDumpScript,
+  downloadSqlBackupFile,
+  SqlDatabaseBackupConfig,
+} from '../extensions/sql-database-backup/config';
+import ExtensionsSecurityAuditorExtension, {
+  SecurityAuditReport,
+} from '../extensions/extensions-security-auditor';
 import {
   UserProfile,
   InstalledExtensionMeta,
@@ -102,11 +115,33 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
   const [editingSettingsExtension, setEditingSettingsExtension] = useState<InstalledExtensionMeta | null>(null);
   const [extensionToDelete, setExtensionToDelete] = useState<InstalledExtensionMeta | null>(null);
 
+  // 3.05.3.aa: Modal e Gerenciamento de Backup Geral SQL Nativo
+  const [showSqlBackupModal, setShowSqlBackupModal] = useState<boolean>(false);
+  const [sqlBackupConfig, setSqlBackupConfig] = useState<SqlDatabaseBackupConfig>(() => getSqlDatabaseBackupConfig());
+  const [sqlDumpPreview, setSqlDumpPreview] = useState<string | null>(null);
+  const [isGeneratingSqlDump, setIsGeneratingSqlDump] = useState<boolean>(false);
+
+  // 3.05.3.ac: Modal de Auditoria de Segurança, Atualizações e Alerta de Memória (>200 MB)
+  const [showAuditorModal, setShowAuditorModal] = useState<boolean>(false);
+  const [securityAuditReport, setSecurityAuditReport] = useState<SecurityAuditReport | null>(null);
+  const [simulatedMemoryOffset, setSimulatedMemoryOffset] = useState<number>(0);
+  const [memUsage, setMemUsage] = useState(() => {
+    const auditorExt = extensionManager.getExtension('ExtensionsSecurityAuditorExtension') as ExtensionsSecurityAuditorExtension | undefined;
+    return auditorExt ? auditorExt.getMemoryUsage() : { usedBytes: 74 * 1024 * 1024, usedMB: 74, limitMB: 200, isExceeded: false, formatted: '74 MB / 200 MB' };
+  });
+
   // Sincronização em Nuvem Firebase (Versão 3.304)
   const [syncStatus, setSyncStatus] = useState<SyncStateStatus>(() => extensionManager.getSyncStatus());
   const [lastCloudSyncAt, setLastCloudSyncAt] = useState<string | null>(() => extensionManager.getLastCloudSyncAt());
   const [cloudConflicts, setCloudConflicts] = useState<ExtensionConflict[]>(() => extensionManager.getCloudConflicts());
   const [isSyncingAll, setIsSyncingAll] = useState<boolean>(false);
+  const [keepSyncConfirmModal, setKeepSyncConfirmModal] = useState<{
+    isOpen: boolean;
+    conflict?: ExtensionConflict;
+    resolution?: 'keep_cloud' | 'overwrite_cloud_with_local' | 'delete_from_cloud' | 'global_sync';
+    title: string;
+    description: string;
+  } | null>(null);
 
   // Upload de Arquivo (index.js / index.ts) (304.4)
   const [uploadedFileContent, setUploadedFileContent] = useState<string>('');
@@ -233,6 +268,105 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       return () => clearTimeout(timer);
     }
   }, [feedback]);
+
+  // 3.05.3.ac: Monitoramento periódico de consumo de memória e alerta de 200 MB
+  useEffect(() => {
+    const updateMem = () => {
+      const auditorExt = extensionManager.getExtension('ExtensionsSecurityAuditorExtension') as
+        | ExtensionsSecurityAuditorExtension
+        | undefined;
+      if (auditorExt) {
+        auditorExt.simulateMemorySpike(simulatedMemoryOffset);
+        setMemUsage(auditorExt.getMemoryUsage());
+      }
+    };
+    updateMem();
+    const interval = setInterval(updateMem, 4000);
+    return () => clearInterval(interval);
+  }, [extensionManager, simulatedMemoryOffset]);
+
+  // 3.05.3.aa: Manipuladores de Backup Geral SQL
+  const handleToggleSqlGeneralBackup = (targetState: boolean) => {
+    if (!userIsBureaucrat) {
+      setFeedback({
+        type: 'error',
+        message: 'Somente o burocrata pode habilitar ou desabilitar o backup geral para o banco de dados SQL.',
+      });
+      return;
+    }
+    const res = updateSqlDatabaseBackupConfig({ isGeneralBackupEnabled: targetState }, currentUser);
+    setSqlBackupConfig(res.config);
+    if (res.success) {
+      setFeedback({ type: 'success', message: res.message });
+      refreshList();
+    } else {
+      setFeedback({ type: 'error', message: res.message });
+    }
+  };
+
+  const handleDownloadSqlBackup = async () => {
+    setIsGeneratingSqlDump(true);
+    try {
+      const res = await downloadSqlBackupFile();
+      setFeedback({
+        type: 'success',
+        message: `Arquivo ${res.filename} (${res.sizeKb} KB) gerado e descarregado com sucesso!`,
+      });
+      setSqlBackupConfig(getSqlDatabaseBackupConfig());
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: `Erro ao gerar dump SQL: ${err?.message || err}` });
+    } finally {
+      setIsGeneratingSqlDump(false);
+    }
+  };
+
+  const handlePreviewSqlDump = async () => {
+    setIsGeneratingSqlDump(true);
+    try {
+      const res = await generateSqlDumpScript(sqlBackupConfig);
+      setSqlDumpPreview(res.sqlScript);
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: `Erro ao gerar prévia SQL: ${err?.message || err}` });
+    } finally {
+      setIsGeneratingSqlDump(false);
+    }
+  };
+
+  // 3.05.3.ac: Manipuladores do Auditor de Segurança e Atualizações
+  const handleRunSecurityAudit = () => {
+    const auditorExt = extensionManager.getExtension('ExtensionsSecurityAuditorExtension') as
+      | ExtensionsSecurityAuditorExtension
+      | undefined;
+    if (auditorExt) {
+      auditorExt.simulateMemorySpike(simulatedMemoryOffset);
+      const rep = auditorExt.runFullAudit();
+      setSecurityAuditReport(rep);
+      setMemUsage(rep.memoryUsage);
+      setFeedback({
+        type: 'info',
+        message: `Auditoria de segurança concluída: ${rep.totalLoaded} extensões avaliadas (Score: ${rep.overallScore}/100, Memória: ${rep.memoryUsage.usedMB} MB).`,
+      });
+    }
+  };
+
+  const handleTestMemorySpike = (deltaMb: number) => {
+    const nextOffset = Math.max(0, simulatedMemoryOffset + deltaMb);
+    setSimulatedMemoryOffset(nextOffset);
+    const auditorExt = extensionManager.getExtension('ExtensionsSecurityAuditorExtension') as
+      | ExtensionsSecurityAuditorExtension
+      | undefined;
+    if (auditorExt) {
+      auditorExt.simulateMemorySpike(nextOffset);
+      const mem = auditorExt.getMemoryUsage();
+      setMemUsage(mem);
+      if (mem.isExceeded) {
+        setFeedback({
+          type: 'error',
+          message: `ALERTA DE MEMÓRIA: Consumo superior a 200 MB disparado (${mem.usedMB} MB)!`,
+        });
+      }
+    }
+  };
 
   // Alterna Ativação / Desativação de Extensão (Update 3.05 - Requisitos 3.05.3.q.2 & 3.05.3.q.3)
   const handleToggleExtension = async (ext: InstalledExtensionMeta) => {
@@ -373,12 +507,16 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
   };
 
   // 304.3.1: Resolução de Conflitos e Extensões Órfãs na Nuvem
+  // Regra de Governança Estrita: Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões
   const handleResolveConflict = async (
     conflict: ExtensionConflict,
     resolution: 'keep_cloud' | 'overwrite_cloud_with_local' | 'delete_from_cloud' | 'sync_new_local'
   ) => {
     if (!userIsBureaucrat) {
-      setFeedback({ type: 'error', message: 'Apenas burocratas podem resolver conflitos de extensões.' });
+      setFeedback({
+        type: 'error',
+        message: 'Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões.',
+      });
       return;
     }
 
@@ -395,6 +533,101 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       setFeedback({ type: 'error', message: `Erro ao resolver conflito: ${err?.message || 'Falha desconhecida'}` });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // Abre modal de confirmação para manter entre sincronia e nuvem
+  const handleRequestKeepSyncConfirmation = (
+    conflict: ExtensionConflict,
+    resolution: 'keep_cloud' | 'overwrite_cloud_with_local' | 'delete_from_cloud'
+  ) => {
+    if (!userIsBureaucrat) {
+      setFeedback({
+        type: 'error',
+        message: 'Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões.',
+      });
+      return;
+    }
+
+    const actionDesc =
+      resolution === 'keep_cloud'
+        ? `Você está confirmando manter a versão da nuvem da extensão '${conflict.extensionName}' preservada e sincronizada localmente no sistema.`
+        : resolution === 'overwrite_cloud_with_local'
+        ? `Você está confirmando sobrescrever a versão da nuvem com o arquivo local da extensão '${conflict.extensionName}' e manter a sincronização com o Firebase Firestore.`
+        : `Você está confirmando a remoção definitiva da extensão '${conflict.extensionName}' da nuvem Firebase.`;
+
+    setKeepSyncConfirmModal({
+      isOpen: true,
+      conflict,
+      resolution,
+      title: 'Confirmar em Manter entre Sincronia e Nuvem das Extensões',
+      description: actionDesc,
+    });
+  };
+
+  // Abre modal global de confirmação de sincronia e nuvem
+  const handleOpenGlobalKeepSyncConfirmation = () => {
+    if (!userIsBureaucrat) {
+      setFeedback({
+        type: 'error',
+        message: 'Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões.',
+      });
+      return;
+    }
+
+    setKeepSyncConfirmModal({
+      isOpen: true,
+      resolution: 'global_sync',
+      title: 'Confirmar em Manter entre Sincronia e Nuvem das Extensões',
+      description:
+        'Você está confirmando manter a sincronização completa entre todas as extensões ativas locais e a nuvem Firebase Firestore. Esta ação homologa o catálogo para toda a comunidade.',
+    });
+  };
+
+  // Executa a confirmação de manter entre sincronia e nuvem com validação estrita
+  const handleExecuteKeepSyncConfirmation = async () => {
+    if (!userIsBureaucrat) {
+      setFeedback({
+        type: 'error',
+        message: 'Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões.',
+      });
+      setKeepSyncConfirmModal(null);
+      return;
+    }
+
+    if (!keepSyncConfirmModal) return;
+
+    setIsProcessing(true);
+    try {
+      if (keepSyncConfirmModal.resolution === 'global_sync') {
+        const res = await extensionManager.confirmKeepSyncBetweenLocalAndCloud(currentUser);
+        if (res.success) {
+          setFeedback({ type: 'success', message: res.message });
+          refreshList();
+        } else {
+          setFeedback({ type: 'error', message: res.message });
+        }
+      } else if (keepSyncConfirmModal.conflict && keepSyncConfirmModal.resolution) {
+        const res = await extensionManager.resolveConflict(
+          keepSyncConfirmModal.conflict,
+          keepSyncConfirmModal.resolution as any,
+          currentUser
+        );
+        if (res.success) {
+          setFeedback({ type: 'success', message: res.message });
+          refreshList();
+        } else {
+          setFeedback({ type: 'error', message: res.message });
+        }
+      }
+    } catch (err: any) {
+      setFeedback({
+        type: 'error',
+        message: `Erro ao confirmar sincronia: ${err?.message || 'Falha de comunicação'}`,
+      });
+    } finally {
+      setIsProcessing(false);
+      setKeepSyncConfirmModal(null);
     }
   };
 
@@ -1258,6 +1491,26 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
             <span>{isSyncingAll ? 'Sincronizando...' : 'Sincronizar Nuvem'}</span>
           </button>
 
+          {/* Confirmação de Manter entre Sincronia e Nuvem (Restrito ao Burocrata) */}
+          <button
+            type="button"
+            disabled={!userIsBureaucrat || isProcessing}
+            onClick={handleOpenGlobalKeepSyncConfirmation}
+            className={`px-3 py-2 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 shadow-2xs ${
+              userIsBureaucrat
+                ? 'border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 cursor-pointer'
+                : 'border-slate-300 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-400 cursor-not-allowed opacity-60'
+            }`}
+            title={
+              userIsBureaucrat
+                ? 'Confirmar em manter entre sincronia e nuvem das extensões (Prerrogativa exclusiva do Burocrata)'
+                : 'Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões'
+            }
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span>Confirmar Manter Sincronia & Nuvem</span>
+          </button>
+
           {/* 304.3.1: Detecção e Resolução de Conflitos e Extensões Órfãs */}
           <button
             type="button"
@@ -1307,6 +1560,36 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
             <span>Auditoria</span>
           </button>
 
+          {/* 3.05.3.aa: Backup Geral para Banco de Dados SQL */}
+          <button
+            type="button"
+            onClick={() => setShowSqlBackupModal(true)}
+            className={`px-3 py-2 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 shadow-2xs ${
+              sqlBackupConfig.isGeneralBackupEnabled
+                ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200'
+                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
+            title="Gerenciar configuração nativa em arquivo de backup geral para banco SQL (3.05.3.aa)"
+          >
+            <Database className={`w-3.5 h-3.5 ${sqlBackupConfig.isGeneralBackupEnabled ? 'text-emerald-600' : 'text-slate-500'}`} />
+            <span>Backup SQL {sqlBackupConfig.isGeneralBackupEnabled ? '(Ativo)' : ''}</span>
+          </button>
+
+          {/* 3.05.3.ac: Auditoria de Segurança, Atualizações e Memória */}
+          <button
+            type="button"
+            onClick={() => setShowAuditorModal(true)}
+            className={`px-3 py-2 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 shadow-2xs ${
+              memUsage.isExceeded
+                ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 animate-pulse'
+                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
+            title="Verificação de segurança, atualizações e consumo de memória (Alerta > 200 MB) (3.05.3.ac)"
+          >
+            <ShieldAlert className={`w-3.5 h-3.5 ${memUsage.isExceeded ? 'text-rose-600 animate-spin' : 'text-blue-500'}`} />
+            <span>Memória: {memUsage.usedMB} MB {memUsage.isExceeded ? '⚠️ (>200MB)' : ''}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setShowHooksModal(true)}
@@ -1340,6 +1623,47 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
           </button>
         </div>
       </div>
+
+      {/* 3.05.3.ac: Banner de Alerta Crítico quando a memória for maior que 200 MB */}
+      {memUsage.isExceeded && (
+        <div className="my-4 p-4 rounded-2xl bg-rose-600 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-rose-700/80 rounded-xl shrink-0">
+              <AlertTriangle className="w-6 h-6 text-white animate-bounce" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-sm tracking-wide uppercase">
+                  ⚠️ ALERTA DE SEGURANÇA: CONSUMO DE MEMÓRIA SUPERIOR A 200 MB!
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white text-rose-700">
+                  {memUsage.usedMB} MB / 200 MB
+                </span>
+              </div>
+              <p className="text-xs text-rose-100 mt-0.5">
+                O monitoramento de segurança detectou {memUsage.usedMB} MB em uso pelas extensões ativas (limite: 200 MB). Verifique atualizações e extensões pesadas carregadas.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleTestMemorySpike(-60)}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-700 hover:bg-rose-800 text-rose-100 transition"
+              title="Reduzir memória simulada em 60 MB"
+            >
+              -60 MB
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAuditorModal(true)}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-rose-700 hover:bg-rose-50 shadow-xs transition cursor-pointer"
+            >
+              Auditar Extensões
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Feedback Alert Banner */}
       {feedback && (
@@ -1574,6 +1898,15 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                           Custom
                         </span>
                       )}
+                      {(ext.noCloudSync || ext.syncStatus === 'local_only' || ext.name === 'SqlDatabaseBackupExtension') && (
+                        <span
+                          className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-0.5"
+                          title="Extensão nativa local não sincronizável com a nuvem (Requisito 3.05.3.aa)"
+                        >
+                          <HardDrive className="w-2.5 h-2.5" />
+                          Local (Não-Nuvem)
+                        </span>
+                      )}
                     </div>
 
                     {/* Status Pill */}
@@ -1652,6 +1985,28 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                         title="Configurar opções da extensão"
                       >
                         <Settings className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {ext.name === 'SqlDatabaseBackupExtension' && (
+                      <button
+                        type="button"
+                        onClick={() => setShowSqlBackupModal(true)}
+                        className="p-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 transition"
+                        title="Configuração Direta em Arquivo e Backup SQL (3.05.3.aa)"
+                      >
+                        <Database className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {ext.name === 'ExtensionsSecurityAuditorExtension' && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAuditorModal(true)}
+                        className="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 transition"
+                        title="Auditoria de Segurança, Atualizações e Memória > 200 MB (3.05.3.ac)"
+                      >
+                        <ShieldAlert className="w-4 h-4" />
                       </button>
                     )}
 
@@ -2472,9 +2827,24 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
               </button>
             </div>
 
+            {/* Aviso de Governança Estrita */}
+            <div className="mx-6 mt-4 p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-950 dark:text-indigo-200 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span>
+                  <strong>Regra de Governança Estrita:</strong> Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões.
+                </span>
+              </div>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase font-mono ${
+                userIsBureaucrat ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+              }`}>
+                {userIsBureaucrat ? 'Burocrata Autorizado' : 'Modo Leitura'}
+              </span>
+            </div>
+
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
               {cloudConflicts.length === 0 ? (
-                <div className="text-center py-12 px-4 space-y-3">
+                <div className="text-center py-10 px-4 space-y-3">
                   <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
@@ -2484,6 +2854,20 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                   <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
                     Todas as extensões do diretório local (index.ts) e as versões persistidas no banco de dados do Firebase Firestore estão sincronizadas em perfeita harmonia.
                   </p>
+                  {userIsBureaucrat ? (
+                    <button
+                      type="button"
+                      onClick={handleOpenGlobalKeepSyncConfirmation}
+                      className="mt-3 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5 mx-auto cursor-pointer shadow-sm"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Confirmar em Manter entre Sincronia e Nuvem</span>
+                    </button>
+                  ) : (
+                    <div className="mt-2 text-center text-xs text-amber-600 dark:text-amber-400 font-medium">
+                      🔒 Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões.
+                    </div>
+                  )}
                 </div>
               ) : (
                 cloudConflicts.map((c) => (
@@ -2516,16 +2900,19 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                           <button
                             type="button"
                             disabled={!userIsBureaucrat || isProcessing}
-                            onClick={() => handleResolveConflict(c, 'keep_cloud')}
-                            className="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-xs font-semibold transition"
+                            onClick={() => handleRequestKeepSyncConfirmation(c, 'keep_cloud')}
+                            className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition flex items-center gap-1 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={userIsBureaucrat ? 'Confirmar em manter na nuvem' : 'Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões'}
                           >
-                            Deixar em Nuvem
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Confirmar em Manter na Nuvem</span>
                           </button>
                           <button
                             type="button"
                             disabled={!userIsBureaucrat || isProcessing}
-                            onClick={() => handleResolveConflict(c, 'delete_from_cloud')}
-                            className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1"
+                            onClick={() => handleRequestKeepSyncConfirmation(c, 'delete_from_cloud')}
+                            className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={userIsBureaucrat ? 'Remover da nuvem' : 'Somente o burocrata pode confirmar operações de nuvem'}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             <span>Remover por Completo da Nuvem</span>
@@ -2536,16 +2923,19 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                           <button
                             type="button"
                             disabled={!userIsBureaucrat || isProcessing}
-                            onClick={() => handleResolveConflict(c, 'keep_cloud')}
-                            className="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-xs font-semibold transition"
+                            onClick={() => handleRequestKeepSyncConfirmation(c, 'keep_cloud')}
+                            className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition flex items-center gap-1 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={userIsBureaucrat ? 'Confirmar em manter versão da nuvem' : 'Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões'}
                           >
-                            Manter Versão da Nuvem
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Confirmar em Manter Versão da Nuvem</span>
                           </button>
                           <button
                             type="button"
                             disabled={!userIsBureaucrat || isProcessing}
-                            onClick={() => handleResolveConflict(c, 'overwrite_cloud_with_local')}
-                            className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition flex items-center gap-1"
+                            onClick={() => handleRequestKeepSyncConfirmation(c, 'overwrite_cloud_with_local')}
+                            className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={userIsBureaucrat ? 'Sobrescrever nuvem com local' : 'Somente o burocrata pode confirmar operações de nuvem'}
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
                             <span>Remover da Nuvem e Sincronizar Nova Extensão Local</span>
@@ -3112,6 +3502,466 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
               <span className="text-[10px] text-slate-400 mt-2 block">
                 Gravando na nuvem Firestore para persistir em todas as janelas e computadores...
               </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: CONFIRMAR EM MANTER ENTRE SINCRONIA E NUVEM       */}
+      {/* ======================================================== */}
+      {keepSyncConfirmModal?.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400">
+                <Crown className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  Confirmar em Manter entre Sincronia e Nuvem das Extensões
+                </h3>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-mono">
+                  Prerrogativa Exclusiva de Burocrata
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-2.5">
+              <p>
+                <strong>Regra de Governança Estrita:</strong> Somente o burocrata pode confirmar em manter entre sincronia e nuvem das extensões.
+              </p>
+              <p className="text-slate-600 dark:text-slate-400">
+                {keepSyncConfirmModal.description}
+              </p>
+              <div className="flex items-center gap-2 pt-1 font-mono text-[11px] text-indigo-700 dark:text-indigo-300">
+                <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>Operador Autenticado: {currentUser?.displayName || currentUser?.username || 'Burocrata'}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setKeepSyncConfirmModal(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={!userIsBureaucrat || isProcessing}
+                onClick={handleExecuteKeepSyncConfirmation}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5 shadow-sm cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isProcessing ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Confirmando...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Confirmar em Manter entre Sincronia e Nuvem</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: BACKUP GERAL PARA BANCO DE DADOS SQL (3.05.3.aa) */}
+      {/* ======================================================== */}
+      {showSqlBackupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden my-6">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-emerald-50/50 dark:bg-emerald-950/20">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-emerald-600 text-white shadow-xs">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Backup Geral para Banco de Dados SQL</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                      Nativa • Não-Sincronizável com Nuvem
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">
+                    Arquivo de Configuração: <code className="text-emerald-700 dark:text-emerald-300 font-bold">src/extensions/sql-database-backup/config.ts</code>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSqlBackupModal(false);
+                  setSqlDumpPreview(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
+              {/* Informativo de Governança Burocrata */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2 leading-relaxed">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                  <HardDrive className="w-4 h-4 text-emerald-600" />
+                  <span>Regra 3.05.3.aa: Configuração Direta em Arquivo & Exclusividade do Burocrata</span>
+                </div>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Esta extensão nativa <strong>não sincroniza com o Firebase Firestore</strong>. Seus parâmetros residem diretamente no arquivo do projeto. Somente o <strong>Burocrata</strong> tem permissão para habilitar e desabilitar o backup geral para o banco de dados SQL (PostgreSQL, Cloud SQL, MySQL ou SQLite).
+                </p>
+              </div>
+
+              {/* Card de Controle Principal: Habilitar / Desabilitar Backup Geral SQL */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                sqlBackupConfig.isGeneralBackupEnabled
+                  ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800'
+                  : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800'
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${sqlBackupConfig.isGeneralBackupEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                      <span className="font-bold text-sm text-slate-900 dark:text-white">
+                        Status do Backup Geral SQL: {sqlBackupConfig.isGeneralBackupEnabled ? 'HABILITADO' : 'DESABILITADO'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      {sqlBackupConfig.isGeneralBackupEnabled
+                        ? 'O backup geral automatizado para o banco SQL está ativo e autorizado pelo Burocrata.'
+                        : 'O backup geral para o banco SQL está pausado/desabilitado aguardando autorização do Burocrata.'}
+                    </p>
+                    <div className="text-[11px] font-mono text-slate-500 mt-1">
+                      Última autorização: <span className="font-bold">{sqlBackupConfig.bureaucratAuthorization.enabledBy}</span> ({new Date(sqlBackupConfig.bureaucratAuthorization.enabledAt).toLocaleString()})
+                    </div>
+                  </div>
+
+                  <div className="shrink-0">
+                    <button
+                      type="button"
+                      disabled={!userIsBureaucrat}
+                      onClick={() => handleToggleSqlGeneralBackup(!sqlBackupConfig.isGeneralBackupEnabled)}
+                      className={`px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition flex items-center gap-2 ${
+                        !userIsBureaucrat
+                          ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-60'
+                          : sqlBackupConfig.isGeneralBackupEnabled
+                          ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
+                      }`}
+                      title={
+                        !userIsBureaucrat
+                          ? 'Somente o burocrata pode habilitar ou desabilitar o backup geral para o banco de dados SQL.'
+                          : sqlBackupConfig.isGeneralBackupEnabled
+                          ? 'Clique para desabilitar o backup geral SQL'
+                          : 'Clique para habilitar o backup geral SQL'
+                      }
+                    >
+                      {!userIsBureaucrat ? (
+                        <>
+                          <Lock className="w-3.5 h-3.5" />
+                          <span>Bloqueado (Requer Burocrata)</span>
+                        </>
+                      ) : sqlBackupConfig.isGeneralBackupEnabled ? (
+                        <>
+                          <Power className="w-3.5 h-3.5" />
+                          <span>Desabilitar Backup Geral</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Habilitar Backup Geral SQL</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {!userIsBureaucrat && (
+                  <div className="mt-2 text-[11px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
+                    <Lock className="w-3 h-3" />
+                    <span>Atenção: Somente o burocrata pode confirmar a habilitação ou desabilitação do backup geral SQL.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Detalhes do Destino Configurado no Arquivo */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Parâmetros Lidos Diretamente do Arquivo config.ts
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Dialeto SQL</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{sqlBackupConfig.sqlDialect}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Servidor / Host</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{sqlBackupConfig.databaseTarget.host}:{sqlBackupConfig.databaseTarget.port}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Banco de Dados</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{sqlBackupConfig.databaseTarget.databaseName} ({sqlBackupConfig.databaseTarget.schema})</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Transações Atômicas</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{sqlBackupConfig.useTransactions ? 'BEGIN / COMMIT Ativos' : 'Não'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botões de Ação Imediata: Gerar / Baixar SQL */}
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={isGeneratingSqlDump}
+                    onClick={handleDownloadSqlBackup}
+                    className="px-4 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-2 cursor-pointer transition disabled:opacity-60"
+                  >
+                    {isGeneratingSqlDump ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Download className="w-3.5 h-3.5" />
+                    )}
+                    <span>Gerar & Descarregar Arquivo .sql</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isGeneratingSqlDump}
+                    onClick={handlePreviewSqlDump}
+                    className="px-3.5 py-2.5 rounded-xl font-semibold text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1.5 cursor-pointer transition"
+                  >
+                    <Code className="w-3.5 h-3.5" />
+                    <span>Visualizar Script SQL</span>
+                  </button>
+                </div>
+
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {sqlBackupConfig.lastExecution?.dumpSizeKb ? `${sqlBackupConfig.lastExecution.dumpSizeKb} KB exportados` : 'Pronto para execução'}
+                </div>
+              </div>
+
+              {/* Prévia do Script SQL */}
+              {sqlDumpPreview && (
+                <div className="p-3 bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 space-y-2 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-mono font-bold text-emerald-400">Prévia do Script SQL Gerado:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(sqlDumpPreview);
+                        setFeedback({ type: 'success', message: 'Script SQL copiado para a área de transferência!' });
+                      }}
+                      className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copiar SQL</span>
+                    </button>
+                  </div>
+                  <pre className="text-[10px] font-mono max-h-48 overflow-y-auto whitespace-pre-wrap leading-relaxed text-slate-300 custom-scrollbar p-2 bg-slate-950/70 rounded-xl">
+                    {sqlDumpPreview.slice(0, 3500)}
+                    {sqlDumpPreview.length > 3500 ? '\n\n-- [... script completo truncado para prévia ...]' : ''}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: AUDITORIA DE SEGURANÇA, ATUALIZAÇÕES E MEMÓRIA (> 200 MB) (3.05.3.ac) */}
+      {/* ========================================================================= */}
+      {showAuditorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden my-6">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-blue-50/50 dark:bg-blue-950/20">
+              <div className="flex items-center gap-2.5">
+                <div className={`p-2.5 rounded-2xl ${memUsage.isExceeded ? 'bg-rose-600 text-white animate-bounce' : 'bg-blue-600 text-white'} shadow-xs`}>
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Auditoria de Segurança, Atualizações & Memória</span>
+                    {memUsage.isExceeded ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-600 text-white animate-pulse">
+                        ALERTA &gt; 200 MB
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                        Memória Normal
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">
+                    Extensão: <code className="text-blue-700 dark:text-blue-300 font-bold">ExtensionsSecurityAuditorExtension</code> (Requisito 3.05.3.ac)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAuditorModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
+              {/* MONITOR DE MEMÓRIA & ALERTA > 200 MB */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                memUsage.isExceeded
+                  ? 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-400 dark:border-rose-800'
+                  : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700'
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Activity className={`w-4 h-4 ${memUsage.isExceeded ? 'text-rose-600 animate-spin' : 'text-blue-600'}`} />
+                        Consumo de Memória das Extensões em Execução
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      O sistema audita o heap e alerta imediatamente quando a quantidade de memória for maior de 200 MB.
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-base font-bold font-mono ${memUsage.isExceeded ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'}`}>
+                      {memUsage.usedMB} MB
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono"> / 200 MB</span>
+                  </div>
+                </div>
+
+                {/* Barra de Progresso */}
+                <div className="h-3 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden my-2">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      memUsage.isExceeded ? 'bg-rose-600 animate-pulse' : memUsage.usedMB > 150 ? 'bg-amber-500' : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${Math.min(100, (memUsage.usedMB / 200) * 100)}%` }}
+                  />
+                </div>
+
+                {/* Banner de Alerta Crítico */}
+                {memUsage.isExceeded && (
+                  <div className="mt-3 p-3 rounded-xl bg-rose-600 text-white font-semibold flex items-center gap-2.5 text-xs animate-pulse">
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                    <span>
+                      ⚠️ ALERTA: Consumo de memória superior a 200 MB detectado ({memUsage.usedMB} MB)! Libere recursos ou desative extensões pesadas.
+                    </span>
+                  </div>
+                )}
+
+                {/* Controles para Teste de Pico de Memória */}
+                <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-700/60 flex items-center justify-between flex-wrap gap-2 text-[11px]">
+                  <span className="text-slate-500 font-medium">Testar Alerta de Memória:</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleTestMemorySpike(60)}
+                      className="px-2.5 py-1 rounded-lg bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 font-bold hover:bg-rose-200 cursor-pointer"
+                      title="Simular aumento de 60 MB para ultrapassar 200 MB e disparar o alerta"
+                    >
+                      +60 MB (Testar Alerta &gt; 200 MB)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTestMemorySpike(-60)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-200 cursor-pointer"
+                    >
+                      -60 MB
+                    </button>
+                    {simulatedMemoryOffset > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleTestMemorySpike(-simulatedMemoryOffset)}
+                        className="px-2 py-1 rounded-lg text-slate-400 hover:text-slate-600 font-medium cursor-pointer"
+                      >
+                        Resetar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Ações de Auditoria e Verificação de Atualizações */}
+              <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleRunSecurityAudit}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-2 cursor-pointer transition"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Verificar Segurança de Todas as Extensões Carregadas</span>
+                </button>
+
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {extensionManager.getLoadedExtensions().length} extensões atualmente em execução
+                </div>
+              </div>
+
+              {/* Tabela de Extensões Carregadas com Auditoria de Segurança e Atualizações */}
+              <div className="space-y-3 pt-2">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                  <span>Extensões Carregadas Atualmente: Auditoria & Atualizações</span>
+                  {securityAuditReport && (
+                    <span className="font-mono text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                      Pontuação Geral: {securityAuditReport.overallScore}/100 ({securityAuditReport.overallStatus.toUpperCase()})
+                    </span>
+                  )}
+                </h4>
+
+                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800/80">
+                  {extensionManager.getLoadedExtensions().map((ext) => {
+                    const name = ext.getName();
+                    const version = ext.getVersion();
+                    const auditItem = securityAuditReport?.items.find((i) => i.name === name);
+                    const hasUpdates = auditItem?.hasUpdates;
+                    const latest = auditItem?.latestVersion || version;
+
+                    return (
+                      <div key={name} className="p-3 bg-white dark:bg-slate-900 flex items-center justify-between gap-3 text-xs">
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-slate-900 dark:text-white">{name}</span>
+                            <span className="font-mono text-[10px] text-purple-600 dark:text-purple-400 font-bold bg-purple-50 dark:bg-purple-950 px-1.5 py-0.2 rounded">
+                              v{version}
+                            </span>
+                            {hasUpdates ? (
+                              <span className="font-mono text-[10px] text-amber-700 dark:text-amber-300 font-bold bg-amber-100 dark:bg-amber-950 px-1.5 py-0.2 rounded flex items-center gap-1">
+                                <span>Nova v{latest} disponível</span>
+                              </span>
+                            ) : (
+                              <span className="font-mono text-[10px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.2 rounded">
+                                Atualizada
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-md">
+                            {ext.getDescription?.() || 'Extensão carregada no núcleo'}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                            <span>Segura ({auditItem ? auditItem.securityScore : 100}%)</span>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>

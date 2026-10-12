@@ -1582,6 +1582,7 @@ export interface InstalledExtensionMeta {
   originFile?: string;
   uploadedFile?: string;
   securityLayer?: boolean;
+  noCloudSync?: boolean;
   syncedAt?: string;
   syncedBy?: string;
 }
