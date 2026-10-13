@@ -92,6 +92,19 @@ export interface UserboxItem {
   borderClass?: string;
 }
 
+export interface ReadLaterBookmark {
+  articleId: string;
+  title: string;
+  savedAt: string; // ISO string quando foi salvo
+  summary?: string;
+  category?: string;
+  thumbnailUrl?: string;
+  contentSnapshot?: string; // Cache offline do verbete
+  readProgress?: number; // 0 a 100%
+  isRead?: boolean;
+  notes?: string;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -115,6 +128,7 @@ export interface UserProfile {
   permissions?: UserPermissions;
   barnstars?: UserBarnstar[];
   userboxes?: UserboxItem[];
+  readLaterBookmarks?: ReadLaterBookmark[];
   reputationScore?: number;
   dataConsentimento?: string;
   ipConsentimento?: string;

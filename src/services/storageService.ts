@@ -28,6 +28,7 @@ import {
   WikiArticle,
   WikiPage,
   UserProfile,
+  ReadLaterBookmark,
   UserRole,
   UserPermissions,
   UserBarnstar,
@@ -173,6 +174,7 @@ const STORAGE_KEYS = {
   LGPD_DELETION_REQUESTS: 'wikizero_lgpd_deletion_requests_v1',
   EXTENSIONS_STATES: 'wikizero_extensions_states_v1',
   CUSTOM_EXTENSIONS: 'wikizero_custom_extensions_v1',
+  READ_LATER_GUEST: 'wikizero_read_later_guest_v3',
   EXTENSION_ACTION_LOGS: 'wikizero_extension_action_logs_v1',
   EXTENSION_SETTINGS: 'wikizero_extension_settings_v1',
   DAILY_EDITS_PREFIX: 'wikizero_daily_edits_',
@@ -8624,6 +8626,196 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         console.warn('Firestore deleteUcocReport error:', err);
       }
     }
+  },
+
+  // === READ LATER & OFFLINE BOOKMARKS ===
+  async getReadLaterBookmarks(userId?: string): Promise<ReadLaterBookmark[]> {
+    initializeLocalStorage();
+    // 1. Se usuário logado fornecido ou ativo na sessão
+    const current = userId ? await this.getUserProfile(userId) : this.getCurrentUser();
+    if (current && Array.isArray(current.readLaterBookmarks)) {
+      return current.readLaterBookmarks;
+    }
+
+    // 2. Fallback de marcadores locais para usuário convidado ou sessão offline
+    const rawGuest = localStorage.getItem(STORAGE_KEYS.READ_LATER_GUEST);
+    if (rawGuest) {
+      try {
+        const parsed = JSON.parse(rawGuest);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (err) {
+        console.warn('[StorageService] Erro ao ler marcadores de convidado:', err);
+      }
+    }
+    return [];
+  },
+
+  isArticleBookmarked(articleId: string, userId?: string): boolean {
+    if (!articleId) return false;
+    // 1. Checa na sessão do usuário logado
+    const current = this.getCurrentUser();
+    if (current && Array.isArray(current.readLaterBookmarks)) {
+      if (current.readLaterBookmarks.some((b) => b.articleId === articleId)) {
+        return true;
+      }
+    }
+    // 2. Checa marcadores de convidado / locais
+    if (typeof window !== 'undefined') {
+      try {
+        const rawGuest = localStorage.getItem(STORAGE_KEYS.READ_LATER_GUEST);
+        if (rawGuest) {
+          const list: ReadLaterBookmark[] = JSON.parse(rawGuest);
+          return list.some((b) => b.articleId === articleId);
+        }
+      } catch {
+        // fallback
+      }
+    }
+    return false;
+  },
+
+  async saveReadLaterBookmark(
+    bookmark: ReadLaterBookmark,
+    user?: UserProfile | null
+  ): Promise<{ success: boolean; bookmarks: ReadLaterBookmark[] }> {
+    initializeLocalStorage();
+    const activeUser = user || this.getCurrentUser();
+    let currentBookmarks: ReadLaterBookmark[] = [];
+
+    if (activeUser && !activeUser.isGuest) {
+      currentBookmarks = Array.isArray(activeUser.readLaterBookmarks)
+        ? [...activeUser.readLaterBookmarks]
+        : [];
+
+      // Remove se já existia para atualizar na frente
+      currentBookmarks = currentBookmarks.filter((b) => b.articleId !== bookmark.articleId);
+      currentBookmarks.unshift(bookmark);
+
+      const updatedUser: UserProfile = {
+        ...activeUser,
+        readLaterBookmarks: currentBookmarks,
+      };
+
+      await this.saveCommunityUser(updatedUser);
+      this.saveUser(updatedUser);
+    } else {
+      // Salva no armazenamento guest
+      const rawGuest = localStorage.getItem(STORAGE_KEYS.READ_LATER_GUEST);
+      currentBookmarks = rawGuest ? JSON.parse(rawGuest) : [];
+      currentBookmarks = currentBookmarks.filter((b) => b.articleId !== bookmark.articleId);
+      currentBookmarks.unshift(bookmark);
+      localStorage.setItem(STORAGE_KEYS.READ_LATER_GUEST, JSON.stringify(currentBookmarks));
+    }
+
+    // Dispara evento para atualização reativa instantânea nos componentes
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('wiki_read_later_updated', { detail: { bookmarks: currentBookmarks } })
+      );
+    }
+
+    return { success: true, bookmarks: currentBookmarks };
+  },
+
+  async removeReadLaterBookmark(
+    articleId: string,
+    user?: UserProfile | null
+  ): Promise<{ success: boolean; bookmarks: ReadLaterBookmark[] }> {
+    initializeLocalStorage();
+    const activeUser = user || this.getCurrentUser();
+    let updatedBookmarks: ReadLaterBookmark[] = [];
+
+    if (activeUser && !activeUser.isGuest) {
+      const existing = Array.isArray(activeUser.readLaterBookmarks)
+        ? activeUser.readLaterBookmarks
+        : [];
+      updatedBookmarks = existing.filter((b) => b.articleId !== articleId);
+
+      const updatedUser: UserProfile = {
+        ...activeUser,
+        readLaterBookmarks: updatedBookmarks,
+      };
+
+      await this.saveCommunityUser(updatedUser);
+      this.saveUser(updatedUser);
+    } else {
+      const rawGuest = localStorage.getItem(STORAGE_KEYS.READ_LATER_GUEST);
+      const existing: ReadLaterBookmark[] = rawGuest ? JSON.parse(rawGuest) : [];
+      updatedBookmarks = existing.filter((b) => b.articleId !== articleId);
+      localStorage.setItem(STORAGE_KEYS.READ_LATER_GUEST, JSON.stringify(updatedBookmarks));
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('wiki_read_later_updated', { detail: { bookmarks: updatedBookmarks } })
+      );
+    }
+
+    return { success: true, bookmarks: updatedBookmarks };
+  },
+
+  async toggleReadLaterBookmark(
+    article: { id: string; titulo: string; resumo?: string; categoria?: string; conteudo?: string; imagem?: string },
+    user?: UserProfile | null
+  ): Promise<{ isBookmarked: boolean; bookmark?: ReadLaterBookmark; bookmarks: ReadLaterBookmark[] }> {
+    const isCurrentlyBookmarked = this.isArticleBookmarked(article.id, user?.uid);
+    if (isCurrentlyBookmarked) {
+      const res = await this.removeReadLaterBookmark(article.id, user);
+      return { isBookmarked: false, bookmarks: res.bookmarks };
+    } else {
+      const newBookmark: ReadLaterBookmark = {
+        articleId: article.id,
+        title: article.titulo,
+        savedAt: new Date().toISOString(),
+        summary: article.resumo || (article.conteudo ? article.conteudo.slice(0, 160).replace(/[#*='[\]]/g, '') + '...' : ''),
+        category: article.categoria || 'Geral',
+        thumbnailUrl: article.imagem,
+        contentSnapshot: article.conteudo,
+        isRead: false,
+        readProgress: 0,
+      };
+      const res = await this.saveReadLaterBookmark(newBookmark, user);
+      return { isBookmarked: true, bookmark: newBookmark, bookmarks: res.bookmarks };
+    }
+  },
+
+  async updateReadLaterProgress(
+    articleId: string,
+    progress: number,
+    isRead?: boolean,
+    user?: UserProfile | null
+  ): Promise<{ success: boolean; bookmarks: ReadLaterBookmark[] }> {
+    const activeUser = user || this.getCurrentUser();
+    let list: ReadLaterBookmark[] = await this.getReadLaterBookmarks(activeUser?.uid);
+    list = list.map((b) => {
+      if (b.articleId === articleId) {
+        return {
+          ...b,
+          readProgress: Math.min(100, Math.max(0, progress)),
+          isRead: isRead !== undefined ? isRead : progress >= 90 ? true : b.isRead,
+        };
+      }
+      return b;
+    });
+
+    if (activeUser && !activeUser.isGuest) {
+      const updatedUser: UserProfile = {
+        ...activeUser,
+        readLaterBookmarks: list,
+      };
+      await this.saveCommunityUser(updatedUser);
+      this.saveUser(updatedUser);
+    } else {
+      localStorage.setItem(STORAGE_KEYS.READ_LATER_GUEST, JSON.stringify(list));
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('wiki_read_later_updated', { detail: { bookmarks: list } })
+      );
+    }
+
+    return { success: true, bookmarks: list };
   },
 
   async clearLocalCache(): Promise<void> {

@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Link2,
   Star,
+  Bookmark,
   Tag,
   ThumbsUp,
   Folder,
@@ -110,6 +111,10 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   >('article');
   const [sourceCopied, setSourceCopied] = useState(false);
   const [isWatched, setIsWatched] = useState(() => StorageService.isWatched(article.id));
+  const [isBookmarked, setIsBookmarked] = useState(() =>
+    StorageService.isArticleBookmarked(article.id, user?.uid)
+  );
+  const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
   const [ratingData, setRatingData] = useState<ArticleRatingData>(() =>
     StorageService.getArticleRating(article.id)
   );
@@ -299,12 +304,32 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     }
   };
 
-  // Sync watched status on article change
+  // Sync watched & bookmark status on article change
   useEffect(() => {
     setIsWatched(StorageService.isWatched(article.id));
+    setIsBookmarked(StorageService.isArticleBookmarked(article.id, user?.uid));
     setRatingData(StorageService.getArticleRating(article.id));
     setHasRated(false);
-  }, [article.id]);
+  }, [article.id, user?.uid]);
+
+  useEffect(() => {
+    const handleBookmarkChange = () => {
+      setIsBookmarked(StorageService.isArticleBookmarked(article.id, user?.uid));
+    };
+    window.addEventListener('wiki_read_later_updated', handleBookmarkChange);
+    return () => window.removeEventListener('wiki_read_later_updated', handleBookmarkChange);
+  }, [article.id, user?.uid]);
+
+  const handleToggleReadLater = async () => {
+    const res = await StorageService.toggleReadLaterBookmark(localArticle, user);
+    setIsBookmarked(res.isBookmarked);
+    setBookmarkToast(
+      res.isBookmarked
+        ? 'Salvo nos Marcadores do Perfil para leitura offline!'
+        : 'Artigo removido dos Marcadores.'
+    );
+    setTimeout(() => setBookmarkToast(null), 3500);
+  };
 
   // ScrollSpy to track active heading as user scrolls
   useEffect(() => {
@@ -970,6 +995,13 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         />
       </div>
 
+      {bookmarkToast && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900/95 dark:bg-slate-800/95 text-white border border-slate-700/80 shadow-2xl flex items-center gap-3 text-xs animate-in fade-in slide-in-from-bottom-3 backdrop-blur-md">
+          <Bookmark size={16} className="text-emerald-400 shrink-0" fill="currentColor" />
+          <span className="font-semibold">{bookmarkToast}</span>
+        </div>
+      )}
+
       {/* High Density Breadcrumb & Action Bar */}
       <div className="flex items-center justify-between flex-wrap gap-2 text-xs border-b border-slate-200 dark:border-slate-800 pb-2 no-print print:hidden article-top-toolbar min-w-0 max-w-full">
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -1036,6 +1068,24 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           >
             <Star size={13} fill={isWatched ? 'currentColor' : 'none'} />
             <span className="hidden sm:inline">{isWatched ? 'Vigiando' : 'Vigiar'}</span>
+          </button>
+
+          {/* Read Later / Marcadores de Leitura Offline */}
+          <button
+            onClick={handleToggleReadLater}
+            title={
+              isBookmarked
+                ? 'Remover do Ler Mais Tarde (Marcadores do Perfil)'
+                : 'Salvar no perfil para leitura posterior no Modo Offline'
+            }
+            className={`p-1.5 rounded border transition flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${
+              isBookmarked
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 shadow-xs'
+                : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Bookmark size={13} fill={isBookmarked ? 'currentColor' : 'none'} className={isBookmarked ? 'text-emerald-600 dark:text-emerald-400' : ''} />
+            <span className="hidden sm:inline">{isBookmarked ? 'Salvo no Perfil' : 'Ler mais tarde'}</span>
           </button>
 
           {/* Edit or Lock Indicator Button */}

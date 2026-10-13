@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Shield,
   Heart,
@@ -32,8 +32,13 @@ import {
   BookOpen,
   Presentation,
   Cpu,
+  Bookmark,
+  RotateCcw,
+  Trash2,
+  Clock,
 } from 'lucide-react';
-import { UserProfile, WikiPage, WikiArticle } from '../types';
+import { UserProfile, WikiPage, WikiArticle, ReadLaterBookmark } from '../types';
+import { StorageService } from '../services/storageService';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
@@ -910,7 +915,78 @@ export const BetaModeView: React.FC<InformativeViewsProps> = ({
 };
 
 // === 6. OFFLINE MODE VIEW ===
-export const OfflineModeView: React.FC<InformativeViewsProps> = ({ articles, pages, onOpenSmartTVModal }) => {
+export const OfflineModeView: React.FC<InformativeViewsProps> = ({
+  articles,
+  pages,
+  onOpenSmartTVModal,
+  onNavigateToArticle,
+  user,
+  onNavigate,
+}) => {
+  const [offlineBookmarks, setOfflineBookmarks] = useState<ReadLaterBookmark[]>([]);
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadBookmarks = async () => {
+      try {
+        const list = await StorageService.getReadLaterBookmarks(user?.uid);
+        setOfflineBookmarks(list);
+      } catch (err) {
+        console.warn('Erro ao carregar marcadores no modo offline:', err);
+      }
+    };
+
+    loadBookmarks();
+
+    const handleUpdate = () => {
+      loadBookmarks();
+    };
+
+    window.addEventListener('wiki_read_later_updated', handleUpdate);
+    return () => window.removeEventListener('wiki_read_later_updated', handleUpdate);
+  }, [user?.uid]);
+
+  const handleToggleReadStatus = async (articleId: string, currentReadStatus?: boolean) => {
+    const res = await StorageService.updateReadLaterProgress(
+      articleId,
+      currentReadStatus ? 0 : 100,
+      !currentReadStatus,
+      user
+    );
+    setOfflineBookmarks(res.bookmarks);
+  };
+
+  const handleRemoveBookmark = async (articleId: string) => {
+    const res = await StorageService.removeReadLaterBookmark(articleId, user);
+    setOfflineBookmarks(res.bookmarks);
+    setFeedbackMsg('Artigo removido dos seus marcadores.');
+    setTimeout(() => setFeedbackMsg(null), 3000);
+  };
+
+  const handleSaveCuratedToOffline = async () => {
+    const sampleArticles = articles.slice(0, 4);
+    for (const art of sampleArticles) {
+      await StorageService.saveReadLaterBookmark(
+        {
+          articleId: art.id,
+          title: art.titulo,
+          savedAt: new Date().toISOString(),
+          summary: art.resumo || (art.descricao ? art.descricao.slice(0, 160).replace(/[#*='[\]]/g, '') + '...' : ''),
+          category: art.categoria || 'Geral',
+          thumbnailUrl: (art as any).imagem,
+          contentSnapshot: art.descricao,
+          isRead: false,
+          readProgress: 0,
+        },
+        user
+      );
+    }
+    const updated = await StorageService.getReadLaterBookmarks(user?.uid);
+    setOfflineBookmarks(updated);
+    setFeedbackMsg('4 verbetes em destaque foram salvos para acesso offline imediato!');
+    setTimeout(() => setFeedbackMsg(null), 3500);
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in select-none">
       <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-6 shadow-xs">
@@ -928,7 +1004,7 @@ export const OfflineModeView: React.FC<InformativeViewsProps> = ({ articles, pag
           </div>
         </div>
 
-        <div className="space-y-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
+        <div className="space-y-4 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
           <div className="p-3 rounded bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex items-center gap-2.5">
             <CheckCircle size={18} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             <div>
@@ -941,7 +1017,7 @@ export const OfflineModeView: React.FC<InformativeViewsProps> = ({ articles, pag
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
             <div className="p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
               <span className="text-slate-400 text-[10px] uppercase font-mono block">Coleções em Cache:</span>
               <span className="text-lg font-bold text-slate-900 dark:text-white">{pages.length}</span>
@@ -950,10 +1026,156 @@ export const OfflineModeView: React.FC<InformativeViewsProps> = ({ articles, pag
               <span className="text-slate-400 text-[10px] uppercase font-mono block">Artigos em Cache:</span>
               <span className="text-lg font-bold text-slate-900 dark:text-white">{articles.length}</span>
             </div>
-            <div className="p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 col-span-2 sm:col-span-1">
+            <div className="p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+              <span className="text-slate-400 text-[10px] uppercase font-mono block">Marcadores Salvos:</span>
+              <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{offlineBookmarks.length}</span>
+            </div>
+            <div className="p-2.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
               <span className="text-slate-400 text-[10px] uppercase font-mono block">Sincronização:</span>
               <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 font-mono">Ativo & Reativo</span>
             </div>
+          </div>
+
+          {/* Feedback Msg */}
+          {feedbackMsg && (
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={14} className="shrink-0" />
+                <span>{feedbackMsg}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFeedbackMsg(null)}
+                className="text-emerald-600 hover:text-emerald-800 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* SEÇÃO DEDICADA: MARCADORES DO PERFIL (READ LATER) NO MODO OFFLINE */}
+          {/* ========================================================================= */}
+          <div className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Bookmark className="w-4 h-4 text-emerald-600 fill-emerald-600" />
+                <h3 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider font-mono">
+                  Artigos Salvos no Perfil (Ler Mais Tarde)
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                  {offlineBookmarks.length} salvos
+                </span>
+              </div>
+
+              {onNavigate && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate('user-page')}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer font-semibold"
+                >
+                  <span>Gerenciar no Perfil</span>
+                  <ArrowRight size={12} />
+                </button>
+              )}
+            </div>
+
+            {offlineBookmarks.length === 0 ? (
+              <div className="p-6 text-center space-y-2.5 bg-white dark:bg-slate-950/60 rounded-lg border border-slate-200 dark:border-slate-800">
+                <Bookmark className="w-8 h-8 mx-auto text-slate-400" />
+                <p className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
+                  Você ainda não salvou nenhum artigo nos marcadores do seu perfil.
+                </p>
+                <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+                  Salve verbetes usando o botão "Ler Mais Tarde" dentro de qualquer artigo ou adicione os destaques abaixo para leitura sem conexão.
+                </p>
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleSaveCuratedToOffline}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                  >
+                    <Sparkles size={13} />
+                    <span>Salvar 4 Artigos em Destaque Agora</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {offlineBookmarks.map((b) => (
+                  <div
+                    key={b.articleId}
+                    className="p-3 bg-white dark:bg-slate-950/80 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-800 transition flex flex-col justify-between gap-2.5"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                          {b.category || 'Geral'}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {b.isRead ? (
+                            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                              <CheckCircle2 size={10} />
+                              <span>Lido</span>
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+                              <Clock size={10} />
+                              <span>Pendente</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <h4
+                        onClick={() => onNavigateToArticle(b.articleId)}
+                        className="font-bold text-xs text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer line-clamp-1"
+                      >
+                        {b.title}
+                      </h4>
+
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                        {b.summary || 'Conteúdo gravado na memória local pronto para leitura offline.'}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onNavigateToArticle(b.articleId)}
+                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                      >
+                        <BookOpen size={12} />
+                        <span>Ler Offline</span>
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleReadStatus(b.articleId, b.isRead)}
+                          className={`p-1 rounded border text-xs transition cursor-pointer ${
+                            b.isRead
+                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                              : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
+                          }`}
+                          title={b.isRead ? 'Marcar como não lido' : 'Marcar como lido'}
+                        >
+                          {b.isRead ? <RotateCcw size={11} /> : <Check size={11} />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveBookmark(b.articleId)}
+                          className="p-1 rounded border border-slate-200 dark:border-slate-700 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                          title="Remover marcador"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Android App & PWA Installation Card */}

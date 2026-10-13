@@ -41,6 +41,10 @@ import {
   ImageOff,
   ShieldCheck,
   ShieldAlert,
+  Bookmark,
+  WifiOff,
+  BookOpen,
+  Eye,
 } from 'lucide-react';
 import {
   UserProfile,
@@ -54,6 +58,7 @@ import {
   WikiPage,
   TalkReply,
   DailyEditLimitStatus,
+  ReadLaterBookmark,
 } from '../types';
 import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
@@ -64,7 +69,7 @@ interface UserPageViewProps {
   currentUser: UserProfile | null;
   allArticles?: WikiArticle[];
   allPages?: WikiPage[];
-  initialTab?: 'profile' | 'talk' | 'contributions' | 'admin';
+  initialTab?: 'profile' | 'talk' | 'contributions' | 'admin' | 'read-later';
   onNavigateToArticle: (id: string) => void;
   onNavigateToPage: (uid: string) => void;
   onNavigateToUser: (identifier: string) => void;
@@ -72,6 +77,7 @@ interface UserPageViewProps {
   onNavigateToPromotionRequests?: () => void;
   onNavigateToUnblockRequests?: () => void;
   onNavigateToCheckUser?: (username: string) => void;
+  onNavigateToOffline?: () => void;
   onBack?: () => void;
 }
 
@@ -88,12 +94,21 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   onNavigateToPromotionRequests,
   onNavigateToUnblockRequests,
   onNavigateToCheckUser,
+  onNavigateToOffline,
   onBack,
 }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'profile' | 'talk' | 'contributions' | 'admin'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'profile' | 'talk' | 'contributions' | 'admin' | 'read-later'>(initialTab);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedUid, setCopiedUid] = useState(false);
+
+  // Read Later / Bookmarks State
+  const [bookmarks, setBookmarks] = useState<ReadLaterBookmark[]>([]);
+  const [bookmarkSearch, setBookmarkSearch] = useState('');
+  const [bookmarkCategoryFilter, setBookmarkCategoryFilter] = useState('todos');
+  const [bookmarkStatusFilter, setBookmarkStatusFilter] = useState<'todos' | 'unread' | 'read'>('todos');
+  const [selectedArticleToBookmark, setSelectedArticleToBookmark] = useState('');
+  const [bookmarkFeedback, setBookmarkFeedback] = useState<string | null>(null);
 
   // Profile Edit State
   const [isEditingBio, setIsEditingBio] = useState(false);
@@ -224,6 +239,14 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
       } catch (err) {
         console.warn('Erro ao verificar status de edições diárias:', err);
       }
+
+      // Load Read Later Bookmarks
+      try {
+        const bms = await StorageService.getReadLaterBookmarks(profile.uid);
+        setBookmarks(bms);
+      } catch (err) {
+        console.warn('Erro ao carregar marcadores de leitura:', err);
+      }
     }
     setIsLoading(false);
   };
@@ -231,6 +254,88 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   useEffect(() => {
     loadUserData();
   }, [targetUserIdentifier]);
+
+  // Sincronização em tempo real de marcadores
+  useEffect(() => {
+    const handleBookmarkChange = () => {
+      if (userProfile?.uid) {
+        StorageService.getReadLaterBookmarks(userProfile.uid).then((bms) => setBookmarks(bms));
+      } else {
+        StorageService.getReadLaterBookmarks().then((bms) => setBookmarks(bms));
+      }
+    };
+    window.addEventListener('wiki_read_later_updated', handleBookmarkChange);
+    return () => window.removeEventListener('wiki_read_later_updated', handleBookmarkChange);
+  }, [userProfile?.uid]);
+
+  const handleRemoveBookmark = async (articleId: string) => {
+    const targetUser = userProfile || currentUser;
+    const res = await StorageService.removeReadLaterBookmark(articleId, targetUser);
+    setBookmarks(res.bookmarks);
+    setBookmarkFeedback('Artigo removido dos seus marcadores.');
+    setTimeout(() => setBookmarkFeedback(null), 3000);
+  };
+
+  const handleToggleReadStatus = async (articleId: string, currentReadStatus?: boolean) => {
+    const targetUser = userProfile || currentUser;
+    const res = await StorageService.updateReadLaterProgress(
+      articleId,
+      currentReadStatus ? 0 : 100,
+      !currentReadStatus,
+      targetUser
+    );
+    setBookmarks(res.bookmarks);
+  };
+
+  const handleAddArticleToBookmarks = async () => {
+    if (!selectedArticleToBookmark) return;
+    const art = allArticles.find((a) => a.id === selectedArticleToBookmark);
+    if (!art) return;
+    const targetUser = userProfile || currentUser;
+    const res = await StorageService.saveReadLaterBookmark(
+      {
+        articleId: art.id,
+        title: art.titulo,
+        savedAt: new Date().toISOString(),
+        summary: art.resumo || (art.descricao ? art.descricao.slice(0, 160).replace(/[#*='[\]]/g, '') + '...' : ''),
+        category: art.categoria || 'Geral',
+        thumbnailUrl: (art as any).imagem,
+        contentSnapshot: art.descricao,
+        isRead: false,
+        readProgress: 0,
+      },
+      targetUser
+    );
+    setBookmarks(res.bookmarks);
+    setSelectedArticleToBookmark('');
+    setBookmarkFeedback(`Verbete "${art.titulo}" salvo nos marcadores para leitura offline!`);
+    setTimeout(() => setBookmarkFeedback(null), 3500);
+  };
+
+  const handleBatchBookmarkCurated = async () => {
+    const targetUser = userProfile || currentUser;
+    const sampleArticles = allArticles.slice(0, 4);
+    for (const art of sampleArticles) {
+      await StorageService.saveReadLaterBookmark(
+        {
+          articleId: art.id,
+          title: art.titulo,
+          savedAt: new Date().toISOString(),
+          summary: art.resumo || (art.descricao ? art.descricao.slice(0, 160).replace(/[#*='[\]]/g, '') + '...' : ''),
+          category: art.categoria || 'Geral',
+          thumbnailUrl: (art as any).imagem,
+          contentSnapshot: art.descricao,
+          isRead: false,
+          readProgress: 0,
+        },
+        targetUser
+      );
+    }
+    const updated = await StorageService.getReadLaterBookmarks(targetUser?.uid);
+    setBookmarks(updated);
+    setBookmarkFeedback('4 verbetes em destaque foram salvos para acesso offline!');
+    setTimeout(() => setBookmarkFeedback(null), 3500);
+  };
 
   // Real-time synchronization for user talk messages
   useEffect(() => {
@@ -277,6 +382,34 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
     if (!userProfile?.bio) return { html: '', toc: [], references: [], categories: [] };
     return parseWikitext(userProfile.bio);
   }, [userProfile?.bio]);
+
+  // Read Later Bookmarks Filtered Memo
+  const filteredBookmarks = useMemo(() => {
+    return bookmarks.filter((b) => {
+      const matchesSearch =
+        !bookmarkSearch.trim() ||
+        b.title.toLowerCase().includes(bookmarkSearch.toLowerCase()) ||
+        (b.summary && b.summary.toLowerCase().includes(bookmarkSearch.toLowerCase())) ||
+        (b.category && b.category.toLowerCase().includes(bookmarkSearch.toLowerCase()));
+
+      const matchesCategory =
+        bookmarkCategoryFilter === 'todos' || b.category === bookmarkCategoryFilter;
+
+      const matchesStatus =
+        bookmarkStatusFilter === 'todos' ||
+        (bookmarkStatusFilter === 'read' ? b.isRead : !b.isRead);
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [bookmarks, bookmarkSearch, bookmarkCategoryFilter, bookmarkStatusFilter]);
+
+  const uniqueBookmarkCategories = useMemo(() => {
+    const set = new Set<string>();
+    bookmarks.forEach((b) => {
+      if (b.category) set.add(b.category);
+    });
+    return Array.from(set);
+  }, [bookmarks]);
 
   // Handle Bio Save
   const handleSaveBio = async () => {
@@ -962,6 +1095,25 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
             <span className="bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-[9px] px-1.5 py-0.2 rounded uppercase font-mono font-bold">
               {isAdminOrMod ? 'Admin' : 'Governança'}
             </span>
+          </button>
+
+          {/* Aba Ler Mais Tarde (Marcadores Offline) */}
+          <button
+            onClick={() => setActiveTab('read-later')}
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-2 ${
+              activeTab === 'read-later'
+                ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/20'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300'
+            }`}
+          >
+            <Bookmark size={14} className={activeTab === 'read-later' ? 'text-emerald-600 fill-emerald-600' : 'text-slate-500'} />
+            <span>Ler Mais Tarde</span>
+            <span className="text-[10px] font-mono text-slate-400">Offline</span>
+            {bookmarks.length > 0 && (
+              <span className="bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold">
+                {bookmarks.length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -2316,6 +2468,315 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ABA 5: LER MAIS TARDE / MARCADORES OFFLINE (READ LATER) */}
+      {/* ========================================================================= */}
+      {activeTab === 'read-later' && (
+        <div className="space-y-6 animate-in fade-in">
+          {/* Header & Status Card */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-800 shrink-0">
+                  <Bookmark size={20} className="fill-emerald-600 dark:fill-emerald-400" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Marcadores de Leitura (Ler Mais Tarde)</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                      Disponível Offline
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Artigos salvos no seu perfil e guardados no armazenamento local para leitura mesmo sem conexão à internet.
+                  </p>
+                </div>
+              </div>
+
+              {onNavigateToOffline && (
+                <button
+                  type="button"
+                  onClick={onNavigateToOffline}
+                  className="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-2 transition cursor-pointer shrink-0"
+                >
+                  <WifiOff size={14} className="text-amber-500" />
+                  <span>Abrir Modo Offline Geral</span>
+                </button>
+              )}
+            </div>
+
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
+              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                <span className="text-[10px] uppercase font-mono text-slate-400 block font-semibold">Total Salvos</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-white font-mono">{bookmarks.length}</span>
+              </div>
+              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                <span className="text-[10px] uppercase font-mono text-slate-400 block font-semibold">Não Lidos</span>
+                <span className="text-xl font-bold text-amber-600 dark:text-amber-400 font-mono">
+                  {bookmarks.filter((b) => !b.isRead).length}
+                </span>
+              </div>
+              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                <span className="text-[10px] uppercase font-mono text-slate-400 block font-semibold">Lidos</span>
+                <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                  {bookmarks.filter((b) => b.isRead).length}
+                </span>
+              </div>
+              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                <span className="text-[10px] uppercase font-mono text-slate-400 block font-semibold">Cache Local</span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono flex items-center gap-1 mt-1">
+                  <CheckCircle2 size={13} />
+                  <span>Sincronizado</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Feedback Toast */}
+          {bookmarkFeedback && (
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs flex items-center justify-between gap-2 animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={15} className="shrink-0" />
+                <span>{bookmarkFeedback}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBookmarkFeedback(null)}
+                className="text-emerald-600 hover:text-emerald-800 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Adicionar Marcador Rápido */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap flex items-center gap-1.5">
+                <Plus size={14} className="text-emerald-600" />
+                <span>Salvar Artigo:</span>
+              </label>
+              <select
+                value={selectedArticleToBookmark}
+                onChange={(e) => setSelectedArticleToBookmark(e.target.value)}
+                className="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+              >
+                <option value="">Selecione um verbete para salvar no seu perfil...</option>
+                {allArticles.map((art) => (
+                  <option key={art.id} value={art.id}>
+                    {art.titulo} ({art.categoria || 'Geral'})
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={!selectedArticleToBookmark}
+                onClick={handleAddArticleToBookmarks}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0"
+              >
+                <Bookmark size={13} />
+                <span>Salvar</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleBatchBookmarkCurated}
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0"
+              title="Salva 4 verbetes em destaque de uma vez para leitura offline"
+            >
+              <Sparkles size={13} className="text-amber-500" />
+              <span>Salvar 4 em Destaque</span>
+            </button>
+          </div>
+
+          {/* Filtros e Busca */}
+          <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={bookmarkSearch}
+                onChange={(e) => setBookmarkSearch(e.target.value)}
+                placeholder="Buscar em marcadores por título ou resumo..."
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={bookmarkCategoryFilter}
+                onChange={(e) => setBookmarkCategoryFilter(e.target.value)}
+                className="px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300"
+              >
+                <option value="todos">Todas as Categorias</option>
+                {uniqueBookmarkCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex rounded-lg border border-slate-300 dark:border-slate-700 overflow-hidden text-xs">
+                <button
+                  type="button"
+                  onClick={() => setBookmarkStatusFilter('todos')}
+                  className={`px-2.5 py-1.5 font-medium transition ${
+                    bookmarkStatusFilter === 'todos'
+                      ? 'bg-blue-600 text-white font-bold'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                  }`}
+                >
+                  Todos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBookmarkStatusFilter('unread')}
+                  className={`px-2.5 py-1.5 font-medium transition ${
+                    bookmarkStatusFilter === 'unread'
+                      ? 'bg-blue-600 text-white font-bold'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                  }`}
+                >
+                  Não Lidos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBookmarkStatusFilter('read')}
+                  className={`px-2.5 py-1.5 font-medium transition ${
+                    bookmarkStatusFilter === 'read'
+                      ? 'bg-blue-600 text-white font-bold'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                  }`}
+                >
+                  Lidos
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de Marcadores */}
+          {filteredBookmarks.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-12 text-center space-y-3">
+              <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                <Bookmark size={24} />
+              </div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                {bookmarks.length === 0
+                  ? 'Nenhum marcador de leitura salvo ainda'
+                  : 'Nenhum marcador corresponde aos filtros'}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                {bookmarks.length === 0
+                  ? 'Ao ler qualquer verbete, clique no botão "Ler Mais Tarde" no topo do artigo para salvá-lo aqui no seu perfil com conteúdo completo disponível offline.'
+                  : 'Tente ajustar os termos da busca ou limpar o filtro de categoria/status.'}
+              </p>
+              {bookmarks.length === 0 && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleBatchBookmarkCurated}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
+                  >
+                    <Sparkles size={14} />
+                    <span>Salvar Artigos em Destaque Agora</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredBookmarks.map((b) => (
+                <div
+                  key={b.articleId}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-800 rounded-xl p-4 shadow-xs transition flex flex-col justify-between gap-3 group"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                          {b.category || 'Geral'}
+                        </span>
+                        {b.isRead ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+                            <CheckCircle2 size={10} />
+                            <span>Lido</span>
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-1">
+                            <Clock size={10} />
+                            <span>Pendente</span>
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
+                          <CheckCircle2 size={10} />
+                          <span>Offline</span>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-slate-400">
+                        <span className="text-[10px] font-mono">
+                          {b.savedAt ? new Date(b.savedAt).toLocaleDateString('pt-BR') : ''}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => onNavigateToArticle(b.articleId)}
+                      className="text-left font-serif-heading font-bold text-sm text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer line-clamp-1 group-hover:underline"
+                    >
+                      {b.title}
+                    </button>
+
+                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                      {b.summary || 'Conteúdo do artigo disponível para leitura no armazenamento local offline.'}
+                    </p>
+                  </div>
+
+                  {/* Actions & Progress Bar */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onNavigateToArticle(b.articleId)}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    >
+                      <BookOpen size={13} />
+                      <span>Ler Offline</span>
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleReadStatus(b.articleId, b.isRead)}
+                        className={`p-1.5 rounded-lg border text-xs font-medium transition cursor-pointer ${
+                          b.isRead
+                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                            : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
+                        }`}
+                        title={b.isRead ? 'Marcar como não lido' : 'Marcar como lido'}
+                      >
+                        {b.isRead ? <RotateCcw size={13} /> : <Check size={13} />}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveBookmark(b.articleId)}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                        title="Remover dos Marcadores"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -1760,6 +1760,7 @@ export default function App() {
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
+              onNavigateToOffline={() => handleNavigate('offline')}
               onBack={() => handleNavigate('hub')}
             />
           )}
@@ -1977,6 +1978,7 @@ export default function App() {
               onNavigateToArticle={handleSelectArticle}
               onOpenEditor={() => handleOpenNewEditor()}
               onOpenSmartTVModal={() => setShowSmartTVModal(true)}
+              onNavigate={(v) => handleNavigate(v)}
             />
           )}
 
