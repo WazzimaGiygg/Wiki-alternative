@@ -149,8 +149,6 @@ export const UserChatModal: React.FC<UserChatModalProps> = ({
     return () => clearTimeout(timer);
   }, [searchQuery, activeTab, currentUser?.uid, chatService]);
 
-  if (!isOpen) return null;
-
   // Identifica o outro participante da conversa ativa
   const recipient = useMemo(() => {
     if (!activeConversation || !currentUser) return null;
@@ -248,6 +246,8 @@ export const UserChatModal: React.FC<UserChatModalProps> = ({
       </span>
     );
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in select-none font-sans">

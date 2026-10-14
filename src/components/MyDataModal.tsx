@@ -43,8 +43,6 @@ export const MyDataModal: React.FC<MyDataModalProps> = ({
   onRefreshNotifications,
   initialTab = 'titular',
 }) => {
-  if (!isOpen) return null;
-
   const [activeTab, setActiveTab] = useState<'titular' | 'notifications'>(initialTab);
   const [notifPrefs, setNotifPrefs] = useState<LgpdNotificationPreferences>(() =>
     StorageService.getLgpdNotificationPreferences()
@@ -185,6 +183,8 @@ export const MyDataModal: React.FC<MyDataModalProps> = ({
       if (onRefreshNotifications) onRefreshNotifications();
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 select-none font-sans">
