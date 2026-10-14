@@ -233,8 +233,11 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
                 type="text"
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                placeholder="Filtrar tópicos e seções por palavra-chave..."
-                className="w-full pl-8 pr-7 py-1 text-xs rounded-lg border border-current/20 bg-white/70 dark:bg-black/40 focus:outline-hidden focus:ring-1 focus:ring-blue-500/50"
+                className={`w-full pl-8 pr-7 py-1 text-xs rounded-lg border border-current/25 focus:outline-hidden focus:ring-1 focus:ring-blue-500/50 ${
+                  isReader
+                    ? 'bg-current/10 text-current placeholder:text-current/50'
+                    : 'bg-white/70 dark:bg-black/40 text-slate-900 dark:text-slate-100 placeholder:text-slate-400'
+                }`}
               />
               {searchFilter && (
                 <button
@@ -271,20 +274,20 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
                   key={item.id}
                   className={`group relative flex items-baseline gap-2 py-1 px-2 rounded-lg transition-colors ${indentClass} ${
                     isActive
-                      ? 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 font-semibold'
+                      ? isReader
+                        ? 'bg-current/15 text-current font-semibold ring-1 ring-current/30'
+                        : 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 font-semibold'
                       : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-90 hover:opacity-100'
                   }`}
                 >
                   {/* Section Number Badge (e.g. 1, 1.1, 2, 2.1) */}
                   <span
                     className={`font-mono shrink-0 select-none text-[11px] ${
-                      isH2
+                      isReader
+                        ? isH2 ? 'font-bold text-current/85' : 'text-current/65 text-[10px]'
+                        : isH2
                         ? 'font-bold text-slate-700 dark:text-slate-300'
                         : 'text-slate-500 dark:text-slate-400 text-[10px]'
-                    } ${
-                      isReader
-                        ? 'text-current/75'
-                        : ''
                     }`}
                   >
                     {item.number}
@@ -296,13 +299,11 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
                     onClick={(e) => handleLinkClick(e, item.id)}
                     title={`Navegar para a seção: ${item.text}`}
                     className={`hover:underline flex-1 truncate transition-colors ${
-                      isH2
+                      isReader
+                        ? isH2 ? 'font-semibold text-current' : 'text-current/90 font-normal'
+                        : isH2
                         ? 'font-semibold text-slate-900 dark:text-slate-100'
                         : 'text-slate-700 dark:text-slate-300 font-normal'
-                    } ${
-                      isReader
-                        ? 'text-current'
-                        : ''
                     }`}
                   >
                     {item.text}
@@ -310,7 +311,7 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
 
                   {/* Active Indicator or subtle anchor icon on hover */}
                   {isActive ? (
-                    <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
+                    <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${isReader ? 'bg-current' : 'bg-blue-600 dark:bg-blue-400'} animate-pulse`} />
                   ) : (
                     <span className="opacity-0 group-hover:opacity-40 transition font-mono text-[10px] shrink-0 text-current">
                       #

@@ -24,7 +24,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const hooks = ExtensionManager.getInstance().getHooks();
       const defaultCode = hooks.applyFilters<string>('i18n:default_language', 'pt');
-      const forceDefault = hooks.applyFilters<boolean>('i18n:force_default', true);
+      const forceDefault = hooks.applyFilters<boolean>('i18n:force_default', false);
       const allowOverride = hooks.applyFilters<boolean>('i18n:allow_user_override', true);
 
       const saved = localStorage.getItem('wikizero_language');

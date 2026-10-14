@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Search,
   Shuffle,
   Bell,
   CheckCheck,
+  Check,
   User as UserIcon,
   LogOut,
   Shield,
@@ -34,6 +35,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { Language } from '../utils/languages';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { StorageService } from '../services/storageService';
 import { ExtensionManager } from '../core/ExtensionManager';
@@ -240,8 +242,16 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  // Quick popular languages list for instant header dropdown
-  const popularLanguages = allLanguages.slice(0, 8);
+  // Curated popular languages without regional duplicate codes (pt vs pt-PT, en vs en-GB, es vs es-MX)
+  const popularLanguages = useMemo(() => {
+    const popularCodes = ['pt', 'en', 'es', 'fr', 'de', 'it', 'ja', 'zh', 'ru', 'ar'];
+    const found: Language[] = [];
+    for (const code of popularCodes) {
+      const match = allLanguages.find((l) => l.code === code);
+      if (match) found.push(match);
+    }
+    return found;
+  }, [allLanguages]);
 
   return (
     <header className="sticky top-0 z-40 bg-[#ffffff] dark:bg-[#0f172a] border-b border-slate-200 dark:border-slate-800 transition-colors select-none no-print print:hidden w-full max-w-full overflow-x-clip">
@@ -921,15 +931,16 @@ export const Header: React.FC<HeaderProps> = ({
             {!isWin95 && <span className={`${isRepo ? "text-[#22d3ee]/80" : isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : isStardew ? "text-[#fed88b]" : "text-slate-400"} hidden md:inline truncate`}>{t('header.open_encyclopedia')}</span>}
           </div>
           <div className={`flex items-center gap-2 sm:gap-4 shrink-0 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : isStardew ? 'text-[#fed88b]' : 'text-slate-400'} text-[11px]`}>
+            {/* Seletor de idioma na micro barra superior: visível em mobile ou temas retrô dedicados (evita duplicidade no desktop) */}
             <button
               onClick={onOpenLanguagesModal}
-              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-300 text-slate-300'} flex items-center gap-1 transition cursor-pointer`}
+              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'md:hidden hover:text-blue-300 text-slate-300'} flex items-center gap-1 transition cursor-pointer`}
               title="Mudar idioma da enciclopédia"
             >
               <Globe2 size={11} className={isWin95 ? 'text-[#000080]' : isGenshin ? 'text-[#72e2db]' : 'text-blue-400'} />
               <span>{currentLanguage.flag} <span className="hidden sm:inline">{currentLanguage.nativeName}</span> ({currentLanguage.code})</span>
             </button>
-            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
+            <span className={`${isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'md:hidden text-slate-600'}`}>|</span>
             <button
               type="button"
               onClick={onToggleTheme}
@@ -1989,104 +2000,51 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {showLangMenu && (
-              <div className="absolute right-0 mt-1.5 w-64 bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 shadow-xl py-1 z-50 animate-in fade-in text-xs">
-                <div className="px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
-                  <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[10px] font-mono">
-                    {t('header.change_language')}
+              <div className="absolute right-0 mt-1.5 w-64 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 text-xs overflow-hidden">
+                <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[10px] font-mono flex items-center gap-1.5">
+                    <Globe2 size={12} className="text-blue-500" />
+                    <span>{t('header.change_language')}</span>
                   </span>
-                  <span className="text-[10px] text-slate-400">45+ idiomas</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">45+ globais</span>
                 </div>
 
-                <div className="max-h-56 overflow-y-auto py-1">
-                  {popularLanguages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setLanguage(lang);
-                        setShowLangMenu(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 flex items-center justify-between text-xs transition ${
-                        currentLanguage.code === lang.code
-                          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{lang.flag}</span>
-                        <span>{lang.nativeName}</span>
-                      </div>
-                      <span className="font-mono text-[10px] text-slate-400 uppercase">{lang.code}</span>
-                    </button>
-                  ))}
+                <div className="max-h-60 overflow-y-auto py-1 divide-y divide-slate-100 dark:divide-slate-800/40">
+                  {popularLanguages.map((lang) => {
+                    const isSelected = currentLanguage.code === lang.code;
+                    return (
+                      <button
+                        key={lang.code}
+                        onClick={() => {
+                          setLanguage(lang);
+                          setShowLangMenu(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 flex items-center justify-between text-xs transition cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-base shrink-0">{lang.flag}</span>
+                          <span className="truncate">{lang.nativeName}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="font-mono text-[10px] text-slate-400 uppercase">{lang.code}</span>
+                          {isSelected && <Check size={13} className="text-blue-600 dark:text-blue-400" />}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <div className="p-1.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60">
                   <button
                     onClick={() => {
                       setShowLangMenu(false);
                       if (onOpenLanguagesModal) onOpenLanguagesModal();
                     }}
-                    className="w-full text-center py-1.5 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition"
-                  >
-                    <Globe2 size={13} />
-                    <span>{t('header.all_languages')}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Online Users Trigger & Modal/Dropdown (Desktop / Tablet) */}
-          <div className="relative hidden sm:block" ref={onlineMenuRef}>
-            <button
-              onClick={() => setShowLangMenu(!showLangMenu)}
-              className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-200"
-              title={t('header.change_language')}
-            >
-              <span className="text-sm">{currentLanguage.flag}</span>
-              <span className="font-mono text-[11px] uppercase hidden sm:inline">{currentLanguage.code}</span>
-              <ChevronDown size={11} className="text-slate-400" />
-            </button>
-
-            {showLangMenu && (
-              <div className="absolute right-0 mt-1.5 w-64 bg-white dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-700 shadow-xl py-1 z-50 animate-in fade-in text-xs">
-                <div className="px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
-                  <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[10px] font-mono">
-                    {t('header.change_language')}
-                  </span>
-                  <span className="text-[10px] text-slate-400">45+ idiomas</span>
-                </div>
-
-                <div className="max-h-56 overflow-y-auto py-1">
-                  {popularLanguages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setLanguage(lang);
-                        setShowLangMenu(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 flex items-center justify-between text-xs transition ${
-                        currentLanguage.code === lang.code
-                          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold'
-                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{lang.flag}</span>
-                        <span>{lang.nativeName}</span>
-                      </div>
-                      <span className="font-mono text-[10px] text-slate-400 uppercase">{lang.code}</span>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="p-1.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                  <button
-                    onClick={() => {
-                      setShowLangMenu(false);
-                      if (onOpenLanguagesModal) onOpenLanguagesModal();
-                    }}
-                    className="w-full text-center py-1.5 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                    className="w-full text-center py-2 px-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
                   >
                     <Globe2 size={13} />
                     <span>{t('header.all_languages')}</span>

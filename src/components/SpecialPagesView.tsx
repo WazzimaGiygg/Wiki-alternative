@@ -874,7 +874,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
             { label: 'Ética de Edição (LGPD)', uid: 'Special:EditingEthics' },
             { label: 'Leis Europeias de Dados', uid: 'Special:EuropeanDataLaws' },
             { label: 'Liberdade de Expressão', uid: 'Special:FreeExpression' },
-            { label: 'App Chrome / PC', uid: 'Special:ChromeApp' },
+            { label: '💻 App Chrome & PC', uid: 'Special:ChromeApp' },
             { label: 'Previsão do Tempo', uid: 'Special:Weather' },
             { label: 'Google Acadêmico', uid: 'Special:Scholar' },
             { label: 'Ferramentas de Uso', uid: 'Special:Tools' },

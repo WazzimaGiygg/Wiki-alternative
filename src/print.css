@@ -175,10 +175,14 @@ body.is-printing-article .wikidiota-notice-box {
   div[role="dialog"],
   .fixed.inset-0:not(.reader-mode-container),
 
-  /* Generic print hiding classes */
+  /* Generic print hiding classes & 3.05.6.d: Categoria oculta na impressão */
   .no-print,
   .print-hidden,
   .print\:hidden,
+  .article-category-badge,
+  .reader-category-badge,
+  .article-categories-footer,
+  [data-print-hide-category],
   [data-print-hide] {
     display: none !important;
     visibility: hidden !important;

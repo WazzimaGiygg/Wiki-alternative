@@ -3920,15 +3920,75 @@ html.theme-halflife ::-webkit-scrollbar-thumb:hover {
   color: #2e2215 !important;
 }
 
-/* Light Reader Theme */
+/* Light Reader Theme — High Contrast WCAG AAA */
 .theme-reader-light {
   background-color: #ffffff !important;
-  color: #1a202c !important;
+  color: #0f172a !important;
 }
 
 .theme-reader-light .reader-paper {
   background-color: #ffffff !important;
-  color: #1a202c !important;
+  color: #0f172a !important;
+}
+
+.theme-reader-light .wiki-rendered-content {
+  color: #0f172a !important;
+}
+
+.theme-reader-light .wiki-rendered-content h1,
+.theme-reader-light .wiki-rendered-content h2,
+.theme-reader-light .wiki-rendered-content h3,
+.theme-reader-light .wiki-rendered-content h4,
+.theme-reader-light .wiki-rendered-content h5 {
+  color: #020617 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+.theme-reader-light .wiki-rendered-content a,
+.theme-reader-light .wiki-rendered-content .wiki-link {
+  color: #1d4ed8 !important;
+  text-decoration-color: #93c5fd !important;
+}
+
+.theme-reader-light .wiki-rendered-content blockquote {
+  background-color: #f8fafc !important;
+  border-left-color: #2563eb !important;
+  color: #334155 !important;
+}
+
+.theme-reader-light .wiki-rendered-content code {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.theme-reader-light .wiki-rendered-content pre {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.theme-reader-light .wiki-rendered-content .wikitable {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.theme-reader-light .wiki-rendered-content .wikitable th {
+  background-color: #f1f5f9 !important;
+  color: #020617 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.theme-reader-light .wiki-rendered-content .wikitable td {
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.theme-reader-light .wiki-rendered-content .wiki-infobox {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
 }
 
 /* Dark Reader Theme */

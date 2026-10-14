@@ -35,6 +35,7 @@ import { AppTheme, CustomToolConfig, UserProfile } from '../types';
 import { WeatherTool } from './WeatherTool';
 import { GoogleScholarTool } from './GoogleScholarTool';
 import { ChromeAppTool } from './ChromeAppTool';
+import { ChromeLogoIcon } from './PWAInstallPrompt';
 import { CalculatorTool } from './CalculatorTool';
 import { WorldClockTool } from './WorldClockTool';
 import { GeminiAssistantTool } from './GeminiAssistantTool';
@@ -702,18 +703,20 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
             }`}
           >
             <div
-              className={`p-2 rounded-xl shrink-0 ${
+              className={`p-2 rounded-xl shrink-0 flex items-center justify-center ${
                 activeTab === 'chrome-app'
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
               }`}
             >
-              <Monitor size={18} />
+              <ChromeLogoIcon size={18} />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold truncate">App Chrome/PC</div>
+              <div className="text-xs font-bold truncate flex items-center gap-1">
+                <span>💻 App Chrome & PC</span>
+              </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                Web Store & Desktop
+                Web Store & Desktop 🌐
               </div>
             </div>
           </button>

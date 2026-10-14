@@ -1212,14 +1212,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onNavigate('smart-tv');
                     }
                   }}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition cursor-pointer"
+                  className="w-full h-8 flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition cursor-pointer"
                   title="Disponibilidade para Smart TVs (Samsung Tizen, LG webOS, Android TV, Fire TV)"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <Tv size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-                    <span>App Smart TV</span>
+                    <span className="truncate text-[11px]">📺 App Smart TV</span>
                   </div>
-                  <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-indigo-600 text-white font-bold">
+                  <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-indigo-600 text-white font-bold shrink-0">
                     10-Foot
                   </span>
                 </button>

@@ -579,7 +579,11 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filtrar seções por nome..."
-              className="w-full pl-6 pr-6 py-1 text-xs rounded bg-white dark:bg-slate-900 border border-current/20 focus:outline-none focus:ring-1 focus:ring-blue-500 font-sans"
+              className={`w-full pl-6 pr-6 py-1 text-xs rounded border border-current/20 focus:outline-none focus:ring-1 focus:ring-blue-500 font-sans ${
+                isReader
+                  ? 'bg-current/10 text-current placeholder:text-current/50'
+                  : 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400'
+              }`}
             />
             {searchQuery && (
               <button
@@ -596,7 +600,11 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
           <select
             value={levelFilter}
             onChange={(e) => setLevelFilter(e.target.value as any)}
-            className="text-[10px] font-mono py-1 px-1.5 rounded bg-white dark:bg-slate-900 border border-current/20 focus:outline-none"
+            className={`text-[10px] font-mono py-1 px-1.5 rounded border border-current/20 focus:outline-none ${
+              isReader
+                ? 'bg-current/10 text-current'
+                : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200'
+            }`}
             title="Filtrar por nível hierárquico"
           >
             <option value="all">Todos</option>

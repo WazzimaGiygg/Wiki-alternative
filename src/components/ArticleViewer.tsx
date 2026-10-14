@@ -43,6 +43,7 @@ import {
   Minus,
   Plus,
   AlignLeft,
+  Globe2,
 } from 'lucide-react';
 import {
   WikiArticle,
@@ -54,6 +55,8 @@ import {
 import { parseWikitext, TocItem } from '../utils/wikitextParser';
 import { buildUidPermalink } from '../utils/urlRouter';
 import { formatExternalUrl } from '../utils/linkUtils';
+import { useLanguage } from '../context/LanguageContext';
+import { ALL_LANGUAGES } from '../utils/languages';
 import { ArticleHistoryView } from './ArticleHistoryView';
 import { TalkPageView } from './TalkPageView';
 import { WhatLinksHereView } from './WhatLinksHereView';
@@ -127,6 +130,11 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const [dossierInitialDoc, setDossierInitialDoc] = useState<DossierDocType>('chronus');
   const [dossierInitialTab, setDossierInitialTab] = useState<'text' | 'pdf' | 'table'>('text');
   const [localArticle, setLocalArticle] = useState<WikiArticle>(article);
+
+  const { currentLanguage, t } = useLanguage();
+  const [translatedArticle, setTranslatedArticle] = useState<{ title: string; content: string; langCode: string } | null>(null);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
+  const [showTranslateDropdown, setShowTranslateDropdown] = useState<boolean>(false);
 
   const isWazzimaGiyggArticle =
     localArticle.id === 'curated-wazzimagiygg-biography' ||
@@ -256,17 +264,131 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   // Sync article when prop changes
   useEffect(() => {
     setLocalArticle(article);
+    setTranslatedArticle(null);
   }, [article]);
+
+  const currentContent = translatedArticle ? translatedArticle.content : (localArticle.descricao || '');
+  const currentTitle = translatedArticle ? translatedArticle.title : localArticle.titulo;
+
+  // Split wikitext into manageable chunks (~2200 chars) preserving paragraphs and line breaks
+  const chunkTextForTranslation = (text: string, maxChunkLength = 2200): string[] => {
+    if (!text || text.length <= maxChunkLength) return [text];
+    const paragraphs = text.split('\n\n');
+    const chunks: string[] = [];
+    let currentChunk = '';
+
+    for (const paragraph of paragraphs) {
+      if ((currentChunk + '\n\n' + paragraph).length <= maxChunkLength) {
+        currentChunk = currentChunk ? currentChunk + '\n\n' + paragraph : paragraph;
+      } else {
+        if (currentChunk) {
+          chunks.push(currentChunk);
+          currentChunk = '';
+        }
+        if (paragraph.length <= maxChunkLength) {
+          currentChunk = paragraph;
+        } else {
+          // Paragraph itself is larger than maxChunkLength, split by lines
+          const lines = paragraph.split('\n');
+          for (const line of lines) {
+            if ((currentChunk + '\n' + line).length <= maxChunkLength) {
+              currentChunk = currentChunk ? currentChunk + '\n' + line : line;
+            } else {
+              if (currentChunk) chunks.push(currentChunk);
+              if (line.length <= maxChunkLength) {
+                currentChunk = line;
+              } else {
+                let remaining = line;
+                while (remaining.length > maxChunkLength) {
+                  chunks.push(remaining.slice(0, maxChunkLength));
+                  remaining = remaining.slice(maxChunkLength);
+                }
+                currentChunk = remaining;
+              }
+            }
+          }
+        }
+      }
+    }
+    if (currentChunk) {
+      chunks.push(currentChunk);
+    }
+    return chunks;
+  };
+
+  const handleTranslateArticle = async (targetLangCode: string) => {
+    if (targetLangCode === 'pt' || targetLangCode === 'original') {
+      setTranslatedArticle(null);
+      setShowTranslateDropdown(false);
+      return;
+    }
+    setIsTranslating(true);
+    setShowTranslateDropdown(false);
+    try {
+      const cacheKey = `wikizero_trans_${localArticle.id}_${targetLangCode}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        setTranslatedArticle(JSON.parse(cached));
+        setIsTranslating(false);
+        return;
+      }
+
+      // 1. Translate article title
+      const titleUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(targetLangCode)}&dt=t&q=${encodeURIComponent(localArticle.titulo)}`;
+      const titlePromise = fetch(titleUrl)
+        .then((r) => r.json())
+        .catch(() => null);
+
+      // 2. Translate entire article body in chunks so no paragraphs or sections are truncated
+      const fullText = localArticle.descricao || '';
+      const textChunks = chunkTextForTranslation(fullText, 2200);
+
+      const chunkPromises = textChunks.map(async (chunk) => {
+        if (!chunk.trim()) return chunk;
+        try {
+          const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(targetLangCode)}&dt=t&q=${encodeURIComponent(chunk)}`;
+          const res = await fetch(url).then((r) => r.json());
+          if (Array.isArray(res?.[0])) {
+            return res[0].map((c: any) => c[0]).join('');
+          }
+          return chunk;
+        } catch {
+          return chunk;
+        }
+      });
+
+      const [titleRes, ...translatedChunks] = await Promise.all([titlePromise, ...chunkPromises]);
+
+      let translatedTitleText = localArticle.titulo;
+      if (Array.isArray(titleRes?.[0])) {
+        translatedTitleText = titleRes[0].map((c: any) => c[0]).join('');
+      }
+
+      const fullTranslatedContent = translatedChunks.join('\n\n');
+
+      const res = {
+        title: translatedTitleText || localArticle.titulo,
+        content: fullTranslatedContent || localArticle.descricao,
+        langCode: targetLangCode,
+      };
+      localStorage.setItem(cacheKey, JSON.stringify(res));
+      setTranslatedArticle(res);
+    } catch (e) {
+      console.warn('Erro na tradução do artigo:', e);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   // Parse wikitext (with callouts, refs, categories, infoboxes)
   const { html, toc, references, categories } = useMemo(
-    () => parseWikitext(localArticle.descricao),
-    [localArticle.descricao]
+    () => parseWikitext(currentContent),
+    [currentContent]
   );
 
   // Calculate reading time estimate based on article text length
   const { readingTimeMinutes, wordCount, characterCount } = useMemo(() => {
-    const rawContent = localArticle.descricao || '';
+    const rawContent = currentContent || '';
     // Strip wikitext templates, links, headers, markup to get accurate textual word count
     const cleanText = rawContent
       .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, '$1')
@@ -284,7 +406,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       wordCount: words,
       characterCount: chars,
     };
-  }, [localArticle.descricao]);
+  }, [currentContent]);
 
   const handleToggleLockArticle = async (reason: string) => {
     if (!user) return;
@@ -620,40 +742,72 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         {/* Minimalist Sticky Reader Toolbar — Ocultada na impressão */}
         {!isPrinting && (
-          <header className="reader-mode-toolbar sticky top-0 z-40 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 sm:gap-3 shadow-2xs no-print transition-colors border-current/15 select-none bg-inherit/90">
+          <header className={`reader-mode-toolbar sticky top-0 z-40 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 sm:gap-3 shadow-xs no-print select-none ${
+            readerTheme === 'sepia'
+              ? 'bg-[#fbf0d9]/95 border-[#d8c59f] text-[#2e2215]'
+              : readerTheme === 'light'
+              ? 'bg-white/95 border-slate-300 text-slate-900'
+              : readerTheme === 'dark'
+              ? 'bg-[#161a22]/95 border-slate-700 text-slate-100'
+              : 'bg-black/95 border-zinc-800 text-zinc-100'
+          }`}>
           {/* Left Controls: Exit Button & Article Title / Reading Progress */}
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <button
               onClick={() => handleToggleReaderMode(false)}
-              className="px-2.5 py-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition shadow-2xs shrink-0"
+              className={`px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition shadow-2xs shrink-0 ${
+                readerTheme === 'sepia'
+                  ? 'border-[#c4a572] bg-[#f4ebd0] text-[#2e2215] hover:bg-[#ebdaba]'
+                  : readerTheme === 'light'
+                  ? 'border-slate-300 bg-slate-50 text-slate-800 hover:bg-slate-100'
+                  : readerTheme === 'dark'
+                  ? 'border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700'
+                  : 'border-zinc-800 bg-zinc-900 text-white hover:bg-zinc-800'
+              }`}
               title="Sair do Modo de Leitura [Pressione Esc]"
             >
               <ArrowLeft size={14} />
               <span className="hidden sm:inline">Sair do Modo Leitura</span>
-              <kbd className="hidden md:inline px-1.5 py-0.2 rounded text-[10px] opacity-70 border border-current/30 font-mono">
+              <kbd className="hidden md:inline px-1.5 py-0.2 rounded text-[10px] font-bold border border-current/30 font-mono">
                 ESC
               </kbd>
             </button>
 
-            <div className="hidden md:flex items-center gap-2 min-w-0 text-xs truncate">
+            <div className={`hidden md:flex items-center gap-2 min-w-0 text-xs truncate ${
+              readerTheme === 'sepia'
+                ? 'text-[#5c4328]'
+                : readerTheme === 'light'
+                ? 'text-slate-600'
+                : readerTheme === 'dark'
+                ? 'text-slate-300'
+                : 'text-zinc-300'
+            }`}>
               <span className="font-bold truncate max-w-xs">{localArticle.titulo}</span>
-              <span className="opacity-30">•</span>
-              <span className="opacity-80 font-mono text-[11px] shrink-0">{readerProgress}% lido</span>
-              <span className="opacity-30">•</span>
-              <span className="opacity-80 text-[11px] shrink-0">~{readingTimeMinutes} min de leitura</span>
+              <span className="opacity-40">•</span>
+              <span className="font-mono text-[11px] shrink-0 font-medium">{readerProgress}% lido</span>
+              <span className="opacity-40">•</span>
+              <span className="text-[11px] shrink-0 font-medium">~{readingTimeMinutes} min de leitura</span>
             </div>
           </div>
 
           {/* Right Controls: Readability Settings & Quick Tools */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Font Family Picker */}
-            <div className="flex items-center bg-black/5 dark:bg-white/5 p-0.5 rounded-lg border border-current/20 text-xs font-medium">
+            <div className={`flex items-center p-0.5 rounded-lg border text-xs font-medium ${
+              readerTheme === 'sepia'
+                ? 'bg-[#f4ebd0] border-[#d8c59f] text-[#2e2215]'
+                : readerTheme === 'light'
+                ? 'bg-slate-100 border-slate-300 text-slate-800'
+                : readerTheme === 'dark'
+                ? 'bg-slate-800 border-slate-700 text-slate-100'
+                : 'bg-zinc-900 border-zinc-800 text-white'
+            }`}>
               <button
                 onClick={() => handleSetReaderFontFamily('serif')}
                 title="Fonte Serifada (Merriweather / Georgia) - Tradicional para livros e conforto prolongado"
                 className={`px-2 py-1 rounded text-[11px] font-serif transition cursor-pointer ${
                   readerFontFamily === 'serif'
-                    ? 'bg-black/10 dark:bg-white/20 font-bold shadow-2xs'
+                    ? readerTheme === 'sepia' ? 'bg-[#ebdaba] font-bold shadow-2xs' : 'bg-current/15 font-bold shadow-2xs'
                     : 'opacity-70 hover:opacity-100'
                 }`}
               >
@@ -664,7 +818,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 title="Fonte Sem Serifa (Inter / Sans) - Limpa e moderna"
                 className={`px-2 py-1 rounded text-[11px] font-sans transition cursor-pointer ${
                   readerFontFamily === 'sans'
-                    ? 'bg-black/10 dark:bg-white/20 font-bold shadow-2xs'
+                    ? readerTheme === 'sepia' ? 'bg-[#ebdaba] font-bold shadow-2xs' : 'bg-current/15 font-bold shadow-2xs'
                     : 'opacity-70 hover:opacity-100'
                 }`}
               >
@@ -675,7 +829,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 title="Fonte Monospaçada (Consolas / Código)"
                 className={`px-2 py-1 rounded text-[11px] font-mono transition cursor-pointer hidden sm:block ${
                   readerFontFamily === 'mono'
-                    ? 'bg-black/10 dark:bg-white/20 font-bold shadow-2xs'
+                    ? readerTheme === 'sepia' ? 'bg-[#ebdaba] font-bold shadow-2xs' : 'bg-current/15 font-bold shadow-2xs'
                     : 'opacity-70 hover:opacity-100'
                 }`}
               >
@@ -684,11 +838,19 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             </div>
 
             {/* Font Size Adjuster */}
-            <div className="flex items-center bg-black/5 dark:bg-white/5 p-0.5 rounded-lg border border-current/20 text-xs">
+            <div className={`flex items-center p-0.5 rounded-lg border text-xs ${
+              readerTheme === 'sepia'
+                ? 'bg-[#f4ebd0] border-[#d8c59f] text-[#2e2215]'
+                : readerTheme === 'light'
+                ? 'bg-slate-100 border-slate-300 text-slate-800'
+                : readerTheme === 'dark'
+                ? 'bg-slate-800 border-slate-700 text-slate-100'
+                : 'bg-zinc-900 border-zinc-800 text-white'
+            }`}>
               <button
                 onClick={() => handleSetReaderFontSize(-2, true)}
                 title="Diminuir tamanho da fonte"
-                className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition cursor-pointer"
+                className="p-1 hover:bg-current/10 rounded transition cursor-pointer"
               >
                 <Minus size={13} />
               </button>
@@ -698,19 +860,27 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               <button
                 onClick={() => handleSetReaderFontSize(2, true)}
                 title="Aumentar tamanho da fonte"
-                className="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition cursor-pointer"
+                className="p-1 hover:bg-current/10 rounded transition cursor-pointer"
               >
                 <Plus size={13} />
               </button>
             </div>
 
             {/* Reading Width Controls */}
-            <div className="hidden lg:flex items-center bg-black/5 dark:bg-white/5 p-0.5 rounded-lg border border-current/20 text-xs">
+            <div className={`hidden lg:flex items-center p-0.5 rounded-lg border text-xs ${
+              readerTheme === 'sepia'
+                ? 'bg-[#f4ebd0] border-[#d8c59f] text-[#2e2215]'
+                : readerTheme === 'light'
+                ? 'bg-slate-100 border-slate-300 text-slate-800'
+                : readerTheme === 'dark'
+                ? 'bg-slate-800 border-slate-700 text-slate-100'
+                : 'bg-zinc-900 border-zinc-800 text-white'
+            }`}>
               <button
                 onClick={() => handleSetReaderWidth('narrow')}
                 title="Coluna Estreita (680px) - Foco concentrado"
                 className={`px-2 py-1 rounded text-[10px] font-bold transition cursor-pointer ${
-                  readerWidth === 'narrow' ? 'bg-black/10 dark:bg-white/20' : 'opacity-70 hover:opacity-100'
+                  readerWidth === 'narrow' ? 'bg-current/15' : 'opacity-70 hover:opacity-100'
                 }`}
               >
                 680
@@ -719,7 +889,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 onClick={() => handleSetReaderWidth('medium')}
                 title="Coluna Média Equilibrada (800px) - Padrão editorial"
                 className={`px-2 py-1 rounded text-[10px] font-bold transition cursor-pointer ${
-                  readerWidth === 'medium' ? 'bg-black/10 dark:bg-white/20' : 'opacity-70 hover:opacity-100'
+                  readerWidth === 'medium' ? 'bg-current/15' : 'opacity-70 hover:opacity-100'
                 }`}
               >
                 800
@@ -728,7 +898,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 onClick={() => handleSetReaderWidth('wide')}
                 title="Coluna Larga (960px) - Leitura expandida"
                 className={`px-2 py-1 rounded text-[10px] font-bold transition cursor-pointer ${
-                  readerWidth === 'wide' ? 'bg-black/10 dark:bg-white/20' : 'opacity-70 hover:opacity-100'
+                  readerWidth === 'wide' ? 'bg-current/15' : 'opacity-70 hover:opacity-100'
                 }`}
               >
                 960
@@ -736,7 +906,15 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             </div>
 
             {/* Reading Themes (Sepia, Light, Dark, OLED Black) */}
-            <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-lg border border-current/20">
+            <div className={`flex items-center gap-1 p-1 rounded-lg border ${
+              readerTheme === 'sepia'
+                ? 'bg-[#f4ebd0] border-[#d8c59f]'
+                : readerTheme === 'light'
+                ? 'bg-slate-100 border-slate-300'
+                : readerTheme === 'dark'
+                ? 'bg-slate-800 border-slate-700'
+                : 'bg-zinc-900 border-zinc-800'
+            }`}>
               <button
                 onClick={() => handleSetReaderTheme('sepia')}
                 title="Tema Sépia / Livro (Tons quentes de papel, reduz cansaço visual)"
@@ -776,8 +954,10 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               <button
                 onClick={() => setShowReaderToc(!showReaderToc)}
                 title="Ver Índice do Artigo"
-                className={`p-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer ${
-                  showReaderToc ? 'bg-black/10 dark:bg-white/20' : ''
+                className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                  showReaderToc
+                    ? 'bg-current/15 border-current/40 font-bold'
+                    : 'border-current/25 hover:bg-current/10'
                 }`}
               >
                 <List size={15} />
@@ -788,8 +968,10 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             <button
               onClick={toggleSpeech}
               title={isPlayingAudio ? 'Parar leitura por voz' : 'Ouvir artigo por voz'}
-              className={`p-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer ${
-                isPlayingAudio ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' : ''
+              className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                isPlayingAudio
+                  ? 'bg-amber-500/20 text-amber-600 border-amber-500 font-bold'
+                  : 'border-current/25 hover:bg-current/10'
               }`}
             >
               {isPlayingAudio ? <VolumeX size={15} /> : <Volume2 size={15} />}
@@ -798,8 +980,16 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             {/* Clean Print / PDF Export */}
             <button
               onClick={handlePrint}
-              title="Imprimir Artigo — Oculta a barra superiora e imprime todo o documento separado por páginas"
-              className="px-2.5 py-1.5 rounded-lg border border-current/25 hover:border-current/40 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer flex items-center gap-1.5 shadow-2xs text-xs font-semibold"
+              title="Imprimir Artigo — Oculta a barra superior e imprime todo o documento com máxima legibilidade"
+              className={`px-2.5 py-1.5 rounded-lg border transition cursor-pointer flex items-center gap-1.5 shadow-2xs text-xs font-semibold ${
+                readerTheme === 'sepia'
+                  ? 'border-[#c4a572] bg-[#f4ebd0] text-[#2e2215] hover:bg-[#ebdaba]'
+                  : readerTheme === 'light'
+                  ? 'border-slate-300 bg-slate-50 text-slate-800 hover:bg-slate-100'
+                  : readerTheme === 'dark'
+                  ? 'border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700'
+                  : 'border-zinc-800 bg-zinc-900 text-white hover:bg-zinc-800'
+              }`}
             >
               <Printer size={14} />
               <span className="hidden sm:inline">Imprimir</span>
@@ -810,7 +1000,15 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         {/* Floating TableOfContents Popover in Reader Mode */}
         {showReaderToc && (
-          <div className="reader-toc-popover fixed top-14 right-4 sm:right-6 z-40 w-80 max-h-[75vh] overflow-y-auto rounded-xl border border-current/20 shadow-2xl p-3 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 no-print bg-inherit">
+          <div className={`reader-toc-popover fixed top-14 right-4 sm:right-6 z-40 w-80 max-h-[75vh] overflow-y-auto rounded-xl border shadow-2xl p-3 animate-in fade-in slide-in-from-top-2 no-print ${
+            readerTheme === 'sepia'
+              ? 'bg-[#fbf0d9] border-[#decba4] text-[#2e2215]'
+              : readerTheme === 'light'
+              ? 'bg-white border-slate-300 text-slate-900'
+              : readerTheme === 'dark'
+              ? 'bg-[#1c2128] border-slate-700 text-slate-100'
+              : 'bg-zinc-950 border-zinc-800 text-zinc-100'
+          }`}>
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-current/15">
               <h3 className="font-bold text-xs flex items-center gap-1.5 uppercase tracking-wide">
                 <List size={13} />
@@ -818,7 +1016,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </h3>
               <button
                 onClick={() => setShowReaderToc(false)}
-                className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer"
+                className="p-1 rounded hover:bg-current/10 transition cursor-pointer"
               >
                 <X size={13} />
               </button>
@@ -857,10 +1055,22 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           {/* Article Title & Metadata Banner */}
           <header className="reader-article-header mb-10 pb-6 border-b border-current/15 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2 mb-3 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider border border-current/25 bg-black/5 dark:bg-white/5">
+              {/* Categoria oculta rigorosamente no momento da impressão (3.05.6.d) */}
+              <span
+                className="no-print print:hidden article-category-badge reader-category-badge px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider border border-current/25 bg-current/5"
+                data-print-hide-category="true"
+              >
                 {localArticle.categoria || 'Geral'}
               </span>
-              <span className="text-xs opacity-75 font-mono">
+              <span className={`text-xs font-mono ${
+                readerTheme === 'sepia'
+                  ? 'text-[#5c4328]'
+                  : readerTheme === 'light'
+                  ? 'text-slate-600'
+                  : readerTheme === 'dark'
+                  ? 'text-slate-300'
+                  : 'text-zinc-300'
+              }`}>
                 ~{readingTimeMinutes} min de leitura • {wordCount.toLocaleString()} palavras
               </span>
             </div>
@@ -877,8 +1087,16 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               {localArticle.titulo}
             </h1>
 
-            <div className="flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs opacity-70 flex-wrap">
-              <span>Por <strong>{localArticle.autor || 'Comunidade WikiWorldWeb'}</strong></span>
+            <div className={`flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs font-medium flex-wrap ${
+              readerTheme === 'sepia'
+                ? 'text-[#5c4328]'
+                : readerTheme === 'light'
+                ? 'text-slate-600'
+                : readerTheme === 'dark'
+                ? 'text-slate-300'
+                : 'text-zinc-300'
+            }`}>
+              <span>Por <strong className="font-bold">{localArticle.autor || 'Comunidade WikiWorldWeb'}</strong></span>
               <span>•</span>
               <span>Atualizado em {new Date(localArticle.dataEdicao || localArticle.dataCriacao).toLocaleDateString('pt-BR')}</span>
               <span>•</span>
@@ -1502,7 +1720,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 <span>https://wikiworldweb.org/?uid={localArticle.id}</span>
               </div>
               <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
-                <span>Categoria: {localArticle.categoria || 'Geral'} • Versão {localArticle.versao || 1}.0 • {wordCount.toLocaleString()} palavras</span>
+                <span>Versão {localArticle.versao || 1}.0 • {wordCount.toLocaleString()} palavras</span>
                 <span>Data de Impressão: {new Date().toLocaleDateString('pt-BR')}</span>
               </div>
             </div>
@@ -1556,7 +1774,10 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             {/* Article Header */}
             <header className="border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                <span
+                  className="no-print print:hidden article-category-badge text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                  data-print-hide-category="true"
+                >
                   {localArticle.categoria || 'Geral'}
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
@@ -1747,7 +1968,10 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
             {/* Wikidot / Fandom Categories Footer Bar */}
             {allCategories.length > 0 && (
-              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 text-xs flex items-center gap-2 flex-wrap not-prose">
+              <div
+                className="no-print print:hidden article-categories-footer p-3 rounded-lg bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 text-xs flex items-center gap-2 flex-wrap not-prose"
+                data-print-hide-category="true"
+              >
                 <div className="flex items-center gap-1 font-bold text-slate-600 dark:text-slate-400 font-mono text-[11px]">
                   <Folder size={13} className="text-amber-500" />
                   <span>Categorias:</span>

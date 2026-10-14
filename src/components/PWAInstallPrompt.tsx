@@ -19,6 +19,17 @@ import {
   ArrowRight
 } from 'lucide-react';
 
+export const ChromeLogoIcon: React.FC<{ size?: number; className?: string }> = ({ size = 15, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 48 48" className={`shrink-0 ${className}`}>
+    <path fill="#4caf50" d="M45,24c0,11.598-9.402,21-21,21S3,35.598,3,24S12.402,3,24,3S45,12.402,45,24z"/>
+    <path fill="#fbc02d" d="M43.682,17c-2.427-6.938-8.498-12.062-15.895-13.51L19.5,18L43.682,17z"/>
+    <path fill="#e53935" d="M24,3C13.627,3,5.034,10.528,3.318,20.5L15.5,27.5L24,3z"/>
+    <path fill="#4caf50" d="M24,45c9.208,0,17.028-5.918,19.866-14.214L32.5,23.5L24,45z"/>
+    <circle fill="#ffffff" cx="24" cy="24" r="10"/>
+    <circle fill="#1e88e5" cx="24" cy="24" r="7.5"/>
+  </svg>
+);
+
 interface PWAInstallPromptProps {
   buttonStyle?: 'compact' | 'full' | 'header' | 'chrome-only';
   customLabel?: string;
@@ -129,24 +140,35 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
           <button
             id="pwa-full-install-btn"
             onClick={handleInstallClick}
-            className="w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white font-medium shadow-md hover:shadow-lg transition cursor-pointer"
+            className="w-full h-8 flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition cursor-pointer shadow-2xs"
+            title="Instalar aplicativo WikiWorldWeb no Google Chrome e Computador"
           >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/15 rounded-lg shrink-0">
-                <Monitor className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-left min-w-0">
-                <div className="text-sm font-semibold truncate">App Chrome & Computador</div>
-                <div className="text-xs text-blue-100 truncate">PC, Mac, Linux, Web Store e Celular</div>
-              </div>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <ChromeLogoIcon size={14} className="shrink-0" />
+              <span className="truncate flex items-center gap-1 font-semibold text-[11px]">
+                <span>💻</span>
+                <span>App Chrome & PC</span>
+              </span>
             </div>
-            <ChevronRight className="w-4 h-4 text-blue-200 shrink-0" />
+            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold shrink-0 flex items-center gap-0.5">
+              <span>🌐</span>
+              <span>PWA</span>
+            </span>
           </button>
         )
       ) : (
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-md">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-          <span className="hidden md:inline">App Instalado</span>
+        <span className="w-full h-8 inline-flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <ChromeLogoIcon size={14} className="shrink-0" />
+            <span className="truncate flex items-center gap-1 text-[11px]">
+              <span>💻</span>
+              <span>App Chrome & PC</span>
+            </span>
+          </div>
+          <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold shrink-0 flex items-center gap-0.5">
+            <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+            <span>Ativo</span>
+          </span>
         </span>
       )}
 
