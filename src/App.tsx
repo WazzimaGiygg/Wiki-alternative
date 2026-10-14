@@ -70,6 +70,8 @@ import { LibraryCatalogView } from './components/LibraryCatalogView';
 import { AcademicCatalogView } from './components/AcademicCatalogView';
 import { JornalNewsView } from './components/JornalNewsView';
 import { CustomContextMenu } from './components/CustomContextMenu';
+import { UserChatModal } from './components/UserChatModal';
+import { UserChatFloatingButton } from './components/UserChatFloatingButton';
 import { CURATED_FEATURED_ARTICLES } from './components/WikiFeaturedArticle';
 import { updateSEO } from './utils/seoManager';
 import { RecentlyReadService } from './utils/recentlyReadService';
@@ -138,6 +140,15 @@ export default function App() {
   const [showPremiumModal, setShowPremiumModal] = useState<boolean>(false);
   const [premiumQuotaType, setPremiumQuotaType] = useState<'chats' | 'images' | 'notebook' | undefined>();
   const [showNotebookModal, setShowNotebookModal] = useState<boolean>(false);
+
+  // Chat em Tempo Real entre Usuários Registrados (3.09.a)
+  const [showUserChatModal, setShowUserChatModal] = useState<boolean>(false);
+  const [userChatInitialTarget, setUserChatInitialTarget] = useState<UserProfile | null>(null);
+
+  const handleOpenUserChat = (targetUser?: UserProfile | null) => {
+    setUserChatInitialTarget(targetUser || null);
+    setShowUserChatModal(true);
+  };
 
   const [isVectorTabTransitioning, setIsVectorTabTransitioning] = useState<boolean>(false);
 
@@ -1409,6 +1420,7 @@ export default function App() {
         onNotificationClick={handleNotificationClick}
         onOpenLanguagesModal={() => setShowLanguageModal(true)}
         onOpenSmartTVModal={() => setShowSmartTVModal(true)}
+        onOpenUserChat={handleOpenUserChat}
         onRebootWin7={() => setShowWin7Boot(true)}
         onRebootWin10={() => setShowWin10Boot(true)}
         onRebootWinXP={() => setShowWinXPBoot(true)}
@@ -1761,6 +1773,7 @@ export default function App() {
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToCheckUser={handleNavigateToCheckUser}
               onNavigateToOffline={() => handleNavigate('offline')}
+              onOpenUserChat={handleOpenUserChat}
               onBack={() => handleNavigate('hub')}
             />
           )}
@@ -2482,6 +2495,29 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Chat em Tempo Real com Outros Usuários Registrados (3.09.a) */}
+      <UserChatModal
+        isOpen={showUserChatModal}
+        onClose={() => {
+          setShowUserChatModal(false);
+          setUserChatInitialTarget(null);
+        }}
+        currentUser={user}
+        initialTargetUser={userChatInitialTarget}
+        onNavigateToUser={handleNavigateToUser}
+        onOpenExtensionsManager={() => {
+          setShowUserChatModal(false);
+          handleNavigate('admin-extensions');
+        }}
+        onLoginClick={() => setShowLoginModal(true)}
+      />
+
+      {/* Botão Flutuante de Atalho Rápido para o Chat */}
+      <UserChatFloatingButton
+        currentUser={user}
+        onOpenChat={() => handleOpenUserChat(null)}
+      />
 
       {/* 8. Menu Alternativo do Botão Direito (por símbolos) */}
       <CustomContextMenu

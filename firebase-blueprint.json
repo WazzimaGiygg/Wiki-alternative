@@ -324,9 +324,52 @@
         "syncedBy": { "type": "string" }
       },
       "required": ["id", "name", "version", "category", "enabled"]
+    },
+    "UserChatConversation": {
+      "title": "UserChatConversation",
+      "description": "Conversa direta em tempo real entre dois usuários registrados",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "participants": { "type": "array" },
+        "participantDetails": { "type": "object" },
+        "lastMessage": { "type": "object" },
+        "unreadCounts": { "type": "object" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "participants", "createdAt", "updatedAt"]
+    },
+    "UserChatMessage": {
+      "title": "UserChatMessage",
+      "description": "Mensagem individual enviada em um chat direto entre usuários",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "chatId": { "type": "string" },
+        "senderUid": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderPhoto": { "type": "string" },
+        "senderRole": { "type": "string" },
+        "recipientUid": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "status": { "type": "string" },
+        "readBy": { "type": "array" },
+        "reactions": { "type": "object" }
+      },
+      "required": ["id", "chatId", "senderUid", "recipientUid", "text", "timestamp"]
     }
   },
   "firestore": {
+    "/user_chats/{chatId}": {
+      "schema": "UserChatConversation",
+      "description": "Conversas diretas em tempo real entre usuários registrados sincronizadas no Firebase"
+    },
+    "/user_chats/{chatId}/messages/{messageId}": {
+      "schema": "UserChatMessage",
+      "description": "Mensagens trocadas em tempo real na conversa entre usuários"
+    },
     "/ucoc_reports/{reportId}": {
       "schema": "UcocReport",
       "description": "Denúncias formais e procedimentos do Código Universal de Conduta"

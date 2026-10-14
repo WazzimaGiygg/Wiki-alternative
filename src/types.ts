@@ -1484,6 +1484,7 @@ export type ExtensionCategory =
   | 'editor'
   | 'widget'
   | 'moderation'
+  | 'communication'
   | 'export';
 
 export interface ExtensionSettingField {
@@ -1640,6 +1641,41 @@ export interface ExtensionActionLog {
   details?: string;
 }
 
+// ==========================================
+// USER REAL-TIME CHAT (3.09.a)
+// ==========================================
+export interface UserChatMessage {
+  id: string;
+  chatId: string;
+  senderUid: string;
+  senderName: string;
+  senderPhoto?: string;
+  senderRole?: string;
+  recipientUid: string;
+  text: string;
+  timestamp: string; // ISO string
+  status?: 'sending' | 'sent' | 'delivered' | 'read';
+  readBy?: string[];
+  reactions?: Record<string, string[]>; // emoji -> list of UIDs
+}
 
-
-
+export interface UserChatConversation {
+  id: string; // Deterministic: [uidA, uidB].sort().join('_')
+  participants: string[]; // [uidA, uidB]
+  participantDetails: Record<string, {
+    uid: string;
+    username: string;
+    displayName: string;
+    photoURL?: string;
+    role?: string;
+    email?: string;
+  }>;
+  lastMessage?: {
+    text: string;
+    senderUid: string;
+    timestamp: string;
+  };
+  unreadCounts: Record<string, number>; // uid -> unreadCount
+  createdAt: string;
+  updatedAt: string;
+}

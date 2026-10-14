@@ -32,6 +32,7 @@ import {
   Moon,
   Puzzle,
   RefreshCw,
+  MessageSquare,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -40,6 +41,7 @@ import { formatExternalUrl } from '../utils/linkUtils';
 import { StorageService } from '../services/storageService';
 import { ExtensionManager } from '../core/ExtensionManager';
 import { PushNotificationService, PushPreferences } from '../services/pushNotificationService';
+import { UserChatService } from '../services/userChatService';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -65,6 +67,7 @@ interface HeaderProps {
   onNotificationClick: (notif: NotificationItem) => void;
   onOpenLanguagesModal?: () => void;
   onOpenSmartTVModal?: () => void;
+  onOpenUserChat?: () => void;
   onRebootWin7?: () => void;
   onRebootWin10?: () => void;
   onRebootWinXP?: () => void;
@@ -96,6 +99,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNotificationClick,
   onOpenLanguagesModal,
   onOpenSmartTVModal,
+  onOpenUserChat,
   onRebootWin7,
   onRebootWin10,
   onRebootWinXP,
@@ -108,6 +112,31 @@ export const Header: React.FC<HeaderProps> = ({
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showOnlineMenu, setShowOnlineMenu] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<UserProfile[]>([]);
+
+  // Chat em Tempo Real com Outros Usuários (3.09.a)
+  const [chatUnreadCount, setChatUnreadCount] = useState<number>(0);
+  const [isChatEnabled, setIsChatEnabled] = useState<boolean>(() =>
+    ExtensionManager.getInstance().isUserChatEnabled()
+  );
+
+  useEffect(() => {
+    const unsub = ExtensionManager.getInstance().subscribe(() => {
+      setIsChatEnabled(ExtensionManager.getInstance().isUserChatEnabled());
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!user || user.isGuest) {
+      setChatUnreadCount(0);
+      return;
+    }
+    const unsub = UserChatService.getInstance().subscribeToConversations(user.uid, (convs) => {
+      const count = convs.reduce((acc, c) => acc + (c.unreadCounts?.[user.uid] || 0), 0);
+      setChatUnreadCount(count);
+    });
+    return () => unsub();
+  }, [user]);
 
   // Notificações Push no Navegador (Service Worker - Requisito 6)
   const [pushPermission, setPushPermission] = useState<NotificationPermission>(
@@ -2188,6 +2217,31 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
           )}
+
+          {/* Real-Time User Chat Trigger Button (3.09.a) */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => onOpenUserChat?.()}
+              className="p-1.5 relative rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0 cursor-pointer"
+              title={
+                !isChatEnabled
+                  ? 'Chat entre usuários desabilitado por Burocrata no Firebase'
+                  : chatUnreadCount > 0
+                  ? `Chat: ${chatUnreadCount} mensagem(ns) não lida(s)`
+                  : 'Chat em tempo real com outros usuários registrados'
+              }
+            >
+              <MessageSquare size={15} className={!isChatEnabled ? 'text-slate-400 opacity-60' : chatUnreadCount > 0 ? 'text-blue-600 dark:text-blue-400' : ''} />
+              {chatUnreadCount > 0 && isChatEnabled && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center animate-pulse">
+                  {chatUnreadCount}
+                </span>
+              )}
+              {!isChatEnabled && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border border-white dark:border-slate-900" title="Desativado por burocrata" />
+              )}
+            </button>
+          </div>
 
           {/* Notification Bell */}
           <div className="relative shrink-0" ref={notifRef}>

@@ -88,6 +88,7 @@ import SqlDatabaseBackupExtension from '../extensions/sql-database-backup';
 import HideOnlineUsersExtension from '../extensions/hide-online-users';
 import ExtensionsSecurityAuditorExtension from '../extensions/extensions-security-auditor';
 import FirebaseAppletConfigImporterExtension from '../extensions/firebase-applet-config-importer';
+import UserChatExtension from '../extensions/user-chat';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -208,6 +209,7 @@ export class ExtensionManager {
       HideOnlineUsersExtension,
       ExtensionsSecurityAuditorExtension,
       FirebaseAppletConfigImporterExtension,
+      UserChatExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -2085,6 +2087,17 @@ ${tc.customCss || ''}
       return false;
     }
     return this.hookRegistry.applyFilters<boolean>('appearance:customization_allowed', true);
+  }
+
+  /**
+   * 3.09.a: Verifica se o chat em tempo real entre usuários está habilitado.
+   * Se a extensão UserChatExtension estiver desativada pelo burocrata, retorna false.
+   */
+  public isUserChatEnabled(): boolean {
+    if (!this.isExtensionEnabled('UserChatExtension')) {
+      return false;
+    }
+    return this.hookRegistry.applyFilters<boolean>('chat:user_chat_enabled', true);
   }
 
   /**

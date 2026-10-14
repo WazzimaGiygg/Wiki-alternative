@@ -78,6 +78,7 @@ interface UserPageViewProps {
   onNavigateToUnblockRequests?: () => void;
   onNavigateToCheckUser?: (username: string) => void;
   onNavigateToOffline?: () => void;
+  onOpenUserChat?: (targetUser: UserProfile) => void;
   onBack?: () => void;
 }
 
@@ -95,6 +96,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   onNavigateToUnblockRequests,
   onNavigateToCheckUser,
   onNavigateToOffline,
+  onOpenUserChat,
   onBack,
 }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -988,6 +990,19 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                 <MessageSquare size={13} />
                 <span>Mensagem na Discussão</span>
               </button>
+
+              {/* Chat em Tempo Real com o Usuário (3.09.a) */}
+              {userProfile.uid !== currentUser?.uid && (
+                <button
+                  type="button"
+                  onClick={() => onOpenUserChat?.(userProfile)}
+                  className="px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                  title={`Iniciar chat em tempo real com ${userProfile.displayName || userProfile.username}`}
+                >
+                  <MessageSquare size={13} />
+                  <span>Conversar no Chat</span>
+                </button>
+              )}
 
               <button
                 onClick={() => setShowBarnstarModal(true)}
