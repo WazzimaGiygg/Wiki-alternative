@@ -473,10 +473,48 @@ export const StorageService = {
           return localArticles;
         }
 
-        // Incluir artigos canônicos e o artigo sobre as regras da LGPD na Wiki
+        // Incluir artigos canônicos e garantir persistência no Firestore
         for (const c of CURATED_FEATURED_ARTICLES) {
           if (!remoteArticles.some((a) => a.id.toLowerCase() === c.id.toLowerCase())) {
             remoteArticles.push(c);
+
+            // Sincroniza em segundo plano no Firestore
+            if (firebaseActive && db) {
+              ensureFirebaseAuth().then(() => {
+                if (!db) return;
+                setDoc(doc(db, 'articles', c.id), {
+                  ...c,
+                  atualizadoEm: serverTimestamp(),
+                }, { merge: true }).catch(() => {});
+
+                setDoc(doc(db, 'documentos', c.pageUid, 'inevitavel', c.id), {
+                  ...c,
+                  atualizadoEm: serverTimestamp(),
+                }, { merge: true }).catch(() => {});
+
+                setDoc(doc(db, 'documentos', c.pageUid), {
+                  uid: c.pageUid,
+                  titulo: c.categoria || c.pageUid,
+                  categoria: c.categoria || 'Geral',
+                  descricao: `Coleção de artigos da categoria ${c.categoria || c.pageUid}`,
+                  icon: c.pageUid.includes('metro') ? '🚇' : '📚',
+                  status: 'ativo',
+                  criadoEm: serverTimestamp(),
+                }, { merge: true }).catch(() => {});
+
+                setDoc(doc(db, 'pages', `main:${c.id}`), {
+                  id: `main:${c.id}`,
+                  namespace: 'main',
+                  title: c.titulo,
+                  content: c.descricao,
+                  categories: [c.categoria],
+                  authorName: c.autor,
+                  version: c.versao || 1,
+                  updatedAt: c.dataEdicao,
+                  createdAt: c.dataCriacao,
+                }, { merge: true }).catch(() => {});
+              }).catch(() => {});
+            }
           }
         }
 

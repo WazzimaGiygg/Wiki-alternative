@@ -38,6 +38,115 @@ A transparência não é apenas uma diretriz teórica, mas um compromisso de có
     ],
   },
   {
+    id: 'motiva-trilhos-metro-sp',
+    pageUid: 'historia-metro-sp',
+    titulo: 'Motiva Trilhos',
+    categoria: 'História (metro sp)',
+    idioma: 'pt',
+    autor: 'Arquivo Histórico do Transporte Metroferroviário de São Paulo',
+    dataCriacao: '2026-03-10T09:00:00Z',
+    dataEdicao: '2026-10-15T12:00:00Z',
+    visualizacoes: 2450,
+    versao: 3,
+    tags: [
+      'Motiva Trilhos',
+      'Metrô de São Paulo',
+      'História (metro sp)',
+      'Via Permanente',
+      'AMV',
+      'Infraestrutura Ferroviária',
+      'Transporte Público',
+      'Engenharia de Trilhos',
+    ],
+    resumo:
+      'Histórico, engenharia e relevância da Motiva Trilhos no fornecimento, usinagem de superestrutura, soldagem contínua e manutenção de aparelhos de mudança de via (AMVs) para a malha da Companhia do Metropolitano de São Paulo (Metrô SP).',
+    descricao: `{{Info/Empresa Ferroviária
+| nome = Motiva Trilhos
+| setor = Infraestrutura Metroferroviária e Via Permanente
+| aplicacao_principal = Metrô de São Paulo e Malhas Ferroviárias
+| especialidades = Laminação, Usinagem de Trilhos, AMVs, Soldagem e Juntas Isoladas
+| sede = São Paulo, Brasil
+| status = Ativa / Fornecedora Qualificada
+| padrao_tecnico = ABNT NBR / Normas Técnicas Metroviárias (NTM Metrô SP)
+}}
+
+'''Motiva Trilhos''' é uma destacada empresa brasileira especializada em engenharia de [[via permanente]], beneficiamento, usinagem e fornecimento de componentes pesados para a superestrutura da malha metroferroviária. Ao longo da expansão do transporte de passageiros sobre trilhos na Região Metropolitana de São Paulo, a empresa consolidou um papel técnico fundamental no atendimento às rigorosas especificações da '''[[Companhia do Metropolitano de São Paulo]] (Metrô SP)''' e das linhas de integração metropolitana.
+
+A atuação da Motiva Trilhos abrange desde a usinagem de perfis de aço laminado de alta dureza superficial (''head hardened'') até a montagem de Aparelhos de Mudança de Via ([[Aparelho de Mudança de Via|AMVs]]), soldagem elétrica contínua por centelhamento e confecção de Juntas de Isolamento Coladas elétricas (JICs), elementos indispensáveis para a segurança de tráfego em intervalos ultra-reduzidos (''headway'') inferiores a 100 segundos.
+
+== Contexto Histórico e a Expansão Metroviária de São Paulo ==
+A implantação do Metrô de São Paulo, inaugurado comercialmente em setembro de 1974 com a [[Linha 1-Azul]] (antiga Linha Norte-Sul), inaugurou um novo padrão de exigência para a indústria siderúrgica e ferroviária nacional. Diferentemente das antigas ferrovias de carga e trens de subúrbio que operavam sobre dormentes de madeira e juntas mecânicas taliscadas, o sistema metroviário exigia:
+# '''Trilhos de Perfil Pesado e Alta Dureza:''' Capazes de suportar ciclos incessantes de aceleração e frenagem com cargas axiais de até 16 toneladas por eixo.
+# '''Via em Concreto (Slab Track) e Lastro Rígido:''' Minimizando a necessidade de nivelamento constante sob o subsolo densamente povoado da capital.
+# '''Redução Drástica de Ruído e Vibração:''' Critério vital para evitar impacto ambiental e ressonância estrutural nos edifícios residenciais e comerciais adjacentes aos túneis.
+
+Nesse cenário de nacionalização progressiva de insumos da via permanente, empresas especializadas em conformação e retrabalho de trilhos, com destaque para a trajetória da Motiva Trilhos, tornaram-se fornecedoras qualificadas para atender às rigorosas Normas Técnicas Metroviárias (NTMs) da operadora estatal paulista.
+
+== Componentes Técnicos Fornecidos e Serviços de Engenharia ==
+
+=== 1. Perfis de Trilho e Usinagem de Agulhas ===
+A superestrutura do Metrô de São Paulo emprega predominantemente trilhos de padrões internacionais reconhecidos por sua robustez:
+* '''Trilho UIC 60 (60E1 / 60E2):''' Com massa linear nominal de 60 kg/m, amplamente instalado em vias principais de alta intensidade, como nas Linhas 1-Azul, 2-Verde e 3-Vermelha.
+* '''Trilho TR 57 (115 RE):''' Com 57 kg/m de massa por metro linear, empregado historicamente em extensões e pátios operacionais.
+A Motiva Trilhos atua na usinagem de alta precisão de agulhas e contra-agulhas, processo que exige tolerâncias micrométricas para garantir a transição suave dos rodeiros de aço dos trens sem solavancos ou descontinuidades mecânicas.
+
+=== 2. Aparelhos de Mudança de Via (AMVs) ===
+Os Aparelhos de Mudança de Via são os elementos mais críticos e solicitados da via permanente, permitindo que os trens manobrem entre vias singelas, terminais de manobra e estacionamentos:
+* '''AMVs de Pátio:''' Fornecidos e montados para os complexos operacionais do Metrô SP, como o [[Pátio Jabaquara]] (PAT), o [[Pátio Itaquera]] (PIT) e o complexo de manutenção de Tamanduateí.
+* '''AMVs de Cruzamento e Bypass de Via Dupla (Scissors / Scissor Crossover):''' Conjuntos complexos instalados nas proximidades de estações terminais (como Tucuruvi, Jabaquara, Palmeiras-Barra Funda e Corinthians-Itaquera), permitindo o retorno dos trens em frações de minuto.
+
+=== 3. Longos Trilhos Soldados (LTS) e Soldagem Aluminotérmica ===
+Para eliminar as antigas juntas com talas aparafusadas — responsáveis pelo tradicional ruído de "tique-taque" das ferrovias e principal causador de fadiga precoce de rodeiros —, a via do Metrô SP adota o conceito de '''Longo Trilho Soldado (LTS)''':
+* Os trilhos de 18 a 24 metros recebidos das usinas são soldados sucessivamente por processo elétrico de centelhamento (''flash-butt welding'') em oficina e complementados por soldas aluminotérmicas nas frentes de obra subterrânea.
+* A Motiva Trilhos realiza ensaios não destrutivos (END) através de ultrassom e partículas magnéticas para atestar a ausência de inclusões ou microfissuras nas juntas soldadas.
+
+=== 4. Juntas de Isolamento Coladas (JIC / JI) ===
+Na sinalização metroviária clássica e híbrida, os trilhos funcionam como condutores elétricos que delimitam os [[Circuito de Via|circuitos de via]], permitindo ao Centro de Controle Operacional (CCO) detectar a posição exata de cada composição.
+* Para isolar eletricamente um bloco de sinalização do outro sem abrir mão da continuidade estrutural mecânica do trilho soldado, utilizam-se as Juntas de Isolamento Coladas de alta densidade.
+* A Motiva Trilhos desenvolveu e fornece conjuntos de JIC com resina epóxi aeroespacial e talas reforçadas em fibra de vidro, capazes de suportar simultaneamente a tensão de tração térmica no inverno, a compressão no verão e a solicitação dielétrica contínua do sistema de tração em 750 V CC / 3.000 V CC.
+
+== Linhas e Vias Atendidas na Malha Paulista ==
+A engenharia de via permanente associada aos serviços e produtos da Motiva Trilhos encontra-se distribuída pelos eixos troncais da mobilidade paulistana:
+{| class="wikitable"
+! Linha / Instalação !! Nome Oficial !! Tipo de Via !! Componentes Aplicados
+|-
+| '''Linha 1-Azul''' || Jabaquara ↔ Tucuruvi || Túnel / Superfície / Elevado || Trilhos UIC 60, JICs e AMVs de terminal
+|-
+| '''Linha 2-Verde''' || Vila Madalena ↔ Vila Prudente || Subterrânea / Trincheira || Perfis de alta dureza para curvas de raio reduzido
+|-
+| '''Linha 3-Vermelha''' || Palmeiras-Barra Funda ↔ Corinthians-Itaquera || Superfície / Subterrânea || Superestrutura de alta densidade de passageiros
+|-
+| '''Pátio Jabaquara (PAT)''' || Complexo de Oficinas Linha 1 || Lastro em brita / Concreto || AMVs de manobra, vias de testes e dormentação
+|-
+| '''Pátio Itaquera (PIT)''' || Complexo Principal Linha 3 || Vias de estacionamento e revisão || Componentes de desvio e trilhos de rolamento
+|}
+
+== Controle de Qualidade, Ensaios e Sustentabilidade ==
+Todas as peças e serviços de via permanente passam por bateria de testes em conformidade com as normas ABNT e os cadernos de encargos do Metrô SP:
+* '''Ensaios Metalográficos:''' Medição da dureza Brinell (HB) no boleto do trilho para comprovar resistência ao desgaste por atrito rodoviário-ferroviário.
+* '''Ensaios por Ultrassom:''' Inspeção automatizada para garantia de sanidade interna do aço e integridade das soldas.
+* '''Geometria da Via:''' Verificação de bitola internacional (1.435 mm no Metrô SP linhas 4 e 5) e bitola larga (1.600 mm nas linhas 1, 2 e 3).
+* '''Reciclagem e Sustentabilidade:''' Recolhimento de sobras de trilhos substituídos por desgaste e retorno à cadeia siderúrgica circular para refusão ecológica.
+
+== Ver Também ==
+* [[Companhia do Metropolitano de São Paulo]]
+* [[Via Permanente]]
+* [[Aparelho de Mudança de Via]]
+* [[Circuito de Via]]
+* [[História do Transporte Ferroviário no Brasil]]
+
+== Referências e Notas Técnicas ==
+# Metrô de São Paulo. ''Especificações Técnicas de Superestrutura de Via Permanente - NTM''. São Paulo: Companhia do Metropolitano, 2022.
+# Associação Brasileira de Normas Técnicas. ''ABNT NBR 7590: Trilhos Vignole para ferrovias e sistemas metroviários''. Rio de Janeiro: ABNT, 2021.
+# Silveira, J. C. ''Engenharia Ferroviária e Metroviária Moderna: Da Subestrutura ao Trilho Soldado''. São Paulo: Editora Técnica dos Transportes, 2020.
+# Arquivo Histórico do Metrô de São Paulo. ''50 Anos de Operação Metroviária sobre Trilhos: Memória Técnica e Industrial''. São Paulo, 2024.`,
+    highlights: [
+      'Empresa essencial no fornecimento de superestrutura de via permanente e usinagem de trilhos para o Metrô de São Paulo.',
+      'Especialista em Aparelhos de Mudança de Via (AMVs) de alta precisão para vias principais e pátios como Jabaquara e Itaquera.',
+      'Pioneirismo na produção de Juntas de Isolamento Coladas (JIC) para circuitos de via e sinalização de intervalos curtos.',
+    ],
+  },
+  {
     id: 'curated-alexandria-preservation',
     pageUid: 'historia',
     titulo: 'A Biblioteca de Alexandria e a História da Preservação do Saber',
