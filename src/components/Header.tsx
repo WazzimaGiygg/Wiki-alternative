@@ -33,6 +33,9 @@ import {
   Puzzle,
   RefreshCw,
   MessageSquare,
+  Maximize,
+  Minimize,
+  HelpCircle,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -42,6 +45,7 @@ import { StorageService } from '../services/storageService';
 import { ExtensionManager } from '../core/ExtensionManager';
 import { PushNotificationService, PushPreferences } from '../services/pushNotificationService';
 import { UserChatService } from '../services/userChatService';
+import { fullscreenManager } from '../utils/fullscreenManager';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -73,6 +77,9 @@ interface HeaderProps {
   onRebootWinXP?: () => void;
   onRebootWin95?: () => void;
   onRebootWin31?: () => void;
+  onOpenHelp?: () => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -105,6 +112,9 @@ export const Header: React.FC<HeaderProps> = ({
   onRebootWinXP,
   onRebootWin95,
   onRebootWin31,
+  onOpenHelp,
+  isFullscreen: propIsFullscreen,
+  onToggleFullscreen,
 }) => {
   const { currentLanguage, setLanguage, t, allLanguages } = useLanguage();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -122,9 +132,27 @@ export const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     const unsub = ExtensionManager.getInstance().subscribe(() => {
       setIsChatEnabled(ExtensionManager.getInstance().isUserChatEnabled());
+      setIsHelpExtensionEnabled(ExtensionManager.getInstance().isGeneralHelpEnabled());
     });
     return unsub;
   }, []);
+
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(() =>
+    propIsFullscreen !== undefined ? propIsFullscreen : fullscreenManager.isFullscreen()
+  );
+
+  useEffect(() => {
+    if (propIsFullscreen !== undefined) {
+      setIsFullscreen(propIsFullscreen);
+      return;
+    }
+    const unsub = fullscreenManager.subscribe((fs) => setIsFullscreen(fs));
+    return unsub;
+  }, [propIsFullscreen]);
+
+  const [isHelpExtensionEnabled, setIsHelpExtensionEnabled] = useState<boolean>(() =>
+    ExtensionManager.getInstance().isGeneralHelpEnabled()
+  );
 
   useEffect(() => {
     if (!user || user.isGuest) {
@@ -985,7 +1013,30 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline font-sans">{isDark ? 'Tema Claro' : 'Tema Escuro'}</span>
             </button>
             <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
-            <span className="hidden md:inline">GNU GPL v3.0</span>
+            <button
+              type="button"
+              onClick={onOpenHelp}
+              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-400 text-slate-300'} hidden sm:flex items-center gap-1 cursor-pointer`}
+              title="Central de Ajuda Geral (F1)"
+            >
+              <HelpCircle size={11} className={isHelpExtensionEnabled ? "text-blue-400" : "text-slate-500"} />
+              <span>Ajuda (F1)</span>
+            </button>
+            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (onToggleFullscreen) onToggleFullscreen();
+                else fullscreenManager.toggleFullscreen();
+              }}
+              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-amber-300 text-slate-300'} hidden md:flex items-center gap-1 cursor-pointer`}
+              title="Alternar Modo Tela Cheia (F11)"
+            >
+              {isFullscreen ? <Minimize size={11} className="text-amber-400" /> : <Maximize size={11} className="text-slate-400" />}
+              <span>{isFullscreen ? 'Sair Tela Cheia' : 'Tela Cheia'}</span>
+            </button>
+            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden md:inline text-slate-600'}>|</span>
+            <span className="hidden lg:inline">GNU GPL v3.0</span>
             <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden lg:inline text-slate-600'}>|</span>
             <a
               href={formatExternalUrl("https://github.com/WazzimaGiygg/Wiki-alternative")}
@@ -2013,6 +2064,58 @@ export const Header: React.FC<HeaderProps> = ({
             )}
             <span className="hidden xl:inline text-[11px] font-sans">
               {isDark ? 'Modo Claro' : 'Modo Escuro'}
+            </span>
+          </button>
+
+          {/* Fullscreen Toggle Button (3.05.8.b & F11) */}
+          <button
+            id="btn-header-fullscreen-toggle"
+            type="button"
+            onClick={() => {
+              if (onToggleFullscreen) {
+                onToggleFullscreen();
+              } else {
+                fullscreenManager.toggleFullscreen();
+              }
+            }}
+            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 min-w-[32px] min-h-[32px] justify-center ${
+              isFullscreen
+                ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/30'
+                : 'bg-white hover:bg-slate-100 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 shadow-2xs'
+            }`}
+            title={isFullscreen ? 'Sair da Tela Cheia (F11)' : 'Alternar Modo Tela Cheia do Wiki-Site (F11)'}
+            aria-label={isFullscreen ? 'Sair da Tela Cheia' : 'Entrar em Tela Cheia'}
+          >
+            {isFullscreen ? (
+              <Minimize size={14} className="text-amber-500 dark:text-amber-400" />
+            ) : (
+              <Maximize size={14} className="text-slate-700 dark:text-slate-300" />
+            )}
+            <span className="hidden xl:inline text-[11px] font-sans">
+              {isFullscreen ? 'Sair Tela Cheia' : 'Tela Cheia'}
+            </span>
+          </button>
+
+          {/* General Help Button (3.05.7.b & F1) */}
+          <button
+            id="btn-header-help"
+            type="button"
+            onClick={onOpenHelp}
+            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 min-w-[32px] min-h-[32px] justify-center ${
+              isHelpExtensionEnabled
+                ? 'bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 opacity-80'
+            }`}
+            title={
+              isHelpExtensionEnabled
+                ? 'Abrir Central de Ajuda Geral & Manual da Wiki (F1)'
+                : 'Ajuda Geral (F1) desativada por Burocrata (Clique para detalhes)'
+            }
+            aria-label="Ajuda Geral (F1)"
+          >
+            <HelpCircle size={14} className={isHelpExtensionEnabled ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'} />
+            <span className="hidden xl:inline text-[11px] font-sans">
+              Ajuda (F1)
             </span>
           </button>
 

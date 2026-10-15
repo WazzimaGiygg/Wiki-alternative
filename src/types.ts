@@ -648,6 +648,7 @@ export type ViewMode =
   | 'library'
   | 'academic'
   | 'news'
+  | 'help'
   | 'other-rules';
 
 // ==========================================

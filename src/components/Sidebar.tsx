@@ -20,6 +20,7 @@ import {
   Users,
   Database,
   LifeBuoy,
+  HelpCircle,
   ExternalLink,
   Layers,
   UserX,
@@ -85,6 +86,7 @@ interface SidebarProps {
   onOpenGeminiNotebook?: () => void;
   onOpenGeminiPremium?: () => void;
   onSelectArticle?: (articleId: string) => void;
+  onOpenHelp?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -106,6 +108,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenGeminiNotebook,
   onOpenGeminiPremium,
   onSelectArticle,
+  onOpenHelp,
 }) => {
   const { currentLanguage, t } = useLanguage();
 
@@ -1126,6 +1129,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <Scale size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
                 {!isCollapsed && <span className="truncate">Outras Regras</span>}
+              </button>
+            )}
+
+            {onOpenHelp && (
+              <button
+                type="button"
+                onClick={onOpenHelp}
+                title="Central de Ajuda Geral & Manual do Usuário (F1)"
+                className="w-full flex items-center justify-between px-2 py-1.5 rounded text-xs text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100/80 dark:hover:bg-blue-900/60 border border-blue-200/80 dark:border-blue-800/60 font-semibold transition cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <HelpCircle size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  {!isCollapsed && <span className="truncate">Ajuda Geral</span>}
+                </div>
+                {!isCollapsed && (
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/80 text-blue-800 dark:text-blue-200 font-bold">
+                    F1
+                  </span>
+                )}
               </button>
             )}
 

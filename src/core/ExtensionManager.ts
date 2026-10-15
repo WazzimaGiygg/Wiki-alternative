@@ -89,6 +89,7 @@ import HideOnlineUsersExtension from '../extensions/hide-online-users';
 import ExtensionsSecurityAuditorExtension from '../extensions/extensions-security-auditor';
 import FirebaseAppletConfigImporterExtension from '../extensions/firebase-applet-config-importer';
 import UserChatExtension from '../extensions/user-chat';
+import GeneralHelpExtension from '../extensions/general-help';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -210,6 +211,7 @@ export class ExtensionManager {
       ExtensionsSecurityAuditorExtension,
       FirebaseAppletConfigImporterExtension,
       UserChatExtension,
+      GeneralHelpExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -2098,6 +2100,37 @@ ${tc.customCss || ''}
       return false;
     }
     return this.hookRegistry.applyFilters<boolean>('chat:user_chat_enabled', true);
+  }
+
+  /**
+   * 3.05.3.ad: Verifica se a Ajuda Geral da Wiki (F1) está habilitada na extensão.
+   * Se a extensão GeneralHelpExtension estiver desativada pelo burocrata, retorna false.
+   */
+  public isGeneralHelpEnabled(): boolean {
+    if (!this.isExtensionEnabled('GeneralHelpExtension')) {
+      return false;
+    }
+    return this.hookRegistry.applyFilters<boolean>('help:general_help_enabled', true);
+  }
+
+  /**
+   * 3.05.3.ad: Verifica se o acionamento pelo atalho de teclado F1 está autorizado.
+   */
+  public isF1ShortcutEnabled(): boolean {
+    if (!this.isGeneralHelpEnabled()) {
+      return false;
+    }
+    return this.hookRegistry.applyFilters<boolean>('help:f1_shortcut_enabled', true);
+  }
+
+  /**
+   * Verifica se o botão de ajuda deve ser exibido no cabeçalho.
+   */
+  public isHelpShownInHeader(): boolean {
+    if (!this.isGeneralHelpEnabled()) {
+      return false;
+    }
+    return this.hookRegistry.applyFilters<boolean>('help:show_in_header', true);
   }
 
   /**

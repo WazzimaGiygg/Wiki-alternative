@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { WikiHub } from './components/WikiHub';
@@ -72,6 +72,8 @@ import { JornalNewsView } from './components/JornalNewsView';
 import { CustomContextMenu } from './components/CustomContextMenu';
 import { UserChatModal } from './components/UserChatModal';
 import { UserChatFloatingButton } from './components/UserChatFloatingButton';
+import { WikiGeneralHelpModal } from './components/WikiGeneralHelpModal';
+import { fullscreenManager } from './utils/fullscreenManager';
 import { CURATED_FEATURED_ARTICLES } from './components/WikiFeaturedArticle';
 import { updateSEO } from './utils/seoManager';
 import { RecentlyReadService } from './utils/recentlyReadService';
@@ -149,6 +151,92 @@ export default function App() {
     setUserChatInitialTarget(targetUser || null);
     setShowUserChatModal(true);
   };
+
+  // Ajuda Geral da Wiki (3.05.7.b & 3.05.3.ad) e Tela Cheia (3.05.8.b)
+  const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(() => fullscreenManager.isFullscreen());
+  const [keyNotice, setKeyNotice] = useState<{ message: string; type: 'info' | 'warning' | 'error' | 'success'; id: number } | null>(null);
+
+  useEffect(() => {
+    const unsub = fullscreenManager.subscribe((fs) => setIsFullscreen(fs));
+    return unsub;
+  }, []);
+
+  // Bloqueio de Teclas F7, F11, F12 (3.05.7.a) e Interceptação de F1 (3.05.7.b & 3.05.3.ad)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // 3.05.7.a: Bloquear F7 (Caret Browsing / Navegação por Cursor)
+      if (e.key === 'F7' || e.code === 'F7') {
+        e.preventDefault();
+        e.stopPropagation();
+        setKeyNotice({
+          message: '🔒 Tecla F7 (Navegação por Cursor) bloqueada pelo WikiZero para evitar desconfigurações visuais de leitura.',
+          type: 'warning',
+          id: Date.now(),
+        });
+        return;
+      }
+
+      // 3.05.7.a & 3.05.8.b: Bloquear F11 padrão do browser e acionar Tela Cheia nativa do Wiki-Site
+      if (e.key === 'F11' || e.code === 'F11') {
+        e.preventDefault();
+        e.stopPropagation();
+        fullscreenManager.toggleFullscreen().then((newFs) => {
+          setKeyNotice({
+            message: newFs
+              ? '🖥️ Modo Tela Cheia do Wiki-Site ativado (Pressione F11 ou Esc para sair)'
+              : 'Modo Normal de Janela restaurado',
+            type: 'info',
+            id: Date.now(),
+          });
+        });
+        return;
+      }
+
+      // 3.05.7.a: Bloquear F12 (Ferramentas de Desenvolvedor / DevTools)
+      if (e.key === 'F12' || e.code === 'F12') {
+        e.preventDefault();
+        e.stopPropagation();
+        setKeyNotice({
+          message: '🛡️ Tecla F12 (Ferramentas de Desenvolvedor) bloqueada pelas diretrizes de segurança da Wiki.',
+          type: 'warning',
+          id: Date.now(),
+        });
+        return;
+      }
+
+      // 3.05.7.b & 3.05.3.ad: Tecla F1 abre Ajuda Geral se habilitada pelo Burocrata
+      if (e.key === 'F1' || e.code === 'F1') {
+        e.preventDefault();
+        e.stopPropagation();
+        const extManager = ExtensionManager.getInstance();
+        if (extManager.isGeneralHelpEnabled() && extManager.isF1ShortcutEnabled()) {
+          setShowHelpModal((prev) => !prev);
+        } else {
+          setKeyNotice({
+            message: '⚠️ A Central de Ajuda Geral (F1) está suspensa no momento pelo Conselho de Burocratas (GeneralHelpExtension).',
+            type: 'warning',
+            id: Date.now(),
+          });
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown, true);
+    };
+  }, []);
+
+  // Fechamento automático do aviso de teclas
+  useEffect(() => {
+    if (!keyNotice) return;
+    const timer = setTimeout(() => {
+      setKeyNotice(null);
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [keyNotice]);
 
   const [isVectorTabTransitioning, setIsVectorTabTransitioning] = useState<boolean>(false);
 
@@ -1426,6 +1514,9 @@ export default function App() {
         onRebootWinXP={() => setShowWinXPBoot(true)}
         onRebootWin95={() => setShowWin95Boot(true)}
         onRebootWin31={() => setShowWin31Boot(true)}
+        onOpenHelp={() => setShowHelpModal(true)}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={() => fullscreenManager.toggleFullscreen()}
       />
 
       {/* 2. Main Workspace Layout */}
@@ -1450,6 +1541,7 @@ export default function App() {
           onOpenGeminiNotebook={handleOpenNotebookModal}
           onOpenGeminiPremium={() => handleOpenPremiumModal()}
           onSelectArticle={handleSelectArticle}
+          onOpenHelp={() => setShowHelpModal(true)}
         />
 
         {/* Content Body Container */}
@@ -2518,6 +2610,46 @@ export default function App() {
         currentUser={user}
         onOpenChat={() => handleOpenUserChat(null)}
       />
+
+      {/* Central de Ajuda Geral & Manual do Usuário (3.05.7.b, 3.05.3.ad, 3.05.8.a) */}
+      <WikiGeneralHelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        currentUser={user}
+        onNavigateToView={(view) => {
+          setShowHelpModal(false);
+          handleNavigate(view as ViewMode);
+        }}
+        onOpenExtensionsManager={() => {
+          setShowHelpModal(false);
+          handleNavigate('admin-extensions');
+        }}
+      />
+
+      {/* Toast Informativo de Teclas Bloqueadas e Atalhos (3.05.7.a, 3.05.8.b) */}
+      {keyNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 sm:bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl shadow-2xl border text-xs font-semibold flex items-center gap-2.5 backdrop-blur-md animate-in slide-in-from-bottom-3 duration-200 select-none max-w-[90vw] sm:max-w-lg bg-slate-900/95 text-white border-slate-700"
+        >
+          {keyNotice.type === 'warning' ? (
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
+          ) : keyNotice.type === 'info' ? (
+            <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+          ) : (
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+          )}
+          <span className="flex-1 leading-snug">{keyNotice.message}</span>
+          <button
+            type="button"
+            onClick={() => setKeyNotice(null)}
+            className="p-1 rounded text-slate-400 hover:text-white transition cursor-pointer"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* 8. Menu Alternativo do Botão Direito (por símbolos) */}
       <CustomContextMenu
