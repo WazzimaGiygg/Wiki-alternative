@@ -63,6 +63,7 @@ import { WhatLinksHereView } from './WhatLinksHereView';
 import { MobileArticleTOC } from './MobileArticleTOC';
 import { PdfExportModal } from './PdfExportModal';
 import { ModerationLockModal } from './ModerationLockModal';
+import { dailyChecklistService } from '../services/dailyChecklistService';
 import { WazzimaGiyggTimeline } from './WazzimaGiyggTimeline';
 import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDossierModal';
 import { ReadingProgressBar } from './ReadingProgressBar';
@@ -653,6 +654,11 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     setRatingData(updated);
     setHasRated(true);
     setRatingComment('');
+    if (user && !user.isGuest) {
+      dailyChecklistService.recordArticleRating(user, article.titulo, selectedRating).catch((err) => {
+        console.warn('[ArticleViewer] Erro ao registrar pontos de avaliação:', err);
+      });
+    }
   };
 
   const scrollToSection = (id: string) => {

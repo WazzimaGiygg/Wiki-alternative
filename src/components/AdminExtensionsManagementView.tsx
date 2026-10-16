@@ -54,6 +54,7 @@ import {
   Globe,
   FileDown,
   MessageSquare,
+  Award,
 } from 'lucide-react';
 import {
   getSqlDatabaseBackupConfig,
@@ -1496,6 +1497,8 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
         return <Download className="w-4 h-4 text-teal-500" />;
       case 'communication':
         return <MessageSquare className="w-4 h-4 text-indigo-500" />;
+      case 'community':
+        return <Award className="w-4 h-4 text-amber-500" />;
       default:
         return <Puzzle className="w-4 h-4 text-slate-500" />;
     }
@@ -1527,6 +1530,8 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
         return 'Moderação & Antivandalismo';
       case 'communication':
         return 'Comunicação & Chat';
+      case 'community':
+        return 'Comunidade & Engajamento';
       case 'export':
         return 'Exportação & Interoperabilidade';
       default:

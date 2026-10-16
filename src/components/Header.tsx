@@ -36,6 +36,7 @@ import {
   Maximize,
   Minimize,
   HelpCircle,
+  Trophy,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -78,6 +79,7 @@ interface HeaderProps {
   onRebootWin95?: () => void;
   onRebootWin31?: () => void;
   onOpenHelp?: () => void;
+  onOpenChecklist?: () => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
 }
@@ -113,6 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
   onRebootWin95,
   onRebootWin31,
   onOpenHelp,
+  onOpenChecklist,
   isFullscreen: propIsFullscreen,
   onToggleFullscreen,
 }) => {
@@ -129,10 +132,15 @@ export const Header: React.FC<HeaderProps> = ({
     ExtensionManager.getInstance().isUserChatEnabled()
   );
 
+  const [isChecklistEnabled, setIsChecklistEnabled] = useState<boolean>(() =>
+    ExtensionManager.getInstance().isDailyChecklistEnabled()
+  );
+
   useEffect(() => {
     const unsub = ExtensionManager.getInstance().subscribe(() => {
       setIsChatEnabled(ExtensionManager.getInstance().isUserChatEnabled());
       setIsHelpExtensionEnabled(ExtensionManager.getInstance().isGeneralHelpEnabled());
+      setIsChecklistEnabled(ExtensionManager.getInstance().isDailyChecklistEnabled());
     });
     return unsub;
   }, []);
@@ -2096,6 +2104,23 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
 
+          {/* Daily Checklist Button (3.05.3.af & 3.05.8.b) */}
+          {isChecklistEnabled && (
+            <button
+              id="btn-header-checklist"
+              type="button"
+              onClick={onOpenChecklist}
+              className="p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 min-w-[32px] min-h-[32px] justify-center bg-amber-50/80 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+              title="Checklist Diário & Pontos Mensais (Requisito 3.05.8.b)"
+              aria-label="Checklist Diário"
+            >
+              <Trophy size={14} className="text-amber-500" />
+              <span className="hidden xl:inline text-[11px] font-sans">
+                Checklist
+              </span>
+            </button>
+          )}
+
           {/* General Help Button (3.05.7.b & F1) */}
           <button
             id="btn-header-help"
@@ -2474,6 +2499,21 @@ export const Header: React.FC<HeaderProps> = ({
                         />
                         <span>📝 Edições pendentes de revisão</span>
                       </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900 dark:hover:text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={pushPrefs.notifyOnDailyChecklist}
+                          onChange={(e) =>
+                            setPushPrefs(
+                              PushNotificationService.savePreferences({
+                                notifyOnDailyChecklist: e.target.checked,
+                              })
+                            )
+                          }
+                          className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
+                        />
+                        <span>🎯 Checklist Diário & Metas de Pontos</span>
+                      </label>
                     </div>
                   )}
 
@@ -2621,6 +2661,15 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
                   </div>
                   <div className="py-1">
+                    <button
+                      onClick={() => {
+                        onOpenChecklist?.();
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-amber-800 dark:text-amber-200 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 flex items-center gap-2 font-bold rounded-sm mb-0.5 cursor-pointer"
+                    >
+                      <Trophy size={13} className="text-amber-600 dark:text-amber-400" /> Checklist Diário & Pontos
+                    </button>
                     <button
                       onClick={() => {
                         onNavigate('user-page');

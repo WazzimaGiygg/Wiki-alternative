@@ -1486,6 +1486,7 @@ export type ExtensionCategory =
   | 'widget'
   | 'moderation'
   | 'communication'
+  | 'community'
   | 'export';
 
 export interface ExtensionSettingField {

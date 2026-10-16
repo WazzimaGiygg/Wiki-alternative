@@ -90,6 +90,7 @@ import ExtensionsSecurityAuditorExtension from '../extensions/extensions-securit
 import FirebaseAppletConfigImporterExtension from '../extensions/firebase-applet-config-importer';
 import UserChatExtension from '../extensions/user-chat';
 import GeneralHelpExtension from '../extensions/general-help';
+import DailyChecklistExtension from '../extensions/daily-checklist';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -212,6 +213,7 @@ export class ExtensionManager {
       FirebaseAppletConfigImporterExtension,
       UserChatExtension,
       GeneralHelpExtension,
+      DailyChecklistExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -2131,6 +2133,26 @@ ${tc.customCss || ''}
       return false;
     }
     return this.hookRegistry.applyFilters<boolean>('help:show_in_header', true);
+  }
+
+  /**
+   * 3.05.3.af & 3.05.8.b: Verifica se o sistema de Checklist Diário e Pontuação Mensal está ativo.
+   */
+  public isDailyChecklistEnabled(): boolean {
+    if (!this.isExtensionEnabled('DailyChecklistExtension')) {
+      return false;
+    }
+    return this.hookRegistry.applyFilters<boolean>('checklist:is_enabled', true);
+  }
+
+  /**
+   * Retorna os pontos configurados para cada tarefa do checklist diário.
+   */
+  public getDailyChecklistPoints(): { login: number; contribution: number; rating: number; donation: number } {
+    return this.hookRegistry.applyFilters<{ login: number; contribution: number; rating: number; donation: number }>(
+      'checklist:points_config',
+      { login: 1.0, contribution: 0.20, rating: 1.0, donation: 10.0 }
+    );
   }
 
   /**

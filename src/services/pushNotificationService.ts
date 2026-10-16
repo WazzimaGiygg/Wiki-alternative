@@ -16,6 +16,7 @@ export interface PushPreferences {
   notifyOnComments: boolean;
   notifyOnPendingEdits: boolean;
   notifyOnWatchlist: boolean;
+  notifyOnDailyChecklist: boolean;
   sound: boolean;
 }
 
@@ -26,7 +27,7 @@ export interface PushNotificationPayload {
   badge?: string;
   tag?: string;
   url?: string;
-  type?: 'comment' | 'pending_edit' | 'discussion' | 'edit' | 'system';
+  type?: 'comment' | 'pending_edit' | 'discussion' | 'edit' | 'system' | 'checklist';
   data?: Record<string, any>;
   requireInteraction?: boolean;
 }
@@ -38,6 +39,7 @@ const DEFAULT_PREFS: PushPreferences = {
   notifyOnComments: true,
   notifyOnPendingEdits: true,
   notifyOnWatchlist: true,
+  notifyOnDailyChecklist: true,
   sound: true,
 };
 
@@ -160,6 +162,9 @@ export class PushNotificationService {
       return false;
     }
     if ((payload.type === 'pending_edit' || payload.type === 'edit') && !prefs.notifyOnPendingEdits) {
+      return false;
+    }
+    if (payload.type === 'checklist' && !prefs.notifyOnDailyChecklist) {
       return false;
     }
 
@@ -321,6 +326,46 @@ export class PushNotificationService {
       data: {
         articleId: params.articleId,
       },
+    });
+  }
+
+  /**
+   * 3.05.3.c: Dispara alerta nativo do Checklist Diário de Pontos
+   */
+  static async sendDailyChecklistReminder(pendingTasks: string[] = []): Promise<boolean> {
+    const prefs = this.getPreferences();
+    if (!prefs.enabled || !prefs.notifyOnDailyChecklist) return false;
+
+    const taskText = pendingTasks.length > 0
+      ? `Pendentes: ${pendingTasks.slice(0, 2).join(', ')}${pendingTasks.length > 2 ? '...' : ''}`
+      : 'Complete suas metas de login, edição e avaliação para acumular pontos no ranking mensal!';
+
+    return this.sendNotification({
+      title: '🎯 Checklist Diário Disponível - WikiZero',
+      body: `Você possui metas de pontos disponíveis hoje! ${taskText}`,
+      type: 'checklist',
+      tag: 'daily-checklist-reminder',
+      url: '/?tab=checklist',
+      requireInteraction: false,
+    });
+  }
+
+  /**
+   * 3.05.3.c: Dispara alerta nativo de pontos acumulados no checklist
+   */
+  static async sendChecklistPointsEarned(points: number, reason: string): Promise<boolean> {
+    const prefs = this.getPreferences();
+    if (!prefs.enabled || !prefs.notifyOnDailyChecklist) return false;
+
+    const formattedPoints = points >= 1 ? `+${points.toFixed(0)}` : `+${points.toFixed(2)}`;
+
+    return this.sendNotification({
+      title: `⭐ ${formattedPoints} Ponto(s) Conquistado(s)!`,
+      body: `${reason}. Seus pontos foram somados ao seu total mensal acumulado!`,
+      type: 'checklist',
+      tag: `checklist-points-${Date.now()}`,
+      url: '/?tab=checklist',
+      requireInteraction: false,
     });
   }
 

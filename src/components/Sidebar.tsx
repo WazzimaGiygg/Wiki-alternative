@@ -45,6 +45,7 @@ import {
   Newspaper,
   Clock,
   Puzzle,
+  Trophy,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -87,6 +88,7 @@ interface SidebarProps {
   onOpenGeminiPremium?: () => void;
   onSelectArticle?: (articleId: string) => void;
   onOpenHelp?: () => void;
+  onOpenChecklist?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -109,6 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenGeminiPremium,
   onSelectArticle,
   onOpenHelp,
+  onOpenChecklist,
 }) => {
   const { currentLanguage, t } = useLanguage();
 
@@ -1129,6 +1132,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <Scale size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
                 {!isCollapsed && <span className="truncate">Outras Regras</span>}
+              </button>
+            )}
+
+            {onOpenChecklist && (
+              <button
+                type="button"
+                onClick={onOpenChecklist}
+                title="Checklist Diário & Pontos Mensais (Requisito 3.05.8.b)"
+                className="w-full flex items-center justify-between px-2 py-1.5 rounded text-xs text-amber-700 dark:text-amber-300 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100/80 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-800/60 font-semibold transition cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Trophy size={15} className="text-amber-500 flex-shrink-0" />
+                  {!isCollapsed && <span className="truncate">Checklist Diário</span>}
+                </div>
+                {!isCollapsed && (
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-900/80 text-amber-800 dark:text-amber-200 font-bold uppercase">
+                    Metas
+                  </span>
+                )}
               </button>
             )}
 

@@ -73,6 +73,8 @@ import { CustomContextMenu } from './components/CustomContextMenu';
 import { UserChatModal } from './components/UserChatModal';
 import { UserChatFloatingButton } from './components/UserChatFloatingButton';
 import { WikiGeneralHelpModal } from './components/WikiGeneralHelpModal';
+import { DailyChecklistModal } from './components/DailyChecklistModal';
+import { dailyChecklistService } from './services/dailyChecklistService';
 import { fullscreenManager } from './utils/fullscreenManager';
 import { CURATED_FEATURED_ARTICLES } from './components/WikiFeaturedArticle';
 import { updateSEO } from './utils/seoManager';
@@ -157,10 +159,28 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(() => fullscreenManager.isFullscreen());
   const [keyNotice, setKeyNotice] = useState<{ message: string; type: 'info' | 'warning' | 'error' | 'success'; id: number } | null>(null);
 
+  // Checklist Diário & Pontos Mensais (3.05.3.af & 3.05.8.b)
+  const [showChecklistModal, setShowChecklistModal] = useState<boolean>(false);
+
   useEffect(() => {
     const unsub = fullscreenManager.subscribe((fs) => setIsFullscreen(fs));
     return unsub;
   }, []);
+
+  // 3.05.8.b.a: Concede 1 ponto diário pelo primeiro login no Wiki-Site
+  useEffect(() => {
+    if (user && !user.isGuest && ExtensionManager.getInstance().isDailyChecklistEnabled()) {
+      dailyChecklistService.recordDailyLogin(user).then((res) => {
+        if (res.awarded) {
+          setKeyNotice({
+            message: '🎯 Meta Diária Concluída! Você ganhou +1.0 ponto pelo login diário no Wiki-Site!',
+            type: 'success',
+            id: Date.now(),
+          });
+        }
+      }).catch((e) => console.warn('[App] Erro ao registrar pontos de login diário:', e));
+    }
+  }, [user?.uid]);
 
   // Bloqueio de Teclas F7, F11, F12 (3.05.7.a) e Interceptação de F1 (3.05.7.b & 3.05.3.ad)
   useEffect(() => {
@@ -1350,6 +1370,19 @@ export default function App() {
     setEditingArticle(null);
     setEditorHasUnsavedChanges(false);
     setCurrentView('article');
+
+    // 3.05.8.b.b: Concede 0.20 pontos por contribuição (edição ou criação de verbete)
+    if (user && !user.isGuest && ExtensionManager.getInstance().isDailyChecklistEnabled()) {
+      dailyChecklistService.recordContribution(user, saved.titulo).then((res) => {
+        if (res.awarded) {
+          setKeyNotice({
+            message: `✍️ Contribuição Registrada! +0.20 pontos adicionados ao seu checklist mensal!`,
+            type: 'success',
+            id: Date.now(),
+          });
+        }
+      }).catch((e) => console.warn('[App] Erro ao registrar pontos de contribuição:', e));
+    }
   };
 
   const handleRestoreRevision = async (historyItem: ArticleHistoryItem) => {
@@ -1515,6 +1548,7 @@ export default function App() {
         onRebootWin95={() => setShowWin95Boot(true)}
         onRebootWin31={() => setShowWin31Boot(true)}
         onOpenHelp={() => setShowHelpModal(true)}
+        onOpenChecklist={() => setShowChecklistModal(true)}
         isFullscreen={isFullscreen}
         onToggleFullscreen={() => fullscreenManager.toggleFullscreen()}
       />
@@ -1542,6 +1576,7 @@ export default function App() {
           onOpenGeminiPremium={() => handleOpenPremiumModal()}
           onSelectArticle={handleSelectArticle}
           onOpenHelp={() => setShowHelpModal(true)}
+          onOpenChecklist={() => setShowChecklistModal(true)}
         />
 
         {/* Content Body Container */}
@@ -2624,6 +2659,19 @@ export default function App() {
           setShowHelpModal(false);
           handleNavigate('admin-extensions');
         }}
+      />
+
+      {/* Checklist Diário & Pontos Mensais (3.05.3.af, 3.05.8.b, 3.05.3.c) */}
+      <DailyChecklistModal
+        isOpen={showChecklistModal}
+        onClose={() => setShowChecklistModal(false)}
+        currentUser={user}
+        onOpenLoginModal={() => setShowLoginModal(true)}
+        onNavigateToEditor={() => {
+          setEditingArticle(null);
+          setCurrentView('editor');
+        }}
+        onNavigateToExplore={() => handleNavigate('hub')}
       />
 
       {/* Toast Informativo de Teclas Bloqueadas e Atalhos (3.05.7.a, 3.05.8.b) */}
