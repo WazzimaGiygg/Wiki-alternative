@@ -27,6 +27,9 @@ import {
   Flame,
   Settings,
   ShieldAlert,
+  Download,
+  Upload,
+  FolderDown,
 } from 'lucide-react';
 import { UserProfile, WikiPage, WikiArticle, GeminiChatbotConfig } from '../types';
 import { StorageService } from '../services/storageService';
@@ -34,6 +37,7 @@ import { GeminiChatbotService, DEFAULT_GEMINI_CHATBOT_CONFIG } from '../services
 import { FirebaseConsoleManager } from './FirebaseConsoleManager';
 import { VpnSecurityChecker } from './VpnSecurityChecker';
 import { FirebaseUsageTelemetryCard } from './FirebaseUsageTelemetryCard';
+import { FirebaseJsonDispatchManager } from './FirebaseJsonDispatchManager';
 
 interface FirebaseAdminDashboardProps {
   currentUser: UserProfile | null;
@@ -58,6 +62,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<
     | 'overview'
+    | 'json-dispatch'
     | 'telemetry'
     | 'firebase-backup'
     | 'firebase-console'
@@ -294,6 +299,7 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
       <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 mb-6 overflow-x-auto pb-0.5">
         {[
           { id: 'overview', label: 'Visão Geral & Parâmetros', icon: Server },
+          { id: 'json-dispatch', label: 'Despacho & Backup JSON (3.05.9)', icon: FolderDown },
           { id: 'telemetry', label: 'Leituras, Gravações & Memória', icon: Activity },
           { id: 'firebase-backup', label: 'Backups Automáticos & PITR (Blaze)', icon: Flame },
           { id: 'firebase-console', label: 'Console Firebase (Configurações)', icon: Settings },
@@ -458,6 +464,14 @@ export const FirebaseAdminDashboard: React.FC<FirebaseAdminDashboardProps> = ({
         </div>
       )}
 
+      {/* TAB: DESPACHO & BACKUP JSON DO SISTEMA E FIREBASE (REQUISITOS 3.05.9.a - 3.05.9.f) */}
+      {activeTab === 'json-dispatch' && (
+        <FirebaseJsonDispatchManager
+          currentUser={currentUser}
+          onDataRestored={loadAuxData}
+        />
+      )}
+
       {/* TAB: LEITURAS, GRAVAÇÕES E MEMÓRIA USADA (TELEMETRIA DO FIREBASE) */}
       {activeTab === 'telemetry' && (
         <FirebaseUsageTelemetryCard
@@ -594,7 +608,29 @@ export const ACTIVE_FIREBASE_CONFIG = {
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setActiveTab('json-dispatch')}
+                className="px-2.5 py-1.5 text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold rounded flex items-center gap-1 cursor-pointer transition shadow-xs"
+                title="3.05.9.e - Baixar coleções do Firebase em JSON"
+              >
+                <Download size={13} />
+                <span>Baixar Coleções JSON (3.05.9.e)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('json-dispatch')}
+                className="px-2.5 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded flex items-center gap-1 cursor-pointer transition border border-slate-300 dark:border-slate-700"
+                title="3.05.9.f - Subir coleções do Firebase em JSON"
+              >
+                <Upload size={13} />
+                <span>Subir Coleções JSON (3.05.9.f)</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap mb-4">
               {[
                 { id: 'documentos', label: 'Coleções (/documentos)', count: pages.length },
                 { id: 'users', label: 'Usuários (/users)', count: communityUsers.length },
@@ -614,7 +650,6 @@ export const ACTIVE_FIREBASE_CONFIG = {
                 </button>
               ))}
             </div>
-          </div>
 
           {/* Collection items table */}
           {selectedCollection === 'documentos' && (
@@ -851,6 +886,28 @@ export const ACTIVE_FIREBASE_CONFIG = {
             </button>
           </div>
 
+          {/* Banner de Despacho & Backup JSON para Computador (3.05.9.a & 3.05.9.b) */}
+          <div className="p-4 rounded-xl border border-indigo-300 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <FolderDown size={22} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <div>
+                <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-200">
+                  Despacho de Todas as Informações & Backup JSON (Requisitos 3.05.9.a & 3.05.9.b)
+                </h4>
+                <p className="text-[11px] text-indigo-800 dark:text-indigo-300">
+                  Faça o download ou upload de todas as informações do sistema, regras do Firebase e coleções em arquivos JSON no seu computador.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab('json-dispatch')}
+              className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <span>Abrir Painel de Despacho JSON</span>
+              <span>→</span>
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
               <div>
@@ -911,9 +968,29 @@ export const ACTIVE_FIREBASE_CONFIG = {
               </p>
             </div>
 
-            <span className="px-2.5 py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-mono text-xs font-bold border border-emerald-300 dark:border-emerald-800">
-              Status: Deployed & Active
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setActiveTab('json-dispatch')}
+                className="px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded flex items-center gap-1 cursor-pointer transition shadow-xs"
+                title="3.05.9.c - Baixar regras do Firebase em JSON"
+              >
+                <Download size={12} />
+                <span>Baixar Regras JSON (3.05.9.c)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('json-dispatch')}
+                className="px-2.5 py-1 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded flex items-center gap-1 cursor-pointer transition border border-slate-300 dark:border-slate-700"
+                title="3.05.9.d - Subir regras do Firebase em JSON"
+              >
+                <Upload size={12} />
+                <span>Subir Regras JSON (3.05.9.d)</span>
+              </button>
+              <span className="px-2.5 py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-mono text-xs font-bold border border-emerald-300 dark:border-emerald-800">
+                Status: Deployed & Active
+              </span>
+            </div>
           </div>
 
           <pre className="p-4 bg-slate-950 text-slate-200 rounded-lg text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800">

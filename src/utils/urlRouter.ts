@@ -449,6 +449,13 @@ export function resolveNavigationUid(
     'firebase-console': { view: 'admin-firebase' },
     'backup-firebase': { view: 'admin-firebase' },
     'backup-blaze': { view: 'admin-firebase' },
+    'special:json-dispatch': { view: 'admin-firebase' },
+    'special:jsondispatch': { view: 'admin-firebase' },
+    'special:dispatch': { view: 'admin-firebase' },
+    'special:backup-json': { view: 'admin-firebase' },
+    'special:backupjson': { view: 'admin-firebase' },
+    'json-dispatch': { view: 'admin-firebase' },
+    'backup-json': { view: 'admin-firebase' },
 
     'special:vpnchecker': { view: 'vpn-checker' },
     'special:vpn': { view: 'vpn-checker' },

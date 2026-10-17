@@ -594,6 +594,85 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
+// -------------------------------------------------------------
+// API Routes: Firebase Rules & Security Backup (Requisitos 3.05.9.c & 3.05.9.d)
+// -------------------------------------------------------------
+
+// Obter regras ativas do Firestore e metadados em JSON (3.05.9.c)
+app.get('/api/firebase/rules', (req: Request, res: Response) => {
+  try {
+    const rulesPath = path.resolve(process.cwd(), 'firestore.rules');
+    const blueprintPath = path.resolve(process.cwd(), 'firebase-blueprint.json');
+    const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+
+    let rulesContent = '';
+    if (fs.existsSync(rulesPath)) {
+      rulesContent = fs.readFileSync(rulesPath, 'utf-8');
+    }
+
+    let blueprint = null;
+    if (fs.existsSync(blueprintPath)) {
+      try {
+        blueprint = JSON.parse(fs.readFileSync(blueprintPath, 'utf-8'));
+      } catch {}
+    }
+
+    let config = null;
+    if (fs.existsSync(configPath)) {
+      try {
+        config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      } catch {}
+    }
+
+    res.json({
+      success: true,
+      service: 'cloud.firestore',
+      rulesVersion: '2',
+      rulesContent,
+      rulesLinesCount: rulesContent.split('\n').length,
+      projectId: config?.projectId || 'wzzm-ce3fc',
+      firestoreDatabaseId: config?.firestoreDatabaseId || 'ai-studio-wikizeroenciclop-0a14dc90-3ab3-47bc-8306-ca5bc2953699',
+      blueprint,
+      config,
+      exportedAt: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'Falha ao ler regras do Firebase' });
+  }
+});
+
+// Salvar / atualizar regras do Firestore enviadas em JSON (3.05.9.d)
+app.post('/api/firebase/rules', (req: Request, res: Response) => {
+  try {
+    const { rulesContent, rules } = req.body;
+    const contentToSave = rulesContent || rules;
+
+    if (!contentToSave || typeof contentToSave !== 'string') {
+      return res.status(400).json({ success: false, error: 'Conteúdo de regras firestore.rules inválido ou ausente no JSON.' });
+    }
+
+    // Validação mínima de segurança de sintaxe
+    if (!contentToSave.includes('rules_version') || !contentToSave.includes('service cloud.firestore')) {
+      return res.status(400).json({
+        success: false,
+        error: 'O JSON fornecido não contém uma declaração válida de regras Firestore (esperado rules_version e service cloud.firestore).'
+      });
+    }
+
+    const rulesPath = path.resolve(process.cwd(), 'firestore.rules');
+    fs.writeFileSync(rulesPath, contentToSave, 'utf-8');
+
+    res.json({
+      success: true,
+      message: 'Regras firestore.rules atualizadas com sucesso no servidor!',
+      linesCount: contentToSave.split('\n').length,
+      savedAt: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'Falha ao gravar firestore.rules' });
+  }
+});
+
 // API Routes: Gemini Chatbot (Google AI Studio)
 // -------------------------------------------------------------
 
