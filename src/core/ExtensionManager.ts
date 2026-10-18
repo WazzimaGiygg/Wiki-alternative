@@ -27,6 +27,8 @@ import {
   FirebaseExtensionSyncService,
   SyncStateStatus,
 } from '../services/firebaseExtensionSyncService';
+import { extensionSyncSecurityDevice } from '../services/extensionSyncSecurityDevice';
+import { extensionMalwareScannerDevice } from '../services/extensionMalwareScannerDevice';
 
 // Extensões nativas instaladas no núcleo
 import ReadingTimeEnhancer from '../extensions/reading-time';
@@ -1928,6 +1930,28 @@ ${tc.customCss || ''}
       return {
         success: false,
         message: 'Acesso negado: Apenas burocratas do Conselho podem fazer upload de novas extensões.',
+      };
+    }
+
+    // Requisito 3.05.9.b: Dispositivo para verificação de informações maliciosas dentro dos arquivos das extensões
+    const scanReport = await extensionMalwareScannerDevice.scanFileContent(fileContent, fileName);
+    if (!scanReport.isSafe && (scanReport.severity === 'critical' || scanReport.severity === 'high')) {
+      const topThreat = scanReport.threatsFound[0];
+      const extName = fileName.replace(/\.[^/.]+$/, '');
+
+      // Requisito 3.05.9.a: Isola no dispositivo de segurança de sincronia
+      await extensionSyncSecurityDevice.quarantineExtension(
+        extName,
+        `Dispositivo contra Malware (3.05.9.b): ${scanReport.threatsFound.length} ameaça(s) identificada(s) no arquivo '${fileName}'. [${topThreat.severity.toUpperCase()}]: ${topThreat.title} (linha ${topThreat.lineNumber || '?'}).`,
+        scanReport.severity === 'critical' ? 'critical' : 'high',
+        'file_upload',
+        fileContent,
+        currentUser
+      );
+
+      return {
+        success: false,
+        message: `Upload bloqueado pelo Dispositivo de Verificação de Malware (3.05.9.b): Foram identificadas ${scanReport.threatsFound.length} ameaça(s) no arquivo '${fileName}'. A extensão foi isolada em quarentena preventiva.`,
       };
     }
 

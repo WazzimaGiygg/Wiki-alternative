@@ -1644,6 +1644,90 @@ export interface ExtensionActionLog {
 }
 
 // ==========================================
+// DISPOSITIVOS DE SEGURANÇA DE EXTENSÕES (3.05.9.a & 3.05.9.b)
+// ==========================================
+export type SyncIntegrityState = 'verified' | 'tampered' | 'unverified' | 'drift' | 'quarantined';
+
+export interface SyncSecurityCheckpoint {
+  id: string;
+  timestamp: string;
+  operatorUid: string;
+  operatorUsername: string;
+  snapshotStates: Record<string, boolean>;
+  snapshotHashes: Record<string, string>;
+  totalExtensions: number;
+  note: string;
+}
+
+export interface SyncQuarantineRecord {
+  id: string;
+  extensionName: string;
+  version: string;
+  source: 'cloud_sync' | 'file_upload' | 'manual';
+  quarantinedAt: string;
+  reason: string;
+  severity: 'critical' | 'high' | 'medium';
+  hash: string;
+  rawContent?: string;
+  status: 'quarantined' | 'approved' | 'rejected' | 'sanitized';
+  reviewedBy?: string;
+  reviewedAt?: string;
+}
+
+export interface SyncSecurityAuditLog {
+  id: string;
+  timestamp: string;
+  action: 'hash_check' | 'quarantined' | 'released' | 'blocked' | 'checkpoint_created' | 'rollback_executed' | 'drift_detected';
+  extensionName?: string;
+  operator: string;
+  details: string;
+  hash?: string;
+}
+
+export type MalwareSeverity = 'critical' | 'high' | 'medium' | 'low' | 'clean';
+
+export type MalwareThreatCategory =
+  | 'rce'
+  | 'xss_injection'
+  | 'data_exfiltration'
+  | 'credential_theft'
+  | 'cryptomining'
+  | 'obfuscation'
+  | 'prototype_pollution'
+  | 'phishing_overlay';
+
+export interface MalwareThreatFinding {
+  id: string;
+  category: MalwareThreatCategory;
+  severity: MalwareSeverity;
+  title: string;
+  description: string;
+  codeSnippet: string;
+  lineNumber?: number;
+  columnNumber?: number;
+  recommendation: string;
+  signatureId: string;
+  cweId?: string;
+}
+
+export interface ExtensionMalwareScanReport {
+  extensionName: string;
+  version?: string;
+  scannedAt: string;
+  totalFilesScanned: number;
+  threatsFound: MalwareThreatFinding[];
+  severity: MalwareSeverity;
+  isSafe: boolean;
+  securityScore: number;
+  fileMetrics: {
+    linesCount: number;
+    bytesCount: number;
+    sha256: string;
+  };
+  status: 'clean' | 'threats_detected' | 'quarantined' | 'sanitized';
+}
+
+// ==========================================
 // USER REAL-TIME CHAT (3.09.a)
 // ==========================================
 export interface UserChatMessage {

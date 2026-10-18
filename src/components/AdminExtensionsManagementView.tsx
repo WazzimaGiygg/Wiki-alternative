@@ -98,6 +98,10 @@ import {
   FirebaseExtensionSyncService,
   SyncStateStatus,
 } from '../services/firebaseExtensionSyncService';
+import { ExtensionSyncSecurityModal } from './ExtensionSyncSecurityModal';
+import { ExtensionMalwareScannerModal } from './ExtensionMalwareScannerModal';
+import { extensionSyncSecurityDevice } from '../services/extensionSyncSecurityDevice';
+import { extensionMalwareScannerDevice } from '../services/extensionMalwareScannerDevice';
 
 interface AdminExtensionsManagementViewProps {
   currentUser: UserProfile | null;
@@ -166,6 +170,15 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     title: string;
     description: string;
   } | null>(null);
+
+  // 3.05.9.a: Dispositivo de Segurança para Sincronia de Extensões
+  const [showSyncSecurityModal, setShowSyncSecurityModal] = useState<boolean>(false);
+  const [quarantineCount, setQuarantineCount] = useState<number>(() =>
+    extensionSyncSecurityDevice.getQuarantinedExtensions().filter((q) => q.status === 'quarantined').length
+  );
+
+  // 3.05.9.b: Dispositivo para Verificação de Informações Maliciosas
+  const [showMalwareScannerModal, setShowMalwareScannerModal] = useState<boolean>(false);
 
   // Upload de Arquivo (index.js / index.ts) (304.4)
   const [uploadedFileContent, setUploadedFileContent] = useState<string>('');
@@ -281,8 +294,14 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     const unsubscribe = extensionManager.subscribe(() => {
       refreshList();
     });
+    const unsubSec = extensionSyncSecurityDevice.subscribe(() => {
+      setQuarantineCount(
+        extensionSyncSecurityDevice.getQuarantinedExtensions().filter((q) => q.status === 'quarantined').length
+      );
+    });
     return () => {
       unsubscribe();
+      unsubSec();
     };
   }, []);
 
@@ -1685,6 +1704,37 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
           >
             <ShieldAlert className={`w-3.5 h-3.5 ${memUsage.isExceeded ? 'text-rose-600 animate-spin' : 'text-blue-500'}`} />
             <span>Memória: {memUsage.usedMB} MB {memUsage.isExceeded ? '⚠️ (>200MB)' : ''}</span>
+          </button>
+
+          {/* 3.05.9.a: Dispositivo de Segurança para Sincronia de Extensões */}
+          <button
+            type="button"
+            onClick={() => setShowSyncSecurityModal(true)}
+            className={`px-3 py-2 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 shadow-2xs cursor-pointer ${
+              quarantineCount > 0
+                ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 animate-pulse'
+                : 'border-indigo-300 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-100'
+            }`}
+            title="Dispositivo de Segurança para Sincronia de Extensões: Hashes SHA-256, Quarentena e Rollback (3.05.9.a)"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span>Segurança Sincronia (3.05.9.a)</span>
+            {quarantineCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-600 text-white">
+                {quarantineCount}
+              </span>
+            )}
+          </button>
+
+          {/* 3.05.9.b: Dispositivo para Verificação de Informações Maliciosas */}
+          <button
+            type="button"
+            onClick={() => setShowMalwareScannerModal(true)}
+            className="px-3 py-2 text-xs font-semibold rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 hover:bg-rose-100 flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+            title="Dispositivo de Verificação de Informações Maliciosas dentro dos Arquivos das Extensões (3.05.9.b)"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+            <span>Antimalware (3.05.9.b)</span>
           </button>
 
           <button
@@ -4315,6 +4365,22 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
           </div>
         </div>
       )}
+
+      {/* 3.05.9.a: Dispositivo de Segurança para Sincronia de Extensões */}
+      <ExtensionSyncSecurityModal
+        isOpen={showSyncSecurityModal}
+        onClose={() => setShowSyncSecurityModal(false)}
+        currentUser={currentUser}
+        onRefreshExtensions={refreshList}
+      />
+
+      {/* 3.05.9.b: Dispositivo para Verificação de Informações Maliciosas */}
+      <ExtensionMalwareScannerModal
+        isOpen={showMalwareScannerModal}
+        onClose={() => setShowMalwareScannerModal(false)}
+        currentUser={currentUser}
+        onRefreshExtensions={refreshList}
+      />
     </div>
   );
 };

@@ -16,6 +16,8 @@ import {
   FirebaseExtensionRegistryDoc,
   UserProfile,
 } from '../types';
+import { extensionSyncSecurityDevice } from './extensionSyncSecurityDevice';
+import { extensionMalwareScannerDevice } from './extensionMalwareScannerDevice';
 
 /**
  * Constantes e Coleções do Firebase para o Módulo de Extensões (Versão 3.304)
@@ -332,6 +334,21 @@ export class FirebaseExtensionSyncService {
     }
 
     try {
+      // Requisito 3.05.9.a: Dispositivo de Segurança para Sincronia de Extensões
+      const gateCheck = await extensionSyncSecurityDevice.validatePreSyncGatekeeper(extensions, user);
+      if (!gateCheck.allowed) {
+        return {
+          success: false,
+          totalSynced: 0,
+          message: `Dispositivo de Segurança (3.05.9.a): Sincronização em nuvem bloqueada. ${gateCheck.errors.join(' ')}`,
+        };
+      }
+
+      // Snapshot automático de segurança (Rollback Shield)
+      if (extensionSyncSecurityDevice.getConfig().autoCheckpointBeforeSync) {
+        await extensionSyncSecurityDevice.createCheckpoint(user, 'Snapshot automático pré-sincronia em lote com Firebase');
+      }
+
       let count = 0;
       const syncedAt = new Date().toISOString();
       const operatorName = user?.displayName || user?.username || user?.email || 'Burocrata Administrador';
@@ -342,7 +359,8 @@ export class FirebaseExtensionSyncService {
           ext.noCloudSync ||
           ext.syncStatus === 'local_only' ||
           ext.name === 'SqlDatabaseBackupExtension' ||
-          ext.name === 'FirebaseAppletConfigImporterExtension'
+          ext.name === 'FirebaseAppletConfigImporterExtension' ||
+          extensionSyncSecurityDevice.isExtensionQuarantined(ext.name)
         ) {
           continue;
         }
@@ -368,6 +386,12 @@ export class FirebaseExtensionSyncService {
       // Atualiza também o registro global de estados
       await this.syncStatesToCloud(states, user);
 
+      extensionSyncSecurityDevice.logSecurityEvent(
+        'hash_check',
+        operatorName,
+        `Sincronização em lote aprovada pelo dispositivo de segurança: ${count} extensões salvas na nuvem.`
+      );
+
       return {
         success: true,
         totalSynced: count,
@@ -390,6 +414,13 @@ export class FirebaseExtensionSyncService {
     extension: InstalledExtensionMeta,
     user: UserProfile | null
   ): Promise<{ success: boolean; message: string }> {
+    if (extensionSyncSecurityDevice.isExtensionQuarantined(extension.name)) {
+      return {
+        success: false,
+        message: `Dispositivo de Segurança (3.05.9.a): A extensão '${extension.name}' está em quarentena de segurança e teve sua sincronização impedida.`,
+      };
+    }
+
     if (
       extension.noCloudSync ||
       extension.syncStatus === 'local_only' ||
