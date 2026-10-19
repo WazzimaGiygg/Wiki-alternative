@@ -1736,6 +1736,7 @@ export default function App() {
                 onArticleUpdated={(updated) =>
                   setArticles((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
                 }
+                onOpenLanguagesModal={() => setShowLanguageModal(true)}
               />
             ) : (
               <NotFoundView

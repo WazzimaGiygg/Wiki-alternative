@@ -87,6 +87,7 @@ interface ArticleViewerProps {
   onBack: () => void;
   onRestoreRevision?: (historyItem: ArticleHistoryItem) => void;
   onArticleUpdated?: (article: WikiArticle) => void;
+  onOpenLanguagesModal?: () => void;
 }
 
 export const ArticleViewer: React.FC<ArticleViewerProps> = ({
@@ -104,6 +105,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   onBack,
   onRestoreRevision,
   onArticleUpdated,
+  onOpenLanguagesModal,
 }) => {
   const [fontSize, setFontSize] = useState<number>(15);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -132,7 +134,15 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const [dossierInitialTab, setDossierInitialTab] = useState<'text' | 'pdf' | 'table'>('text');
   const [localArticle, setLocalArticle] = useState<WikiArticle>(article);
 
-  const { currentLanguage, t } = useLanguage();
+  const {
+    currentLanguage,
+    t,
+    isUniversalTranslationActive,
+    showOriginal,
+    toggleShowOriginal,
+    translateArticle,
+    translateArticleOnlineAsync,
+  } = useLanguage();
   const [translatedArticle, setTranslatedArticle] = useState<{ title: string; content: string; langCode: string } | null>(null);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [showTranslateDropdown, setShowTranslateDropdown] = useState<boolean>(false);
@@ -268,8 +278,52 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     setTranslatedArticle(null);
   }, [article]);
 
-  const currentContent = translatedArticle ? translatedArticle.content : (localArticle.descricao || '');
-  const currentTitle = translatedArticle ? translatedArticle.title : localArticle.titulo;
+  // Tradução Universal 3.05.10.a: Se o idioma selecionado não for português e showOriginal for falso
+  const universallyTranslated = useMemo(() => {
+    if (!isUniversalTranslationActive) return null;
+    return translateArticle(localArticle, currentLanguage.code);
+  }, [isUniversalTranslationActive, localArticle, currentLanguage.code, translateArticle]);
+
+  // Se a Tradução Universal estiver ativa, tenta enriquecer com o motor assíncrono em segundo plano
+  useEffect(() => {
+    if (isUniversalTranslationActive && currentLanguage.code !== 'pt' && !translatedArticle) {
+      let isMounted = true;
+      setIsTranslating(true);
+      translateArticleOnlineAsync(localArticle, currentLanguage.code)
+        .then((res) => {
+          if (isMounted && res && res.titulo) {
+            setTranslatedArticle({
+              title: res.titulo,
+              content: res.descricao,
+              langCode: currentLanguage.code,
+            });
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (isMounted) setIsTranslating(false);
+        });
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [isUniversalTranslationActive, localArticle.id, currentLanguage.code, translateArticleOnlineAsync]);
+
+  const currentContent = translatedArticle
+    ? translatedArticle.content
+    : universallyTranslated
+    ? (universallyTranslated.descricao || '')
+    : (localArticle.descricao || '');
+
+  const currentTitle = translatedArticle
+    ? translatedArticle.title
+    : universallyTranslated
+    ? universallyTranslated.titulo
+    : localArticle.titulo;
+
+  const currentCategory = universallyTranslated
+    ? universallyTranslated.categoria
+    : (localArticle.categoria || 'Geral');
 
   // Split wikitext into manageable chunks (~2200 chars) preserving paragraphs and line breaks
   const chunkTextForTranslation = (text: string, maxChunkLength = 2200): string[] => {
@@ -788,7 +842,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 ? 'text-slate-300'
                 : 'text-zinc-300'
             }`}>
-              <span className="font-bold truncate max-w-xs">{localArticle.titulo}</span>
+              <span className="font-bold truncate max-w-xs">{currentTitle}</span>
               <span className="opacity-40">•</span>
               <span className="font-mono text-[11px] shrink-0 font-medium">{readerProgress}% lido</span>
               <span className="opacity-40">•</span>
@@ -1031,7 +1085,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               containerRef={readerContentRef}
               containerSelector=".wiki-rendered-content"
               articleId={localArticle.id}
-              articleTitle={localArticle.titulo}
+              articleTitle={currentTitle}
               htmlContent={html}
               initialToc={toc}
               onNavigateToSection={(id) => {
@@ -1066,7 +1120,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 className="no-print print:hidden article-category-badge reader-category-badge px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider border border-current/25 bg-current/5"
                 data-print-hide-category="true"
               >
-                {localArticle.categoria || 'Geral'}
+                {currentCategory}
               </span>
               <span className={`text-xs font-mono ${
                 readerTheme === 'sepia'
@@ -1090,7 +1144,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                   : 'font-sans'
               }`}
             >
-              {localArticle.titulo}
+              {currentTitle}
             </h1>
 
             <div className={`flex items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs font-medium flex-wrap ${
@@ -1249,7 +1303,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </>
             )}
             <span className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-xs">
-              {article.titulo}
+              {currentTitle}
             </span>
           </div>
 
@@ -1380,6 +1434,35 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           >
             <BookOpen size={13} className="text-indigo-600 dark:text-indigo-400" />
             <span className="hidden sm:inline">Modo Leitura</span>
+          </button>
+
+          {/* Universal Translation / Language Button (3.05.10.a) */}
+          <button
+            onClick={() => {
+              if (onOpenLanguagesModal) {
+                onOpenLanguagesModal();
+              } else {
+                toggleShowOriginal();
+              }
+            }}
+            title={
+              currentLanguage.code !== 'pt'
+                ? `Idioma Atual: ${currentLanguage.nativeName} (${currentLanguage.name}) • Clique para configurar traduções ou alternar original`
+                : 'Tradução Universal i18n • Selecionar idioma para traduzir o artigo'
+            }
+            className={`px-2.5 py-1 rounded border font-semibold text-xs transition flex items-center gap-1.5 shadow-2xs cursor-pointer ${
+              currentLanguage.code !== 'pt' && !showOriginal
+                ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-200 border-indigo-300 dark:border-indigo-700'
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700'
+            }`}
+          >
+            <Globe2 size={13} className={currentLanguage.code !== 'pt' && !showOriginal ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-300'} />
+            <span>{currentLanguage.flag}</span>
+            <span className="hidden sm:inline">
+              {currentLanguage.code !== 'pt' && !showOriginal
+                ? `${currentLanguage.code.toUpperCase()}`
+                : 'Traduzir'}
+            </span>
           </button>
 
           <button
@@ -1777,6 +1860,56 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </div>
             )}
 
+            {/* Universal Translation Banner (3.05.10.a) */}
+            {currentLanguage.code !== 'pt' && (
+              <div className="p-3 sm:p-3.5 rounded-lg bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-950 dark:text-indigo-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs no-print print:hidden">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-xl shrink-0">{currentLanguage.flag}</span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        {showOriginal
+                          ? 'Modo Original em Português'
+                          : `Tradução Universal Ativa (${currentLanguage.nativeName})`}
+                      </span>
+                      {isTranslating && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 animate-pulse">
+                          <Sparkles size={10} /> Sincronizando tradução...
+                        </span>
+                      )}
+                      <span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-semibold bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-300">
+                        i18n 3.05.10.a
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                      {showOriginal
+                        ? 'Exibindo a versão original do verbete em português. Clique ao lado para ver a tradução.'
+                        : `Verbete, seções, tabelas e wikitext traduzidos universalmente para ${currentLanguage.name}.`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => toggleShowOriginal()}
+                    className="px-2.5 py-1 rounded bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-semibold text-xs transition cursor-pointer shadow-2xs"
+                  >
+                    {showOriginal ? `Ver em ${currentLanguage.name}` : 'Ver Original (PT)'}
+                  </button>
+                  {onOpenLanguagesModal && (
+                    <button
+                      type="button"
+                      onClick={onOpenLanguagesModal}
+                      className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition cursor-pointer shadow-2xs flex items-center gap-1"
+                    >
+                      <Globe2 size={12} />
+                      <span>Idiomas</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Article Header */}
             <header className="border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -1784,7 +1917,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                   className="no-print print:hidden article-category-badge text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
                   data-print-hide-category="true"
                 >
-                  {localArticle.categoria || 'Geral'}
+                  {currentCategory}
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">
                   Versão {localArticle.versao || 1}.0
@@ -1807,7 +1940,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-normal font-serif-heading text-slate-900 dark:text-white leading-tight">
-                {localArticle.titulo}
+                {currentTitle}
               </h1>
 
               {/* Metadata Badges */}
@@ -1926,7 +2059,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               containerRef={contentRef}
               containerSelector=".wiki-rendered-content"
               articleId={localArticle.id}
-              articleTitle={localArticle.titulo}
+              articleTitle={currentTitle}
               htmlContent={html}
               initialToc={toc}
               onNavigateToSection={scrollToSection}
@@ -2129,7 +2262,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               containerRef={contentRef}
               containerSelector=".wiki-rendered-content"
               articleId={localArticle.id}
-              articleTitle={localArticle.titulo}
+              articleTitle={currentTitle}
               htmlContent={html}
               initialToc={toc}
               onNavigateToSection={scrollToSection}

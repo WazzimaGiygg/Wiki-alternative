@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Tag, BookOpen, Clock, ArrowLeft, Layers, Search, RefreshCw } from 'lucide-react';
 import { PageService } from '../services/PageService';
 import { Page } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 interface CategoryListViewProps {
   categoryName: string;
@@ -19,6 +20,7 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
   onNavigateToArticle,
   onBack,
 }) => {
+  const { currentLanguage, isUniversalTranslationActive, translateText } = useLanguage();
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchFilter, setSearchFilter] = useState('');
@@ -65,7 +67,7 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                Categoria: {categoryName}
+                Categoria: {isUniversalTranslationActive ? translateText(categoryName, currentLanguage.code) : categoryName}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Páginas e artigos classificados sob este tópico na enciclopédia
@@ -121,7 +123,7 @@ export const CategoryListView: React.FC<CategoryListViewProps> = ({
                   {page.version && <span>• v{page.version}</span>}
                 </div>
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                  {page.title}
+                  {isUniversalTranslationActive ? translateText(page.title, currentLanguage.code) : page.title}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
                   {page.content.replace(/\[\[.*?\]\]/g, '').replace(/[#*='_]/g, '').trim()}

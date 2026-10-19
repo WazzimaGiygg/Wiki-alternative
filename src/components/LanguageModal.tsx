@@ -9,7 +9,16 @@ interface LanguageModalProps {
 }
 
 export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose }) => {
-  const { currentLanguage, setLanguage, t } = useLanguage();
+  const {
+    currentLanguage,
+    setLanguage,
+    t,
+    isUniversalTranslationActive,
+    showOriginal,
+    toggleShowOriginal,
+    universalState,
+    setAutoTranslate,
+  } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<string>('All');
 
@@ -64,6 +73,53 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
           >
             <X size={16} />
           </button>
+        </div>
+
+        {/* 3.05.10.a: Tradução Universal de Todas as Páginas */}
+        <div className="p-3 bg-indigo-50/70 dark:bg-indigo-950/40 border-b border-indigo-200 dark:border-indigo-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-base">{currentLanguage.flag}</span>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-slate-900 dark:text-white">
+                  Tradução Universal (3.05.10.a)
+                </span>
+                {isUniversalTranslationActive ? (
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                    Ativa: {currentLanguage.nativeName}
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {showOriginal ? 'Modo Original' : 'Português (Padrão)'}
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                Traduz automaticamente todas as páginas, títulos, coleções, verbetes e wikitext do Wiki-Site.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            {currentLanguage.code !== 'pt' && (
+              <button
+                type="button"
+                onClick={() => toggleShowOriginal()}
+                className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold text-[11px] hover:bg-slate-100 transition cursor-pointer"
+              >
+                {showOriginal ? 'Ver Tradução Universal' : 'Ver Original (PT)'}
+              </button>
+            )}
+            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={universalState.autoTranslateAllPages}
+                onChange={(e) => setAutoTranslate(e.target.checked)}
+                className="rounded text-indigo-600 focus:ring-0"
+              />
+              <span>Auto-traduzir ao navegar</span>
+            </label>
+          </div>
         </div>
 
         {/* Search & Region Filters */}

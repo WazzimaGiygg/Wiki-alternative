@@ -27,6 +27,7 @@ import { WikiArticle, WikiPage } from '../types';
 import { getCleanExcerpt } from '../utils/wikitextParser';
 import { getLanguageByCode } from '../utils/languages';
 import { CURATED_FEATURED_ARTICLES } from '../data/curatedArticles';
+import { useLanguage } from '../context/LanguageContext';
 
 export { CURATED_FEATURED_ARTICLES };
 
@@ -218,8 +219,18 @@ export const WikiFeaturedArticle: React.FC<WikiFeaturedArticleProps> = ({
     return (baseIndex + shuffleOffset) % candidates.length;
   }, [candidates.length, dailySeed, shuffleOffset]);
 
-  const featured = candidates[activeIndex] || CURATED_FEATURED_ARTICLES[0];
+  const rawFeatured = candidates[activeIndex] || CURATED_FEATURED_ARTICLES[0];
   const isShuffled = shuffleOffset > 0;
+
+  const { currentLanguage, isUniversalTranslationActive, translateArticle } = useLanguage();
+
+  const featured = useMemo(() => {
+    if (!rawFeatured) return rawFeatured;
+    if (isUniversalTranslationActive) {
+      return translateArticle(rawFeatured, currentLanguage.code);
+    }
+    return rawFeatured;
+  }, [rawFeatured, isUniversalTranslationActive, currentLanguage.code, translateArticle]);
 
   // Calculate quality score and metrics
   const qualityScore = useMemo(

@@ -2,6 +2,11 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Language, ALL_LANGUAGES, DEFAULT_LANGUAGE, getLanguageByCode } from '../utils/languages';
 import { TranslationKey, getTranslation } from '../utils/translations';
 import { ExtensionManager } from '../core/ExtensionManager';
+import {
+  universalI18nService,
+  UniversalTranslationState,
+} from '../services/universalI18nService';
+import { WikiArticle, WikiPage } from '../types';
 
 interface LanguageContextType {
   currentLanguage: Language;
@@ -9,6 +14,18 @@ interface LanguageContextType {
   t: (key: TranslationKey) => string;
   allLanguages: Language[];
   isRTL: boolean;
+  // 3.05.10.a: Suporte i18n para tradução universal de todas as páginas e toda a Wiki-Site
+  isUniversalTranslationActive: boolean;
+  showOriginal: boolean;
+  toggleShowOriginal: (showOriginal?: boolean) => void;
+  translateText: (text: string, targetLang?: string) => string;
+  translateArticle: (article: WikiArticle, targetLang?: string) => WikiArticle;
+  translateArticleOnlineAsync: (article: WikiArticle, targetLang?: string) => Promise<WikiArticle>;
+  translatePage: (page: WikiPage, targetLang?: string) => WikiPage;
+  translateArticlesList: (articles: WikiArticle[], targetLang?: string) => WikiArticle[];
+  translatePagesList: (pages: WikiPage[], targetLang?: string) => WikiPage[];
+  universalState: UniversalTranslationState;
+  setAutoTranslate: (enabled: boolean) => void;
 }
 
 const LanguageContext = createContext<LanguageContextType>({
@@ -17,6 +34,17 @@ const LanguageContext = createContext<LanguageContextType>({
   t: (key) => key,
   allLanguages: ALL_LANGUAGES,
   isRTL: false,
+  isUniversalTranslationActive: false,
+  showOriginal: false,
+  toggleShowOriginal: () => {},
+  translateText: (text) => text,
+  translateArticle: (art) => art,
+  translateArticleOnlineAsync: async (art) => art,
+  translatePage: (page) => page,
+  translateArticlesList: (arts) => arts,
+  translatePagesList: (pages) => pages,
+  universalState: universalI18nService.getState(),
+  setAutoTranslate: () => {},
 });
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -108,7 +136,54 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return getTranslation(key, currentLanguage.code);
   };
 
+  const [universalState, setUniversalState] = useState<UniversalTranslationState>(() =>
+    universalI18nService.getState()
+  );
+
+  useEffect(() => {
+    universalI18nService.setTargetLanguage(currentLanguage.code);
+    const unsub = universalI18nService.subscribe((st) => {
+      setUniversalState({ ...st });
+    });
+    return () => unsub();
+  }, [currentLanguage]);
+
+  const toggleShowOriginal = (showOriginal?: boolean) => {
+    universalI18nService.toggleShowOriginal(showOriginal);
+  };
+
+  const setAutoTranslate = (enabled: boolean) => {
+    universalI18nService.setAutoTranslate(enabled);
+  };
+
+  const translateText = (text: string, targetLang?: string): string => {
+    return universalI18nService.translateText(text, targetLang || currentLanguage.code);
+  };
+
+  const translateArticle = (article: WikiArticle, targetLang?: string): WikiArticle => {
+    return universalI18nService.translateArticle(article, targetLang || currentLanguage.code);
+  };
+
+  const translateArticleOnlineAsync = async (article: WikiArticle, targetLang?: string): Promise<WikiArticle> => {
+    return universalI18nService.translateArticleOnlineAsync(article, targetLang || currentLanguage.code);
+  };
+
+  const translatePage = (page: WikiPage, targetLang?: string): WikiPage => {
+    return universalI18nService.translatePage(page, targetLang || currentLanguage.code);
+  };
+
+  const translateArticlesList = (articles: WikiArticle[], targetLang?: string): WikiArticle[] => {
+    return universalI18nService.translateArticlesList(articles, targetLang || currentLanguage.code);
+  };
+
+  const translatePagesList = (pages: WikiPage[], targetLang?: string): WikiPage[] => {
+    return universalI18nService.translatePagesList(pages, targetLang || currentLanguage.code);
+  };
+
   const isRTL = currentLanguage.dir === 'rtl';
+
+  const isUniversalTranslationActive =
+    currentLanguage.code !== 'pt' && !universalState.showOriginal && universalState.autoTranslateAllPages;
 
   return (
     <LanguageContext.Provider
@@ -118,6 +193,17 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         t,
         allLanguages: ALL_LANGUAGES,
         isRTL,
+        isUniversalTranslationActive,
+        showOriginal: universalState.showOriginal,
+        toggleShowOriginal,
+        translateText,
+        translateArticle,
+        translateArticleOnlineAsync,
+        translatePage,
+        translateArticlesList,
+        translatePagesList,
+        universalState,
+        setAutoTranslate,
       }}
     >
       {children}

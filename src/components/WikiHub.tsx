@@ -54,7 +54,13 @@ export const WikiHub: React.FC<WikiHubProps> = ({
   onOpenEditor,
   onNavigate,
 }) => {
-  const { currentLanguage, t } = useLanguage();
+  const {
+    currentLanguage,
+    t,
+    isUniversalTranslationActive,
+    translatePagesList,
+    translateArticlesList,
+  } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
   const [selectedLanguageFilter, setSelectedLanguageFilter] = useState<string>('all');
   const [lockModalPage, setLockModalPage] = useState<WikiPage | null>(null);
@@ -82,9 +88,22 @@ export const WikiHub: React.FC<WikiHubProps> = ({
     }
   };
 
-  // Extract all categories
-  const safePages = localPages;
-  const safeArticles = articles || [];
+  // Extract all categories with Universal Translation support (3.05.10.a)
+  const safePages = useMemo(() => {
+    if (isUniversalTranslationActive) {
+      return translatePagesList(localPages, currentLanguage.code);
+    }
+    return localPages;
+  }, [localPages, isUniversalTranslationActive, currentLanguage.code, translatePagesList]);
+
+  const safeArticles = useMemo(() => {
+    const list = articles || [];
+    if (isUniversalTranslationActive) {
+      return translateArticlesList(list, currentLanguage.code);
+    }
+    return list;
+  }, [articles, isUniversalTranslationActive, currentLanguage.code, translateArticlesList]);
+
   const categories = ['Todas', ...Array.from(new Set(safePages.map((p) => p?.categoria).filter(Boolean)))];
 
   // Filter pages
