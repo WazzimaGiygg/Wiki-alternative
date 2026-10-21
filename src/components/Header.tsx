@@ -309,7 +309,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   // Curated popular languages without regional duplicate codes (pt vs pt-PT, en vs en-GB, es vs es-MX)
   const popularLanguages = useMemo(() => {
-    const popularCodes = ['pt', 'en', 'es', 'fr', 'de', 'it', 'ja', 'zh', 'ru', 'ar'];
+    const popularCodes = ['pt', 'en', 'es', 'fr', 'de', 'it', 'ja', 'zh', 'ru', 'ar', 'fa'];
     const found: Language[] = [];
     for (const code of popularCodes) {
       const match = allLanguages.find((l) => l.code === code);
@@ -996,16 +996,27 @@ export const Header: React.FC<HeaderProps> = ({
             {!isWin95 && <span className={`${isRepo ? "text-[#22d3ee]/80" : isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : isStardew ? "text-[#fed88b]" : "text-slate-400"} hidden md:inline truncate`}>{t('header.open_encyclopedia')}</span>}
           </div>
           <div className={`flex items-center gap-2 sm:gap-4 shrink-0 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : isStardew ? 'text-[#fed88b]' : 'text-slate-400'} text-[11px]`}>
-            {/* Seletor de idioma na micro barra superior: visível em mobile ou temas retrô dedicados (evita duplicidade no desktop) */}
+            {/* Seletor de idioma na micro barra superior: visível em todas as resoluções como atalho global permanente */}
             <button
               onClick={onOpenLanguagesModal}
-              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'md:hidden hover:text-blue-300 text-slate-300'} flex items-center gap-1 transition cursor-pointer`}
+              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-500 dark:hover:text-blue-300 text-slate-600 dark:text-slate-300'} flex items-center gap-1 transition cursor-pointer font-medium`}
               title="Mudar idioma da enciclopédia"
             >
               <Globe2 size={11} className={isWin95 ? 'text-[#000080]' : isGenshin ? 'text-[#72e2db]' : 'text-blue-400'} />
               <span>{currentLanguage.flag} <span className="hidden sm:inline">{currentLanguage.nativeName}</span> ({currentLanguage.code})</span>
             </button>
-            <span className={`${isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'md:hidden text-slate-600'}`}>|</span>
+            {currentLanguage.code !== 'pt' && (
+              <button
+                type="button"
+                onClick={() => setLanguage('pt')}
+                className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                title="Restaurar idioma para Português (Brasil)"
+              >
+                <span>🇧🇷</span>
+                <span className="hidden xs:inline">Voltar PT</span>
+              </button>
+            )}
+            <span className={`${isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'text-slate-300 dark:text-slate-700'}`}>|</span>
             <button
               type="button"
               onClick={onToggleTheme}
@@ -1962,7 +1973,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex-1 max-w-lg mx-2 hidden md:block">
+          <div className="flex-1 max-w-lg min-w-0 mx-2 hidden md:block">
             <div
               onClick={handleSearchInputClick}
               className="relative cursor-pointer"
@@ -1974,7 +1985,8 @@ export const Header: React.FC<HeaderProps> = ({
                 onFocus={handleSearchInputClick}
                 onChange={(e) => onSearchChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="Busca avançada de artigos (clique para abrir)..."
+                placeholder="Busca unificada (User:, Skin:, Diff:, Collection:, ou termo)..."
+                title="Busca unificada na Wiki: use prefixos User:, Skin:, Diff:, Collection: ou termo livre"
                 className="w-full pl-8 pr-24 py-1 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 cursor-text"
               />
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -2144,11 +2156,13 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
 
-          {/* Language Switcher Dropdown (Desktop / Tablet) */}
-          <div className="relative hidden md:block" ref={langMenuRef}>
+          {/* Language Switcher Dropdown (Visível em todas as resoluções com suporte a RTL) */}
+          <div className="relative shrink-0" ref={langMenuRef}>
             <button
+              id="btn-header-language-toggle"
+              type="button"
               onClick={() => setShowLangMenu(!showLangMenu)}
-              className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-200"
+              className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-200 cursor-pointer shadow-2xs active:scale-95"
               title={t('header.change_language')}
             >
               <span className="text-sm">{currentLanguage.flag}</span>
@@ -2157,7 +2171,12 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {showLangMenu && (
-              <div className="absolute right-0 mt-1.5 w-64 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 text-xs overflow-hidden">
+              <div
+                dir="ltr"
+                className={`fixed sm:absolute inset-x-2 sm:inset-x-auto top-14 sm:top-auto sm:mt-1.5 w-auto sm:w-64 max-w-[calc(100vw-1rem)] ${
+                  currentLanguage.dir === 'rtl' ? 'sm:left-0 sm:right-auto' : 'sm:right-0 sm:left-auto'
+                } bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 text-xs overflow-hidden`}
+              >
                 <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
                   <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[10px] font-mono flex items-center gap-1.5">
                     <Globe2 size={12} className="text-blue-500" />
@@ -2166,12 +2185,45 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">45+ globais</span>
                 </div>
 
+                {/* Atalho direto de retorno ao Português e Inglês se um idioma não-padrão (árabe, persa, etc.) estiver ativo */}
+                {currentLanguage.code !== 'pt' && (
+                  <div className="p-2 border-b border-blue-100 dark:border-blue-900/60 bg-blue-50/90 dark:bg-blue-950/50 space-y-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLanguage('pt');
+                        setShowLangMenu(false);
+                      }}
+                      className="w-full text-center py-1.5 px-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+                      title="Restaurar Português do Brasil como idioma ativo da enciclopédia"
+                    >
+                      <span className="text-sm">🇧🇷</span>
+                      <span>Voltar para Português</span>
+                    </button>
+                    {currentLanguage.code !== 'en' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLanguage('en');
+                          setShowLangMenu(false);
+                        }}
+                        className="w-full text-center py-1 px-3 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+                        title="Switch to English"
+                      >
+                        <span className="text-sm">🇺🇸</span>
+                        <span>English (Inglês)</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="max-h-60 overflow-y-auto py-1 divide-y divide-slate-100 dark:divide-slate-800/40">
                   {popularLanguages.map((lang) => {
                     const isSelected = currentLanguage.code === lang.code;
                     return (
                       <button
                         key={lang.code}
+                        type="button"
                         onClick={() => {
                           setLanguage(lang);
                           setShowLangMenu(false);
@@ -2197,6 +2249,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                 <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60">
                   <button
+                    type="button"
                     onClick={() => {
                       setShowLangMenu(false);
                       if (onOpenLanguagesModal) onOpenLanguagesModal();
@@ -2234,7 +2287,10 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {showOnlineMenu && (
-              <div className="absolute right-0 mt-1.5 w-80 bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xl p-3.5 z-50 animate-in fade-in text-xs space-y-3">
+              <div
+                style={{ [currentLanguage.dir === 'rtl' ? 'left' : 'right']: 0 }}
+                className={`absolute ${currentLanguage.dir === 'rtl' ? 'left-0' : 'right-0'} mt-1.5 w-80 bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xl p-3.5 z-50 animate-in fade-in text-xs space-y-3`}
+              >
                 {/* Header: Status Pulse & Tag */}
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
                   <div className="flex items-center gap-2">

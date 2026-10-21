@@ -102,6 +102,7 @@ import { ExtensionSyncSecurityModal } from './ExtensionSyncSecurityModal';
 import { ExtensionMalwareScannerModal } from './ExtensionMalwareScannerModal';
 import { extensionSyncSecurityDevice } from '../services/extensionSyncSecurityDevice';
 import { extensionMalwareScannerDevice } from '../services/extensionMalwareScannerDevice';
+import { siteAutoUpdateService } from '../services/siteAutoUpdateService';
 
 interface AdminExtensionsManagementViewProps {
   currentUser: UserProfile | null;
@@ -592,15 +593,16 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     }
   };
 
-  // 304.2: Força rechecagem de conexão com o Firebase
+  // 304.2 & 3.05.11: Força rechecagem de conexão e verificação em tempo real com o Firebase
   const handleForceRecheckSync = async () => {
     setIsProcessing(true);
     try {
+      const verifyRes = await siteAutoUpdateService.verifyExtensionsOnFirebase('admin_recheck');
       const res = await extensionManager.forceRecheckSync();
-      if (res.success) {
+      if (res.success || verifyRes.success) {
         setFeedback({
           type: 'success',
-          message: 'Conexão e sincronia com o Firebase Firestore verificadas com sucesso!',
+          message: `Verificação em tempo real no Firebase concluída (${verifyRes.latencyMs}ms): ${verifyRes.activeCount} ativas de ${verifyRes.totalExtensions} extensões catalogadas.`,
         });
       } else {
         setFeedback({

@@ -31,6 +31,36 @@ export const EXTENSION_FIREBASE_COLLECTIONS = {
 
 export type SyncStateStatus = 'connected' | 'connecting' | 'offline' | 'error';
 
+/**
+ * Evento emitido quando uma alteração em tempo real é detectada no Firebase (3.05.11).
+ */
+export interface ExtensionRealtimeChangeEvent {
+  id: string;
+  type: 'state_toggled' | 'settings_modified' | 'extension_added' | 'extension_removed';
+  extensionName: string;
+  previousValue?: any;
+  newValue?: any;
+  updatedBy?: string;
+  timestamp: string;
+  isCritical?: boolean;
+}
+
+/**
+ * Resultado da verificação manual ou automática de extensões no Firestore (3.05.11).
+ */
+export interface ExtensionVerificationResult {
+  success: boolean;
+  timestamp: string;
+  reason: string;
+  latencyMs: number;
+  activeCount: number;
+  totalExtensions: number;
+  differencesDetected: number;
+  changesSummary: string[];
+  registryDocExists: boolean;
+  message: string;
+}
+
 function cleanFirestorePayload<T>(obj: T): T {
   if (obj === null || obj === undefined) return null as any;
   if (typeof obj !== 'object') return obj;
@@ -50,7 +80,7 @@ function cleanFirestorePayload<T>(obj: T): T {
 
 /**
  * Serviço de Sincronização de Extensões em Nuvem via Firebase Firestore.
- * Atende às especificações da Versão 3.304:
+ * Atende às especificações da Versão 3.304 e 3.05.11:
  * - 304.1 / 304.2: Sincronia de extensões ativadas/desativadas com Firestore em tempo real.
  * - 304.3: Mapeamento de extensões entre arquivos locais (index.ts) e banco de dados.
  * - 304.3.1: Resolução de extensões órfãs e colisões de nome/função.
@@ -58,6 +88,8 @@ function cleanFirestorePayload<T>(obj: T): T {
  * - 304.4: Sincronização em massa de todas as extensões na nuvem.
  * - 304.5: Porta de entrada para segurança da Wiki mesmo para visitantes não logados.
  * - 304.6: Suporte a camadas de segurança salvas em nuvem.
+ * - 3.05.11: Verificação automática contínua se há mudanças em tempo real nas extensões no Firebase,
+ *   com histórico de eventos, detecção de diferenças (diff) e emissão de eventos/toasts.
  */
 export class FirebaseExtensionSyncService {
   private static instance: FirebaseExtensionSyncService;
@@ -65,7 +97,21 @@ export class FirebaseExtensionSyncService {
   private extensionsUnsubscribe: Unsubscribe | null = null;
   private currentSyncStatus: SyncStateStatus = 'connecting';
   private lastSyncedAt: string | null = null;
+  private lastVerifiedAt: string | null = null;
   private listeners: Set<(status: SyncStateStatus) => void> = new Set();
+
+  // Rastreamento para detecção de diff em tempo real (3.05.11)
+  private lastKnownStates: Record<string, boolean> | null = null;
+  private lastKnownSettings: Record<string, Record<string, any>> | null = null;
+  private lastKnownCloudExtNames: Set<string> = new Set();
+  private isInitialStatesSnapshot: boolean = true;
+  private isInitialExtensionsSnapshot: boolean = true;
+  private changeHistory: ExtensionRealtimeChangeEvent[] = [];
+  private changeListeners: Set<(event: ExtensionRealtimeChangeEvent) => void> = new Set();
+
+  // Callbacks salvos para religar listeners via ensureRealtimeActive()
+  private onStatesUpdateCallback?: (states: Record<string, boolean>, settings?: Record<string, Record<string, any>>) => void;
+  private onCloudExtensionsUpdateCallback?: (extensions: InstalledExtensionMeta[]) => void;
 
   private constructor() {}
 
@@ -84,12 +130,52 @@ export class FirebaseExtensionSyncService {
     return this.lastSyncedAt;
   }
 
+  public getLastVerifiedAt(): string | null {
+    return this.lastVerifiedAt;
+  }
+
+  public getChangeHistory(): ExtensionRealtimeChangeEvent[] {
+    return [...this.changeHistory];
+  }
+
   public subscribeStatus(listener: (status: SyncStateStatus) => void): () => void {
     this.listeners.add(listener);
     listener(this.currentSyncStatus);
     return () => {
       this.listeners.delete(listener);
     };
+  }
+
+  public subscribeChangeEvents(listener: (event: ExtensionRealtimeChangeEvent) => void): () => void {
+    this.changeListeners.add(listener);
+    return () => {
+      this.changeListeners.delete(listener);
+    };
+  }
+
+  private dispatchChangeEvent(event: ExtensionRealtimeChangeEvent): void {
+    this.changeHistory.unshift(event);
+    if (this.changeHistory.length > 50) {
+      this.changeHistory = this.changeHistory.slice(0, 50);
+    }
+
+    this.changeListeners.forEach((l) => {
+      try {
+        l(event);
+      } catch (err) {
+        console.warn('[FirebaseExtensionSyncService] Erro no listener de mudança em tempo real:', err);
+      }
+    });
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(
+          new CustomEvent('wikizero:extension-cloud-changed', {
+            detail: event,
+          })
+        );
+      } catch (_) {}
+    }
   }
 
   private setStatus(status: SyncStateStatus): void {
@@ -131,13 +217,16 @@ export class FirebaseExtensionSyncService {
   }
 
   /**
-   * 304.2 & 304.5: Inicia a escuta em tempo real no Firestore para sincronizar
-   * ativações/desativações e extensões da nuvem mesmo para visitantes não autenticados.
+   * 304.2 & 304.5 & 3.05.11: Inicia a escuta em tempo real no Firestore com detecção
+   * contínua de diferenças entre clientes e disparo de eventos informativos.
    */
   public startRealtimeSync(
     onStatesUpdate: (states: Record<string, boolean>, settings?: Record<string, Record<string, any>>) => void,
     onCloudExtensionsUpdate: (extensions: InstalledExtensionMeta[]) => void
   ): void {
+    this.onStatesUpdateCallback = onStatesUpdate;
+    this.onCloudExtensionsUpdateCallback = onCloudExtensionsUpdate;
+
     const db = getDbSafe();
     if (!db) {
       this.setStatus('offline');
@@ -159,6 +248,11 @@ export class FirebaseExtensionSyncService {
             const data = snap.data() as FirebaseExtensionRegistryDoc;
             if (data && data.states && typeof data.states === 'object') {
               this.lastSyncedAt = data.updatedAt || new Date().toISOString();
+              this.lastVerifiedAt = this.lastSyncedAt;
+              this.lastKnownStates = { ...data.states };
+              if (data.settings) {
+                this.lastKnownSettings = JSON.parse(JSON.stringify(data.settings));
+              }
               this.setStatus('connected');
               onStatesUpdate(data.states, data.settings);
             }
@@ -174,12 +268,63 @@ export class FirebaseExtensionSyncService {
           if (snap.exists()) {
             const data = snap.data() as FirebaseExtensionRegistryDoc;
             if (data && data.states && typeof data.states === 'object') {
+              const previousStates = this.lastKnownStates;
+              const incomingStates = data.states;
+              const incomingSettings = data.settings;
+              const previousSettings = this.lastKnownSettings;
+
               this.lastSyncedAt = data.updatedAt || new Date().toISOString();
+              this.lastVerifiedAt = this.lastSyncedAt;
               this.setStatus('connected');
+
+              // 3.05.11: Detecção de diferenças em tempo real (diffing)
+              if (!this.isInitialStatesSnapshot && previousStates) {
+                for (const [extName, isEnabled] of Object.entries(incomingStates)) {
+                  if (previousStates[extName] !== undefined && previousStates[extName] !== isEnabled) {
+                    const isCritical =
+                      extName.toLowerCase().includes('security') ||
+                      extName.toLowerCase().includes('theme') ||
+                      extName.toLowerCase().includes('guard');
+                    this.dispatchChangeEvent({
+                      id: `change-${Date.now()}-${extName}`,
+                      type: 'state_toggled',
+                      extensionName: extName,
+                      previousValue: previousStates[extName],
+                      newValue: isEnabled,
+                      updatedBy: data.updatedBy || 'Burocrata',
+                      timestamp: data.updatedAt || new Date().toISOString(),
+                      isCritical,
+                    });
+                  }
+                }
+
+                // Verifica mudanças em settings
+                if (incomingSettings && previousSettings) {
+                  for (const [extName, conf] of Object.entries(incomingSettings)) {
+                    if (JSON.stringify(previousSettings[extName]) !== JSON.stringify(conf)) {
+                      this.dispatchChangeEvent({
+                        id: `setting-${Date.now()}-${extName}`,
+                        type: 'settings_modified',
+                        extensionName: extName,
+                        previousValue: previousSettings[extName],
+                        newValue: conf,
+                        updatedBy: data.updatedBy || 'Burocrata',
+                        timestamp: data.updatedAt || new Date().toISOString(),
+                      });
+                    }
+                  }
+                }
+              }
+
+              this.isInitialStatesSnapshot = false;
+              this.lastKnownStates = { ...incomingStates };
+              if (incomingSettings) {
+                this.lastKnownSettings = JSON.parse(JSON.stringify(incomingSettings));
+              }
+
               onStatesUpdate(data.states, data.settings);
             }
           } else {
-            // Documento ainda não inicializado na nuvem
             this.setStatus('connected');
           }
         },
@@ -200,6 +345,8 @@ export class FirebaseExtensionSyncService {
         colRef,
         (snapshot) => {
           const cloudExts: InstalledExtensionMeta[] = [];
+          const currentNames = new Set<string>();
+
           snapshot.forEach((docSnap) => {
             const item = docSnap.data() as InstalledExtensionMeta;
             if (item && item.name) {
@@ -207,10 +354,39 @@ export class FirebaseExtensionSyncService {
                 ...item,
                 syncStatus: 'synced',
               });
+              currentNames.add(item.name);
             }
           });
+
+          // 3.05.11: Detecção de extensões adicionadas/removidas na nuvem
+          if (!this.isInitialExtensionsSnapshot && this.lastKnownCloudExtNames.size > 0) {
+            for (const name of currentNames) {
+              if (!this.lastKnownCloudExtNames.has(name)) {
+                this.dispatchChangeEvent({
+                  id: `add-${Date.now()}-${name}`,
+                  type: 'extension_added',
+                  extensionName: name,
+                  timestamp: new Date().toISOString(),
+                });
+              }
+            }
+            for (const name of this.lastKnownCloudExtNames) {
+              if (!currentNames.has(name)) {
+                this.dispatchChangeEvent({
+                  id: `rem-${Date.now()}-${name}`,
+                  type: 'extension_removed',
+                  extensionName: name,
+                  timestamp: new Date().toISOString(),
+                });
+              }
+            }
+          }
+
+          this.isInitialExtensionsSnapshot = false;
+          this.lastKnownCloudExtNames = currentNames;
           this.setStatus('connected');
           this.lastSyncedAt = new Date().toISOString();
+          this.lastVerifiedAt = this.lastSyncedAt;
           onCloudExtensionsUpdate(cloudExts);
         },
         (error) => {
@@ -221,6 +397,117 @@ export class FirebaseExtensionSyncService {
     } catch (e) {
       console.warn('[FirebaseExtensionSyncService] Erro ao conectar à coleção wiki_extensions:', e);
       this.setStatus('offline');
+    }
+  }
+
+  /**
+   * 3.05.11: Garante que os ouvintes em tempo real estejam ativos.
+   */
+  public ensureRealtimeActive(): void {
+    if (!this.registryUnsubscribe || !this.extensionsUnsubscribe) {
+      if (this.onStatesUpdateCallback && this.onCloudExtensionsUpdateCallback) {
+        this.startRealtimeSync(this.onStatesUpdateCallback, this.onCloudExtensionsUpdateCallback);
+      }
+    }
+  }
+
+  /**
+   * 3.05.11: Realiza uma verificação pontual e rigorosa em tempo real no Firebase Firestore.
+   * Consulta diretamente o documento global_states e a coleção wiki_extensions medindo latência.
+   */
+  public async verifyExtensionsRealtime(reason: string = 'manual'): Promise<ExtensionVerificationResult> {
+    const startTime = performance.now();
+    const timestamp = new Date().toISOString();
+    const db = getDbSafe();
+
+    if (!db) {
+      return {
+        success: false,
+        timestamp,
+        reason,
+        latencyMs: 0,
+        activeCount: 0,
+        totalExtensions: 0,
+        differencesDetected: 0,
+        changesSummary: [],
+        registryDocExists: false,
+        message: 'Banco de dados do Firebase Firestore indisponível no cliente.',
+      };
+    }
+
+    try {
+      const regDocRef = doc(
+        db,
+        EXTENSION_FIREBASE_COLLECTIONS.REGISTRY,
+        EXTENSION_FIREBASE_COLLECTIONS.REGISTRY_DOC
+      );
+      const colRef = collection(db, EXTENSION_FIREBASE_COLLECTIONS.EXTENSIONS);
+
+      // Consulta simultânea para minimizar latência
+      const [regSnap, colSnap] = await Promise.all([
+        getDoc(regDocRef),
+        getDocs(colRef),
+      ]);
+
+      const latencyMs = Math.round(performance.now() - startTime);
+      this.lastVerifiedAt = timestamp;
+      this.setStatus('connected');
+
+      let activeCount = 0;
+      let totalExtensions = 0;
+      const changesSummary: string[] = [];
+      let differencesDetected = 0;
+
+      if (regSnap.exists()) {
+        const data = regSnap.data() as FirebaseExtensionRegistryDoc;
+        if (data.states) {
+          activeCount = Object.values(data.states).filter(Boolean).length;
+          totalExtensions = Object.keys(data.states).length;
+
+          // Compara com os estados conhecidos
+          if (this.lastKnownStates) {
+            for (const [name, isEnabled] of Object.entries(data.states)) {
+              if (this.lastKnownStates[name] !== isEnabled) {
+                differencesDetected++;
+                changesSummary.push(`'${name}': ${this.lastKnownStates[name] ? 'Ativa' : 'Inativa'} -> ${isEnabled ? 'Ativa' : 'Inativa'}`);
+              }
+            }
+          }
+        }
+      }
+
+      const cloudDocsCount = colSnap.size;
+      const message = regSnap.exists()
+        ? `Verificação em tempo real concluída (${latencyMs}ms). ${activeCount} ativas de ${totalExtensions} cadastradas no Firestore (${cloudDocsCount} documentos na nuvem).`
+        : `Registro global ainda não inicializado no Firestore (${cloudDocsCount} documentos individuais encontrados).`;
+
+      return {
+        success: true,
+        timestamp,
+        reason,
+        latencyMs,
+        activeCount,
+        totalExtensions: Math.max(totalExtensions, cloudDocsCount),
+        differencesDetected,
+        changesSummary,
+        registryDocExists: regSnap.exists(),
+        message,
+      };
+    } catch (err: any) {
+      const latencyMs = Math.round(performance.now() - startTime);
+      console.warn('[FirebaseExtensionSyncService] Falha na verificação de extensões no Firestore:', err);
+      return {
+        success: false,
+        timestamp,
+        reason,
+        latencyMs,
+        activeCount: 0,
+        totalExtensions: 0,
+        differencesDetected: 0,
+        changesSummary: [],
+        registryDocExists: false,
+        message: `Falha na verificação com o Firebase: ${err?.message || 'Erro de rede ou permissão'}`,
+      };
     }
   }
 

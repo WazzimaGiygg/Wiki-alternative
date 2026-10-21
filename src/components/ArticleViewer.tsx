@@ -284,9 +284,24 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     return translateArticle(localArticle, currentLanguage.code);
   }, [isUniversalTranslationActive, localArticle, currentLanguage.code, translateArticle]);
 
+  // Reset translatedArticle when language changes or original is requested
+  useEffect(() => {
+    if (currentLanguage.code === 'pt' || showOriginal) {
+      setTranslatedArticle(null);
+      setIsTranslating(false);
+    } else if (translatedArticle && translatedArticle.langCode !== currentLanguage.code) {
+      setTranslatedArticle(null);
+    }
+  }, [currentLanguage.code, showOriginal]);
+
   // Se a Tradução Universal estiver ativa, tenta enriquecer com o motor assíncrono em segundo plano
   useEffect(() => {
-    if (isUniversalTranslationActive && currentLanguage.code !== 'pt' && !translatedArticle) {
+    if (
+      isUniversalTranslationActive &&
+      currentLanguage.code !== 'pt' &&
+      !showOriginal &&
+      (!translatedArticle || translatedArticle.langCode !== currentLanguage.code)
+    ) {
       let isMounted = true;
       setIsTranslating(true);
       translateArticleOnlineAsync(localArticle, currentLanguage.code)
@@ -299,7 +314,9 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             });
           }
         })
-        .catch(() => {})
+        .catch((err) => {
+          console.warn('[ArticleViewer] Falha na tradução assíncrona:', err);
+        })
         .finally(() => {
           if (isMounted) setIsTranslating(false);
         });
@@ -307,16 +324,31 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         isMounted = false;
       };
     }
-  }, [isUniversalTranslationActive, localArticle.id, currentLanguage.code, translateArticleOnlineAsync]);
+  }, [
+    isUniversalTranslationActive,
+    showOriginal,
+    localArticle.id,
+    currentLanguage.code,
+    translateArticleOnlineAsync,
+  ]);
 
-  const currentContent = translatedArticle
-    ? translatedArticle.content
+  // Garante que translatedArticle só é válido se corresponder estritamente ao idioma ativo
+  const validTranslatedArticle =
+    translatedArticle &&
+    translatedArticle.langCode === currentLanguage.code &&
+    currentLanguage.code !== 'pt' &&
+    !showOriginal
+      ? translatedArticle
+      : null;
+
+  const currentContent = validTranslatedArticle
+    ? validTranslatedArticle.content
     : universallyTranslated
     ? (universallyTranslated.descricao || '')
     : (localArticle.descricao || '');
 
-  const currentTitle = translatedArticle
-    ? translatedArticle.title
+  const currentTitle = validTranslatedArticle
+    ? validTranslatedArticle.title
     : universallyTranslated
     ? universallyTranslated.titulo
     : localArticle.titulo;

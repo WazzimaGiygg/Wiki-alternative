@@ -22,6 +22,14 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<string>('All');
 
+  // Reseta filtros toda vez que o modal é aberto para evitar que o usuário fique preso na aba Oriente Médio
+  React.useEffect(() => {
+    if (isOpen) {
+      setSelectedRegion('All');
+      setSearchQuery('');
+    }
+  }, [isOpen]);
+
   const regions = [
     { id: 'All', label: 'Todos' },
     { id: 'Americas', label: 'Américas' },
@@ -32,9 +40,10 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
   ];
 
   const filteredLanguages = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     return ALL_LANGUAGES.filter((lang) => {
-      const matchesRegion = selectedRegion === 'All' || lang.region === selectedRegion;
-      const q = searchQuery.toLowerCase().trim();
+      // Se estiver pesquisando, busca em todas as regiões para nunca travar a busca
+      const matchesRegion = !q ? (selectedRegion === 'All' || lang.region === selectedRegion) : true;
       const matchesSearch =
         !q ||
         lang.name.toLowerCase().includes(q) ||
@@ -52,8 +61,8 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none font-sans">
-      <div className="max-w-2xl w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded shadow-2xl overflow-hidden animate-in zoom-in-95 text-xs flex flex-col max-h-[85vh]">
+    <div dir="ltr" className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none font-sans">
+      <div dir="ltr" className="max-w-2xl w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded shadow-2xl overflow-hidden animate-in zoom-in-95 text-xs flex flex-col max-h-[85vh]">
         {/* Header */}
         <div className="bg-[#1e293b] p-3 text-white flex items-center justify-between border-b border-slate-800 flex-shrink-0">
           <div className="flex items-center gap-2 font-mono">
@@ -69,18 +78,18 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
           </div>
           <button
             onClick={onClose}
-            className="text-white/70 hover:text-white p-1 rounded hover:bg-slate-800 transition"
+            className="text-white/70 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer"
           >
             <X size={16} />
           </button>
         </div>
 
-        {/* 3.05.10.a: Tradução Universal de Todas as Páginas */}
+        {/* 3.05.10.a: Tradução Universal de Todas as Páginas & Retorno Rápido ao Português / Inglês / Espanhol */}
         <div className="p-3 bg-indigo-50/70 dark:bg-indigo-950/40 border-b border-indigo-200 dark:border-indigo-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs flex-shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-base">{currentLanguage.flag}</span>
             <div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="font-bold text-slate-900 dark:text-white">
                   Tradução Universal (3.05.10.a)
                 </span>
@@ -100,12 +109,54 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-center">
+          <div className="flex items-center gap-2 self-end sm:self-center flex-wrap">
+            {currentLanguage.code !== 'pt' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLanguage('pt');
+                  onClose();
+                }}
+                className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] transition cursor-pointer shadow-xs flex items-center gap-1 active:scale-95"
+                title="Voltar instantaneamente para Português (Brasil)"
+              >
+                <span>🇧🇷</span>
+                <span>Voltar ao Português</span>
+              </button>
+            )}
+            {currentLanguage.code !== 'en' && currentLanguage.code !== 'pt' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLanguage('en');
+                  onClose();
+                }}
+                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] transition cursor-pointer shadow-xs flex items-center gap-1 active:scale-95"
+                title="Switch to English"
+              >
+                <span>🇺🇸</span>
+                <span>English</span>
+              </button>
+            )}
+            {currentLanguage.code !== 'es' && currentLanguage.code !== 'pt' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLanguage('es');
+                  onClose();
+                }}
+                className="px-2.5 py-1 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] transition cursor-pointer shadow-xs flex items-center gap-1 active:scale-95"
+                title="Cambiar a Español"
+              >
+                <span>🇪🇸</span>
+                <span>Español</span>
+              </button>
+            )}
             {currentLanguage.code !== 'pt' && (
               <button
                 type="button"
                 onClick={() => toggleShowOriginal()}
-                className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold text-[11px] hover:bg-slate-100 transition cursor-pointer"
+                className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-semibold text-[11px] hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 {showOriginal ? 'Ver Tradução Universal' : 'Ver Original (PT)'}
               </button>
@@ -117,7 +168,7 @@ export const LanguageModal: React.FC<LanguageModalProps> = ({ isOpen, onClose })
                 onChange={(e) => setAutoTranslate(e.target.checked)}
                 className="rounded text-indigo-600 focus:ring-0"
               />
-              <span>Auto-traduzir ao navegar</span>
+              <span>Auto-traduzir</span>
             </label>
           </div>
         </div>

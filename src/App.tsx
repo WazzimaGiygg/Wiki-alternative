@@ -28,6 +28,7 @@ import { BannedOverlay } from './components/BannedOverlay';
 import { LgpdConsentModal } from './components/LgpdConsentModal';
 import { MyDataModal } from './components/MyDataModal';
 import { LanguageModal } from './components/LanguageModal';
+import { useLanguage } from './context/LanguageContext';
 import {
   SecurityView,
   DonationView,
@@ -82,6 +83,7 @@ import { RecentlyReadService } from './utils/recentlyReadService';
 import { StorageService } from './services/storageService';
 import { ExtensionManager } from './core/ExtensionManager';
 import { WikiSecurityGatekeeper } from './components/WikiSecurityGatekeeper';
+import { siteAutoUpdateService } from './services/siteAutoUpdateService';
 import {
   WikiPage,
   WikiArticle,
@@ -101,6 +103,8 @@ import {
 } from './utils/urlRouter';
 
 export default function App() {
+  const { currentLanguage, setLanguage, isRTL } = useLanguage();
+
   // === STATE MANAGEMENT ===
   const [pages, setPages] = useState<WikiPage[]>([]);
   const [articles, setArticles] = useState<WikiArticle[]>([]);
@@ -263,6 +267,8 @@ export default function App() {
   useEffect(() => {
     setIsVectorTabTransitioning(true);
     const timer = setTimeout(() => setIsVectorTabTransitioning(false), 350);
+    // 3.05.11: Registra a navegação no serviço de auto-atualização e verificação de extensões
+    siteAutoUpdateService.recordNavigation(currentView);
     return () => clearTimeout(timer);
   }, [currentView]);
   const [selectedPageUid, setSelectedPageUid] = useState<string | null>(null);
@@ -386,6 +392,46 @@ export default function App() {
         handleNotify(flash, 'success');
       }
     } catch (_) {}
+
+    // 3.05.11: Escuta alterações em tempo real nas extensões originadas do Firebase
+    const handleExtensionCloudChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const cfg = siteAutoUpdateService.getConfig();
+      if (cfg.showExtensionChangeToasts && detail) {
+        if (detail.type === 'state_toggled') {
+          const stateLabel = detail.newValue ? 'ATIVADA' : 'DESATIVADA';
+          handleNotify(
+            `⚡ [Firebase em Tempo Real] Extensão "${detail.extensionName}" foi ${stateLabel} na nuvem por ${detail.updatedBy || 'Burocrata'}.`,
+            detail.newValue ? 'info' : 'warning'
+          );
+        } else if (detail.type === 'settings_modified') {
+          handleNotify(
+            `⚙️ [Firebase em Tempo Real] Parâmetros de "${detail.extensionName}" foram atualizados na nuvem por ${detail.updatedBy || 'Burocrata'}.`,
+            'info'
+          );
+        } else if (detail.type === 'extension_added') {
+          handleNotify(
+            `📦 [Firebase em Tempo Real] Nova extensão "${detail.extensionName}" registrada na nuvem.`,
+            'success'
+          );
+        }
+      }
+
+      if (cfg.autoReloadOnCriticalExtensionChange && detail?.isCritical) {
+        handleNotify(
+          `🔄 [Reinício Automático] Módulo crítico alterado na nuvem. Recarregando em instantes...`,
+          'info'
+        );
+        setTimeout(() => {
+          window.location.reload();
+        }, 1800);
+      }
+    };
+
+    window.addEventListener('wikizero:extension-cloud-changed', handleExtensionCloudChange);
+    return () => {
+      window.removeEventListener('wikizero:extension-cloud-changed', handleExtensionCloudChange);
+    };
   }, []);
 
   // Controls classic Windows 3.1 boot startup animation
@@ -1516,6 +1562,52 @@ export default function App() {
       onOpenLogin={() => handleLoginClick()}
     >
       <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors w-full max-w-full overflow-x-clip">
+      {/* 1.0 RTL Safety Alert Banner (Árabe, Persa, Hebraico) */}
+      {(currentLanguage.dir === 'rtl' || isRTL) && (
+        <aside
+          dir="ltr"
+          id="rtl-language-emergency-bar"
+          aria-label="Aviso de idioma RTL e atalho de retorno"
+          className="sticky top-0 z-50 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 text-slate-950 px-3 py-1.5 shadow-md flex items-center justify-between gap-2 border-b border-amber-700 text-xs font-sans select-none no-print print:hidden"
+        >
+          <div className="flex items-center gap-2 min-w-0 truncate">
+            <span className="text-base shrink-0">{currentLanguage.flag}</span>
+            <span className="truncate">
+              Idioma ativo: <strong>{currentLanguage.nativeName} ({currentLanguage.name})</strong> — Escrita da direita para a esquerda (RTL)
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setLanguage('pt')}
+              className="px-2.5 py-1 rounded bg-blue-700 hover:bg-blue-800 text-white font-bold text-[11px] shadow-xs cursor-pointer flex items-center gap-1 transition active:scale-95"
+              title="Restaurar Português como idioma padrão"
+            >
+              <span>🇧🇷</span>
+              <span>Voltar para Português</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage('en')}
+              className="px-2.5 py-1 rounded bg-white hover:bg-slate-100 text-slate-900 font-bold text-[11px] shadow-xs cursor-pointer flex items-center gap-1 transition active:scale-95"
+              title="Switch to English"
+            >
+              <span>🇺🇸</span>
+              <span>English</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowLanguageModal(true)}
+              className="px-2.5 py-1 rounded bg-slate-900 hover:bg-black text-white font-bold text-[11px] shadow-xs cursor-pointer flex items-center gap-1 transition active:scale-95"
+              title="Abrir seletor com mais de 45 idiomas"
+            >
+              <span>🌐</span>
+              <span className="hidden sm:inline">Todos os Idiomas</span>
+            </button>
+          </div>
+        </aside>
+      )}
+
       {/* 1. Top Header */}
       <Header
         user={user}
@@ -2154,6 +2246,9 @@ export default function App() {
               onOpenNewEditor={() => handleOpenNewEditor()}
               onNavigateHome={() => handleNavigate('hub')}
               onNavigateTo404={(q) => handleShowNotFound(q, 'generic')}
+              onSetTheme={handleSetTheme}
+              onNavigateToUser={handleNavigateToUser}
+              onNavigate={handleNavigate}
             />
           )}
 

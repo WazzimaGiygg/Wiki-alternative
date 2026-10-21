@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { LanguageProvider } from './context/LanguageContext';
 import { ExtensionManager } from './core/ExtensionManager';
 import { StorageService } from './services/storageService';
+import { siteAutoUpdateService } from './services/siteAutoUpdateService';
 import './index.css';
 import './print.css';
 
@@ -20,6 +21,12 @@ ExtensionManager.getInstance().loadExtensionsFromGlob().catch((err) => {
  */
 function showUpdateNotificationToast(onApplyUpdate: () => void): void {
   if (typeof document === 'undefined') return;
+
+  const config = siteAutoUpdateService.getConfig();
+  if (!config.notifyOnUpdateAvailable && config.mode === 'prompt') {
+    // Se o usuário desativou a notificação visual, não exibe o toast
+    return;
+  }
 
   const TOAST_ID = 'wikizero-sw-update-toast';
   if (document.getElementById(TOAST_ID)) return; // Evita duplicação
@@ -63,7 +70,7 @@ function showUpdateNotificationToast(onApplyUpdate: () => void): void {
       <div style="flex: 1; min-width: 0;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
           <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(147,197,253,0.3); padding: 2px 6px; border-radius: 6px;">
-            Atualização Pronta
+            Atualização Pronta (3.05.11)
           </span>
           <span style="font-size: 11px; color: #94a3b8; font-family: monospace;">WikiZero v3.05</span>
         </div>
@@ -117,7 +124,7 @@ function showUpdateNotificationToast(onApplyUpdate: () => void): void {
 
 /**
  * Monitoramento completo do ciclo de vida do Service Worker (PWA)
- * Notifica proativamente o usuário quando houver novas versões prontas para ativação.
+ * Notifica proativamente o usuário conforme o uso e as configurações de auto-atualização (3.05.11).
  */
 function setupServiceWorkerUpdateMonitoring(): void {
   if (typeof window === 'undefined') return;
@@ -147,11 +154,15 @@ function setupServiceWorkerUpdateMonitoring(): void {
       navigator.serviceWorker.register('/sw-push.js', { scope: '/' }).catch(() => {});
     }
 
-    // Expõe método global para permitir testes manuais do banner de atualização mesmo no ambiente dev
+    // Expõe método global conectado ao serviço de auto-atualização
     (window as any).simulateWikiZeroUpdate = () => {
-      showUpdateNotificationToast(() => {
-        window.location.reload();
-      });
+      siteAutoUpdateService.simulateUpdateFound();
+      const cfg = siteAutoUpdateService.getConfig();
+      if (cfg.mode === 'prompt') {
+        showUpdateNotificationToast(() => {
+          siteAutoUpdateService.applyPendingUpdate();
+        });
+      }
     };
     return;
   }
@@ -162,9 +173,13 @@ function setupServiceWorkerUpdateMonitoring(): void {
       immediate: true,
       onNeedRefresh() {
         console.info('[WikiZero SW] 🔔 Nova versão da WikiZero pronta para instalação!');
-        showUpdateNotificationToast(() => {
-          updateSW(true);
-        });
+        const applyFn = () => updateSW(true);
+        siteAutoUpdateService.setUpdateAvailable(applyFn);
+
+        const cfg = siteAutoUpdateService.getConfig();
+        if (cfg.mode === 'prompt') {
+          showUpdateNotificationToast(applyFn);
+        }
       },
       onOfflineReady() {
         console.info('[WikiZero SW] ✅ WikiZero cacheada e pronta para navegação offline.');
@@ -172,12 +187,7 @@ function setupServiceWorkerUpdateMonitoring(): void {
       onRegisteredSW(swScriptUrl, registration) {
         console.info('[WikiZero SW] Service Worker registrado:', swScriptUrl);
         if (registration) {
-          // Checagem periódica a cada 45 minutos enquanto o usuário utiliza a aplicação
-          setInterval(() => {
-            registration
-              .update()
-              .catch((err) => console.debug('[WikiZero SW] Checagem periódica de atualização:', err));
-          }, 45 * 60 * 1000);
+          siteAutoUpdateService.setServiceWorkerRegistration(registration, () => updateSW(true));
         }
       },
       onRegisterError(error) {
@@ -194,16 +204,22 @@ function setupServiceWorkerUpdateMonitoring(): void {
       .getRegistration()
       .then((registration) => {
         if (!registration) return;
+        siteAutoUpdateService.setServiceWorkerRegistration(registration);
 
         // Caso já exista uma versão baixada esperando ativação (waiting)
         if (registration.waiting) {
           console.info('[WikiZero SW] Versão prévia aguardando ativação no Service Worker.');
-          showUpdateNotificationToast(() => {
+          const applyFn = () => {
             if (registration.waiting) {
               registration.waiting.postMessage({ type: 'SKIP_WAITING' });
             }
             window.location.reload();
-          });
+          };
+          siteAutoUpdateService.setUpdateAvailable(applyFn);
+          const cfg = siteAutoUpdateService.getConfig();
+          if (cfg.mode === 'prompt') {
+            showUpdateNotificationToast(applyFn);
+          }
         }
 
         // Monitora quando uma nova versão começar a ser baixada e for instalada
@@ -215,10 +231,15 @@ function setupServiceWorkerUpdateMonitoring(): void {
             // Se foi instalada e já existia um controlador ativo, uma nova versão está disponível!
             if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
               console.info('[WikiZero SW] Nova versão da WikiZero instalada em segundo plano!');
-              showUpdateNotificationToast(() => {
+              const applyFn = () => {
                 installingWorker.postMessage({ type: 'SKIP_WAITING' });
                 window.location.reload();
-              });
+              };
+              siteAutoUpdateService.setUpdateAvailable(applyFn);
+              const cfg = siteAutoUpdateService.getConfig();
+              if (cfg.mode === 'prompt') {
+                showUpdateNotificationToast(applyFn);
+              }
             }
           });
         });
@@ -226,17 +247,6 @@ function setupServiceWorkerUpdateMonitoring(): void {
       .catch((err) => {
         console.debug('[WikiZero SW] Falha ao inspecionar registro de Service Worker nativo:', err);
       });
-
-    // Atualização sob demanda quando a página recuperar foco ou conexão de rede
-    window.addEventListener('online', () => {
-      navigator.serviceWorker.getRegistration().then((reg) => reg?.update()).catch(() => {});
-    });
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        navigator.serviceWorker.getRegistration().then((reg) => reg?.update()).catch(() => {});
-      }
-    });
 
     // Recarrega automaticamente caso o controller seja atualizado por skipWaiting
     let refreshing = false;

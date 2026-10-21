@@ -43,10 +43,24 @@ import {
   ChevronUp,
   ArrowUpRight,
   SlidersHorizontal,
+  Zap,
+  Bell,
+  Wifi,
+  Activity,
 } from 'lucide-react';
 import { SystemUpdateEntry, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
 import { useLanguage } from '../context/LanguageContext';
+import {
+  siteAutoUpdateService,
+  SiteAutoUpdateConfig,
+} from '../services/siteAutoUpdateService';
+import {
+  FirebaseExtensionSyncService,
+  ExtensionVerificationResult,
+  ExtensionRealtimeChangeEvent,
+  SyncStateStatus,
+} from '../services/firebaseExtensionSyncService';
 import {
   GitHubDiffService,
   GitHubCommitSummary,
@@ -78,8 +92,25 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Aba principal ativa: 'github-diffs' (Padrão para inspeção direta de diffs no GitHub) | 'compare-diffs' | 'release-notes'
-  const [activeMainTab, setActiveMainTab] = useState<'github-diffs' | 'compare-diffs' | 'release-notes'>('github-diffs');
+  // Aba principal ativa: 'github-diffs' | 'compare-diffs' | 'release-notes' | 'auto-update-settings' (3.05.11)
+  const [activeMainTab, setActiveMainTab] = useState<'github-diffs' | 'compare-diffs' | 'release-notes' | 'auto-update-settings'>('github-diffs');
+
+  // Estados do Módulo de Auto-Atualização conforme o uso & Firebase em Tempo Real (3.05.11)
+  const [autoUpdateConfig, setAutoUpdateConfig] = useState<SiteAutoUpdateConfig>(() =>
+    siteAutoUpdateService.getConfig()
+  );
+  const [autoUpdateStatus, setAutoUpdateStatus] = useState(() =>
+    siteAutoUpdateService.getStatus()
+  );
+  const [firebaseSyncStatus, setFirebaseSyncStatus] = useState<SyncStateStatus>(() =>
+    FirebaseExtensionSyncService.getInstance().getSyncStatus()
+  );
+  const [firebaseVerificationResult, setFirebaseVerificationResult] = useState<ExtensionVerificationResult | null>(null);
+  const [isVerifyingFirebase, setIsVerifyingFirebase] = useState(false);
+  const [isCheckingSiteUpdate, setIsCheckingSiteUpdate] = useState(false);
+  const [firebaseEvents, setFirebaseEvents] = useState<ExtensionRealtimeChangeEvent[]>(() =>
+    FirebaseExtensionSyncService.getInstance().getChangeHistory()
+  );
 
   // Estados de Commits e Diffs do GitHub (WazzimaGiygg/Wiki-alternative)
   const [gitCommits, setGitCommits] = useState<GitHubCommitSummary[]>([]);
@@ -230,8 +261,70 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
         setUpdates(liveUpdates);
       }
     });
-    return () => unsub();
+
+    // 3.05.11: Assinatura de configurações e status de auto-atualização e Firebase
+    const unsubAutoUpdateConfig = siteAutoUpdateService.subscribeConfig((cfg) => {
+      setAutoUpdateConfig(cfg);
+    });
+
+    const unsubAutoUpdateStatus = siteAutoUpdateService.subscribeStatus((st) => {
+      setAutoUpdateStatus(st);
+    });
+
+    const unsubFirebase = FirebaseExtensionSyncService.getInstance().subscribeStatus((st) => {
+      setFirebaseSyncStatus(st);
+    });
+
+    const unsubChangeEvents = FirebaseExtensionSyncService.getInstance().subscribeChangeEvents(() => {
+      setFirebaseEvents(FirebaseExtensionSyncService.getInstance().getChangeHistory());
+    });
+
+    return () => {
+      unsub();
+      unsubAutoUpdateConfig();
+      unsubAutoUpdateStatus();
+      unsubFirebase();
+      unsubChangeEvents();
+    };
   }, []);
+
+  // 3.05.11: Manipuladores para configuração de Auto-Atualização e Firebase
+  const handleUpdateConfig = (patch: Partial<SiteAutoUpdateConfig>) => {
+    const updated = siteAutoUpdateService.updateConfig(patch);
+    setAutoUpdateConfig(updated);
+    showToast('Configuração de auto-atualização atualizada com sucesso.');
+  };
+
+  const handleCheckSiteUpdateNow = async () => {
+    setIsCheckingSiteUpdate(true);
+    try {
+      const res = await siteAutoUpdateService.checkForUpdates('manual');
+      showToast(res.message);
+    } catch (err: any) {
+      showToast(`Erro ao checar atualizações: ${err?.message || 'Falha de rede'}`);
+    } finally {
+      setIsCheckingSiteUpdate(false);
+    }
+  };
+
+  const handleVerifyFirebaseNow = async () => {
+    setIsVerifyingFirebase(true);
+    try {
+      const res = await siteAutoUpdateService.verifyExtensionsOnFirebase('manual_dashboard');
+      setFirebaseVerificationResult(res);
+      setFirebaseEvents(FirebaseExtensionSyncService.getInstance().getChangeHistory());
+      showToast(res.message);
+    } catch (err: any) {
+      showToast(`Erro na verificação do Firebase: ${err?.message || 'Falha'}`);
+    } finally {
+      setIsVerifyingFirebase(false);
+    }
+  };
+
+  const handleSimulateUpdateNow = () => {
+    siteAutoUpdateService.simulateUpdateFound();
+    showToast('Simulação de atualização disparada! Veja o banner/toast de notificação na tela.');
+  };
 
   const toggleCommitDiff = async (sha: string) => {
     const willOpen = !expandedCommitShas[sha];
@@ -816,6 +909,27 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
             }`}
           >
             {updates.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveMainTab('auto-update-settings')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition whitespace-nowrap ${
+            activeMainTab === 'auto-update-settings'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+          }`}
+        >
+          <Zap size={16} />
+          <span>Auto-Atualização & Firebase</span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+              activeMainTab === 'auto-update-settings'
+                ? 'bg-white/20 text-white'
+                : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300/40'
+            }`}
+          >
+            v3.05.11
           </span>
         </button>
       </div>
@@ -1555,6 +1669,486 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* ABA 4: AUTO-ATUALIZAÇÃO CONFORME O USO & FIREBASE EM TEMPO REAL (3.05.11)  */}
+      {/* ========================================================================= */}
+      {activeMainTab === 'auto-update-settings' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Header Banner do Módulo 3.05.11 */}
+          <div className="bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl border border-blue-500/30 relative overflow-hidden">
+            <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2 max-w-2xl">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-1 rounded-md bg-blue-500/20 text-blue-200 border border-blue-400/30 font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <Zap size={13} className="text-amber-400" />
+                    Requisito 3.05.11
+                  </span>
+                  <span className="px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 font-mono text-xs font-semibold">
+                    Service Worker & Firestore Real-Time
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold font-serif-heading tracking-tight">
+                  Auto-Atualização Conforme o Uso & Extensões em Tempo Real
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  Gerencie a frequência e o modo de aplicação de novas versões do site e do PWA baseados na atividade do usuário,
+                  além de monitorar e verificar mudanças instantâneas nos módulos e extensões armazenados no Firebase Firestore.
+                </p>
+              </div>
+
+              {/* Botões de Ação Imediata */}
+              <div className="flex flex-wrap sm:flex-nowrap lg:flex-col gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleCheckSiteUpdateNow}
+                  disabled={isCheckingSiteUpdate}
+                  className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-60"
+                >
+                  <RefreshCw size={14} className={isCheckingSiteUpdate ? 'animate-spin' : ''} />
+                  <span>{isCheckingSiteUpdate ? 'Checando Versão...' : 'Checar Atualização do Site'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleVerifyFirebaseNow}
+                  disabled={isVerifyingFirebase}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  <Activity size={14} className={isVerifyingFirebase ? 'animate-spin text-amber-400' : 'text-emerald-400'} />
+                  <span>{isVerifyingFirebase ? 'Consultando Firebase...' : 'Verificar Extensões no Firebase'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSimulateUpdateNow}
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 border border-white/20 font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                  title="Dispara a simulação de uma atualização recém-baixada para testar o toast de notificação"
+                >
+                  <Sparkles size={14} className="text-amber-300" />
+                  <span>Simular Atualização (Teste UI)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Status Bar Rápido */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-white/10 text-xs">
+              <div>
+                <span className="text-slate-400 text-[11px] block">Modo de Auto-Atualização:</span>
+                <span className="font-semibold text-white capitalize font-mono">
+                  {autoUpdateConfig.mode === 'prompt' ? 'Perguntar (Toast)' : autoUpdateConfig.mode === 'silent_on_idle' ? 'Silencioso no Ócio' : 'Imediato'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 text-[11px] block">Status do Usuário:</span>
+                <span className={`font-semibold font-mono flex items-center gap-1.5 ${autoUpdateStatus.isIdle ? 'text-amber-300' : 'text-emerald-300'}`}>
+                  <span className={`w-2 h-2 rounded-full ${autoUpdateStatus.isIdle ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'}`} />
+                  {autoUpdateStatus.isIdle ? 'Ocioso (Inativo)' : 'Ativo Navegando'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 text-[11px] block">Conexão com Firestore:</span>
+                <span className={`font-semibold font-mono flex items-center gap-1.5 ${firebaseSyncStatus === 'connected' ? 'text-emerald-300' : firebaseSyncStatus === 'connecting' ? 'text-blue-300' : 'text-rose-300'}`}>
+                  <span className={`w-2 h-2 rounded-full ${firebaseSyncStatus === 'connected' ? 'bg-emerald-400 animate-ping' : 'bg-rose-400'}`} />
+                  {firebaseSyncStatus === 'connected' ? 'Tempo Real Ativo' : firebaseSyncStatus === 'connecting' ? 'Conectando...' : 'Desconectado'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 text-[11px] block">Checagens nesta Sessão:</span>
+                <span className="font-semibold text-white font-mono">
+                  {autoUpdateStatus.checksCount} verificações
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* SEÇÃO 1: CONFIGURAÇÃO DE AUTO-ATUALIZAÇÃO CONFORME O USO DO SITE */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                    <RefreshCw size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                      Auto-Atualização Conforme o Uso
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Políticas de checagem do Service Worker e PWA
+                    </p>
+                  </div>
+                </div>
+
+                {/* Alternador Principal */}
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoUpdateConfig.enabled}
+                    onChange={(e) => handleUpdateConfig({ enabled: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* Modos de Aplicação da Atualização */}
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                  Modo de Aplicação da Atualização:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {/* Modo Prompt */}
+                  <div
+                    onClick={() => handleUpdateConfig({ mode: 'prompt' })}
+                    className={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+                      autoUpdateConfig.mode === 'prompt'
+                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs">Perguntar</span>
+                        <Bell size={14} className={autoUpdateConfig.mode === 'prompt' ? 'text-blue-600' : 'text-slate-400'} />
+                      </div>
+                      <p className="text-[11px] leading-tight text-slate-500 dark:text-slate-400">
+                        Exibe banner flutuante para você decidir o momento de reiniciar.
+                      </p>
+                    </div>
+                    {autoUpdateConfig.mode === 'prompt' && (
+                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-1">
+                        <Check size={11} /> Selecionado
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Modo Silent on Idle */}
+                  <div
+                    onClick={() => handleUpdateConfig({ mode: 'silent_on_idle' })}
+                    className={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+                      autoUpdateConfig.mode === 'silent_on_idle'
+                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs">No Ócio</span>
+                        <Clock size={14} className={autoUpdateConfig.mode === 'silent_on_idle' ? 'text-blue-600' : 'text-slate-400'} />
+                      </div>
+                      <p className="text-[11px] leading-tight text-slate-500 dark:text-slate-400">
+                        Atualiza silenciosamente quando você parar de interagir com o site.
+                      </p>
+                    </div>
+                    {autoUpdateConfig.mode === 'silent_on_idle' && (
+                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-1">
+                        <Check size={11} /> Selecionado
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Modo Immediate */}
+                  <div
+                    onClick={() => handleUpdateConfig({ mode: 'immediate' })}
+                    className={`p-3 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+                      autoUpdateConfig.mode === 'immediate'
+                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-200 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs">Imediato</span>
+                        <Zap size={14} className={autoUpdateConfig.mode === 'immediate' ? 'text-blue-600' : 'text-slate-400'} />
+                      </div>
+                      <p className="text-[11px] leading-tight text-slate-500 dark:text-slate-400">
+                        Recarrega e aplica a nova versão no instante exato em que for baixada.
+                      </p>
+                    </div>
+                    {autoUpdateConfig.mode === 'immediate' && (
+                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-1">
+                        <Check size={11} /> Selecionado
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Gatilhos Inteligentes Baseados no Uso */}
+              <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                  Gatilhos de Verificação Inteligente:
+                </label>
+                
+                <div className="space-y-2 text-xs">
+                  <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                    <span className="text-slate-800 dark:text-slate-200 font-medium">
+                      Verificar ao navegar entre artigos e páginas
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={autoUpdateConfig.checkOnNavigation}
+                      onChange={(e) => handleUpdateConfig({ checkOnNavigation: e.target.checked })}
+                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                    <span className="text-slate-800 dark:text-slate-200 font-medium">
+                      Verificar ao focar ou retornar para a aba da enciclopédia
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={autoUpdateConfig.checkOnTabFocus}
+                      onChange={(e) => handleUpdateConfig({ checkOnTabFocus: e.target.checked })}
+                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                    <span className="text-slate-800 dark:text-slate-200 font-medium">
+                      Verificar ao restabelecer a conexão de rede (online)
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={autoUpdateConfig.checkOnOnline}
+                      onChange={(e) => handleUpdateConfig({ checkOnOnline: e.target.checked })}
+                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                    <span className="text-slate-800 dark:text-slate-200 font-medium">
+                      Exibir notificação visual flutuante quando nova versão estiver pronta
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={autoUpdateConfig.notifyOnUpdateAvailable}
+                      onChange={(e) => handleUpdateConfig({ notifyOnUpdateAvailable: e.target.checked })}
+                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Ajustes de Intervalo e Ociosidade */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Intervalo Durante Uso Ativo:
+                  </label>
+                  <select
+                    value={autoUpdateConfig.checkIntervalMinutes}
+                    onChange={(e) => handleUpdateConfig({ checkIntervalMinutes: Number(e.target.value) })}
+                    className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={5}>A cada 5 minutos (Uso Intensivo)</option>
+                    <option value={10}>A cada 10 minutos</option>
+                    <option value={15}>A cada 15 minutos (Recomendado)</option>
+                    <option value={30}>A cada 30 minutos</option>
+                    <option value={60}>A cada 1 hora</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Limiar de Ociosidade (Modo Silencioso):
+                  </label>
+                  <select
+                    value={autoUpdateConfig.idleThresholdSeconds}
+                    onChange={(e) => handleUpdateConfig({ idleThresholdSeconds: Number(e.target.value) })}
+                    className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={30}>30 segundos sem atividade</option>
+                    <option value={60}>60 segundos (1 minuto - Padrão)</option>
+                    <option value={120}>120 segundos (2 minutos)</option>
+                    <option value={300}>300 segundos (5 minutos)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* SEÇÃO 2: VERIFICAÇÃO AUTOMÁTICA EM TEMPO REAL DE EXTENSÕES NO FIREBASE */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-5 flex flex-col justify-between">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                      <Database size={18} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                        Extensões no Firebase Firestore
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Monitoramento contínuo de coleções em tempo real
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Alternador de Escuta Contínua */}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoUpdateConfig.realtimeExtensionsSyncEnabled}
+                      onChange={(e) => handleUpdateConfig({ realtimeExtensionsSyncEnabled: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-600"></div>
+                  </label>
+                </div>
+
+                {/* Gatilhos de Verificação de Extensões */}
+                <div className="space-y-3">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
+                    Gatilhos de Verificação das Extensões:
+                  </label>
+
+                  <div className="space-y-2 text-xs">
+                    <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                      <span className="text-slate-800 dark:text-slate-200 font-medium">
+                        Re-verificar extensões no Firebase ao navegar na enciclopédia
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={autoUpdateConfig.verifyExtensionsOnNavigation}
+                        onChange={(e) => handleUpdateConfig({ verifyExtensionsOnNavigation: e.target.checked })}
+                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                      <span className="text-slate-800 dark:text-slate-200 font-medium">
+                        Re-verificar extensões ao retornar ou focar na aba
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={autoUpdateConfig.verifyExtensionsOnTabFocus}
+                        onChange={(e) => handleUpdateConfig({ verifyExtensionsOnTabFocus: e.target.checked })}
+                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                      <span className="text-slate-800 dark:text-slate-200 font-medium">
+                        Exibir toasts imediatos quando extensões forem ativadas/alteradas na nuvem
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={autoUpdateConfig.showExtensionChangeToasts}
+                        onChange={(e) => handleUpdateConfig({ showExtensionChangeToasts: e.target.checked })}
+                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">
+                      <span className="text-slate-800 dark:text-slate-200 font-medium">
+                        Recarregar automaticamente se extensão crítica (tema/segurança) mudar
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={autoUpdateConfig.autoReloadOnCriticalExtensionChange}
+                        onChange={(e) => handleUpdateConfig({ autoReloadOnCriticalExtensionChange: e.target.checked })}
+                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Resultado da Última Verificação Manual/Automática */}
+                {firebaseVerificationResult && (
+                  <div className="bg-slate-50 dark:bg-slate-800/80 rounded-xl p-3.5 border border-slate-200 dark:border-slate-700 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <CheckCircle2 size={13} className="text-emerald-500" />
+                        Última Verificação ao Vivo:
+                      </span>
+                      <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                        Latência: {firebaseVerificationResult.latencyMs}ms
+                      </span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                      {firebaseVerificationResult.message}
+                    </p>
+                    {firebaseVerificationResult.changesSummary.length > 0 && (
+                      <div className="space-y-1 pt-1 border-t border-slate-200 dark:border-slate-700">
+                        <span className="font-bold text-[10px] text-amber-600 dark:text-amber-400 uppercase">
+                          Diferenças Detectadas ({firebaseVerificationResult.differencesDetected}):
+                        </span>
+                        {firebaseVerificationResult.changesSummary.map((diff, i) => (
+                          <div key={i} className="text-[11px] text-slate-700 dark:text-slate-300 font-mono">
+                            • {diff}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Histórico em Tempo Real de Mudanças nas Extensões */}
+              <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Activity size={13} className="text-blue-500" />
+                    Log de Eventos em Tempo Real ({firebaseEvents.length})
+                  </span>
+                  <span className="text-[10px] text-slate-400">Atualiza instantaneamente</span>
+                </div>
+
+                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                  {firebaseEvents.length === 0 ? (
+                    <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 text-center text-xs text-slate-400">
+                      Nenhuma alteração remota recente detectada nas coleções do Firestore.
+                    </div>
+                  ) : (
+                    firebaseEvents.map((evt) => (
+                      <div
+                        key={evt.id}
+                        className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className={`w-2 h-2 rounded-full shrink-0 ${
+                              evt.type === 'state_toggled'
+                                ? evt.newValue
+                                  ? 'bg-emerald-500'
+                                  : 'bg-rose-500'
+                                : evt.type === 'extension_added'
+                                ? 'bg-blue-500'
+                                : 'bg-amber-500'
+                            }`}
+                          />
+                          <div className="truncate">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              {evt.extensionName}
+                            </span>
+                            <span className="text-slate-500 dark:text-slate-400 ml-1 text-[11px]">
+                              {evt.type === 'state_toggled'
+                                ? evt.newValue ? 'ativada' : 'desativada'
+                                : evt.type === 'settings_modified'
+                                ? 'configuração alterada'
+                                : evt.type === 'extension_added'
+                                ? 'adicionada'
+                                : 'removida'}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-slate-400 shrink-0 ml-2 font-mono">
+                          {new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

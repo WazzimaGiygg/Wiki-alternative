@@ -11,6 +11,7 @@ import { WikiArticle, WikiPage } from '../types';
 interface LanguageContextType {
   currentLanguage: Language;
   setLanguage: (lang: Language | string) => void;
+  resetToDefaultLanguage: () => void;
   t: (key: TranslationKey) => string;
   allLanguages: Language[];
   isRTL: boolean;
@@ -31,6 +32,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType>({
   currentLanguage: DEFAULT_LANGUAGE,
   setLanguage: () => {},
+  resetToDefaultLanguage: () => {},
   t: (key) => key,
   allLanguages: ALL_LANGUAGES,
   isRTL: false,
@@ -56,13 +58,14 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const allowOverride = hooks.applyFilters<boolean>('i18n:allow_user_override', true);
 
       const saved = localStorage.getItem('wikizero_language');
-      if (saved && allowOverride && !forceDefault) {
+      // Se o usuário selecionou um idioma e tem permissão para escolha (allowOverride), respeita sempre a seleção
+      if (saved && allowOverride) {
         return getLanguageByCode(saved);
       }
       if (forceDefault && defaultCode) {
         return getLanguageByCode(defaultCode);
       }
-      if (saved && allowOverride) {
+      if (saved) {
         return getLanguageByCode(saved);
       }
       // Check browser language or configured default
@@ -81,11 +84,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         const hooks = extensionManager.getHooks();
         const defaultCode = hooks.applyFilters<string>('i18n:default_language', 'pt');
-        const forceDefault = hooks.applyFilters<boolean>('i18n:force_default', false);
         const allowOverride = hooks.applyFilters<boolean>('i18n:allow_user_override', true);
         const saved = localStorage.getItem('wikizero_language');
 
-        if (forceDefault || (!allowOverride && saved !== defaultCode)) {
+        // Só reverte compulsoriamente se o Burocrata desativar a permissão do usuário de escolher idiomas
+        if (!allowOverride && saved && saved !== defaultCode) {
           const newLang = getLanguageByCode(defaultCode);
           setCurrentLanguageState(newLang);
           localStorage.setItem('wikizero_language', newLang.code);
@@ -117,19 +120,37 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setCurrentLanguageState(targetLang);
       localStorage.setItem('wikizero_language', targetLang.code);
 
-      // Update document HTML attributes
+      // Sincroniza imediatamente os atributos HTML e direção do documento
+      const direction = targetLang.dir || 'ltr';
       document.documentElement.lang = targetLang.code;
-      document.documentElement.dir = targetLang.dir || 'ltr';
+      document.documentElement.dir = direction;
+      if (document.body) {
+        document.body.dir = direction;
+      }
     } catch (_) {
       const targetLang = typeof lang === 'string' ? getLanguageByCode(lang) : lang;
       setCurrentLanguageState(targetLang);
       localStorage.setItem('wikizero_language', targetLang.code);
+      const direction = targetLang.dir || 'ltr';
+      document.documentElement.lang = targetLang.code;
+      document.documentElement.dir = direction;
+      if (document.body) {
+        document.body.dir = direction;
+      }
     }
   };
 
+  const resetToDefaultLanguage = () => {
+    setLanguage(DEFAULT_LANGUAGE);
+  };
+
   useEffect(() => {
+    const direction = currentLanguage.dir || 'ltr';
     document.documentElement.lang = currentLanguage.code;
-    document.documentElement.dir = currentLanguage.dir || 'ltr';
+    document.documentElement.dir = direction;
+    if (document.body) {
+      document.body.dir = direction;
+    }
   }, [currentLanguage]);
 
   const t = (key: TranslationKey): string => {
@@ -190,6 +211,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       value={{
         currentLanguage,
         setLanguage,
+        resetToDefaultLanguage,
         t,
         allLanguages: ALL_LANGUAGES,
         isRTL,

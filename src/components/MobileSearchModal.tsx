@@ -101,7 +101,7 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Pesquisar na WikiWorldWeb (ex: IA, Brasil, Física)..."
+            placeholder="Busca unificada (User:, Skin:, Diff:, Collection:, ou termo)..."
             className="w-full pl-9 pr-8 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder:text-slate-400"
           />
           <Search size={16} className="text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -117,6 +117,33 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
         </div>
       </div>
 
+      {/* Sector quick tags */}
+      <div className="px-3 py-1.5 bg-slate-100 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs scrollbar-none">
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-0.5">
+          Tags:
+        </span>
+        {[
+          { label: 'User:', hint: 'User: ' },
+          { label: 'Skin:', hint: 'Skin: ' },
+          { label: 'Diff:', hint: 'Diff: ' },
+          { label: 'Collection:', hint: 'Collection: ' },
+          { label: 'Article:', hint: 'Article: ' },
+        ].map((tag) => (
+          <button
+            key={tag.label}
+            type="button"
+            onClick={() => {
+              const clean = query.replace(/^(user|skin|diff|collection|article):\s*/i, '').trim();
+              setQuery(`${tag.hint}${clean}`);
+              inputRef.current?.focus();
+            }}
+            className="px-2 py-0.5 rounded-md font-mono text-[11px] font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-400 shrink-0"
+          >
+            {tag.label}
+          </button>
+        ))}
+      </div>
+
       {/* Search Results / Suggestions List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         {onOpenAdvancedSearch && (
@@ -129,7 +156,7 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
           >
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="text-blue-600 dark:text-blue-400" />
-              <span>Abrir Página de Busca Avançada de Artigos</span>
+              <span>Abrir Página de Busca Unificada Completa</span>
             </div>
             <ChevronRight size={16} />
           </button>
