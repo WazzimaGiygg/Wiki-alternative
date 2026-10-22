@@ -1,95 +1,87 @@
-# Wiki Zero
+# WikiWorldWeb / WikiZero
 
-> O paradigma *Wiki Zero* vs. sistemas tradicionais de documentação colaborativa
+**A Enciclopédia Livre, Rápida e Sem Anúncios**
 
-[![Runtime](https://img.shields.io/badge/runtime-Bun-000000?logo=bun)](https://bun.sh)
-[![Build](https://img.shields.io/badge/build-Vite-646CFF?logo=vite)](https://vitejs.dev)
-[![Lang](https://img.shields.io/badge/lang-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
-[![Backend](https://img.shields.io/badge/backend-Firebase-FFCA28?logo=firebase)](https://firebase.google.com)
-[![Deploy](https://img.shields.io/badge/deploy-Vercel-000000?logo=vercel)](https://vercel.com)
+[![Live Demo](https://img.shields.io/badge/Live-wikizero.wazzimagiygg.com-blue?style=for-the-badge)](https://wikizero.wazzimagiygg.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite)](https://vitejs.dev/)
+[![Firebase](https://img.shields.io/badge/Firebase-Firestore-FFCA28?style=flat-square&logo=firebase)](https://firebase.google.com/)
+[![Gemini](https://img.shields.io/badge/Google-Gemini-4285F4?style=flat-square&logo=google)](https://ai.google.dev/)
 
----
-
-## 📖 Sobre o Projeto
-
-O **Wiki Zero** (referenciado no ecossistema GitHub como `Wiki-alternative`) é uma solução de documentação colaborativa construída sobre o template oficial `google-gemini/aistudio-repository-template`. O projeto adota o "triângulo de eficiência" composto por **TypeScript**, **Vite** e **Bun**, substituindo o Node.js tradicional para garantir maior velocidade de execução tanto em desenvolvimento quanto em produção.
-
-Diferente das ferramentas de wiki tradicionais, o Wiki Zero propõe uma arquitetura *backend-less* e *serverless*, eliminando a necessidade de provisionar ou manter servidores próprios.
+> Uma alternativa moderna, aberta e de alto desempenho à Wikipédia, MediaWiki, Wikidot e Fandom.  
+> Construída para ser leve de configurar, barata de manter e poderosa de usar.
 
 ---
 
-## 🆚 Wiki Zero vs. MediaWiki
+## ✨ Visão Geral
 
-O **MediaWiki** — motor por trás da Wikipédia — é o padrão histórico do setor, mas carrega uma complexidade operacional significativa por depender de uma pilha **LAMP/LEMP** (Linux, Apache/Nginx, MySQL/MariaDB, PHP), exigindo patches de segurança constantes e gerenciamento manual de dependências.
+O **WikiWorldWeb** (também conhecido como **WikiZero**) é uma plataforma de enciclopédia colaborativa de nova geração. Diferente dos sistemas tradicionais baseados em PHP + MySQL, ele adota uma arquitetura **serverless** moderna com:
 
-O Wiki Zero substitui esse modelo por uma persistência de dados descentralizada, oferecendo autonomia através da abstração total da infraestrutura — sem exigir um administrador de sistemas dedicado.
+- **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS
+- **Backend**: Firebase (Authentication + Cloud Firestore)
+- **IA nativa**: Integração profunda com Google Gemini
+- **Runtime**: Bun / Node
+- **Deploy**: Extremamente simples (Vercel, Cloud Run ou qualquer host estático + Firebase)
 
-| Critério | Wiki Zero (Firebase/Vercel) | MediaWiki (Hospedagem Tradicional) |
-|---|---|---|
-| **Runtime Environment** | Bun / Vite | PHP / Apache ou Nginx |
-| **Escalabilidade** | Automática e Nativa (Serverless) | Requer Load Balancers e Config. Manual |
-| **Manutenção de Banco** | Gerenciada (Cloud Firestore) | Manual (MySQL/PostgreSQL) |
-| **Facilidade de Deploy** | CI/CD Contínuo (Vercel/Git) | Complexa (Scripts de migração/Manual) |
-| **Custo de Entrada** | Próximo a Zero (Nível Gratuito) | Elevado (Hospedagem Fixa/Servidor) |
+O resultado é uma wiki que carrega rápido, escala automaticamente, custa quase zero no início e exige manutenção mínima.
 
 ---
 
-## 🔥 Diferencial Firebase
+## 🚀 Principais Diferenciais
 
-A adoção do **Firebase** como backend elimina a fricção de gerenciamento de servidores, permitindo que a equipe de engenharia foque na entrega de valor em vez da manutenção de infraestrutura.
-
-A análise dos arquivos de configuração do projeto revela uma implementação sofisticada:
-
-- **`firestore.rules`** — Segurança declarativa movida para a "borda" (*edge*) do banco de dados, com lógica de autorização tratada nativamente pelo Firebase.
-- **`firebase-blueprint.json`** — Estrutura de dashboard administrativo pré-configurada, permitindo estabelecer a governança da wiki imediatamente após o deploy.
-- **`firebase-applet-config.json`** — Configuração adicional do applet integrado à plataforma.
-
-> A sinergia entre Vite, TypeScript e o runtime Bun redefine a experiência de desenvolvimento, entregando uma aplicação otimizada para carregamento instantâneo.
-
----
-
-## 💰 Eficiência e Custo Total de Propriedade (TCO)
-
-O modelo *pay-per-use*, combinado ao deploy via **Vercel**, resulta em custo total de entrada virtualmente zero, permitindo que os custos escalem proporcionalmente à adoção da ferramenta.
-
-- **MediaWiki:** o custo real está no "custo de oportunidade" e nas horas-homem gastas em *patch management* de PHP e SQL.
-- **Wiki Zero:** essa carga é delegada aos provedores de nuvem (Google e Vercel), mantendo a infraestrutura sempre atualizada e segura.
+| Recurso                        | WikiWorldWeb / WikiZero          | MediaWiki / Wikipédia          |
+|--------------------------------|----------------------------------|--------------------------------|
+| Custo de entrada               | Próximo de zero                  | Servidor + manutenção constante|
+| Configuração inicial           | Minutos                          | Horas / dias                   |
+| Escalabilidade                 | Automática (serverless)          | Manual                         |
+| Integração com IA              | Nativa (Gemini)                  | Quase inexistente              |
+| Conformidade LGPD              | Nativa e profunda                | Via extensões                  |
+| Experiência moderna (PWA)      | Sim                              | Limitada                       |
+| Temas e personalização visual  | Rica e em tempo real             | Via skins                      |
+| Editor                         | Wikitexto em tempo real + IA     | VisualEditor + wikitexto       |
 
 ---
 
-## 🔒 Conformidade e Governança de Dados (LGPD / Marco Civil)
+## 🌟 Funcionalidades Principais
 
-A conformidade legal é tratada como requisito arquitetural, não como um detalhe posterior.
-
-Um ponto técnico de destaque é a **ferramenta de renomeação de usuários** (commit `777d770`). Em bancos NoSQL como o Firestore, manter a consistência de dados ao renomear uma entidade é tecnicamente desafiador devido à natureza desnormalizada dos dados — desafio que o Wiki Zero resolve nativamente.
-
-Essa funcionalidade atende diretamente a:
-
-- **LGPD** (Lei Geral de Proteção de Dados)
-- **Marco Civil da Internet**
-- **Direito ao Esquecimento** e anonimização de dados pessoais
-
-Ter essa capacidade integrada nativamente elimina a dependência de plugins de terceiros para governança de dados.
-
----
-
-## ✅ Recomendações de Uso
-
-| Perfil | Adequação |
-|---|---|
-| **Startups e Scale-ups** | Ideal para baixo custo operacional e escalabilidade imediata |
-| **Equipes de Engenharia** | Perfeito para documentação técnica interna integrada a fluxos Git |
-| **Projetos com Rigor de Compliance** | Recomendado para controle estrito de dados de usuários (LGPD) |
+- **Editor de Wikitexto em tempo real** com validação de citações
+- **Gemini Notebook** — assistente de IA integrado para criação e melhoria de conteúdo
+- **Histórico de navegação estilo navegador** (Voltar / Avançar por UID)
+- **Sistema de Extensões** com scanner de malware e quarentena
+- **Wiki dos Livros** e **Wiki Universitário** (integração com fontes acadêmicas)
+- **Jornal WazzimaGiygg** — edição digital e notícias em tempo real
+- **Temas visuais** personalizáveis
+- **Sincronização Cloud Firestore** em tempo real
+- **Sistema de reputação e checklist diário** (gamificação)
+- **Central de Dados (Meus Dados)** com portabilidade, retificação e anonimização (LGPD)
+- **Verificação de idade** e conformidade com a Lei nº 13.709/2018
+- **Mensagens diretas** em tempo real
+- **PWA completo** (instalável, offline-capable)
+- **Tradução universal** (i18n)
+- **Ferramentas administrativas avançadas** (usuários, extensões, remoção de dados, etc.)
 
 ---
 
-## 🚀 Conclusão
+## 🛠 Stack Tecnológica
 
-O Wiki Zero integra a robustez do **TypeScript** com a agilidade do **Bun** e a escalabilidade do **Firebase**, propondo-se como uma alternativa moderna, *serverless* e economicamente vantajosa frente aos sistemas de wiki tradicionais — priorizando eficiência, segurança declarativa e performance.
+- **Frontend**: React 19, TypeScript, Vite 6, Tailwind CSS 4, Lucide React, Motion
+- **Backend / Dados**: Firebase Authentication + Cloud Firestore
+- **IA**: `@google/genai` (Gemini)
+- **Servidor**: Express + tsx (desenvolvimento)
+- **PWA**: vite-plugin-pwa
+- **Outros**: jsPDF, html2canvas, JSZip, Recharts, canvas-confetti
 
 ---
 
-## 📚 Fonte
+## 📦 Como Rodar Localmente
 
-Conteúdo adaptado do artigo original:
-**"Análise Comparativa de Plataformas Wiki: O Paradigma Wiki Zero vs. Sistemas Tradicionais"** — [WazzimaGiygg](https://wazzimagiyggcore.blogspot.com/2026/08/analise-comparativa-de-plataformas-wiki.html), agosto de 2026.
+### Pré-requisitos
+- Node.js 20+ ou **Bun** (recomendado)
+- Conta no Firebase
+- Chave da API Gemini (Google AI Studio)
+
+### 1. Clone o repositório
+```bash
+git clone https://github.com/WazzimaGiygg/Wiki-alternative.git
+cd Wiki-alternative
