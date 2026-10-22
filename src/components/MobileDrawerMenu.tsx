@@ -40,6 +40,8 @@ import {
   Check,
   Calculator,
   Puzzle,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { UserProfile, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -50,6 +52,7 @@ import {
   getSupportTicketsUrl,
   getSupportTicketsButtonLabel,
 } from '../utils/linkUtils';
+import { getFriendlyUidLabel } from '../utils/urlRouter';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 
 interface MobileDrawerMenuProps {
@@ -71,6 +74,14 @@ interface MobileDrawerMenuProps {
   onCreatePageClick: () => void;
   onLoginClick: () => void;
   onLogoutClick: () => void;
+  // 3.05.6.d: Navegação por UID
+  canGoBack?: boolean;
+  canGoForward?: boolean;
+  previousUid?: string | null;
+  nextUid?: string | null;
+  currentUid?: string | null;
+  onGoBack?: () => void;
+  onGoForward?: () => void;
 }
 
 export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
@@ -92,6 +103,13 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
   onCreatePageClick,
   onLoginClick,
   onLogoutClick,
+  canGoBack = false,
+  canGoForward = false,
+  previousUid = null,
+  nextUid = null,
+  currentUid = null,
+  onGoBack,
+  onGoForward,
 }) => {
   const { currentLanguage, t } = useLanguage();
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
@@ -182,6 +200,49 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
               <span>Entrar / Cadastrar-se</span>
             </button>
           )}
+        </div>
+
+        {/* 3.05.6.d: Navegação por UID no Histórico (Retornar e Avançar) */}
+        <div className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 shrink-0">Histórico UID:</span>
+            {currentUid && (
+              <span
+                className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 truncate max-w-[110px]"
+                title={`UID: ${currentUid}`}
+              >
+                {currentUid}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                onGoBack?.();
+                onClose();
+              }}
+              disabled={!canGoBack}
+              className="px-2 py-1 rounded text-xs font-semibold bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-600 disabled:opacity-40 flex items-center gap-1 active:scale-95 transition shadow-2xs cursor-pointer"
+              title={canGoBack ? `Retornar para: ${previousUid ? getFriendlyUidLabel(previousUid) : 'Anterior'}` : 'Início do histórico'}
+            >
+              <ArrowLeft size={12} />
+              <span>Voltar</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onGoForward?.();
+                onClose();
+              }}
+              disabled={!canGoForward}
+              className="px-2 py-1 rounded text-xs font-semibold bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-600 disabled:opacity-40 flex items-center gap-1 active:scale-95 transition shadow-2xs cursor-pointer"
+              title={canGoForward ? `Avançar para: ${nextUid ? getFriendlyUidLabel(nextUid) : 'Seguinte'}` : 'Fim do histórico'}
+            >
+              <span>Avançar</span>
+              <ArrowRight size={12} />
+            </button>
+          </div>
         </div>
 
         {/* Quick Mode Switches (Mobile vs Desktop & Theme & Language) */}

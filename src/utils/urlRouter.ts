@@ -100,15 +100,80 @@ export function setBrowserUid(uid: string | null, mode: 'push' | 'replace' = 're
     const currentRelative = window.location.pathname + window.location.search + window.location.hash;
 
     if (newRelativePathQuery !== currentRelative) {
+      const historyPayload = { uid: uid || 'hub', timestamp: Date.now() };
       if (mode === 'push') {
-        window.history.pushState({ uid }, '', newRelativePathQuery);
+        window.history.pushState(historyPayload, '', newRelativePathQuery);
       } else {
-        window.history.replaceState({ uid }, '', newRelativePathQuery);
+        window.history.replaceState(historyPayload, '', newRelativePathQuery);
       }
     }
   } catch (err) {
     console.warn('Error setting browser UID in URL:', err);
   }
+}
+
+/**
+ * Returns a human-friendly label for any UID (for tooltips and UI badges)
+ */
+export function getFriendlyUidLabel(uid: string | null | undefined): string {
+  if (!uid || uid === 'hub' || uid === 'home') return 'Página Principal';
+
+  const clean = uid.trim();
+  if (clean.startsWith('Special:')) {
+    const specialPart = clean.substring(8);
+    const map: Record<string, string> = {
+      RecentChanges: 'Mudanças Recentes',
+      Tools: 'Ferramentas',
+      SpecialPages: 'Páginas Especiais',
+      Watchlist: 'Páginas Vigiadas',
+      SiteUpdates: 'Atualizações',
+      Appearance: 'Aparência e Temas',
+      Library: 'Wiki dos Livros',
+      Academic: 'Wiki Universitário',
+      News: 'Jornal de Notícias',
+      AdminDashboard: 'Painel Administrativo',
+      ListUsers: 'Lista de Usuários',
+      Bureaucrats: 'Conselho de Burocratas',
+      Extensions: 'Extensões',
+      CheckUser: 'CheckUser',
+      Arbitration: 'Comitê de Arbitragem',
+      UCoC: 'Código de Conduta',
+      AdminFirebase: 'Console Firebase',
+      VpnChecker: 'Segurança & VPN',
+      Privacy: 'Dossiê & Privacidade',
+      Terms: 'Termos de Uso',
+      EditingEthics: 'Ética Editorial',
+      OtherRules: 'Outras Regras',
+      Security: 'Segurança',
+      Donation: 'Doações',
+      MyData: 'Meus Dados (LGPD)',
+      Beta: 'Modo Beta',
+      Offline: 'Modo Offline',
+      Comparison: 'Comparativo',
+      WazzimaGiygg: 'WazzimaGiygg',
+      CreatePage: 'Criar Coleção',
+      Editor: 'Editor Wikitext',
+      NotFound: 'Não Encontrada',
+      ListFiles: 'Galeria de Arquivos',
+      Upload: 'Carregar Arquivo',
+    };
+    return map[specialPart] || `Especial: ${specialPart}`;
+  }
+
+  if (clean.startsWith('User:')) {
+    return `Usuário: ${clean.substring(5).replace(/[+_]/g, ' ')}`;
+  }
+  if (clean.startsWith('File:')) {
+    return `Arquivo: ${clean.substring(5)}`;
+  }
+  if (clean.startsWith('Page:')) {
+    return `Coleção: ${clean.substring(5)}`;
+  }
+  if (clean.startsWith('Edit:')) {
+    return `Editar: ${clean.substring(5)}`;
+  }
+
+  return clean;
 }
 
 /**

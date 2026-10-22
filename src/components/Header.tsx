@@ -37,6 +37,8 @@ import {
   Minimize,
   HelpCircle,
   Trophy,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -47,6 +49,7 @@ import { ExtensionManager } from '../core/ExtensionManager';
 import { PushNotificationService, PushPreferences } from '../services/pushNotificationService';
 import { UserChatService } from '../services/userChatService';
 import { fullscreenManager } from '../utils/fullscreenManager';
+import { getFriendlyUidLabel, buildUidPermalink } from '../utils/urlRouter';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -82,6 +85,15 @@ interface HeaderProps {
   onOpenChecklist?: () => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  // 3.05.6.d: Navegação por UID no URL da Wiki (Retornar e Avançar)
+  canGoBack?: boolean;
+  canGoForward?: boolean;
+  previousUid?: string | null;
+  nextUid?: string | null;
+  currentUid?: string | null;
+  onGoBack?: () => void;
+  onGoForward?: () => void;
+  onNotify?: (message: string, type: 'info' | 'warning' | 'success') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -118,6 +130,14 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenChecklist,
   isFullscreen: propIsFullscreen,
   onToggleFullscreen,
+  canGoBack = false,
+  canGoForward = false,
+  previousUid = null,
+  nextUid = null,
+  currentUid = null,
+  onGoBack,
+  onGoForward,
+  onNotify,
 }) => {
   const { currentLanguage, setLanguage, t, allLanguages } = useLanguage();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -1408,6 +1428,103 @@ export const Header: React.FC<HeaderProps> = ({
                 </p>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* 3.05.6.d: Navegação por UID no URL da Wiki (Retornar e Avançar) */}
+        <div className="flex items-center gap-1 shrink-0">
+          {/* Botão Retornar (Voltar no Histórico por UID) */}
+          <button
+            id="btn-nav-uid-back"
+            type="button"
+            onClick={onGoBack}
+            disabled={!canGoBack}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition cursor-pointer select-none border ${
+              isWin95
+                ? 'win95-button text-[11px] disabled:opacity-40'
+                : isWinXP
+                ? 'winxp-button text-[11px] disabled:opacity-40'
+                : isWin7
+                ? 'win7-button text-[11px] disabled:opacity-40'
+                : isGoogleTheme
+                ? 'rounded-full px-2.5 py-1 bg-white dark:bg-[#303134] text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-[#3c4043] disabled:opacity-40 shadow-2xs'
+                : isNokia
+                ? 'border-2 border-[#1f281b] bg-[#b4c995] text-[#1f281b] font-mono text-[10px] disabled:opacity-40'
+                : isHalfLife
+                ? 'border border-[#ff9900]/50 bg-[#121512] text-[#ff9900] font-mono text-[10px] disabled:opacity-40'
+                : isMinecraft
+                ? 'minecraft-btn text-[10px] disabled:opacity-40'
+                : isRoblox
+                ? 'roblox-btn text-[10px] disabled:opacity-40'
+                : canGoBack
+                ? 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 active:scale-95 shadow-2xs'
+                : 'opacity-40 cursor-not-allowed bg-slate-50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800'
+            }`}
+            title={
+              canGoBack
+                ? `Retornar para: ${previousUid ? getFriendlyUidLabel(previousUid) : 'Página Anterior'} (${previousUid || ''})`
+                : 'Início do histórico (Sem UID anterior)'
+            }
+            aria-label="Retornar para a página anterior no histórico por UID"
+          >
+            <ArrowLeft size={13} className="shrink-0" />
+            <span className="hidden sm:inline">Retornar</span>
+          </button>
+
+          {/* Botão Avançar no Histórico por UID */}
+          <button
+            id="btn-nav-uid-forward"
+            type="button"
+            onClick={onGoForward}
+            disabled={!canGoForward}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition cursor-pointer select-none border ${
+              isWin95
+                ? 'win95-button text-[11px] disabled:opacity-40'
+                : isWinXP
+                ? 'winxp-button text-[11px] disabled:opacity-40'
+                : isWin7
+                ? 'win7-button text-[11px] disabled:opacity-40'
+                : isGoogleTheme
+                ? 'rounded-full px-2.5 py-1 bg-white dark:bg-[#303134] text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-[#3c4043] disabled:opacity-40 shadow-2xs'
+                : isNokia
+                ? 'border-2 border-[#1f281b] bg-[#b4c995] text-[#1f281b] font-mono text-[10px] disabled:opacity-40'
+                : isHalfLife
+                ? 'border border-[#ff9900]/50 bg-[#121512] text-[#ff9900] font-mono text-[10px] disabled:opacity-40'
+                : isMinecraft
+                ? 'minecraft-btn text-[10px] disabled:opacity-40'
+                : isRoblox
+                ? 'roblox-btn text-[10px] disabled:opacity-40'
+                : canGoForward
+                ? 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 active:scale-95 shadow-2xs'
+                : 'opacity-40 cursor-not-allowed bg-slate-50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800'
+            }`}
+            title={
+              canGoForward
+                ? `Avançar para: ${nextUid ? getFriendlyUidLabel(nextUid) : 'Próxima Página'} (${nextUid || ''})`
+                : 'Fim do histórico (Sem UID posterior)'
+            }
+            aria-label="Avançar para a próxima página no histórico por UID"
+          >
+            <span className="hidden sm:inline">Avançar</span>
+            <ArrowRight size={13} className="shrink-0" />
+          </button>
+
+          {/* Badge Interativo com o UID atual da URL */}
+          {currentUid && (
+            <button
+              id="btn-nav-uid-badge"
+              type="button"
+              onClick={() => {
+                const permalink = buildUidPermalink(currentUid);
+                navigator.clipboard?.writeText(permalink);
+                onNotify?.(`Permalink copiado com sucesso: ?uid=${currentUid}`, 'info');
+              }}
+              className="hidden xl:flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-mono font-medium bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition cursor-pointer max-w-[170px] truncate"
+              title={`UID atual na barra de endereços: ?uid=${currentUid}\nClique para copiar o link permanente (permalink)`}
+            >
+              <span className="text-blue-500 dark:text-blue-400 font-bold shrink-0">UID:</span>
+              <span className="truncate">{currentUid}</span>
+            </button>
           )}
         </div>
 

@@ -100,6 +100,8 @@ import {
   setBrowserUid,
   getCanonicalUid,
   resolveNavigationUid,
+  getFriendlyUidLabel,
+  buildUidPermalink,
 } from './utils/urlRouter';
 
 export default function App() {
@@ -108,6 +110,46 @@ export default function App() {
   // === STATE MANAGEMENT ===
   const [pages, setPages] = useState<WikiPage[]>([]);
   const [articles, setArticles] = useState<WikiArticle[]>([]);
+
+  // 3.05.6.d: Histórico de Navegação e Traversal por UID (Retornar e Avançar)
+  const [uidHistory, setUidHistory] = useState<string[]>(() => {
+    try {
+      const initial = getUidFromUrl();
+      const canonicalInitial = initial || 'hub';
+      const stored = sessionStorage.getItem('wikizero_uid_history');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return [canonicalInitial];
+    } catch (_) {
+      return ['hub'];
+    }
+  });
+
+  const [uidHistoryIndex, setUidHistoryIndex] = useState<number>(() => {
+    try {
+      const stored = sessionStorage.getItem('wikizero_uid_history_index');
+      if (stored !== null) {
+        const idx = parseInt(stored, 10);
+        if (!isNaN(idx) && idx >= 0) {
+          return idx;
+        }
+      }
+    } catch (_) {}
+    return 0;
+  });
+
+  const isTraversingHistoryRef = React.useRef<boolean>(false);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('wikizero_uid_history', JSON.stringify(uidHistory));
+      sessionStorage.setItem('wikizero_uid_history_index', uidHistoryIndex.toString());
+    } catch (_) {}
+  }, [uidHistory, uidHistoryIndex]);
 
   // Acervo enciclopédico consolidado (combina artigos persistidos e artigos editoriais de referência)
   const allEncyclopediaArticles = useMemo(() => {
@@ -862,15 +904,43 @@ export default function App() {
     };
   }, []);
 
-  // Listen to browser Back/Forward (popstate) and hash changes for deep linking
+  // 3.05.6.d: Escuta eventos de retorno/avanço do navegador (popstate) e navegação por UID
   useEffect(() => {
     const handleUrlChange = () => {
-      const uid = getUidFromUrl();
-      if (uid) {
-        handleNavigateByUid(uid, 'replace');
-      } else {
-        setCurrentView('hub');
+      // Se houver edições não salvas no editor, cancela a saída e exibe aviso
+      if (currentView === 'editor' && editorHasUnsavedChanges) {
+        window.history.pushState(null, '', window.location.href);
+        setShowExitEditorConfirmModal(true);
+        return;
       }
+
+      const uid = getUidFromUrl() || 'hub';
+      isTraversingHistoryRef.current = true;
+
+      setUidHistory((prevHistory) => {
+        // Se o usuário retornou (passo anterior no histórico)
+        if (uidHistoryIndex > 0 && prevHistory[uidHistoryIndex - 1] === uid) {
+          setUidHistoryIndex(uidHistoryIndex - 1);
+          return prevHistory;
+        }
+        // Se o usuário avançou (passo seguinte no histórico)
+        if (uidHistoryIndex < prevHistory.length - 1 && prevHistory[uidHistoryIndex + 1] === uid) {
+          setUidHistoryIndex(uidHistoryIndex + 1);
+          return prevHistory;
+        }
+        // Se o UID já está em algum outro ponto do histórico
+        const existingIdx = prevHistory.lastIndexOf(uid);
+        if (existingIdx !== -1) {
+          setUidHistoryIndex(existingIdx);
+          return prevHistory;
+        }
+        // Novo UID vindo externamente
+        const updated = [...prevHistory.slice(0, uidHistoryIndex + 1), uid];
+        setUidHistoryIndex(updated.length - 1);
+        return updated;
+      });
+
+      handleNavigateByUid(uid, 'replace');
     };
 
     window.addEventListener('popstate', handleUrlChange);
@@ -879,7 +949,7 @@ export default function App() {
       window.removeEventListener('popstate', handleUrlChange);
       window.removeEventListener('hashchange', handleUrlChange);
     };
-  }, [articles, pages]);
+  }, [articles, pages, currentView, editorHasUnsavedChanges, uidHistoryIndex]);
 
   // Keep browser URL query string ?uid= synchronized with current application view and state
   useEffect(() => {
@@ -897,7 +967,25 @@ export default function App() {
       notFoundQuery,
     });
 
-    setBrowserUid(canonicalUid, 'replace');
+    if (isTraversingHistoryRef.current) {
+      isTraversingHistoryRef.current = false;
+      setBrowserUid(canonicalUid, 'replace');
+      return;
+    }
+
+    setUidHistory((prevHistory) => {
+      const currentEntry = prevHistory[uidHistoryIndex];
+      if (currentEntry === canonicalUid) {
+        setBrowserUid(canonicalUid, 'replace');
+        return prevHistory;
+      }
+
+      const newHistory = [...prevHistory.slice(0, uidHistoryIndex + 1), canonicalUid];
+      const newIndex = newHistory.length - 1;
+      setUidHistoryIndex(newIndex);
+      setBrowserUid(canonicalUid, 'push');
+      return newHistory;
+    });
   }, [
     currentView,
     selectedArticleId,
@@ -908,7 +996,49 @@ export default function App() {
     notFoundQuery,
     allEncyclopediaArticles,
     pages,
+    uidHistoryIndex,
   ]);
+
+  // 3.05.6.d: Controles de Navegação por UID (Retornar e Avançar)
+  const canGoBack = uidHistoryIndex > 0;
+  const canGoForward = uidHistoryIndex < uidHistory.length - 1;
+  const previousUid = canGoBack ? uidHistory[uidHistoryIndex - 1] : null;
+  const nextUid = canGoForward ? uidHistory[uidHistoryIndex + 1] : null;
+
+  const currentActiveArticle = currentView === 'article'
+    ? (allEncyclopediaArticles.find((a) => a.id === selectedArticleId) || allEncyclopediaArticles[0])
+    : null;
+
+  const currentCanonicalUid = getCanonicalUid(currentView, {
+    selectedArticle: currentActiveArticle,
+    selectedPageUid,
+    targetUserIdentifier,
+    selectedFileName,
+    uploadInitialTargetName,
+    notFoundQuery,
+  });
+
+  const handleGoBack = () => {
+    confirmNavigationIfDirty(() => {
+      if (!canGoBack || !previousUid) return;
+      isTraversingHistoryRef.current = true;
+      const targetUid = previousUid;
+      setUidHistoryIndex((prev) => Math.max(0, prev - 1));
+      setBrowserUid(targetUid, 'replace');
+      handleNavigateByUid(targetUid, 'replace');
+    });
+  };
+
+  const handleGoForward = () => {
+    confirmNavigationIfDirty(() => {
+      if (!canGoForward || !nextUid) return;
+      isTraversingHistoryRef.current = true;
+      const targetUid = nextUid;
+      setUidHistoryIndex((prev) => Math.min(uidHistory.length - 1, prev + 1));
+      setBrowserUid(targetUid, 'replace');
+      handleNavigateByUid(targetUid, 'replace');
+    });
+  };
 
   // Keep SEO, document title, meta tags, OpenGraph and Schema.org JSON-LD dynamically in sync
   useEffect(() => {
@@ -1008,18 +1138,6 @@ export default function App() {
     setShowExitEditorConfirmModal(false);
     setPendingNavigationAction(null);
   };
-
-  // Intercepta botão Voltar do navegador para não perder edições acidentalmente
-  useEffect(() => {
-    const handlePopState = () => {
-      if (currentView === 'editor' && editorHasUnsavedChanges) {
-        window.history.pushState(null, '', window.location.href);
-        setShowExitEditorConfirmModal(true);
-      }
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [currentView, editorHasUnsavedChanges]);
 
   const handleNavigate = (view: ViewMode) => {
     confirmNavigationIfDirty(() => {
@@ -1643,6 +1761,14 @@ export default function App() {
         onOpenChecklist={() => setShowChecklistModal(true)}
         isFullscreen={isFullscreen}
         onToggleFullscreen={() => fullscreenManager.toggleFullscreen()}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        previousUid={previousUid}
+        nextUid={nextUid}
+        currentUid={currentCanonicalUid}
+        onGoBack={handleGoBack}
+        onGoForward={handleGoForward}
+        onNotify={handleNotify}
       />
 
       {/* 2. Main Workspace Layout */}
@@ -2513,6 +2639,13 @@ export default function App() {
           setIsMobileDrawerOpen(false);
           setShowSmartTVModal(true);
         }}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        previousUid={previousUid}
+        nextUid={nextUid}
+        currentUid={currentCanonicalUid}
+        onGoBack={handleGoBack}
+        onGoForward={handleGoForward}
       />
 
       {/* 7. Modals & Overlays */}
