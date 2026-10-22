@@ -30,6 +30,7 @@ import {
   Lock,
   Shield,
   Wrench,
+  Key,
 } from 'lucide-react';
 import { AppTheme, CustomToolConfig, UserProfile } from '../types';
 import { WeatherTool } from './WeatherTool';
@@ -39,6 +40,7 @@ import { ChromeLogoIcon } from './PWAInstallPrompt';
 import { CalculatorTool } from './CalculatorTool';
 import { WorldClockTool } from './WorldClockTool';
 import { GeminiAssistantTool } from './GeminiAssistantTool';
+import { GeminiApiKeyTool } from './GeminiApiKeyTool';
 import { CustomInteractiveToolRunner } from './CustomInteractiveToolRunner';
 import { ExtensionManager } from '../core/ExtensionManager';
 
@@ -450,10 +452,13 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
   const [isGeminiAssistantActive, setIsGeminiAssistantActive] = useState<boolean>(() =>
     extensionManager.isExtensionLoaded('GeminiAssistantToolExtension')
   );
+  const [isGeminiApiKeyActive, setIsGeminiApiKeyActive] = useState<boolean>(() =>
+    extensionManager.isExtensionLoaded('GeminiApiKeyExtension')
+  );
 
   const [customTools, setCustomTools] = useState<CustomToolConfig[]>(() =>
     extensionManager.getActiveTools().filter(
-      (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant'].includes(t.toolId)
+      (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant', 'gemini-api-key'].includes(t.toolId)
     )
   );
 
@@ -463,9 +468,10 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
       setIsWorldClockActive(extensionManager.isExtensionLoaded('WorldClockToolExtension'));
       setIsWeatherActive(extensionManager.isExtensionLoaded('WeatherForecastToolExtension'));
       setIsGeminiAssistantActive(extensionManager.isExtensionLoaded('GeminiAssistantToolExtension'));
+      setIsGeminiApiKeyActive(extensionManager.isExtensionLoaded('GeminiApiKeyExtension'));
       setCustomTools(
         extensionManager.getActiveTools().filter(
-          (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant'].includes(t.toolId)
+          (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant', 'gemini-api-key'].includes(t.toolId)
         )
       );
     };
@@ -526,7 +532,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
         </div>
 
         {/* Seletor das Ferramentas com Indicadores de Extensão */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5 mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2.5 mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
           {/* Aba 1: Previsão do Tempo (Extensão) */}
           <button
             id="tab-btn-weather"
@@ -760,6 +766,45 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
             )}
           </button>
 
+          {/* Aba 8: Variável GEMINI_API_KEY (Extensão Nativa 3.05.3.ag) */}
+          <button
+            id="tab-btn-gemini-api-key"
+            onClick={() => setActiveTab('gemini-api-key')}
+            className={`p-3 rounded-2xl border text-left transition flex items-center justify-between gap-2 cursor-pointer ${
+              activeTab === 'gemini-api-key'
+                ? 'border-purple-500 bg-gradient-to-r from-purple-50/90 to-blue-50/70 dark:from-purple-950/40 dark:to-blue-950/30 text-purple-950 dark:text-purple-100 ring-2 ring-purple-400/20 shadow-xs'
+                : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={`p-2 rounded-xl shrink-0 ${
+                  activeTab === 'gemini-api-key'
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400'
+                }`}
+              >
+                <Key size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold truncate flex items-center gap-1">
+                  <span>GEMINI_API_KEY</span>
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                  <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
+                    3.05.3.ag
+                  </span>
+                  <span>{isGeminiApiKeyActive ? 'Ativa' : 'Desativada'}</span>
+                </div>
+              </div>
+            </div>
+            {!isGeminiApiKeyActive && (
+              <span title="Extensão desativada pelo burocrata" className="text-amber-500 shrink-0">
+                <Lock size={12} />
+              </span>
+            )}
+          </button>
+
           {/* Abas Dinâmicas de Ferramentas de Extensões Instaladas */}
           {customTools.map((ct) => {
             const isSelected = activeTab === ct.toolId || activeTab === `custom-${ct.toolId}`;
@@ -861,6 +906,25 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
             toolName="Assistente IA Gemini Studio"
             extensionName="GeminiAssistantToolExtension"
             icon={<Sparkles size={32} />}
+            onNavigateToExtensions={onNavigateToExtensions}
+          />
+        )
+      )}
+
+      {/* Renderização da Variável GEMINI_API_KEY (Extensão Nativa 3.05.3.ag) */}
+      {activeTab === 'gemini-api-key' && (
+        isGeminiApiKeyActive ? (
+          <GeminiApiKeyTool
+            theme={theme}
+            onNavigateToExtensions={onNavigateToExtensions}
+            onOpenNotebook={onOpenNotebook}
+            onOpenEditor={() => onOpenEditor && onOpenEditor()}
+          />
+        ) : (
+          <DeactivatedToolNotice
+            toolName="Variável GEMINI_API_KEY"
+            extensionName="GeminiApiKeyExtension"
+            icon={<Key size={32} />}
             onNavigateToExtensions={onNavigateToExtensions}
           />
         )

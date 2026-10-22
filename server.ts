@@ -676,16 +676,73 @@ app.post('/api/firebase/rules', (req: Request, res: Response) => {
 // API Routes: Gemini Chatbot (Google AI Studio)
 // -------------------------------------------------------------
 
-// 1. Status do Chatbot Gemini
+// 1. Status do Chatbot e Variável GEMINI_API_KEY (Requisito 3.05.3.ag)
 app.get('/api/gemini/status', (req: Request, res: Response) => {
-  const hasKey = !!process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
+  const hasKey = !!apiKey;
+  const maskedKey = hasKey
+    ? `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`
+    : null;
+
   res.json({
     status: 'ok',
     hasApiKey: hasKey,
-    defaultModel: 'gemini-2.5-flash',
+    variableName: 'GEMINI_API_KEY',
+    defaultModel: 'gemini-3.8-flash',
     appletId: '0a14dc90-3ab3-47bc-8306-ca5bc2953699',
     provider: 'Google AI Studio & Gemini API',
+    maskedKey,
+    serverSideProxy: true,
+    recommendedModels: [
+      'gemini-3.8-flash',
+      'gemini-flash-latest',
+      'gemini-4-argon',
+      'gemini-3.1-flash-lite',
+      'gemini-3.1-flash-lite-image',
+      'gemini-3.8-flash-lite-tts',
+      'gemini-3.5-transcribe',
+    ],
   });
+});
+
+// 1.1 Teste de Ping e Diagnóstico da variável GEMINI_API_KEY (Requisito 3.05.3.ag)
+app.post('/api/gemini/test-ping', async (req: Request, res: Response) => {
+  try {
+    const startTime = Date.now();
+    const ai = getGemini();
+    const testModel = req.body?.model || 'gemini-3.8-flash';
+    const prompt = req.body?.prompt || 'Responda em uma frase curta confirmando que a variável GEMINI_API_KEY está ativa e funcionando no servidor da Wiki.';
+
+    const { response, usedModel } = await generateWithFallback(
+      ai,
+      testModel,
+      {
+        contents: prompt,
+        config: {
+          temperature: 0.2,
+        },
+      },
+      15000
+    );
+
+    const latencyMs = Date.now() - startTime;
+    res.json({
+      success: true,
+      variable: 'GEMINI_API_KEY',
+      model: usedModel || testModel,
+      latencyMs,
+      reply: response.text || 'Conexão GEMINI_API_KEY operacional.',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.error('Erro no teste de ping GEMINI_API_KEY:', err);
+    res.status(500).json({
+      success: false,
+      variable: 'GEMINI_API_KEY',
+      error: err?.message || 'Falha ao conectar à API do Gemini usando GEMINI_API_KEY.',
+      details: err?.toString(),
+    });
+  }
 });
 
 // 2. Chatbot Geral & Assistente de Criação de Conteúdo com Identidade de Usuário, Imagens e Oferta de Planos

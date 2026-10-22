@@ -93,6 +93,7 @@ import FirebaseAppletConfigImporterExtension from '../extensions/firebase-applet
 import UserChatExtension from '../extensions/user-chat';
 import GeneralHelpExtension from '../extensions/general-help';
 import DailyChecklistExtension from '../extensions/daily-checklist';
+import GeminiApiKeyExtension from '../extensions/gemini-api-key';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -216,6 +217,7 @@ export class ExtensionManager {
       UserChatExtension,
       GeneralHelpExtension,
       DailyChecklistExtension,
+      GeminiApiKeyExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -2305,6 +2307,20 @@ ${tc.customCss || ''}
     }
 
     return { success: true, message: `Configurações da extensão '${name}' salvas e sincronizadas com sucesso!` };
+  }
+
+  /**
+   * 3.05.3.ag: Retorna se a extensão da variável GEMINI_API_KEY está ativa.
+   */
+  public isGeminiApiKeyEnabled(): boolean {
+    return this.isExtensionEnabled('GeminiApiKeyExtension');
+  }
+
+  /**
+   * 3.05.3.ag: Retorna as configurações ativas da extensão da variável GEMINI_API_KEY.
+   */
+  public getGeminiApiKeySettings(): Record<string, any> {
+    return this.extensionSettings['GeminiApiKeyExtension'] || {};
   }
 }
 

@@ -1197,9 +1197,9 @@ export const AdvancedSearchView: React.FC<AdvancedSearchViewProps> = ({
                           {u.group}
                         </span>
                       )}
-                      {u.reputation !== undefined && (
+                      {(u.reputationScore !== undefined || (u as any).reputation !== undefined) && (
                         <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
-                          ★ {u.reputation} rep
+                          ★ {u.reputationScore ?? (u as any).reputation} rep
                         </span>
                       )}
                     </div>
