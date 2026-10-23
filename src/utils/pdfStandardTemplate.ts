@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { WIKIZERO_STANDARD_LOGO_DATA_URL } from './pdfStandardLogoAsset';
 
 export interface PdfKpiCard {
   title: string;
@@ -18,8 +19,8 @@ export interface StandardPdfHeroOptions {
 }
 
 /**
- * Desenha o logotipo quadrado oficial colorido do WikiZero (bloco geométrico + 'W')
- * exatamente conforme o modelo padronizado do PDF anexado.
+ * Desenha o logotipo oficial padronizado da WikiZero / WazzimaGiygg
+ * (portal infinito em perspectiva 3D geométrica / Mondrian moderno).
  */
 export function drawPdfStandardLogo(
   doc: jsPDF,
@@ -29,7 +30,26 @@ export function drawPdfStandardLogo(
 ): void {
   doc.saveGraphicsState();
 
-  // Fundo escuro do badge do logotipo
+  try {
+    if (WIKIZERO_STANDARD_LOGO_DATA_URL) {
+      doc.addImage(
+        WIKIZERO_STANDARD_LOGO_DATA_URL,
+        'PNG',
+        x,
+        y,
+        size,
+        size,
+        undefined,
+        'FAST'
+      );
+      doc.restoreGraphicsState();
+      return;
+    }
+  } catch (err) {
+    console.warn('Falha ao renderizar PNG do logotipo, aplicando fallback vetorial:', err);
+  }
+
+  // Fundo escuro do badge do logotipo (fallback vetorial)
   doc.setFillColor(15, 23, 42); // slate-900
   doc.setDrawColor(203, 213, 225); // slate-300
   doc.setLineWidth(0.35);
@@ -260,15 +280,34 @@ export function drawPdfStandardMiniHeader(
 ): void {
   doc.saveGraphicsState();
 
+  let textX = margin;
+  try {
+    if (WIKIZERO_STANDARD_LOGO_DATA_URL) {
+      doc.addImage(
+        WIKIZERO_STANDARD_LOGO_DATA_URL,
+        'PNG',
+        margin,
+        6.8,
+        4.6,
+        4.6,
+        undefined,
+        'FAST'
+      );
+      textX = margin + 6;
+    }
+  } catch (err) {
+    console.warn('Falha ao renderizar miniatura do logotipo:', err);
+  }
+
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(30, 64, 175); // Royal blue
-  doc.text(leftText.toUpperCase(), margin, 10);
+  doc.text(leftText.toUpperCase(), textX, 10.3);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(100, 116, 139);
-  doc.text(rightText, pageWidth - margin, 10, { align: 'right' });
+  doc.text(rightText, pageWidth - margin, 10.3, { align: 'right' });
 
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.3);
