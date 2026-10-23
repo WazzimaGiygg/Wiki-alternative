@@ -4,6 +4,16 @@ import {
   GITHUB_REPO_CONFIG,
 } from '../services/githubDiffService';
 import { SystemUpdateEntry } from '../types';
+import {
+  drawPdfStandardHeroBanner,
+  drawPdfStandardKpiCards,
+  drawPdfStandardSectionHeader,
+  drawPdfStandardCategoryBanner,
+  drawPdfStandardMiniHeader,
+  drawPdfStandardFooters,
+  drawPdfStandardGovernanceBox,
+  PdfKpiCard,
+} from './pdfStandardTemplate';
 
 export type GitHubPdfClassificationMode =
   | 'date-desc'    // Por Data (Mais recente primeiro)
@@ -274,27 +284,13 @@ export async function exportGitHubUpdatesToPdf(
   };
 
   const drawMiniHeader = () => {
-    doc.saveGraphicsState();
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(30, 64, 175); // Royal blue
-    doc.text('WIKIZERO • CHANGELOG & DIFFS DO GITHUB', margin, 10);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(100, 116, 139);
-    doc.text(
+    drawPdfStandardMiniHeader(
+      doc,
+      'WIKIZERO • CHANGELOG & DIFFS DO GITHUB',
       `${GITHUB_REPO_CONFIG.owner}/${GITHUB_REPO_CONFIG.repo} (${GITHUB_REPO_CONFIG.branch})`,
-      pageWidth - margin,
-      10,
-      { align: 'right' }
+      margin,
+      pageWidth
     );
-
-    // Linha divisória de cabeçalho
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
-    doc.line(margin, 12, pageWidth - margin, 12);
-    doc.restoreGraphicsState();
     currentY = 16;
   };
 
@@ -306,27 +302,10 @@ export async function exportGitHubUpdatesToPdf(
   };
 
   // =========================================================================
-  // 1. HERO BANNER DO RELATÓRIO
+  // 1. HERO BANNER DO RELATÓRIO PADRONIZADO
   // =========================================================================
-  const bannerHeight = 34;
-  doc.setFillColor(15, 23, 42); // slate-900
-  doc.roundedRect(margin, currentY, contentWidth, bannerHeight, 2.5, 2.5, 'F');
-
-  // Badge no topo do banner
-  doc.setFillColor(37, 99, 235); // blue-600
-  doc.roundedRect(margin + 6, currentY + 5, 52, 4.5, 1, 1, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.setTextColor(255, 255, 255);
-  doc.text('CHANGELOG & DIFFS DO GITHUB', margin + 8, currentY + 8.2);
-
-  // Título Principal
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(255, 255, 255);
   const mainReportTitle =
     customTitle || 'RELATÓRIO DE ATUALIZAÇÕES & MUDANÇAS NO GITHUB';
-  doc.text(mainReportTitle, margin + 6, currentY + 16);
 
   // Subtítulo e Modo de Classificação
   let classificationLabel = '';
@@ -348,22 +327,22 @@ export async function exportGitHubUpdatesToPdf(
       break;
   }
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(203, 213, 225); // slate-300
-  doc.text(classificationLabel, margin + 6, currentY + 22);
-
-  // Metadados inferiores do banner
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(148, 163, 184); // slate-400
-  doc.text(
-    `Gerado em: ${new Date().toLocaleString('pt-BR')} • Emissor: ${generatedBy} • Commits listados: ${sortedCommits.length}`,
-    margin + 6,
-    currentY + 29
+  const heroHeight = 36;
+  drawPdfStandardHeroBanner(
+    doc,
+    currentY,
+    {
+      categoryTag: 'CHANGELOG & DIFFS DO GITHUB',
+      title: mainReportTitle,
+      subtitle: classificationLabel,
+      metadataLine: `Gerado em: ${new Date().toLocaleString('pt-BR')} • Emissor: ${generatedBy} • Commits listados: ${sortedCommits.length}`,
+      height: heroHeight,
+    },
+    margin,
+    contentWidth
   );
 
-  currentY += bannerHeight + 5;
+  currentY += heroHeight + 5;
 
   // =========================================================================
   // 2. RESUMO DAS MÉTRICAS (COMMITS, ADIÇÕES, DELEÇÕES, ARQUIVOS)
@@ -381,12 +360,7 @@ export async function exportGitHubUpdatesToPdf(
     totalFilesModified += c.filesCount || (c.files?.length || 0);
   }
 
-  const kpiCount = 4;
-  const kpiGap = 3;
-  const kpiWidth = (contentWidth - (kpiCount - 1) * kpiGap) / kpiCount;
-  const kpiHeight = 16;
-
-  const kpis = [
+  const kpis: PdfKpiCard[] = [
     {
       title: 'TOTAL DE COMMITS',
       val: `${totalCommits}`,
@@ -421,30 +395,8 @@ export async function exportGitHubUpdatesToPdf(
     },
   ];
 
-  kpis.forEach((kpi, idx) => {
-    const kpiX = margin + idx * (kpiWidth + kpiGap);
-    doc.setFillColor(kpi.bg[0], kpi.bg[1], kpi.bg[2]);
-    doc.setDrawColor(kpi.border[0], kpi.border[1], kpi.border[2]);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(kpiX, currentY, kpiWidth, kpiHeight, 1.5, 1.5, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.2);
-    doc.setTextColor(kpi.textCol[0], kpi.textCol[1], kpi.textCol[2]);
-    doc.text(kpi.title, kpiX + 3, currentY + 4.5);
-
-    doc.setFont('courier', 'bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(15, 23, 42);
-    doc.text(kpi.val, kpiX + 3, currentY + 10.5);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(5.8);
-    doc.setTextColor(100, 116, 139);
-    doc.text(kpi.sub, kpiX + 3, currentY + 14);
-  });
-
-  currentY += kpiHeight + 6;
+  drawPdfStandardKpiCards(doc, currentY, kpis, margin, contentWidth, 16);
+  currentY += 16 + 6;
 
   // =========================================================================
   // 3. SEÇÃO OPCIONAL: NOTAS DE RELEASE OFICIAIS DO SISTEMA
@@ -519,21 +471,15 @@ export async function exportGitHubUpdatesToPdf(
   // =========================================================================
   checkPageBreak(20);
 
-  // Faixa de Título da Seção de Commits
-  doc.setFillColor(30, 41, 59); // slate-800
-  doc.roundedRect(margin, currentY, contentWidth, 7.5, 1, 1, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(255, 255, 255);
-  doc.text('ÁRVORE DE COMMITS & MUDANÇAS NO CÓDIGO-FONTE', margin + 3, currentY + 5.2);
-
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(147, 197, 253); // blue-200
-  doc.text(`[${sortedCommits.length} COMMITS]`, pageWidth - margin - 3, currentY + 5.2, {
-    align: 'right',
-  });
-
+  drawPdfStandardSectionHeader(
+    doc,
+    currentY,
+    'ÁRVORE DE COMMITS & MUDANÇAS NO CÓDIGO-FONTE',
+    `[${sortedCommits.length} COMMITS]`,
+    margin,
+    contentWidth,
+    pageWidth
+  );
   currentY += 10;
 
   // Renderização diferenciada se classificado por tipo de atualização (agrupamento)
@@ -549,17 +495,16 @@ export async function exportGitHubUpdatesToPdf(
         lastGroupHeader = category.id;
         checkPageBreak(12);
 
-        doc.setFillColor(category.bgColorRgb[0], category.bgColorRgb[1], category.bgColorRgb[2]);
-        doc.setDrawColor(category.colorRgb[0], category.colorRgb[1], category.colorRgb[2]);
-        doc.setLineWidth(0.4);
-        doc.roundedRect(margin, currentY, contentWidth, 6, 1, 1, 'FD');
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(category.colorRgb[0], category.colorRgb[1], category.colorRgb[2]);
-        doc.text(`CATEGORIA: ${category.label.toUpperCase()}`, margin + 3, currentY + 4.2);
-
-        currentY += 8;
+        drawPdfStandardCategoryBanner(
+          doc,
+          currentY,
+          category.label,
+          category.colorRgb,
+          [255, 255, 255],
+          margin,
+          contentWidth
+        );
+        currentY += 8.5;
       }
     }
 
@@ -682,66 +627,19 @@ export async function exportGitHubUpdatesToPdf(
   // =========================================================================
   checkPageBreak(28);
 
-  doc.setFillColor(248, 250, 252); // slate-50
-  doc.setDrawColor(226, 232, 240); // slate-200
-  doc.setLineWidth(0.3);
-  doc.roundedRect(margin, currentY, contentWidth, 24, 1.5, 1.5, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Governança, Código Aberto & Rastreabilidade Técnica', margin + 4, currentY + 5.5);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.2);
-  doc.setTextColor(71, 85, 105);
-  doc.text(
-    `• Repositório público versionado sob a licença pública GPLv3 • https://github.com/${GITHUB_REPO_CONFIG.owner}/${GITHUB_REPO_CONFIG.repo}`,
-    margin + 4,
-    currentY + 11
-  );
-  doc.text(
-    `• Rastreabilidade total de commits, integridade criptográfica SHA-1 e autoria auditável de código.`,
-    margin + 4,
-    currentY + 16
-  );
-  doc.text(
-    `• Em conformidade com o Marco Civil da Internet (Lei 12.965/2014) e governança de dados da LGPD (Lei 13.709/2018).`,
-    margin + 4,
-    currentY + 21
-  );
-
-  currentY += 28;
+  const boxH = drawPdfStandardGovernanceBox(doc, currentY, margin, contentWidth);
+  currentY += boxH + 6;
 
   // =========================================================================
   // 6. RODAPÉ UNIFICADO EM TODAS AS PÁGINAS (DOIS PASSOS)
   // =========================================================================
-  const drawPageFooter = (pageNum: number, totalPages: number) => {
-    doc.saveGraphicsState();
-    const footerY = pageHeight - 8;
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
-    doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(148, 163, 184);
-    doc.text(
-      `WikiZero • Changelog Oficial do GitHub • Relatório Gerado Automaticamente`,
-      margin,
-      footerY
-    );
-
-    doc.setFont('courier', 'bold');
-    doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - margin, footerY, { align: 'right' });
-    doc.restoreGraphicsState();
-  };
-
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    doc.setPage(p);
-    drawPageFooter(p, totalPages);
-  }
+  drawPdfStandardFooters(
+    doc,
+    'Changelog Oficial do GitHub',
+    margin,
+    pageWidth,
+    pageHeight
+  );
 
   // Nome do arquivo gerado para download
   const dateSlug = new Date().toISOString().slice(0, 10);

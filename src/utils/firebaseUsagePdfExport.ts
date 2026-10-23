@@ -1,5 +1,15 @@
 import { jsPDF } from 'jspdf';
 import { FirebaseUsageMetrics } from '../types';
+import {
+  drawPdfStandardHeroBanner,
+  drawPdfStandardKpiCards,
+  drawPdfStandardSectionHeader,
+  drawPdfStandardCategoryBanner,
+  drawPdfStandardMiniHeader,
+  drawPdfStandardFooters,
+  drawPdfStandardGovernanceBox,
+  PdfKpiCard,
+} from './pdfStandardTemplate';
 
 export type ReportPeriodType = 'day' | 'month' | 'year';
 
@@ -342,189 +352,91 @@ export async function generateFirebaseUsagePdf(
   };
 
   const drawMiniHeader = () => {
-    doc.saveGraphicsState();
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(217, 119, 6); // Amber-600
-    doc.text('FIREBASE CLOUD FIRESTORE TELEMETRY', margin, 10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 116, 139);
-    doc.text(computed.periodLabel, pageWidth - margin, 10, { align: 'right' });
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
-    doc.line(margin, 12, pageWidth - margin, 12);
-    doc.restoreGraphicsState();
+    drawPdfStandardMiniHeader(
+      doc,
+      'WIKIZERO • TELEMETRIA DO CLOUD FIRESTORE',
+      computed.periodLabel,
+      margin,
+      pageWidth
+    );
     currentY = 16;
   };
 
   // =========================================================================
-  // 1. CABEÇALHO OFICIAL DO RELATÓRIO
+  // 1. CABEÇALHO OFICIAL DO RELATÓRIO PADRONIZADO
   // =========================================================================
-  // Caixa de topo azul escuro / grafite
-  doc.setFillColor(15, 23, 42); // slate-900
-  doc.roundedRect(margin, currentY, contentWidth, 32, 2, 2, 'F');
-
-  // Título e Subtítulo
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(255, 255, 255);
-  doc.text('RELATÓRIO DE TELEMETRIA DO CLOUD FIRESTORE', margin + 6, currentY + 9);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(203, 213, 225); // slate-300
-  doc.text('Monitoramento de Leituras, Gravações, Memória em Disco e Cotas de Infraestrutura', margin + 6, currentY + 15);
-
-  // Metadados do banco em duas colunas no cabeçalho
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(251, 191, 36); // amber-400
-  doc.text(`Banco: ${baseMetrics.firestoreDatabaseId || 'ai-studio-wikizeroenciclop'}`, margin + 6, currentY + 22);
-  doc.text(`Projeto: ${baseMetrics.projectId || 'wzzm-ce3fc'}`, margin + 6, currentY + 27);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(255, 255, 255);
-  doc.text(`Plano: ${baseMetrics.plan.toUpperCase()}`, margin + 115, currentY + 22);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(148, 163, 184);
-  doc.text(`Emissão: ${new Date().toLocaleString('pt-BR')}`, margin + 115, currentY + 27);
-
-  currentY += 37;
-
-  // Faixa de identificação do Período Selecionado
-  doc.setFillColor(245, 158, 11, 0.12); // Amber light
-  doc.setDrawColor(245, 158, 11);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(margin, currentY, contentWidth, 10, 1.5, 1.5, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9.5);
-  doc.setTextColor(180, 83, 9); // Amber-700
-  doc.text(computed.periodLabel.toUpperCase(), margin + 4, currentY + 6.5);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`Status do Banco: Conectado em Tempo Real • Docs Indexados: ${computed.totalDocuments}`, pageWidth - margin - 4, currentY + 6.5, { align: 'right' });
-
-  currentY += 15;
+  const heroHeight = 36;
+  drawPdfStandardHeroBanner(
+    doc,
+    currentY,
+    {
+      categoryTag: 'INFRAESTRUTURA & TELEMETRIA DO FIRESTORE',
+      title: 'RELATÓRIO DE TELEMETRIA DO CLOUD FIRESTORE',
+      subtitle: `${computed.periodLabel} • Monitoramento de Leituras, Gravações, Memória e Cotas`,
+      metadataLine: `Banco: ${baseMetrics.firestoreDatabaseId || 'ai-studio-wikizeroenciclop'} • Projeto: ${baseMetrics.projectId || 'wzzm-ce3fc'} • Plano: ${baseMetrics.plan.toUpperCase()} • Emissão: ${new Date().toLocaleString('pt-BR')}`,
+      height: heroHeight,
+    },
+    margin,
+    contentWidth
+  );
+  currentY += heroHeight + 5;
 
   // =========================================================================
-  // 2. OS 3 CARDS DE KPI (LEITURAS, GRAVAÇÕES E MEMÓRIA USADA)
+  // 2. RESUMO DAS MÉTRICAS (4 CARDS DE KPIS PADRONIZADOS)
   // =========================================================================
-  const cardWidth = (contentWidth - 6) / 3;
-  const cardHeight = 32;
+  const kpis: PdfKpiCard[] = [
+    {
+      title: 'LEITURAS FIRESTORE',
+      val: computed.readsCount.toLocaleString('pt-BR'),
+      sub: `Cota: ${computed.readsLimit.toLocaleString('pt-BR')} (${computed.readsPercent}%)`,
+      bg: [239, 246, 255],
+      border: [191, 219, 254],
+      textCol: [29, 78, 216],
+    },
+    {
+      title: 'GRAVAÇÕES FIRESTORE',
+      val: computed.writesCount.toLocaleString('pt-BR'),
+      sub: `Cota: ${computed.writesLimit.toLocaleString('pt-BR')} (${computed.writesPercent}%)`,
+      bg: [236, 253, 245],
+      border: [167, 243, 208],
+      textCol: [4, 120, 87],
+    },
+    {
+      title: 'MEMÓRIA EM DISCO',
+      val: computed.memoryFormatted,
+      sub: `Limite: ${computed.memoryLimitFormatted} (${computed.memoryPercent}%)`,
+      bg: [250, 245, 255],
+      border: [233, 213, 255],
+      textCol: [109, 40, 217],
+    },
+    {
+      title: 'CUSTO ESTIMADO',
+      val: `$${computed.estimatedCostUsd.toFixed(2)} USD`,
+      sub: `${computed.totalDocuments} docs indexados`,
+      bg: [254, 243, 199],
+      border: [253, 230, 138],
+      textCol: [180, 83, 9],
+    },
+  ];
 
-  // --- CARD 1: LEITURAS ---
-  doc.setFillColor(239, 246, 255); // blue-50
-  doc.setDrawColor(191, 219, 254); // blue-200
-  doc.setLineWidth(0.3);
-  doc.roundedRect(margin, currentY, cardWidth, cardHeight, 2, 2, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(29, 78, 216); // blue-700
-  doc.text('LEITURAS NO FIRESTORE', margin + 4, currentY + 6);
-
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(15, 23, 42);
-  doc.text(computed.readsCount.toLocaleString('pt-BR'), margin + 4, currentY + 15);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`Cota: ${computed.readsLimit.toLocaleString('pt-BR')}`, margin + 4, currentY + 21);
-
-  // Barra de progresso Leituras
-  doc.setFillColor(226, 232, 240);
-  doc.rect(margin + 4, currentY + 24, cardWidth - 8, 2.5, 'F');
-  doc.setFillColor(37, 99, 235);
-  const readBarW = Math.max(1, ((cardWidth - 8) * Math.min(100, computed.readsPercent)) / 100);
-  doc.rect(margin + 4, currentY + 24, readBarW, 2.5, 'F');
-
-  doc.setFontSize(6.8);
-  doc.setTextColor(37, 99, 235);
-  doc.text(`${computed.readsPercent}% da cota utilizada`, margin + 4, currentY + 29.5);
-
-  // --- CARD 2: GRAVAÇÕES ---
-  const card2X = margin + cardWidth + 3;
-  doc.setFillColor(236, 253, 245); // emerald-50
-  doc.setDrawColor(167, 243, 208); // emerald-200
-  doc.roundedRect(card2X, currentY, cardWidth, cardHeight, 2, 2, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(4, 120, 87); // emerald-700
-  doc.text('GRAVAÇÕES NO FIRESTORE', card2X + 4, currentY + 6);
-
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(15, 23, 42);
-  doc.text(computed.writesCount.toLocaleString('pt-BR'), card2X + 4, currentY + 15);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`Cota: ${computed.writesLimit.toLocaleString('pt-BR')}`, card2X + 4, currentY + 21);
-
-  // Barra de progresso Gravações
-  doc.setFillColor(226, 232, 240);
-  doc.rect(card2X + 4, currentY + 24, cardWidth - 8, 2.5, 'F');
-  doc.setFillColor(16, 185, 129);
-  const writeBarW = Math.max(1, ((cardWidth - 8) * Math.min(100, computed.writesPercent)) / 100);
-  doc.rect(card2X + 4, currentY + 24, writeBarW, 2.5, 'F');
-
-  doc.setFontSize(6.8);
-  doc.setTextColor(16, 185, 129);
-  doc.text(`${computed.writesPercent}% da cota utilizada`, card2X + 4, currentY + 29.5);
-
-  // --- CARD 3: MEMÓRIA USADA ---
-  const card3X = margin + (cardWidth + 3) * 2;
-  doc.setFillColor(250, 245, 255); // purple-50
-  doc.setDrawColor(233, 213, 255); // purple-200
-  doc.roundedRect(card3X, currentY, cardWidth, cardHeight, 2, 2, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(109, 40, 217); // purple-700
-  doc.text('MEMÓRIA USADA DO BANCO', card3X + 4, currentY + 6);
-
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(15, 23, 42);
-  doc.text(computed.memoryFormatted, card3X + 4, currentY + 15);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`Limite: ${computed.memoryLimitFormatted}`, card3X + 4, currentY + 21);
-
-  // Barra de progresso Memória
-  doc.setFillColor(226, 232, 240);
-  doc.rect(card3X + 4, currentY + 24, cardWidth - 8, 2.5, 'F');
-  doc.setFillColor(139, 92, 246);
-  const memBarW = Math.max(1, ((cardWidth - 8) * Math.min(100, computed.memoryPercent)) / 100);
-  doc.rect(card3X + 4, currentY + 24, memBarW, 2.5, 'F');
-
-  doc.setFontSize(6.8);
-  doc.setTextColor(139, 92, 246);
-  doc.text(`${computed.memoryPercent}% do storage ocupado`, card3X + 4, currentY + 29.5);
-
-  currentY += cardHeight + 8;
+  drawPdfStandardKpiCards(doc, currentY, kpis, margin, contentWidth, 16);
+  currentY += 16 + 6;
 
   // =========================================================================
   // 3. TABELA DETALHADA POR COLEÇÃO DO FIRESTORE
   // =========================================================================
   checkPageBreak(50);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text('Detalhamento por Coleção do Firebase Firestore', margin, currentY);
-
-  currentY += 4;
+  drawPdfStandardSectionHeader(
+    doc,
+    currentY,
+    'Detalhamento por Coleção do Firebase Firestore',
+    `[${computed.collections.length} COLEÇÕES]`,
+    margin,
+    contentWidth,
+    pageWidth
+  );
+  currentY += 10;
 
   // Cabeçalho da Tabela
   const colWidths = [45, 30, 28, 24, 30, 25];
@@ -612,12 +524,16 @@ export async function generateFirebaseUsagePdf(
       ? 'Evolução Semanal no Mês Selecionado'
       : 'Evolução Trimestral no Ano Selecionado';
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text(temporalTitle, margin, currentY);
-
-  currentY += 4;
+  drawPdfStandardCategoryBanner(
+    doc,
+    currentY,
+    temporalTitle,
+    [37, 99, 235],
+    [255, 255, 255],
+    margin,
+    contentWidth
+  );
+  currentY += 8.5;
 
   const tempColWidths = [60, 32, 32, 34, 24];
   const tempHeaders = ['Segmento / Intervalo', 'Leituras', 'Gravações', 'Memória Usada', 'Tráfego'];
@@ -682,12 +598,16 @@ export async function generateFirebaseUsagePdf(
   // =========================================================================
   checkPageBreak(38);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(15, 23, 42);
-  doc.text('Distribuição da Memória & Índices no Firebase', margin, currentY);
-
-  currentY += 4;
+  drawPdfStandardCategoryBanner(
+    doc,
+    currentY,
+    'Distribuição da Memória & Índices no Firebase',
+    [109, 40, 217],
+    [255, 255, 255],
+    margin,
+    contentWidth
+  );
+  currentY += 8.5;
 
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(226, 232, 240);
@@ -736,64 +656,29 @@ export async function generateFirebaseUsagePdf(
   currentY += 38;
 
   // =========================================================================
-  // 5. AUDITORIA FINANCEIRA, COTAS & CONFORMIDADE
+  // 5. AUDITORIA FINANCEIRA, COTAS & GOVERNANÇA TÉCNICA
   // =========================================================================
   checkPageBreak(30);
 
-  doc.setFillColor(241, 245, 249);
-  doc.setDrawColor(203, 213, 225);
-  doc.roundedRect(margin, currentY, contentWidth, 24, 2, 2, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text('Auditoria de Faturamento & Cotas Oficiais (Google Cloud Platform)', margin + 4, currentY + 5.5);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.2);
-  doc.setTextColor(71, 85, 105);
-  doc.text(
-    `• Plano: ${baseMetrics.plan.toUpperCase()} • Cota gratuita diária: 50.000 leituras e 20.000 gravações. Excedente faturado via Cloud Billing.`,
-    margin + 4,
-    currentY + 11
-  );
-  doc.text(
+  const extraBullets = [
+    `• Plano: ${baseMetrics.plan.toUpperCase()} • Cota gratuita diária: 50.000 leituras e 20.000 gravações (Google Cloud Platform).`,
     `• Custo estimado para o período: $${computed.estimatedCostUsd.toFixed(2)} USD • Armazenamento estimado: $0.108 / GiB-mês.`,
-    margin + 4,
-    currentY + 16
-  );
-  doc.text(
-    `• Em conformidade com as diretrizes de governança de dados da LGPD (Lei 13.709/2018) e Marco Civil da Internet.`,
-    margin + 4,
-    currentY + 21
-  );
+    `• Banco de Dados: ${baseMetrics.firestoreDatabaseId || 'ai-studio-wikizeroenciclop'} • Projeto GCP: ${baseMetrics.projectId || 'wzzm-ce3fc'}.`,
+  ];
 
-  currentY += 28;
+  const boxH = drawPdfStandardGovernanceBox(doc, currentY, margin, contentWidth, extraBullets);
+  currentY += boxH + 6;
 
   // =========================================================================
-  // 6. RODAPÉ DE PÁGINA
+  // 6. RODAPÉ UNIFICADO EM TODAS AS PÁGINAS (PADRÃO DO PDF ANEXADO)
   // =========================================================================
-  const drawPageFooter = (pageNum: number, totalPages: number) => {
-    doc.saveGraphicsState();
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
-    doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(148, 163, 184);
-    doc.text('WikiZero • Infraestrutura Cloud Firestore • Relatório de Auditoria Gerado Automaticamente', margin, pageHeight - 8);
-
-    doc.setFont('courier', 'bold');
-    doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
-    doc.restoreGraphicsState();
-  };
-
-  const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    drawPageFooter(i, totalPages);
-  }
+  drawPdfStandardFooters(
+    doc,
+    'Infraestrutura Cloud Firestore',
+    margin,
+    pageWidth,
+    pageHeight
+  );
 
   // Nome do arquivo com timestamp e período
   const periodSlug =

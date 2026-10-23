@@ -1,5 +1,15 @@
 import { jsPDF } from 'jspdf';
 import { LgpdAccountDeletionRequest, LgpdDeletionRequestStatus } from '../types';
+import {
+  drawPdfStandardHeroBanner,
+  drawPdfStandardKpiCards,
+  drawPdfStandardSectionHeader,
+  drawPdfStandardCategoryBanner,
+  drawPdfStandardMiniHeader,
+  drawPdfStandardFooters,
+  drawPdfStandardGovernanceBox,
+  PdfKpiCard,
+} from './pdfStandardTemplate';
 
 export type LgpdPdfStatusFilter = 'all' | 'pendente' | 'executada' | 'rejeitada' | 'cancelada';
 
@@ -37,27 +47,13 @@ export async function generateLgpdRemovalPdf(
   let currentY = margin;
 
   const drawMiniHeader = () => {
-    doc.saveGraphicsState();
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(225, 29, 72); // rose-600
-    doc.text('WIKIZERO • RELATÓRIO DE AUDITORIA LGPD', margin, 10);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(100, 116, 139);
-    doc.text(
-      `Governança & Privacidade (Lei nº 13.709/2018)`,
-      pageWidth - margin,
-      10,
-      { align: 'right' }
+    drawPdfStandardMiniHeader(
+      doc,
+      'WIKIZERO • RELATÓRIO DE AUDITORIA LGPD',
+      'Governança & Privacidade (Lei nº 13.709/2018)',
+      margin,
+      pageWidth
     );
-
-    // Linha divisória de cabeçalho
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
-    doc.line(margin, 12, pageWidth - margin, 12);
-    doc.restoreGraphicsState();
     currentY = 16;
   };
 
@@ -92,179 +88,98 @@ export async function generateLgpdRemovalPdf(
   const complianceRate = totalCount > 0 ? Math.round(((totalCount - pendingCount) / totalCount) * 100) : 100;
 
   // =========================================================================
-  // 1. CABEÇALHO EXECUTIVO (SLATE-900)
+  // 1. HERO BANNER PADRONIZADO (CARD BRANCO COM BORDA E LOGOTIPO COLORIDO)
   // =========================================================================
-  const bannerHeight = 35;
-  doc.setFillColor(15, 23, 42); // slate-900
-  doc.roundedRect(margin, currentY, contentWidth, bannerHeight, 2.5, 2.5, 'F');
-
-  // Badge pill superior
-  doc.setFillColor(225, 29, 72); // rose-600
-  doc.roundedRect(margin + 5, currentY + 5, 62, 4.5, 1, 1, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.setTextColor(255, 255, 255);
-  doc.text('AUDITORIA DE PRIVACIDADE & DPO', margin + 7, currentY + 8.2);
-
-  // Título Principal
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(255, 255, 255);
-  doc.text('RELATÓRIO DE PEDIDOS DE REMOÇÃO DE DADOS (LGPD)', margin + 5, currentY + 16);
-
-  // Subtítulo
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.8);
-  doc.setTextColor(203, 213, 225); // slate-300
-  doc.text(
-    'Registro Legal de Atendimento aos Titulares de Dados • Art. 18, VI da Lei nº 13.709/2018',
-    margin + 5,
-    currentY + 22
+  const heroHeight = 36;
+  drawPdfStandardHeroBanner(
+    doc,
+    currentY,
+    {
+      categoryTag: 'AUDITORIA DE PRIVACIDADE & DPO',
+      title: 'RELATÓRIO DE PEDIDOS DE REMOÇÃO DE DADOS (LGPD)',
+      subtitle: 'Registro Legal de Atendimento aos Titulares de Dados • Art. 18 da Lei nº 13.709/2018',
+      metadataLine: `Encarregado (DPO): ${generatedBy} • Emissão: ${new Date().toLocaleString('pt-BR')} • Filtro: ${statusFilter.toUpperCase()} • Total: ${filteredRequests.length}`,
+      height: heroHeight,
+    },
+    margin,
+    contentWidth
   );
 
-  // Metadados inferiores
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(251, 191, 36); // amber-400
-  doc.text(`Encarregado (DPO): ${generatedBy}`, margin + 5, currentY + 29);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(148, 163, 184); // slate-400
-  doc.text(
-    `Emissão: ${new Date().toLocaleString('pt-BR')} • Filtro: ${statusFilter.toUpperCase()} • Total: ${filteredRequests.length}`,
-    margin + 68,
-    currentY + 29
-  );
-
-  currentY += bannerHeight + 5;
+  currentY += heroHeight + 5;
 
   // =========================================================================
   // 2. FAIXA DE STATUS LEGAL
   // =========================================================================
   checkPageBreak(12);
-  doc.setFillColor(255, 241, 242); // rose-50
-  doc.setDrawColor(254, 205, 211); // rose-200
-  doc.setLineWidth(0.3);
-  doc.roundedRect(margin, currentY, contentWidth, 9, 1.2, 1.2, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(190, 18, 60); // rose-700
-  doc.text(`CONFORMIDADE REGULATÓRIA: LEI GERAL DE PROTEÇÃO DE DADOS`, margin + 4, currentY + 5.8);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.2);
-  doc.setTextColor(100, 116, 139);
-  doc.text(
-    `Art. 18: Anonimização, Bloqueio ou Eliminação • Protocolos Auditáveis`,
-    pageWidth - margin - 4,
-    currentY + 5.8,
-    { align: 'right' }
+  drawPdfStandardCategoryBanner(
+    doc,
+    currentY,
+    'CONFORMIDADE REGULATÓRIA: LEI GERAL DE PROTEÇÃO DE DADOS (ART. 18)',
+    [225, 29, 72],
+    [255, 255, 255],
+    margin,
+    contentWidth
   );
-
-  currentY += 13;
-
-  // =========================================================================
-  // 3. CARDS DE KPI (TOTAL, APROVADOS/PENDENTES, CONFORMIDADE)
-  // =========================================================================
-  checkPageBreak(30);
-  const cardWidth = (contentWidth - 6) / 3;
-  const cardHeight = 26;
-
-  // CARD 1: TOTAL DE PEDIDOS
-  doc.setFillColor(248, 250, 252); // slate-50
-  doc.setDrawColor(226, 232, 240);
-  doc.setLineWidth(0.3);
-  doc.roundedRect(margin, currentY, cardWidth, cardHeight, 1.5, 1.5, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.2);
-  doc.setTextColor(37, 99, 235); // blue-600
-  doc.text('VOLUME TOTAL', margin + 3.5, currentY + 5.5);
-
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(15, 23, 42);
-  doc.text(`${totalCount} pedidos`, margin + 3.5, currentY + 13);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.8);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`${pendingCount} pendentes de análise`, margin + 3.5, currentY + 18.5);
-
-  doc.setFillColor(37, 99, 235);
-  doc.rect(margin + 3.5, currentY + 21.5, Math.min(cardWidth - 7, (totalCount * 8) + 10), 1.8, 'F');
-
-  // CARD 2: CONCLUÍDOS / ANONIMIZADOS
-  const card2X = margin + cardWidth + 3;
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(card2X, currentY, cardWidth, cardHeight, 1.5, 1.5, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.2);
-  doc.setTextColor(16, 185, 129); // emerald-600
-  doc.text('PROCESSADOS / EFETIVADOS', card2X + 3.5, currentY + 5.5);
-
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(15, 23, 42);
-  doc.text(`${approvedCount} aprovados`, card2X + 3.5, currentY + 13);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.8);
-  doc.setTextColor(100, 116, 139);
-  doc.text(`${rejectedCount} indeferidos com justificativa`, card2X + 3.5, currentY + 18.5);
-
-  doc.setFillColor(16, 185, 129);
-  doc.rect(card2X + 3.5, currentY + 21.5, Math.min(cardWidth - 7, (approvedCount * 12) + 10), 1.8, 'F');
-
-  // CARD 3: TAXA DE RESOLUÇÃO DPO
-  const card3X = margin + (cardWidth + 3) * 2;
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(card3X, currentY, cardWidth, cardHeight, 1.5, 1.5, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.2);
-  doc.setTextColor(217, 119, 6); // amber-600
-  doc.text('TAXA DE ATENDIMENTO', card3X + 3.5, currentY + 5.5);
-
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(13);
-  doc.setTextColor(15, 23, 42);
-  doc.text(`${complianceRate}% atendidos`, card3X + 3.5, currentY + 13);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.8);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Conformidade legal dos prazos', card3X + 3.5, currentY + 18.5);
-
-  doc.setFillColor(217, 119, 6);
-  doc.rect(card3X + 3.5, currentY + 21.5, (cardWidth - 7) * (complianceRate / 100), 1.8, 'F');
-
-  currentY += cardHeight + 6;
+  currentY += 8.5;
 
   // =========================================================================
-  // 4. LISTA DE SOLICITAÇÕES AUDITÁVEIS (SLATE-800 BANNER)
+  // 3. GRADE COM 4 CARDS DE KPIS PADRONIZADOS
+  // =========================================================================
+  checkPageBreak(20);
+
+  const kpis: PdfKpiCard[] = [
+    {
+      title: 'VOLUME TOTAL',
+      val: `${totalCount}`,
+      sub: `${pendingCount} pendentes`,
+      bg: [239, 246, 255],
+      border: [191, 219, 254],
+      textCol: [29, 78, 216],
+    },
+    {
+      title: 'PROCESSADOS',
+      val: `${approvedCount}`,
+      sub: 'Anonimizados',
+      bg: [236, 253, 245],
+      border: [167, 243, 208],
+      textCol: [5, 150, 105],
+    },
+    {
+      title: 'INDEFERIDOS',
+      val: `${rejectedCount}`,
+      sub: 'Com justificativa',
+      bg: [255, 241, 242],
+      border: [254, 205, 211],
+      textCol: [225, 29, 72],
+    },
+    {
+      title: 'RESOLUÇÃO DPO',
+      val: `${complianceRate}%`,
+      sub: 'Prazos legais',
+      bg: [254, 243, 199],
+      border: [253, 230, 138],
+      textCol: [180, 83, 9],
+    },
+  ];
+
+  drawPdfStandardKpiCards(doc, currentY, kpis, margin, contentWidth, 16);
+  currentY += 16 + 6;
+
+  // =========================================================================
+  // 4. LISTA DE SOLICITAÇÕES AUDITÁVEIS
   // =========================================================================
   checkPageBreak(18);
 
-  doc.setFillColor(30, 41, 59); // slate-800
-  doc.roundedRect(margin, currentY, contentWidth, 7, 1, 1, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(255, 255, 255);
-  doc.text('REGISTRO OFICIAL DE SOLICITAÇÕES DOS TITULARES', margin + 3.5, currentY + 4.8);
-
-  doc.setFont('courier', 'bold');
-  doc.setFontSize(6.8);
-  doc.setTextColor(147, 197, 253);
-  doc.text(`[${filteredRequests.length} REGISTROS]`, pageWidth - margin - 3.5, currentY + 4.8, {
-    align: 'right',
-  });
-
-  currentY += 11;
+  drawPdfStandardSectionHeader(
+    doc,
+    currentY,
+    'REGISTRO OFICIAL DE SOLICITAÇÕES DOS TITULARES',
+    `[${filteredRequests.length} REGISTROS]`,
+    margin,
+    contentWidth,
+    pageWidth
+  );
+  currentY += 10;
 
   for (const req of filteredRequests) {
     checkPageBreak(22);
@@ -355,66 +270,25 @@ export async function generateLgpdRemovalPdf(
   // =========================================================================
   checkPageBreak(28);
 
-  doc.setFillColor(248, 250, 252); // slate-50
-  doc.setDrawColor(226, 232, 240); // slate-200
-  doc.setLineWidth(0.3);
-  doc.roundedRect(margin, currentY, contentWidth, 24, 1.5, 1.5, 'FD');
+  const extraBullets = [
+    '• Atendimento ao Artigo 18 da Lei Federal nº 13.709/2018 (Lei Geral de Proteção de Dados - LGPD).',
+    '• Preservação criptográfica estrita do Google UID para garantia de integridade e bloqueio de reincidência.',
+    '• Pseudonimização documental mantendo o valor histórico da enciclopédia sob a licença CC BY-SA 4.0 / GPLv3.',
+  ];
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Garantias Jurídicas & Governança de Dados da WikiZero', margin + 4, currentY + 5.5);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.2);
-  doc.setTextColor(71, 85, 105);
-  doc.text(
-    `• Atendimento ao Artigo 18 da Lei Federal nº 13.709/2018 (Lei Geral de Proteção de Dados - LGPD).`,
-    margin + 4,
-    currentY + 11
-  );
-  doc.text(
-    `• Preservação criptográfica estrita do Google UID para garantia de integridade e bloqueio de reincidência.`,
-    margin + 4,
-    currentY + 16
-  );
-  doc.text(
-    `• Pseudonimização documental mantendo o valor histórico da enciclopédia sob a licença CC BY-SA 4.0 / GPLv3.`,
-    margin + 4,
-    currentY + 21
-  );
-
-  currentY += 28;
+  const boxH = drawPdfStandardGovernanceBox(doc, currentY, margin, contentWidth, extraBullets);
+  currentY += boxH + 6;
 
   // =========================================================================
-  // 6. RODAPÉ UNIFICADO EM TODAS AS PÁGINAS (DOIS PASSOS)
+  // 6. RODAPÉ UNIFICADO EM TODAS AS PÁGINAS (PADRÃO DO PDF ANEXADO)
   // =========================================================================
-  const drawPageFooter = (pageNum: number, totalPages: number) => {
-    doc.saveGraphicsState();
-    const footerY = pageHeight - 8;
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.3);
-    doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(148, 163, 184);
-    doc.text(
-      `WikiZero • Auditoria Oficial LGPD • Relatório Gerado Automaticamente`,
-      margin,
-      footerY
-    );
-
-    doc.setFont('courier', 'bold');
-    doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - margin, footerY, { align: 'right' });
-    doc.restoreGraphicsState();
-  };
-
-  const totalPages = doc.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    doc.setPage(p);
-    drawPageFooter(p, totalPages);
-  }
+  drawPdfStandardFooters(
+    doc,
+    'Auditoria Oficial LGPD',
+    margin,
+    pageWidth,
+    pageHeight
+  );
 
   // Nome do arquivo gerado para download
   const dateSlug = new Date().toISOString().slice(0, 10);
