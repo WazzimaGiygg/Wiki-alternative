@@ -156,6 +156,8 @@ export function getFriendlyUidLabel(uid: string | null | undefined): string {
       NotFound: 'Não Encontrada',
       ListFiles: 'Galeria de Arquivos',
       Upload: 'Carregar Arquivo',
+      Bots: 'Agente de BOTS & Robôs',
+      BotAgent: 'Agente de BOTS',
     };
     return map[specialPart] || `Especial: ${specialPart}`;
   }
@@ -711,6 +713,13 @@ export function resolveNavigationUid(
     'previsaodotempo': { view: 'tools', initialTab: 'weather' },
     'previsao': { view: 'tools', initialTab: 'weather' },
     'weather': { view: 'tools', initialTab: 'weather' },
+    'special:bots': { view: 'tools', initialTab: 'bot-agent' },
+    'special:botagent': { view: 'tools', initialTab: 'bot-agent' },
+    'special:robos': { view: 'tools', initialTab: 'bot-agent' },
+    'special:bot': { view: 'tools', initialTab: 'bot-agent' },
+    'bots': { view: 'tools', initialTab: 'bot-agent' },
+    'bot-agent': { view: 'tools', initialTab: 'bot-agent' },
+    'robos': { view: 'tools', initialTab: 'bot-agent' },
 
     // Wiki dos Livros & Periódicos / Acervo Bibliográfico
     'special:library': { view: 'library' },

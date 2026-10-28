@@ -31,8 +31,10 @@ import {
   Shield,
   Wrench,
   Key,
+  Bot,
 } from 'lucide-react';
-import { AppTheme, CustomToolConfig, UserProfile } from '../types';
+import { AppTheme, CustomToolConfig, UserProfile, WikiArticle, WikiPage } from '../types';
+import { StorageService } from '../services/storageService';
 import { WeatherTool } from './WeatherTool';
 import { GoogleScholarTool } from './GoogleScholarTool';
 import { ChromeAppTool } from './ChromeAppTool';
@@ -41,6 +43,7 @@ import { CalculatorTool } from './CalculatorTool';
 import { WorldClockTool } from './WorldClockTool';
 import { GeminiAssistantTool } from './GeminiAssistantTool';
 import { GeminiApiKeyTool } from './GeminiApiKeyTool';
+import { BotAgentDashboard } from './BotAgentDashboard';
 import { CustomInteractiveToolRunner } from './CustomInteractiveToolRunner';
 import { ExtensionManager } from '../core/ExtensionManager';
 
@@ -53,9 +56,12 @@ interface ToolsViewProps {
   currentUser?: UserProfile | null;
   onOpenNotebook?: () => void;
   onOpenPremiumModal?: (quotaType?: 'chats' | 'images' | 'notebook') => void;
+  articles?: WikiArticle[];
+  pages?: WikiPage[];
+  onSelectArticle?: (id: string) => void;
 }
 
-export type ToolTab = 'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app' | 'gemini-assistant' | string;
+export type ToolTab = 'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app' | 'gemini-assistant' | 'gemini-api-key' | 'bot-agent' | string;
 
 // ==========================================
 // AVISO DE EXTENSÃO DE FERRAMENTA DESATIVADA
@@ -434,6 +440,9 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
   currentUser,
   onOpenNotebook,
   onOpenPremiumModal,
+  articles,
+  pages,
+  onSelectArticle,
 }) => {
   const [activeTab, setActiveTab] = useState<ToolTab>(initialTab);
 
@@ -455,10 +464,36 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
   const [isGeminiApiKeyActive, setIsGeminiApiKeyActive] = useState<boolean>(() =>
     extensionManager.isExtensionLoaded('GeminiApiKeyExtension')
   );
+  const [isBotAgentActive, setIsBotAgentActive] = useState<boolean>(() =>
+    extensionManager.isBotAgentEnabled()
+  );
+
+  const [loadedArticles, setLoadedArticles] = useState<WikiArticle[]>(articles || []);
+  const [loadedPages, setLoadedPages] = useState<WikiPage[]>(pages || []);
+
+  useEffect(() => {
+    if (articles && articles.length > 0) {
+      setLoadedArticles(articles);
+    } else {
+      StorageService.getArticles().then((res) => {
+        if (Array.isArray(res)) setLoadedArticles(res);
+      }).catch(() => {});
+    }
+  }, [articles]);
+
+  useEffect(() => {
+    if (pages && pages.length > 0) {
+      setLoadedPages(pages);
+    } else {
+      StorageService.getPages().then((res) => {
+        if (Array.isArray(res)) setLoadedPages(res);
+      }).catch(() => {});
+    }
+  }, [pages]);
 
   const [customTools, setCustomTools] = useState<CustomToolConfig[]>(() =>
     extensionManager.getActiveTools().filter(
-      (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant', 'gemini-api-key'].includes(t.toolId)
+      (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant', 'gemini-api-key', 'bot-agent'].includes(t.toolId)
     )
   );
 
@@ -469,9 +504,10 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
       setIsWeatherActive(extensionManager.isExtensionLoaded('WeatherForecastToolExtension'));
       setIsGeminiAssistantActive(extensionManager.isExtensionLoaded('GeminiAssistantToolExtension'));
       setIsGeminiApiKeyActive(extensionManager.isExtensionLoaded('GeminiApiKeyExtension'));
+      setIsBotAgentActive(extensionManager.isBotAgentEnabled());
       setCustomTools(
         extensionManager.getActiveTools().filter(
-          (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant', 'gemini-api-key'].includes(t.toolId)
+          (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant', 'gemini-api-key', 'bot-agent'].includes(t.toolId)
         )
       );
     };
@@ -805,6 +841,45 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
             )}
           </button>
 
+          {/* Aba 9: Agente de BOTS & Gerenciador de Robôs (4.1.1.8T.1, 4.1.1.PN.1, 4.1.1.1JE.1) */}
+          <button
+            id="tab-btn-bot-agent"
+            onClick={() => setActiveTab('bot-agent')}
+            className={`p-3 rounded-2xl border text-left transition flex items-center justify-between gap-2 cursor-pointer ${
+              activeTab === 'bot-agent'
+                ? 'border-emerald-500 bg-gradient-to-r from-emerald-50/90 to-teal-50/70 dark:from-emerald-950/40 dark:to-teal-950/30 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-400/20 shadow-xs'
+                : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={`p-2 rounded-xl shrink-0 ${
+                  activeTab === 'bot-agent'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
+                }`}
+              >
+                <Bot size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold truncate flex items-center gap-1">
+                  <span>Agente de BOTS</span>
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                  <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold">
+                    4.1.1.8T
+                  </span>
+                  <span>{isBotAgentActive ? 'Robôs Ativos' : 'Desativado'}</span>
+                </div>
+              </div>
+            </div>
+            {!isBotAgentActive && (
+              <span title="Extensão de Bots desativada pelo burocrata" className="text-amber-500 shrink-0">
+                <Lock size={12} />
+              </span>
+            )}
+          </button>
+
           {/* Abas Dinâmicas de Ferramentas de Extensões Instaladas */}
           {customTools.map((ct) => {
             const isSelected = activeTab === ct.toolId || activeTab === `custom-${ct.toolId}`;
@@ -925,6 +1000,26 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
             toolName="Variável GEMINI_API_KEY"
             extensionName="GeminiApiKeyExtension"
             icon={<Key size={32} />}
+            onNavigateToExtensions={onNavigateToExtensions}
+          />
+        )
+      )}
+
+      {/* Renderização do Agente de Bots (4.1.1.8T.1, 4.1.1.PN.1, 4.1.1.1JE.1) */}
+      {activeTab === 'bot-agent' && (
+        isBotAgentActive ? (
+          <BotAgentDashboard
+            articles={loadedArticles}
+            pages={loadedPages}
+            currentUser={currentUser}
+            onOpenArticle={onSelectArticle}
+            onOpenEditor={onOpenEditor}
+          />
+        ) : (
+          <DeactivatedToolNotice
+            toolName="Agente de BOTS & Robôs de Varredura"
+            extensionName="BotAgentExtension"
+            icon={<Bot size={32} />}
             onNavigateToExtensions={onNavigateToExtensions}
           />
         )

@@ -2443,6 +2443,9 @@ export default function App() {
               theme={theme}
               initialTab={toolsInitialTab}
               currentUser={user}
+              articles={allEncyclopediaArticles}
+              pages={pages}
+              onSelectArticle={handleSelectArticle}
               onNavigateHome={() => handleNavigate('hub')}
               onNavigateToExtensions={() => handleNavigate('admin-extensions')}
               onOpenNotebook={handleOpenNotebookModal}

@@ -48,8 +48,10 @@ import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus, CustomEditorP
 import { ExtensionManager } from '../core/ExtensionManager';
 import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
+import { BotAgentService } from '../services/botAgentService';
 import { SaveReasonModal } from './SaveReasonModal';
 import { PdfExportModal } from './PdfExportModal';
+import { PdfPreviewModal } from './PdfPreviewModal';
 import { UnsavedChangesModal } from './UnsavedChangesModal';
 import { htmlToWikitext } from '../utils/wikitextConverters';
 import { GeminiChatbotDrawer } from './GeminiChatbotDrawer';
@@ -122,6 +124,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [draftSaved, setDraftSaved] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showPdfPreviewModal, setShowPdfPreviewModal] = useState(false);
   const [showGeminiDrawer, setShowGeminiDrawer] = useState(false);
   const [showInsertWikitextModal, setShowInsertWikitextModal] = useState(false);
   const [customWikitextCode, setCustomWikitextCode] = useState('');
@@ -846,12 +849,44 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         }
       }
 
-      await onSave(
+      // 4.1.1.18C.1 & 4.1.1.11E.1 & 4.1.1.E0.1 / 4.1.1-L8.3: Interceptação e Auditoria por Bots
+      const botCheck = BotAgentService.processArticleOnSave(
         {
           id: initialArticle?.id,
           titulo: titulo.trim(),
           pageUid,
           categoria,
+          idioma,
+          descricao: finalDescricao,
+        },
+        initialArticle || null,
+        user || null
+      );
+
+      if (!botCheck.canSave) {
+        setIsSaving(false);
+        alert(botCheck.rejectionReason || 'Edição bloqueada pelo sistema de robôs e integridade da WikiZero.');
+        return;
+      }
+
+      // Higienização automática por LGPD (removendo números de cartão/CPF desnecessários)
+      if (botCheck.sanitizedArticle.descricao && botCheck.sanitizedArticle.descricao !== finalDescricao) {
+        finalDescricao = botCheck.sanitizedArticle.descricao;
+        setDescricao(finalDescricao);
+      }
+
+      let finalCategoria = categoria;
+      if (botCheck.sanitizedArticle.categoria && botCheck.sanitizedArticle.categoria !== categoria) {
+        finalCategoria = botCheck.sanitizedArticle.categoria;
+        setCategoria(finalCategoria);
+      }
+
+      await onSave(
+        {
+          id: initialArticle?.id,
+          titulo: titulo.trim(),
+          pageUid,
+          categoria: finalCategoria,
           idioma,
           descricao: finalDescricao,
           resumo: editSummary || finalDescricao.slice(0, 140) + '...',
@@ -1305,11 +1340,22 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             <button
               type="button"
               onClick={() => setShowPdfModal(true)}
-              className="px-2 py-1 rounded border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition text-xs font-semibold flex items-center gap-1 shadow-xs"
+              className="px-2 py-1 rounded border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition text-xs font-semibold flex items-center gap-1 shadow-xs cursor-pointer"
               title="Exportar rascunho/artigo para PDF"
             >
               <FileDown size={13} className="text-rose-600 dark:text-rose-400" />
               <span className="hidden sm:inline">Exportar PDF</span>
+            </button>
+
+            {/* Botão de Pré-visualizar PDF com Cabeçalho Padronizado */}
+            <button
+              type="button"
+              onClick={() => setShowPdfPreviewModal(true)}
+              className="px-2.5 py-1 rounded border border-blue-200 dark:border-blue-900/60 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
+              title="Pré-visualizar documento formatado em PDF com o cabeçalho personalizado"
+            >
+              <FileText size={13} className="text-blue-600 dark:text-blue-400" />
+              <span>Pré-visualizar PDF</span>
             </button>
 
             {/* Botão de Comitê de Ética em Pesquisa com Seres Humanos */}
@@ -2497,6 +2543,27 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           pageName={pages.find((p) => p.uid === pageUid)?.titulo || 'WikiWorldWeb'}
           isOpen={showPdfModal}
           onClose={() => setShowPdfModal(false)}
+        />
+      )}
+
+      {/* PDF Preview Modal with Standard Header & Metrics */}
+      {showPdfPreviewModal && (
+        <PdfPreviewModal
+          article={{
+            id: initialArticle?.id || 'draft-article',
+            titulo: titulo || 'Artigo Sem Título',
+            descricao: descricao,
+            categoria: categoria || 'Geral',
+            pageUid: pageUid || 'geral',
+            idioma: idioma || 'Português',
+            autor: user?.displayName || user?.username || 'Editor WikiZero',
+            dataCriacao: initialArticle?.dataCriacao || new Date().toISOString(),
+            dataEdicao: new Date().toISOString(),
+            versao: initialArticle?.versao || 1,
+          }}
+          pageName={pages.find((p) => p.uid === pageUid)?.titulo || 'WikiZero Enciclopédia'}
+          isOpen={showPdfPreviewModal}
+          onClose={() => setShowPdfPreviewModal(false)}
         />
       )}
 

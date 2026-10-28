@@ -94,6 +94,7 @@ import UserChatExtension from '../extensions/user-chat';
 import GeneralHelpExtension from '../extensions/general-help';
 import DailyChecklistExtension from '../extensions/daily-checklist';
 import GeminiApiKeyExtension from '../extensions/gemini-api-key';
+import BotAgentExtension from '../extensions/bot-agent';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -218,6 +219,7 @@ export class ExtensionManager {
       GeneralHelpExtension,
       DailyChecklistExtension,
       GeminiApiKeyExtension,
+      BotAgentExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -2321,6 +2323,13 @@ ${tc.customCss || ''}
    */
   public getGeminiApiKeySettings(): Record<string, any> {
     return this.extensionSettings['GeminiApiKeyExtension'] || {};
+  }
+
+  /**
+   * 4.1.1.8T.1 / 4.1.1.PN.1: Retorna se a extensão de Agente de Bots está ativa.
+   */
+  public isBotAgentEnabled(): boolean {
+    return this.isExtensionEnabled('BotAgentExtension');
   }
 }
 
