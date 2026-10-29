@@ -69,9 +69,10 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
   const [advisorName, setAdvisorName] = useState('Profa. Dra. Mariana Helena Vasconcelos');
   const [course, setCourse] = useState('Ciência da Computação & Engenharia de Software');
 
-  // Estado de arquivo PDF
+  // Estado de arquivo (PDF com PDF.js e Word DOCX com Mammoth.js)
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isExtractingPdf, setIsExtractingPdf] = useState(false);
+  const [fileFormat, setFileFormat] = useState<'pdf' | 'docx' | 'txt' | null>(null);
+  const [isExtractingDocument, setIsExtractingDocument] = useState(false);
   const [pdfPagesEstimate, setPdfPagesEstimate] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -85,29 +86,43 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Manipulador de upload de arquivo PDF
+  // Manipulador de upload de arquivo (PDF com PDF.js do Mozilla e Word .DOCX com Mammoth.js)
   const handleFileChange = async (file: File) => {
     if (!file) return;
-    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      alert('Por favor, selecione um arquivo no formato PDF (.pdf).');
+    const nameLower = file.name.toLowerCase();
+    const isPdf = nameLower.endsWith('.pdf') || file.type.includes('pdf');
+    const isDocx =
+      nameLower.endsWith('.docx') ||
+      nameLower.endsWith('.doc') ||
+      file.type.includes('word') ||
+      file.type.includes('officedocument');
+    const isTxt = nameLower.endsWith('.txt') || file.type.includes('text/plain');
+
+    if (!isPdf && !isDocx && !isTxt) {
+      alert('Por favor, selecione um arquivo no formato PDF (.pdf) ou Word (.docx).');
       return;
     }
 
     setSelectedFile(file);
-    setIsExtractingPdf(true);
+    setIsExtractingDocument(true);
 
     try {
-      const { text, pagesEstimate } = await AntiplagiarismService.extractTextFromPdfFile(file);
+      const { text, pagesEstimate, format } = await AntiplagiarismService.extractTextFromDocument(file);
       setTccText(text);
       setPdfPagesEstimate(pagesEstimate);
-      if (!tccTitle || tccTitle === 'Trabalho de Conclusão de Curso (TCC)') {
-        const cleanName = file.name.replace(/\.pdf$/i, '').replace(/[-_]+/g, ' ');
+      setFileFormat(format);
+      if (
+        !tccTitle ||
+        tccTitle === 'Trabalho de Conclusão de Curso (TCC)' ||
+        tccTitle === 'A Aplicação de Inteligência Artificial na Gestão de Conhecimento'
+      ) {
+        const cleanName = file.name.replace(/\.(pdf|docx|doc|txt)$/i, '').replace(/[-_]+/g, ' ');
         setTccTitle(cleanName);
       }
     } catch (err: any) {
-      alert(`Erro ao extrair texto do PDF: ${err.message || err}`);
+      alert(`Erro ao extrair texto do documento: ${err?.message || err}`);
     } finally {
-      setIsExtractingPdf(false);
+      setIsExtractingDocument(false);
     }
   };
 
@@ -377,13 +392,13 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
           </div>
         </div>
 
-        {/* MODO 1: ÁREA DE UPLOAD DE PDF */}
+        {/* MODO 1: ÁREA DE UPLOAD DE ARQUIVOS (PDF & WORD DOCX) */}
         {inputMode === 'upload' && (
           <div className="space-y-3">
             <input
               type="file"
               ref={fileInputRef}
-              accept=".pdf,application/pdf"
+              accept=".pdf,application/pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.doc,application/msword,.txt,text/plain"
               onChange={(e) => e.target.files && handleFileChange(e.target.files[0])}
               className="hidden"
             />
@@ -401,8 +416,8 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
             >
               <div className="flex flex-col items-center justify-center space-y-3">
                 <div className="p-4 rounded-3xl bg-blue-100 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 shadow-xs">
-                  {isExtractingPdf ? (
-                    <Loader2 size={32} className="animate-spin" />
+                  {isExtractingDocument ? (
+                    <Loader2 size={32} className="animate-spin text-blue-600" />
                   ) : (
                     <Upload size={32} />
                   )}
@@ -410,18 +425,37 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
 
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                    {selectedFile ? selectedFile.name : 'Clique para selecionar ou arraste o arquivo PDF do TCC'}
+                    {selectedFile
+                      ? selectedFile.name
+                      : 'Clique para selecionar ou arraste o arquivo do TCC (PDF ou Word .DOCX)'}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Suporta arquivos PDF de monografias, dissertações e artigos científicos acadêmicos
+                    Extração direta de texto limpo: <strong>PDF.js (Mozilla)</strong> para arquivos PDF e <strong>Mammoth.js</strong> para documentos Word (.docx)
                   </p>
                 </div>
 
                 {selectedFile && (
-                  <div className="flex items-center gap-2 text-xs font-mono px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                    <span>Tamanho: {(selectedFile.size / 1024).toFixed(1)} KB</span>
-                    {pdfPagesEstimate && <span>• Páginas estimadas: ~{pdfPagesEstimate}</span>}
-                    {wordCount > 0 && <span>• {wordCount} palavras extraídas</span>}
+                  <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-mono">
+                    <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold">
+                      {fileFormat === 'pdf'
+                        ? '📄 PDF (PDF.js Mozilla)'
+                        : fileFormat === 'docx'
+                        ? '📝 Word DOCX (Mammoth.js)'
+                        : '📄 Documento de Texto'}
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      Tamanho: {(selectedFile.size / 1024).toFixed(1)} KB
+                    </span>
+                    {pdfPagesEstimate && (
+                      <span className="px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                        {fileFormat === 'pdf' ? `${pdfPagesEstimate} páginas reais` : `~${pdfPagesEstimate} páginas ABNT`}
+                      </span>
+                    )}
+                    {wordCount > 0 && (
+                      <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        {wordCount} palavras extraídas
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -429,17 +463,23 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
 
             {/* Pré-visualização do texto extraído */}
             {tccText && (
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Prévia do texto extraído do PDF:</span>
-                  <span>{wordCount} palavras • ~{paragraphEstimate} parágrafos</span>
+                  <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+                    <CheckCircle2 size={13} className="text-emerald-600" />
+                    <span>
+                      Texto limpo extraído com{' '}
+                      <strong>{fileFormat === 'docx' ? 'Mammoth.js' : fileFormat === 'pdf' ? 'PDF.js (Mozilla)' : 'Extrator'}</strong>:
+                    </span>
+                  </span>
+                  <span>{wordCount} palavras • ~{paragraphEstimate} parágrafos prontos para a auditoria</span>
                 </div>
                 <textarea
                   value={tccText}
                   onChange={(e) => setTccText(e.target.value)}
-                  rows={4}
-                  className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none font-sans"
-                  placeholder="O texto extraído do PDF aparecerá aqui..."
+                  rows={5}
+                  className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none font-sans leading-relaxed text-slate-800 dark:text-slate-200"
+                  placeholder="O texto limpo extraído do documento aparecerá aqui..."
                 />
               </div>
             )}

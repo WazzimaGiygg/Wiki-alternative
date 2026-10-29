@@ -10,98 +10,203 @@ import {
   PlagiarismRiskLevel,
 } from '../types/antiplagiarism';
 
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import mammoth from 'mammoth';
+
+// Configura o worker do PDF.js do Mozilla de forma segura
+if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+  } catch {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+  }
+}
+
 export class AntiplagiarismService {
   /**
-   * Extrai o conteúdo de texto de um arquivo PDF carregado no navegador.
-   * Utiliza descompressão de streams de texto e regex para decodificar blocos de texto PDF (BT...ET / Tj / TJ)
-   * sem dependências pesadas externas.
+   * Limpa e padroniza o texto extraído de documentos eliminando códigos internos,
+   * artefatos de controle, quebras artificiais de linha e hifenização de fim de página,
+   * garantindo parágrafos coesos para envio à API do Gemini e verificação de ABNT.
+   */
+  static cleanExtractedText(rawText: string): string {
+    if (!rawText) return '';
+
+    return rawText
+      // 1. Remove caracteres nulos e de controle não-imprimíveis (mantém \t e \n)
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '')
+      // 2. Normaliza quebras de linha Windows/Mac
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      // 3. Remove resquícios de streams ou artefatos binários
+      .replace(/^(?:%PDF-[\d.]+|<<\/[\w\s/]+>>|obj\b[\s\S]*?endobj|stream[\s\S]*?endstream)/gm, '')
+      // 4. Une palavras quebradas por hífen no final de linhas (ex: "sustenta-\nbilidade" -> "sustentabilidade")
+      .replace(/([a-zA-ZÀ-ÿ])-[\t ]*\n+[\t ]*([a-zA-ZÀ-ÿ])/g, '$1$2')
+      // 5. Normaliza quebras simples no meio de frases em parágrafos contínuos
+      .split(/\n\s*\n+/)
+      .map((paragraph) => {
+        return paragraph
+          .split('\n')
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .join(' ')
+          .replace(/[ \t\u00A0]+/g, ' ')
+          .trim();
+      })
+      .filter((p) => p.length > 0)
+      .join('\n\n');
+  }
+
+  /**
+   * 1. Extrai texto limpo de todas as páginas de um arquivo PDF utilizando
+   * a biblioteca oficial pdfjs-dist (PDF.js da Mozilla).
    */
   static async extractTextFromPdfFile(file: File): Promise<{ text: string; pagesEstimate: number }> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({
+        data: new Uint8Array(arrayBuffer),
+        useSystemFonts: true,
+      });
 
-      reader.onload = async (e) => {
-        try {
-          const buffer = e.target?.result as ArrayBuffer;
-          if (!buffer) {
-            throw new Error('Não foi possível ler o arquivo PDF.');
-          }
+      const pdfDoc = await loadingTask.promise;
+      const numPages = pdfDoc.numPages;
+      const pageTexts: string[] = [];
 
-          const uint8 = new Uint8Array(buffer);
-          let rawString = '';
-          const chunkSize = 8192;
-          for (let i = 0; i < uint8.length; i += chunkSize) {
-            rawString += String.fromCharCode.apply(
-              null,
-              Array.from(uint8.subarray(i, Math.min(i + chunkSize, uint8.length)))
-            );
-          }
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        const textContent = await page.getTextContent();
 
-          // Extração heurística de blocos de texto PDF
-          let extracted = '';
-          const textBlockRegex = /BT[\s\S]*?ET/g;
-          let match: RegExpExecArray | null;
+        let pageStr = '';
+        let lastY: number | undefined;
 
-          while ((match = textBlockRegex.exec(rawString)) !== null) {
-            const block = match[0];
-            // Captura strings entre parênteses: (Texto Aqui) Tj ou [(T) 10 (exto)] TJ
-            const tjRegex = /\((.*?)\)\s*Tj/g;
-            let tjMatch: RegExpExecArray | null;
-            while ((tjMatch = tjRegex.exec(block)) !== null) {
-              extracted += tjMatch[1].replace(/\\([()\\])/g, '$1') + ' ';
+        for (const item of textContent.items as any[]) {
+          if (!item || typeof item.str !== 'string') continue;
+          const str = item.str;
+
+          // Se houver mudança na coordenada vertical Y, adiciona nova linha/parágrafo
+          const currentY = item.transform ? item.transform[5] : undefined;
+          if (lastY !== undefined && currentY !== undefined && Math.abs(currentY - lastY) > 5) {
+            if (Math.abs(currentY - lastY) > 14) {
+              pageStr += '\n\n';
+            } else {
+              pageStr += '\n';
             }
-
-            const arrayRegex = /\[(.*?)\]\s*TJ/g;
-            let arrayMatch: RegExpExecArray | null;
-            while ((arrayMatch = arrayRegex.exec(block)) !== null) {
-              const inner = arrayMatch[1];
-              const parts = inner.match(/\((.*?)\)/g);
-              if (parts) {
-                parts.forEach((p) => {
-                  extracted += p.slice(1, -1).replace(/\\([()\\])/g, '$1');
-                });
-                extracted += ' ';
-              }
-            }
-            extracted += '\n';
+          } else if (pageStr.length > 0 && !pageStr.endsWith(' ') && !pageStr.endsWith('\n')) {
+            pageStr += ' ';
           }
 
-          // Se a extração por operadores PDF não encontrou texto (PDF com codificação diferente),
-          // tenta extrair trechos de texto legíveis ASCII/Latin1
-          if (extracted.trim().length < 50) {
-            const asciiRuns = rawString.match(/[A-ZÀ-Úa-zà-ú0-9\s.,;:\-()"'!?]{20,}/g);
-            if (asciiRuns && asciiRuns.length > 0) {
-              extracted = asciiRuns.filter((r) => !r.includes('/Type') && !r.includes('/Font')).join('\n\n');
-            }
+          pageStr += str;
+          if (currentY !== undefined) {
+            lastY = currentY;
           }
-
-          // Conta ocorrências de /Type /Page para estimar páginas
-          const pageMatches = rawString.match(/\/Type\s*\/Page\b/g);
-          const pagesEstimate = Math.max(1, pageMatches ? pageMatches.length : 1);
-
-          if (extracted.trim().length > 0) {
-            resolve({
-              text: extracted.trim(),
-              pagesEstimate,
-            });
-          } else {
-            // Se o PDF for baseado apenas em imagens digitalizadas
-            resolve({
-              text: 'O arquivo PDF foi carregado com sucesso. No entanto, o arquivo aparenta ser composto por páginas digitalizadas ou imagens escaneadas sem camada de texto selecionável. Por favor, cole o texto do TCC diretamente no campo de edição abaixo para prosseguir com a análise.',
-              pagesEstimate,
-            });
-          }
-        } catch (err: any) {
-          reject(new Error(err?.message || 'Falha ao processar arquivo PDF.'));
         }
-      };
 
-      reader.onerror = () => {
-        reject(new Error('Erro de leitura do arquivo PDF.'));
-      };
+        if (pageStr.trim()) {
+          pageTexts.push(pageStr.trim());
+        }
+      }
 
-      reader.readAsArrayBuffer(file);
-    });
+      const rawJoined = pageTexts.join('\n\n');
+      const cleanText = this.cleanExtractedText(rawJoined);
+
+      if (cleanText.length > 0) {
+        return {
+          text: cleanText,
+          pagesEstimate: numPages,
+        };
+      }
+
+      return {
+        text: 'O arquivo PDF foi carregado com sucesso pelo PDF.js, mas não possui camadas de texto selecionáveis legíveis (documento baseado apenas em imagens escaneadas). Cole o texto do TCC diretamente no campo de texto para prosseguir.',
+        pagesEstimate: numPages,
+      };
+    } catch (err: any) {
+      console.error('[AntiplagiarismService] Erro ao extrair PDF com pdfjs-dist:', err);
+      throw new Error(`Falha ao ler o PDF com PDF.js: ${err?.message || err}`);
+    }
+  }
+
+  /**
+   * 2. Extrai texto puro e limpo de arquivos do Word (.docx) utilizando a biblioteca mammoth.js.
+   */
+  static async extractTextFromDocxFile(file: File): Promise<{ text: string; pagesEstimate: number }> {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      const cleanText = this.cleanExtractedText(result.value || '');
+
+      // Estimativa de páginas ABNT: média de ~280 palavras por página padrão (NBR 14724)
+      const wordsCount = cleanText.split(/\s+/).filter(Boolean).length;
+      const pagesEstimate = Math.max(1, Math.ceil(wordsCount / 280));
+
+      if (cleanText.length > 0) {
+        return {
+          text: cleanText,
+          pagesEstimate,
+        };
+      }
+
+      return {
+        text: 'O arquivo .docx foi processado com mammoth.js, mas não continha texto legível.',
+        pagesEstimate: 1,
+      };
+    } catch (err: any) {
+      console.error('[AntiplagiarismService] Erro ao extrair DOCX com mammoth.js:', err);
+      throw new Error(`Falha ao converter o documento Word .docx com mammoth.js: ${err?.message || err}`);
+    }
+  }
+
+  /**
+   * 3. Detecta a extensão do documento e direciona para pdfjs-dist (PDF) ou mammoth.js (DOCX).
+   */
+  static async extractTextFromDocument(file: File): Promise<{
+    text: string;
+    pagesEstimate: number;
+    format: 'pdf' | 'docx' | 'txt';
+  }> {
+    const name = file.name.toLowerCase();
+    const mime = file.type.toLowerCase();
+
+    if (name.endsWith('.pdf') || mime.includes('pdf')) {
+      const res = await this.extractTextFromPdfFile(file);
+      return { ...res, format: 'pdf' };
+    }
+
+    if (name.endsWith('.docx') || name.endsWith('.doc') || mime.includes('word') || mime.includes('officedocument')) {
+      const res = await this.extractTextFromDocxFile(file);
+      return { ...res, format: 'docx' };
+    }
+
+    if (name.endsWith('.txt') || mime.includes('text/plain')) {
+      const raw = await file.text();
+      const clean = this.cleanExtractedText(raw);
+      const wordsCount = clean.split(/\s+/).filter(Boolean).length;
+      return {
+        text: clean,
+        pagesEstimate: Math.max(1, Math.ceil(wordsCount / 280)),
+        format: 'txt',
+      };
+    }
+
+    // Tenta PDF se assinatura contiver %PDF
+    try {
+      const slice = await file.slice(0, 5).text();
+      if (slice.startsWith('%PDF')) {
+        const res = await this.extractTextFromPdfFile(file);
+        return { ...res, format: 'pdf' };
+      }
+    } catch {
+      // Ignora
+    }
+
+    // Tenta mammoth como fallback
+    try {
+      const res = await this.extractTextFromDocxFile(file);
+      return { ...res, format: 'docx' };
+    } catch {
+      throw new Error(`Formato de arquivo não suportado. Por favor envie um documento no formato PDF (.pdf) ou Word (.docx).`);
+    }
   }
 
   /**
