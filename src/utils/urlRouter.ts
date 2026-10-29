@@ -158,6 +158,8 @@ export function getFriendlyUidLabel(uid: string | null | undefined): string {
       Upload: 'Carregar Arquivo',
       Bots: 'Agente de BOTS & Robôs',
       BotAgent: 'Agente de BOTS',
+      AntiPlagio: 'Antiplágio & TCC (ABNT)',
+      TCC: 'Análise de TCC (ABNT)',
     };
     return map[specialPart] || `Especial: ${specialPart}`;
   }
@@ -331,6 +333,9 @@ export function getCanonicalUid(
 
     case 'news':
       return 'Special:News';
+
+    case 'antiplagio':
+      return 'Special:AntiPlagio';
 
     case 'create-page':
       return 'Special:CreatePage';
@@ -720,6 +725,16 @@ export function resolveNavigationUid(
     'bots': { view: 'tools', initialTab: 'bot-agent' },
     'bot-agent': { view: 'tools', initialTab: 'bot-agent' },
     'robos': { view: 'tools', initialTab: 'bot-agent' },
+
+    // Antiplágio & Analisador de TCC (4.1.1.8P.5 & 4.1.1.RW.5)
+    'special:antiplagio': { view: 'antiplagio' },
+    'special:anti-plagio': { view: 'antiplagio' },
+    'special:tcc': { view: 'antiplagio' },
+    'special:plagio': { view: 'antiplagio' },
+    'antiplagio': { view: 'antiplagio' },
+    'anti-plagio': { view: 'antiplagio' },
+    'tcc': { view: 'antiplagio' },
+    'plagio': { view: 'antiplagio' },
 
     // Wiki dos Livros & Periódicos / Acervo Bibliográfico
     'special:library': { view: 'library' },

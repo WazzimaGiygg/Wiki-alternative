@@ -649,6 +649,7 @@ export type ViewMode =
   | 'academic'
   | 'news'
   | 'help'
+  | 'antiplagio'
   | 'other-rules';
 
 // ==========================================

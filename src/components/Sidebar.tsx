@@ -46,6 +46,7 @@ import {
   Clock,
   Puzzle,
   Trophy,
+  FileCheck,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -452,6 +453,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               )}
             </button>
+
+            {ExtensionManager.isPlagiarismCheckerEnabled() && (
+              <button
+                id="btn-sidebar-antiplagio"
+                onClick={() => onNavigate('antiplagio')}
+                title="Antiplágio & Verificador de TCC (Normas ABNT NBR 10520 & 6023)"
+                className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                  currentView === 'antiplagio'
+                    ? 'bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                <FileCheck size={15} className="text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                {!isCollapsed && (
+                  <div className="flex items-center justify-between w-full truncate">
+                    <span className="truncate">Antiplágio & TCC</span>
+                    <span className="text-[8px] bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-mono font-bold px-1 rounded-xs">
+                      ABNT
+                    </span>
+                  </div>
+                )}
+              </button>
+            )}
 
             <button
               id="btn-sidebar-comparison"

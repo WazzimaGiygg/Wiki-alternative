@@ -57,6 +57,7 @@ interface AcademicCatalogViewProps {
   currentUser?: any;
   onNavigateToArticle?: (title: string) => void;
   onNavigateBack?: () => void;
+  onNavigateToAntiplagio?: () => void;
 }
 
 const PUBLICATION_TYPE_LABELS: Record<AcademicPublicationType, { label: string; icon: string; badgeColor: string }> = {
@@ -90,6 +91,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
   currentUser,
   onNavigateToArticle,
   onNavigateBack,
+  onNavigateToAntiplagio,
 }) => {
   // Estado Principal
   const [publications, setPublications] = useState<AcademicPublication[]>([]);
@@ -545,6 +547,17 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-blue-600' : ''}`} />
             <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar com Firebase'}</span>
           </button>
+
+          {onNavigateToAntiplagio && (
+            <button
+              onClick={onNavigateToAntiplagio}
+              className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg border border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors shadow-xs"
+              title="Abrir Ferramenta Antiplágio & Análise de TCC (Normas ABNT)"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              <span>Antiplágio & TCC (ABNT)</span>
+            </button>
+          )}
 
           <button
             onClick={handleOpenNewSubmission}

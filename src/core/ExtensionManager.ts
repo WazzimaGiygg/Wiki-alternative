@@ -95,6 +95,8 @@ import GeneralHelpExtension from '../extensions/general-help';
 import DailyChecklistExtension from '../extensions/daily-checklist';
 import GeminiApiKeyExtension from '../extensions/gemini-api-key';
 import BotAgentExtension from '../extensions/bot-agent';
+import FirstVisitNewsPopupExtension from '../extensions/first-visit-news-popup';
+import PlagiarismCheckerExtension from '../extensions/plagiarism-checker';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -220,6 +222,8 @@ export class ExtensionManager {
       DailyChecklistExtension,
       GeminiApiKeyExtension,
       BotAgentExtension,
+      FirstVisitNewsPopupExtension,
+      PlagiarismCheckerExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -2330,6 +2334,58 @@ ${tc.customCss || ''}
    */
   public isBotAgentEnabled(): boolean {
     return this.isExtensionEnabled('BotAgentExtension');
+  }
+
+  /**
+   * 4.1.1.Y5.4: Retorna se a extensão do popup de notícia de primeiro acesso está ativa.
+   */
+  public isFirstVisitPopupEnabled(): boolean {
+    return this.isExtensionEnabled('FirstVisitNewsPopupExtension');
+  }
+
+  /**
+   * 4.1.1.Y5.4: Retorna as configurações do popup de notícia de primeiro acesso.
+   */
+  public getFirstVisitPopupSettings(): Record<string, any> {
+    return this.extensionSettings['FirstVisitNewsPopupExtension'] || {};
+  }
+
+  /**
+   * 4.1.1.RW.5: Retorna se a extensão do verificador de plágio está ativa.
+   */
+  public isPlagiarismCheckerEnabled(): boolean {
+    return this.isExtensionEnabled('PlagiarismCheckerExtension');
+  }
+
+  /**
+   * 4.1.1.RW.5: Retorna as configurações do verificador de plágio.
+   */
+  public getPlagiarismCheckerSettings(): Record<string, any> {
+    return this.extensionSettings['PlagiarismCheckerExtension'] || {};
+  }
+
+  public static isPlagiarismCheckerEnabled(): boolean {
+    return ExtensionManager.getInstance().isPlagiarismCheckerEnabled();
+  }
+
+  public static getPlagiarismCheckerSettings(): Record<string, any> {
+    return ExtensionManager.getInstance().getPlagiarismCheckerSettings();
+  }
+
+  public static isFirstVisitPopupEnabled(): boolean {
+    return ExtensionManager.getInstance().isFirstVisitPopupEnabled();
+  }
+
+  public static getFirstVisitPopupSettings(): Record<string, any> {
+    return ExtensionManager.getInstance().getFirstVisitPopupSettings();
+  }
+
+  public static isBotAgentEnabled(): boolean {
+    return ExtensionManager.getInstance().isBotAgentEnabled();
+  }
+
+  public static isGeminiApiKeyEnabled(): boolean {
+    return ExtensionManager.getInstance().isGeminiApiKeyEnabled();
   }
 }
 

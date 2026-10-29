@@ -23,6 +23,7 @@ import {
   Scale,
   Crown,
   Shield,
+  ShieldCheck,
   UserX,
   Users,
   Upload,
@@ -80,6 +81,7 @@ interface SpecialPagesViewProps {
   onNavigateToLibrary?: () => void;
   onNavigateToAcademic?: () => void;
   onNavigateToNews?: () => void;
+  onNavigateToAntiplagio?: () => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -112,6 +114,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToLibrary,
   onNavigateToAcademic,
   onNavigateToNews,
+  onNavigateToAntiplagio,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -776,6 +779,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Agente de Bots, Robôs de Varredura e Proteção LGPD
+              </div>
+            </div>
+          </button>
+        )}
+
+        {(onNavigateToAntiplagio || onNavigateToTools) && (
+          <button
+            id="btn-specialpages-antiplagio"
+            onClick={() => onNavigateToAntiplagio ? onNavigateToAntiplagio() : onNavigateToTools?.()}
+            className="p-3 rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-indigo-600 text-white shrink-0 shadow-2xs">
+              <ShieldCheck size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 truncate group-hover:underline">
+                  Special:AntiPlagio
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-600 text-white">
+                  TCC/ABNT
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Analisador Antiplágio de TCC & Parecer para Orientadores
               </div>
             </div>
           </button>

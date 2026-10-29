@@ -70,6 +70,8 @@ import { ToolsView } from './components/ToolsView';
 import { LibraryCatalogView } from './components/LibraryCatalogView';
 import { AcademicCatalogView } from './components/AcademicCatalogView';
 import { JornalNewsView } from './components/JornalNewsView';
+import { AntiplagiarismTccView } from './components/AntiplagiarismTccView';
+import { FirstVisitNewsPopupModal } from './components/FirstVisitNewsPopupModal';
 import { CustomContextMenu } from './components/CustomContextMenu';
 import { UserChatModal } from './components/UserChatModal';
 import { UserChatFloatingButton } from './components/UserChatFloatingButton';
@@ -2033,6 +2035,7 @@ export default function App() {
               onNavigateToLibrary={() => handleNavigate('library')}
               onNavigateToAcademic={() => handleNavigate('academic')}
               onNavigateToNews={() => handleNavigate('news')}
+              onNavigateToAntiplagio={() => handleNavigate('antiplagio')}
               initialTab="all"
             />
           )}
@@ -2070,6 +2073,7 @@ export default function App() {
               onNavigateToLibrary={() => handleNavigate('library')}
               onNavigateToAcademic={() => handleNavigate('academic')}
               onNavigateToNews={() => handleNavigate('news')}
+              onNavigateToAntiplagio={() => handleNavigate('antiplagio')}
               initialTab="watchlist"
             />
           )}
@@ -2524,6 +2528,7 @@ export default function App() {
                 }
               }}
               onNavigateBack={() => handleNavigate('hub')}
+              onNavigateToAntiplagio={() => handleNavigate('antiplagio')}
             />
           )}
 
@@ -2549,6 +2554,17 @@ export default function App() {
                   setCurrentView('editor');
                 }
               }}
+            />
+          )}
+
+          {currentView === 'antiplagio' && (
+            <AntiplagiarismTccView
+              theme={theme}
+              currentUser={user}
+              onNavigateHome={() => handleNavigate('hub')}
+              onNavigateToAcademic={() => handleNavigate('academic')}
+              onNavigateToTools={() => handleNavigate('tools')}
+              onOpenEditor={() => handleOpenNewEditor()}
             />
           )}
 
@@ -2716,6 +2732,12 @@ export default function App() {
           setShowChromeRecommendationModal(false);
           handleNavigate('tools');
         }}
+      />
+
+      {/* 4.1.1.Y5.4: Popup Notícia de Primeiro Acesso com HTML customizado pelo Burocrata */}
+      <FirstVisitNewsPopupModal
+        currentUser={user}
+        onNavigateToExtensions={() => handleNavigate('admin-extensions')}
       />
 
       {/* My Data Portability Modal */}

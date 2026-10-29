@@ -29,6 +29,7 @@ import {
   Puzzle,
   Lock,
   Shield,
+  ShieldCheck,
   Wrench,
   Key,
   Bot,
@@ -44,6 +45,7 @@ import { WorldClockTool } from './WorldClockTool';
 import { GeminiAssistantTool } from './GeminiAssistantTool';
 import { GeminiApiKeyTool } from './GeminiApiKeyTool';
 import { BotAgentDashboard } from './BotAgentDashboard';
+import { AntiplagiarismTccView } from './AntiplagiarismTccView';
 import { CustomInteractiveToolRunner } from './CustomInteractiveToolRunner';
 import { ExtensionManager } from '../core/ExtensionManager';
 
@@ -61,7 +63,7 @@ interface ToolsViewProps {
   onSelectArticle?: (id: string) => void;
 }
 
-export type ToolTab = 'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app' | 'gemini-assistant' | 'gemini-api-key' | 'bot-agent' | string;
+export type ToolTab = 'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app' | 'gemini-assistant' | 'gemini-api-key' | 'bot-agent' | 'anti-plagio' | string;
 
 // ==========================================
 // AVISO DE EXTENSÃO DE FERRAMENTA DESATIVADA
@@ -467,6 +469,9 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
   const [isBotAgentActive, setIsBotAgentActive] = useState<boolean>(() =>
     extensionManager.isBotAgentEnabled()
   );
+  const [isPlagiarismActive, setIsPlagiarismActive] = useState<boolean>(() =>
+    extensionManager.isPlagiarismCheckerEnabled()
+  );
 
   const [loadedArticles, setLoadedArticles] = useState<WikiArticle[]>(articles || []);
   const [loadedPages, setLoadedPages] = useState<WikiPage[]>(pages || []);
@@ -493,7 +498,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
 
   const [customTools, setCustomTools] = useState<CustomToolConfig[]>(() =>
     extensionManager.getActiveTools().filter(
-      (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant', 'gemini-api-key', 'bot-agent'].includes(t.toolId)
+      (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant', 'gemini-api-key', 'bot-agent', 'anti-plagio'].includes(t.toolId)
     )
   );
 
@@ -505,9 +510,10 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
       setIsGeminiAssistantActive(extensionManager.isExtensionLoaded('GeminiAssistantToolExtension'));
       setIsGeminiApiKeyActive(extensionManager.isExtensionLoaded('GeminiApiKeyExtension'));
       setIsBotAgentActive(extensionManager.isBotAgentEnabled());
+      setIsPlagiarismActive(extensionManager.isPlagiarismCheckerEnabled());
       setCustomTools(
         extensionManager.getActiveTools().filter(
-          (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant', 'gemini-api-key', 'bot-agent'].includes(t.toolId)
+          (t) => !['calculator', 'world-clock', 'weather', 'gemini-assistant', 'gemini-api-key', 'bot-agent', 'anti-plagio'].includes(t.toolId)
         )
       );
     };
@@ -880,6 +886,45 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
             )}
           </button>
 
+          {/* Aba 10: Verificador Antiplágio & Análise de TCC (4.1.1.8P.5 & 4.1.1.RW.5) */}
+          <button
+            id="tab-btn-anti-plagio"
+            onClick={() => setActiveTab('anti-plagio')}
+            className={`p-3 rounded-2xl border text-left transition flex items-center justify-between gap-2 cursor-pointer ${
+              activeTab === 'anti-plagio'
+                ? 'border-indigo-500 bg-gradient-to-r from-indigo-50/90 to-blue-50/70 dark:from-indigo-950/40 dark:to-blue-950/30 text-indigo-950 dark:text-indigo-100 ring-2 ring-indigo-400/20 shadow-xs'
+                : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={`p-2 rounded-xl shrink-0 ${
+                  activeTab === 'anti-plagio'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
+                }`}
+              >
+                <ShieldCheck size={18} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold truncate flex items-center gap-1">
+                  <span>Antiplágio & TCC</span>
+                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                  <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-semibold">
+                    4.1.1.RW
+                  </span>
+                  <span>{isPlagiarismActive ? 'ABNT Ativa' : 'Desativado'}</span>
+                </div>
+              </div>
+            </div>
+            {!isPlagiarismActive && (
+              <span title="Extensão de Antiplágio desativada pelo burocrata" className="text-amber-500 shrink-0">
+                <Lock size={12} />
+              </span>
+            )}
+          </button>
+
           {/* Abas Dinâmicas de Ferramentas de Extensões Instaladas */}
           {customTools.map((ct) => {
             const isSelected = activeTab === ct.toolId || activeTab === `custom-${ct.toolId}`;
@@ -1020,6 +1065,25 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
             toolName="Agente de BOTS & Robôs de Varredura"
             extensionName="BotAgentExtension"
             icon={<Bot size={32} />}
+            onNavigateToExtensions={onNavigateToExtensions}
+          />
+        )
+      )}
+
+      {/* Renderização do Verificador Antiplágio & Análise de TCC (4.1.1.8P.5 & 4.1.1.RW.5) */}
+      {activeTab === 'anti-plagio' && (
+        isPlagiarismActive ? (
+          <AntiplagiarismTccView
+            theme={theme}
+            currentUser={currentUser}
+            onNavigateHome={onNavigateHome}
+            onOpenEditor={onOpenEditor}
+          />
+        ) : (
+          <DeactivatedToolNotice
+            toolName="Verificador Antiplágio & Análise de TCC"
+            extensionName="PlagiarismCheckerExtension"
+            icon={<ShieldCheck size={32} />}
             onNavigateToExtensions={onNavigateToExtensions}
           />
         )
