@@ -70,7 +70,13 @@ import { ToolsView } from './components/ToolsView';
 import { LibraryCatalogView } from './components/LibraryCatalogView';
 import { AcademicCatalogView } from './components/AcademicCatalogView';
 import { JornalNewsView } from './components/JornalNewsView';
-import { AntiplagiarismTccView } from './components/AntiplagiarismTccView';
+
+// 4.1.1.222.6: Otimização de Pacotes (Code-Splitting sob demanda para AntiplagiarismTccView)
+const AntiplagiarismTccView = React.lazy(() =>
+  import('./components/AntiplagiarismTccView').then((m) => ({
+    default: m.AntiplagiarismTccView,
+  }))
+);
 import { FirstVisitNewsPopupModal } from './components/FirstVisitNewsPopupModal';
 import { CustomContextMenu } from './components/CustomContextMenu';
 import { UserChatModal } from './components/UserChatModal';
@@ -2558,14 +2564,25 @@ export default function App() {
           )}
 
           {currentView === 'antiplagio' && (
-            <AntiplagiarismTccView
-              theme={theme}
-              currentUser={user}
-              onNavigateHome={() => handleNavigate('hub')}
-              onNavigateToAcademic={() => handleNavigate('academic')}
-              onNavigateToTools={() => handleNavigate('tools')}
-              onOpenEditor={() => handleOpenNewEditor()}
-            />
+            <React.Suspense
+              fallback={
+                <div className="flex flex-col items-center justify-center min-h-[400px] space-y-3">
+                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs text-slate-500 font-mono">
+                    Carregando analisador antiplágio & ABNT (4.1.1.222.6 Code-Splitting)...
+                  </p>
+                </div>
+              }
+            >
+              <AntiplagiarismTccView
+                theme={theme}
+                currentUser={user}
+                onNavigateHome={() => handleNavigate('hub')}
+                onNavigateToAcademic={() => handleNavigate('academic')}
+                onNavigateToTools={() => handleNavigate('tools')}
+                onOpenEditor={() => handleOpenNewEditor()}
+              />
+            </React.Suspense>
           )}
 
           {currentView === 'mydata' && (

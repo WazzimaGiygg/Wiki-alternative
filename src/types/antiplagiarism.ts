@@ -11,6 +11,16 @@ export type ParagraphStatus =
   | 'inconformidade_abnt'
   | 'risco_plagio_critico';
 
+export interface MatchedWebSource {
+  title: string;
+  url: string;
+  snippet?: string;
+  similarityPercent?: number;
+  similarity?: number;
+  domain?: string;
+  sourceType?: 'academic_paper' | 'web_search' | 'encyclopedia' | 'institutional';
+}
+
 export interface ParagraphAnalysisItem {
   id: string;
   paragraphNumber: number;
@@ -31,6 +41,7 @@ export interface ParagraphAnalysisItem {
   abntRule: string;
   similarityPercentage: number;
   matchedSourceHint?: string;
+  matchedSources?: MatchedWebSource[];
 }
 
 export interface AntiplagiarismReport {
@@ -50,5 +61,9 @@ export interface AntiplagiarismReport {
   paragraphs: ParagraphAnalysisItem[];
   executiveSummary: string;
   generalRecommendations: string[];
-  usedEngine: 'gemini_ai' | 'heuristic_syntax';
+  usedEngine: 'gemini_ai' | 'heuristic_syntax' | 'gemini_search_grounding';
+  webGroundingSourcesCount?: number;
+  groundingWebSources?: MatchedWebSource[];
+  ocrProcessedPages?: number;
+  formatNotice?: string;
 }

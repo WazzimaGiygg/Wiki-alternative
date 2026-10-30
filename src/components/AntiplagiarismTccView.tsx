@@ -35,13 +35,19 @@ import {
   Loader2,
   Paperclip,
   CheckCheck,
+  Globe,
+  Camera,
+  TestTube2,
+  FileCode,
 } from 'lucide-react';
 import {
   AntiplagiarismReport,
   ParagraphAnalysisItem,
   ParagraphStatus,
+  MatchedWebSource,
 } from '../types/antiplagiarism';
-import { AntiplagiarismService } from '../services/antiplagiarismService';
+import { AntiplagiarismService, DocumentExtractionProgress } from '../services/antiplagiarismService';
+import { runSanitizationTestSuite, SanitizationSuiteReport } from '../utils/textSanitizer';
 import { UserProfile, AppTheme } from '../types';
 
 interface AntiplagiarismTccViewProps {
@@ -69,48 +75,63 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
   const [advisorName, setAdvisorName] = useState('Profa. Dra. Mariana Helena Vasconcelos');
   const [course, setCourse] = useState('Ciência da Computação & Engenharia de Software');
 
-  // Estado de arquivo (PDF com PDF.js e Word DOCX com Mammoth.js)
+  // Estado de arquivo (PDF com PDF.js, Word DOCX com Mammoth.js, e DOC legado OLE)
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileFormat, setFileFormat] = useState<'pdf' | 'docx' | 'txt' | null>(null);
+  const [fileFormat, setFileFormat] = useState<'pdf' | 'docx' | 'doc' | 'txt' | null>(null);
   const [isExtractingDocument, setIsExtractingDocument] = useState(false);
+  const [extractionProgress, setExtractionProgress] = useState<DocumentExtractionProgress | null>(null);
+  const [formatNotice, setFormatNotice] = useState<string | null>(null);
+  const [wasOcrUsed, setWasOcrUsed] = useState(false);
   const [pdfPagesEstimate, setPdfPagesEstimate] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   // Estado de análise e relatório
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [report, setReport] = useState<AntiplagiarismReport | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'paragraphs' | 'abnt-guide' | 'opinion'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'paragraphs' | 'grounding' | 'abnt-guide' | 'opinion' | 'tests'>('dashboard');
   const [paragraphFilter, setParagraphFilter] = useState<'all' | 'advisor' | 'abnt' | 'critical' | 'regular'>('all');
   const [expandedParagraphs, setExpandedParagraphs] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // 4.1.1.20Z.6: Estado da Suíte de Testes Unitários de Sanitização
+  const [testSuiteReport, setTestSuiteReport] = useState<SanitizationSuiteReport | null>(null);
+  const [isRunningTests, setIsRunningTests] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Manipulador de upload de arquivo (PDF com PDF.js do Mozilla e Word .DOCX com Mammoth.js)
+  // Manipulador de upload de arquivo (PDF com PDF.js e OCR, Word .DOCX com Mammoth.js, e Word Legado .DOC OLE)
   const handleFileChange = async (file: File) => {
     if (!file) return;
     const nameLower = file.name.toLowerCase();
     const isPdf = nameLower.endsWith('.pdf') || file.type.includes('pdf');
-    const isDocx =
-      nameLower.endsWith('.docx') ||
-      nameLower.endsWith('.doc') ||
-      file.type.includes('word') ||
-      file.type.includes('officedocument');
+    const isDocx = nameLower.endsWith('.docx') || file.type.includes('wordprocessingml');
+    const isDoc = nameLower.endsWith('.doc') || file.type.includes('msword');
     const isTxt = nameLower.endsWith('.txt') || file.type.includes('text/plain');
 
-    if (!isPdf && !isDocx && !isTxt) {
-      alert('Por favor, selecione um arquivo no formato PDF (.pdf) ou Word (.docx).');
+    if (!isPdf && !isDocx && !isDoc && !isTxt) {
+      alert('Por favor, selecione um arquivo no formato PDF (.pdf), Word (.docx) ou Word Legado (.doc).');
       return;
     }
 
     setSelectedFile(file);
     setIsExtractingDocument(true);
+    setFormatNotice(null);
+    setWasOcrUsed(false);
+    setExtractionProgress({ message: 'Carregando documento...', percent: 10, stage: 'loading' });
 
     try {
-      const { text, pagesEstimate, format } = await AntiplagiarismService.extractTextFromDocument(file);
-      setTccText(text);
-      setPdfPagesEstimate(pagesEstimate);
-      setFileFormat(format);
+      const res = await AntiplagiarismService.extractTextFromDocument(file, (p) => {
+        setExtractionProgress(p);
+      });
+      setTccText(res.text);
+      setPdfPagesEstimate(res.pagesEstimate);
+      setFileFormat(res.format);
+      if (res.formatNotice) {
+        setFormatNotice(res.formatNotice);
+      }
+      if (res.isOcr) {
+        setWasOcrUsed(true);
+      }
       if (
         !tccTitle ||
         tccTitle === 'Trabalho de Conclusão de Curso (TCC)' ||
@@ -123,7 +144,19 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
       alert(`Erro ao extrair texto do documento: ${err?.message || err}`);
     } finally {
       setIsExtractingDocument(false);
+      setExtractionProgress(null);
     }
+  };
+
+  // 4.1.1.20Z.6: Executa a bateria de testes unitários automatizados de sanitização
+  const handleRunUnitTests = () => {
+    setIsRunningTests(true);
+    setTimeout(() => {
+      const rep = runSanitizationTestSuite();
+      setTestSuiteReport(rep);
+      setIsRunningTests(false);
+      setActiveTab('tests');
+    }, 120);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -222,6 +255,7 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
 
   const wordCount = tccText.trim() ? tccText.trim().split(/\s+/).filter(Boolean).length : 0;
   const paragraphEstimate = tccText.trim() ? tccText.split(/\n\s*\n/).filter((p) => p.trim().length > 10).length : 0;
+  const suiteReport = useMemo(() => testSuiteReport || runSanitizationTestSuite(), [testSuiteReport]);
 
   return (
     <div id="antiplagiarism-tcc-view" className="max-w-6xl mx-auto px-4 py-6 space-y-6">
@@ -253,6 +287,15 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleRunUnitTests}
+              className="px-3 py-2 text-xs font-semibold rounded-xl border border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition flex items-center gap-1.5 cursor-pointer"
+              title="Executar testes unitários de sanitização de texto (4.1.1.20Z.6)"
+            >
+              <TestTube2 size={14} className={isRunningTests ? 'animate-spin' : ''} />
+              <span>Testes (4.1.1.20Z.6)</span>
+            </button>
+
             {onNavigateToAcademic && (
               <button
                 onClick={onNavigateToAcademic}
@@ -427,22 +470,59 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                   <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
                     {selectedFile
                       ? selectedFile.name
-                      : 'Clique para selecionar ou arraste o arquivo do TCC (PDF ou Word .DOCX)'}
+                      : 'Clique para selecionar ou arraste o arquivo do TCC (PDF, Word .DOCX ou Word Legado .DOC)'}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Extração direta de texto limpo: <strong>PDF.js (Mozilla)</strong> para arquivos PDF e <strong>Mammoth.js</strong> para documentos Word (.docx)
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-lg mx-auto">
+                    Processamento seguro no cliente: <strong>PDF.js (Mozilla)</strong> com fallback de <strong>OCR Tesseract.js</strong> para escaneados, <strong>Mammoth.js</strong> para Word (.docx) e conversor OLE para <strong>.doc legado</strong>.
                   </p>
                 </div>
 
-                {selectedFile && (
+                {/* Barra de Progresso em Tempo Real da Extração & OCR */}
+                {isExtractingDocument && extractionProgress && (
+                  <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900 rounded-2xl p-3.5 space-y-2 shadow-xs">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                        {extractionProgress.stage === 'ocr' ? (
+                          <Camera size={14} className="animate-pulse text-amber-500" />
+                        ) : (
+                          <Loader2 size={14} className="animate-spin text-blue-500" />
+                        )}
+                        <span>{extractionProgress.message}</span>
+                      </span>
+                      <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                        {extractionProgress.percent}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${
+                          extractionProgress.stage === 'ocr' ? 'bg-amber-500' : 'bg-blue-600'
+                        }`}
+                        style={{ width: `${extractionProgress.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {selectedFile && !isExtractingDocument && (
                   <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-mono">
                     <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold">
                       {fileFormat === 'pdf'
                         ? '📄 PDF (PDF.js Mozilla)'
                         : fileFormat === 'docx'
                         ? '📝 Word DOCX (Mammoth.js)'
+                        : fileFormat === 'doc'
+                        ? '📜 Word Legado (.doc OLE)'
                         : '📄 Documento de Texto'}
                     </span>
+
+                    {wasOcrUsed && (
+                      <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-bold flex items-center gap-1">
+                        <Camera size={12} />
+                        <span>OCR Tesseract.js Ativado (4.1.1.2I5.6)</span>
+                      </span>
+                    )}
+
                     <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                       Tamanho: {(selectedFile.size / 1024).toFixed(1)} KB
                     </span>
@@ -456,6 +536,17 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                         {wordCount} palavras extraídas
                       </span>
                     )}
+                  </div>
+                )}
+
+                {/* 4.1.1.23Q.6: Aviso amigável para documentos Word Legados (.doc) */}
+                {formatNotice && (
+                  <div className="w-full max-w-xl text-left bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+                    <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block font-bold">Aviso sobre Formato Binário Legado (.doc):</strong>
+                      <span>{formatNotice}</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -544,6 +635,125 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
         </div>
       </div>
 
+      {/* 4.1.1.20Z.6: Visualização Direta da Suíte de Testes Unitários de Sanitização (acesso prévio sem necessidade de análise) */}
+      {activeTab === 'tests' && !report && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-5 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-mono">
+                SUÍTE UNITÁRIA 4.1.1.20Z.6
+              </span>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white font-serif-heading">
+                Validação Automatizada de Edge Cases do Sanitizador
+              </h3>
+            </div>
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-medium cursor-pointer"
+            >
+              Fechar Painel de Testes ✕
+            </button>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-xs text-purple-950 dark:text-purple-200 font-medium">
+                Execução dos 10 testes unitários de sanitização de texto acadêmico (caracteres nulos, CRLF, hifenizações de fim de página, blocos PDF residuais, numeração e preservação ABNT).
+              </p>
+            </div>
+            <button
+              onClick={handleRunUnitTests}
+              disabled={isRunningTests}
+              className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition flex items-center gap-1.5 disabled:opacity-50 shrink-0 cursor-pointer"
+            >
+              <RotateCcw size={13} className={isRunningTests ? 'animate-spin' : ''} />
+              <span>Executar Bateria Novamente</span>
+            </button>
+          </div>
+
+          {/* Métricas */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+              <span className="text-[10px] font-bold uppercase text-slate-400 block">Total de Testes</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">{suiteReport.total}</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+              <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 block">Aprovados</span>
+              <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{suiteReport.passedCount}</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
+              <span className="text-[10px] font-bold uppercase text-rose-700 dark:text-rose-300 block">Falhas</span>
+              <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{suiteReport.failedCount}</span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+              <span className="text-[10px] font-bold uppercase text-blue-700 dark:text-blue-300 block">Taxa de Sucesso</span>
+              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {Math.round((suiteReport.passedCount / suiteReport.total) * 100)}%
+              </span>
+            </div>
+          </div>
+
+          {/* Lista de Casos de Teste */}
+          <div className="space-y-3">
+            {suiteReport.results.map((res, index) => (
+              <div
+                key={res.id}
+                className="p-4 rounded-2xl bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2.5"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+                      {index + 1}
+                    </span>
+                    <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
+                      {res.name}
+                    </h4>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-slate-400">
+                      {res.durationMs}ms
+                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${
+                      res.passed
+                        ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                        : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                    }`}>
+                      {res.passed ? '✓ Aprovado (Pass)' : '✕ Falha (Fail)'}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {res.description}
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] font-bold text-slate-400 block mb-1">Entrada Bruta com Artefato:</span>
+                    <pre className="whitespace-pre-wrap text-[11px] text-slate-700 dark:text-slate-300 break-all">
+                      {JSON.stringify(res.input)}
+                    </pre>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50">
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 block mb-1">Resultado Sanitizado Limpo:</span>
+                    <pre className="whitespace-pre-wrap text-[11px] text-emerald-900 dark:text-emerald-300 break-all">
+                      {JSON.stringify(res.output)}
+                    </pre>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                  <span>{res.expectedExplanation}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* RELATÓRIO DETALHADO DO TCC (EXIBIDO APÓS ANÁLISE) */}
       {report && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-6 animate-in fade-in duration-300">
@@ -567,7 +777,7 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
             </div>
 
             {/* Abas do Relatório */}
-            <div className="inline-flex rounded-2xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700">
+            <div className="flex flex-wrap items-center rounded-2xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700 gap-1">
               <button
                 onClick={() => setActiveTab('dashboard')}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
@@ -593,6 +803,18 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
               </button>
 
               <button
+                onClick={() => setActiveTab('grounding')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'grounding'
+                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-300 shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <Globe size={14} />
+                <span>Bases Web ({report.webGroundingSourcesCount || report.groundingWebSources?.length || 0})</span>
+              </button>
+
+              <button
                 onClick={() => setActiveTab('abnt-guide')}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'abnt-guide'
@@ -614,6 +836,18 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
               >
                 <Printer size={14} />
                 <span>Parecer Formal</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('tests')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'tests'
+                    ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-300 shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <TestTube2 size={14} />
+                <span>Testes Sanitização (4.1.1.20Z.6)</span>
               </button>
             </div>
           </div>
@@ -933,6 +1167,62 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                               </div>
                             </div>
                           )}
+
+                          {/* 4.1.1.2HL.6: Fontes Externas Identificadas (Cruzamento Web / Grounding) */}
+                          {p.matchedSources && p.matchedSources.length > 0 && (
+                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2">
+                              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                                <span className="flex items-center gap-1.5">
+                                  <Globe size={14} className="text-blue-500" />
+                                  <span>Fontes Externas Identificadas (Cruzamento Web Grounding):</span>
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-mono">
+                                  {p.matchedSources.length} fonte(s) similar(es)
+                                </span>
+                              </div>
+                              <div className="space-y-1.5">
+                                {p.matchedSources.map((ms, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                                  >
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5 font-medium text-slate-900 dark:text-slate-100 truncate">
+                                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold uppercase">
+                                          {ms.domain || 'Web'}
+                                        </span>
+                                        <span className="truncate">{ms.title}</span>
+                                      </div>
+                                      {ms.snippet && (
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 italic line-clamp-1 mt-0.5">
+                                          "{ms.snippet}"
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {ms.similarity !== undefined && (
+                                        <span className="text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400">
+                                          ~{ms.similarity}% similar
+                                        </span>
+                                      )}
+                                      {ms.url && (
+                                        <a
+                                          href={ms.url}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="p-1 rounded-md text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 transition flex items-center gap-1 text-[11px] font-medium"
+                                          title="Abrir publicação externa"
+                                        >
+                                          <span>Acessar</span>
+                                          <ExternalLink size={12} />
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1109,6 +1399,249 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                   <Printer size={14} />
                   <span>Imprimir Parecer Oficial</span>
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: BASES WEB & CRUZAMENTO DE FONTES (4.1.1.2HL.6) */}
+          {activeTab === 'grounding' && (
+            <div className="space-y-5">
+              <div className="p-5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                    <Globe size={18} className="text-blue-600 dark:text-blue-400" />
+                    <span>Expansão de Fontes e Cruzamento com Repositórios Acadêmicos (4.1.1.2HL.6)</span>
+                  </h3>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 uppercase">
+                    Google Search Grounding + Gemini 3.8
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Além da análise estrutural e sintática baseada nas normas ABNT, esta camada cruza os trechos do TCC diretamente com bases públicas indexadas na web (SciELO Brasil, Repositório Digital de Teses da USP, Portal de Periódicos CAPES, Google Scholar e documentos acadêmicos abertos).
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300">
+                    📚 SciELO Brasil
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300">
+                    🏛️ Teses & Dissertações USP
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300">
+                    🔬 Portal CAPES
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300">
+                    🌐 Google Scholar
+                  </span>
+                </div>
+              </div>
+
+              {/* Indicadores de Fontes */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                    Fontes Mapeadas
+                  </span>
+                  <span className="text-2xl font-bold font-mono text-slate-900 dark:text-white">
+                    {report.groundingWebSources?.length || report.webGroundingSourcesCount || 0}
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Artigos e dissertações públicas correlacionadas
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                    Similaridade Média Web
+                  </span>
+                  <span className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400">
+                    {report.overallSimilarityScore}%
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Grau de correspondência com indexadores
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                    Status de Integridade
+                  </span>
+                  <span className={`text-base font-bold font-mono ${
+                    report.riskLevel === 'baixo' ? 'text-emerald-600' : 'text-amber-600'
+                  }`}>
+                    {report.riskLevel === 'baixo' ? 'BAIXO RISCO EXTERNO' : 'REQUER AJUSTES DE CITAÇÃO'}
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Conforme normas ABNT NBR 10520
+                  </p>
+                </div>
+              </div>
+
+              {/* Lista de Fontes Externas */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                  Publicações e Referências com Coincidência Textual Detectada:
+                </h4>
+
+                {(!report.groundingWebSources || report.groundingWebSources.length === 0) ? (
+                  <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
+                    Nenhuma coincidência textual direta detectada com as bases web consultadas.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {report.groundingWebSources.map((src, idx) => (
+                      <div
+                        key={idx}
+                        className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-2xs hover:border-blue-300 dark:hover:border-blue-700 transition"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 text-[10px] font-bold font-mono rounded-md bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900 uppercase">
+                              {src.domain || 'Base Científica'}
+                            </span>
+                            <h5 className="text-xs md:text-sm font-bold text-slate-900 dark:text-slate-100">
+                              {src.title}
+                            </h5>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {src.similarity !== undefined && (
+                              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                ~{src.similarity}% de similaridade
+                              </span>
+                            )}
+                            {src.url && (
+                              <a
+                                href={src.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-3 py-1 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1.5"
+                              >
+                                <span>Acessar Fonte</span>
+                                <ExternalLink size={12} />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        {src.snippet && (
+                          <blockquote className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/70 border-l-4 border-blue-400 text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">
+                            "{src.snippet}"
+                          </blockquote>
+                        )}
+
+                        <div className="text-[11px] text-slate-400 flex items-center gap-2 font-mono">
+                          <span className="truncate">URL: {src.url}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: SUÍTE DE TESTES UNITÁRIOS DE SANITIZAÇÃO (4.1.1.20Z.6) */}
+          {activeTab === 'tests' && (
+            <div className="space-y-5">
+              <div className="p-5 rounded-2xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                    <TestTube2 size={18} className="text-purple-600 dark:text-purple-400" />
+                    <span>Suíte de Testes Unitários Automatizados da Sanitização (4.1.1.20Z.6)</span>
+                  </h3>
+                  <button
+                    onClick={handleRunUnitTests}
+                    disabled={isRunningTests}
+                    className="px-3 py-1.5 text-xs font-bold rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    <RotateCcw size={13} className={isRunningTests ? 'animate-spin' : ''} />
+                    <span>Reexecutar Bateria ({suiteReport.total} Testes)</span>
+                  </button>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Cobre exaustivamente edge cases da função de sanitização de texto acadêmico (<code>cleanExtractedText</code>): caracteres nulos (\x00), quebras de linha Windows/Mac, hifenizações complexas de fim de linha, remoção residual de blocos PDF, números soltos de página e preservação integral de citações e travessões da ABNT.
+                </p>
+              </div>
+
+              {/* Métricas dos Testes */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Total de Testes</span>
+                  <span className="text-2xl font-bold text-slate-900 dark:text-white">{suiteReport.total}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 block">Aprovados</span>
+                  <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{suiteReport.passedCount}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
+                  <span className="text-[10px] font-bold uppercase text-rose-700 dark:text-rose-300 block">Falhas</span>
+                  <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{suiteReport.failedCount}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+                  <span className="text-[10px] font-bold uppercase text-blue-700 dark:text-blue-300 block">Taxa de Cobertura</span>
+                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {Math.round((suiteReport.passedCount / suiteReport.total) * 100)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Casos de Teste Detalhados */}
+              <div className="space-y-3">
+                {suiteReport.results.map((res, index) => (
+                  <div
+                    key={res.id}
+                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+                          {index + 1}
+                        </span>
+                        <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
+                          {res.name}
+                        </h4>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {res.durationMs}ms
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${
+                          res.passed
+                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                            : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                        }`}>
+                          {res.passed ? '✓ Aprovado (Pass)' : '✕ Falha (Fail)'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {res.description}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                        <span className="text-[10px] font-bold text-slate-400 block mb-1">Entrada Bruta com Artefato:</span>
+                        <pre className="whitespace-pre-wrap text-[11px] text-slate-700 dark:text-slate-300 break-all">
+                          {JSON.stringify(res.input)}
+                        </pre>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50">
+                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 block mb-1">Resultado Sanitizado Limpo:</span>
+                        <pre className="whitespace-pre-wrap text-[11px] text-emerald-900 dark:text-emerald-300 break-all">
+                          {JSON.stringify(res.output)}
+                        </pre>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                      <span>{res.expectedExplanation}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

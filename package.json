@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "0.0.0",
+  "version": "4.1.0",
   "type": "module",
   "scripts": {
     "dev": "tsx --dns-result-order=ipv4first server.ts",
@@ -9,7 +9,8 @@
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test:sanitization": "tsx scripts/test-sanitization.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -30,6 +31,7 @@
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "recharts": "^3.10.1",
+    "tesseract.js": "^7.0.0",
     "vite": "^6.2.3"
   },
   "devDependencies": {

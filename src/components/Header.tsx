@@ -1346,8 +1346,8 @@ export const Header: React.FC<HeaderProps> = ({
                     <span className="text-[#FBBC05]">k</span>
                     <span className="text-[#34A853]">i</span>
                   </h1>
-                  <span className="text-[9px] font-bold uppercase tracking-wider bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-300 border border-red-200 dark:border-red-800 px-1.5 py-0.2 rounded-full">
-                    Google
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-300 border border-red-200 dark:border-red-800 px-1.5 py-0.2 rounded-full font-mono">
+                    Google V4.1
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans leading-none mt-0.5 hidden xs:block">
@@ -1416,8 +1416,8 @@ export const Header: React.FC<HeaderProps> = ({
                   <h1 className="font-serif-heading font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
                     {branding.wikiName}
                   </h1>
-                  <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-1 py-0.2 rounded-xs">
-                    {branding.systemName}
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-1.5 py-0.5 rounded-xs font-mono">
+                    {branding.systemName} V4.1
                   </span>
                 </div>
                 <p

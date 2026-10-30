@@ -763,9 +763,12 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
 
         <div className="relative z-10 max-w-4xl space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30 backdrop-blur-xs">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30 backdrop-blur-xs font-mono">
               <Sparkles size={13} className="text-amber-300 animate-pulse" />
-              Changelog & Diffs Contínuos
+              WikiWorldWeb V4.1
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-400/30 backdrop-blur-xs">
+              Changelog & Diffs
             </span>
             <a
               href={GITHUB_REPO_CONFIG.repoUrl}
