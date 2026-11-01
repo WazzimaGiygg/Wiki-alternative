@@ -10,6 +10,28 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
+import {
+  normalizeText,
+  tokenizeWords,
+  generateShingles,
+  winnow,
+  hashShingle,
+  calculateContainment,
+  calculateJaccard,
+  extractMatchingExcerpts,
+  extractCharacteristicPhrases,
+  prepareSourceDocument,
+  analyzeParagraphDeterministically,
+  calculateWeightedOverallSimilarity,
+  detectLegitimateAbntCitation,
+  fetchWikipediaPtSources,
+  fetchCrossrefSources,
+  fetchOpenAlexSources,
+  SourceQueryResult,
+  SourceStatusReport,
+  PreparedSourceDocument,
+  ParagraphSimilarityAnalysis,
+} from './src/services/similarityEngine';
 
 dotenv.config();
 
@@ -82,6 +104,85 @@ async function generateWithFallback(
     }
   }
   throw lastErr;
+}
+
+// -------------------------------------------------------------
+// Firebase ID Token Verification & Rate Limiting (Antiplagiarism Protection)
+// -------------------------------------------------------------
+let cachedFirebaseApiKey: string | null = null;
+function getFirebaseApiKey(): string | null {
+  if (cachedFirebaseApiKey) return cachedFirebaseApiKey;
+  try {
+    const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (cfg && cfg.apiKey) {
+        cachedFirebaseApiKey = cfg.apiKey;
+        return cachedFirebaseApiKey;
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao ler firebase-applet-config.json:', err);
+  }
+  return process.env.VITE_FIREBASE_API_KEY || null;
+}
+
+export async function verifyFirebaseIdToken(
+  token: string
+): Promise<{ uid: string; email?: string } | null> {
+  if (!token || typeof token !== 'string') return null;
+  const apiKey = getFirebaseApiKey();
+  if (!apiKey) {
+    console.warn('[Auth] Firebase API Key não configurada para verificação de token.');
+    return null;
+  }
+
+  try {
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: token }),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      console.warn(`[Auth] Falha na validação do token Firebase (status ${res.status}):`, errBody);
+      return null;
+    }
+
+    const data = (await res.json()) as { users?: Array<{ localId: string; email?: string }> };
+    if (data.users && data.users.length > 0 && data.users[0].localId) {
+      return {
+        uid: data.users[0].localId,
+        email: data.users[0].email,
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error('[Auth] Erro ao verificar token Firebase:', err);
+    return null;
+  }
+}
+
+// Limite em memória por usuário: máximo 10 requisições a cada 10 minutos
+const antiplagiarismRateLimits = new Map<string, { count: number; resetAt: number }>();
+function checkAntiplagiarismRateLimit(
+  userUid: string,
+  maxRequests = 10,
+  windowMs = 10 * 60 * 1000
+): { allowed: boolean; retryAfter?: number } {
+  const now = Date.now();
+  const record = antiplagiarismRateLimits.get(userUid);
+  if (!record || now > record.resetAt) {
+    antiplagiarismRateLimits.set(userUid, { count: 1, resetAt: now + windowMs });
+    return { allowed: true };
+  }
+  if (record.count >= maxRequests) {
+    const retryAfter = Math.ceil((record.resetAt - now) / 1000);
+    return { allowed: false, retryAfter };
+  }
+  record.count += 1;
+  return { allowed: true };
 }
 
 // -------------------------------------------------------------
@@ -1192,320 +1293,531 @@ Retorne APENAS o JSON puro, sem crases de markdown e sem texto antes ou depois.`
 
 // =============================================================
 // 5. Rota Antiplágio & Análise de TCC (4.1.1.8P.5 & 4.1.1.RW.5)
+// Protegida por Token de ID Firebase, Limite de Taxa e Restrições de Tamanho
 // =============================================================
 app.post('/api/antiplagiarism/analyze', async (req: Request, res: Response) => {
   try {
+    // 0. Autenticação Obrigatória via Firebase ID Token (verifyIdToken)
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+    if (!token) {
+      return res.status(401).json({
+        error: 'Autenticação necessária. É obrigatório fornecer o token de ID do Firebase no cabeçalho Authorization para auditar trabalhos acadêmicos.',
+      });
+    }
+
+    const authUser = await verifyFirebaseIdToken(token);
+    if (!authUser || !authUser.uid) {
+      return res.status(401).json({
+        error: 'Token de autenticação do Firebase inválido ou expirado. Por favor, autentique-se novamente na WikiWorldWeb.',
+      });
+    }
+
+    // 0.1 Limite de Requisições por Usuário (Rate Limiting: 10 requisições a cada 10 minutos)
+    const rateCheck = checkAntiplagiarismRateLimit(authUser.uid);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({
+        error: `Limite de requisições excedido. Você pode realizar no máximo 10 análises de TCC a cada 10 minutos. Tente novamente em ${rateCheck.retryAfter} segundos.`,
+        retryAfter: rateCheck.retryAfter,
+      });
+    }
+
+    // 0.2 Validação do Corpo da Requisição e Limite de Tamanho (Payload Limit: máx. 300.000 caracteres)
     const {
       text,
       title = 'Trabalho de Conclusão de Curso (TCC)',
       studentName = 'Estudante Não Informado',
       advisorName = 'Orientador Acadêmico',
+      advisorEmail = '',
+      advisorUid = '',
       course = 'Graduação / Pós-Graduação',
+      options = {},
     } = req.body;
 
-    if (!text || typeof text !== 'string' || text.trim().length < 15) {
-      return res.status(400).json({ error: 'O texto do TCC para análise deve ser fornecido.' });
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'O texto do TCC para análise deve ser fornecido como string.' });
     }
 
-    // Divisão por parágrafos
+    if (text.length > 300000) {
+      return res.status(413).json({
+        error: `Documento muito extenso (${text.length.toLocaleString('pt-BR')} caracteres). O limite máximo permitido para processamento é de 300.000 caracteres (aprox. 50.000 palavras).`,
+      });
+    }
+
+    if (text.trim().length < 15) {
+      return res.status(400).json({ error: 'O texto do TCC deve conter ao menos 15 caracteres para permitir uma análise minimamente significativa.' });
+    }
+
+    // 0.3 Configurações Ativas da Extensão plagiarism-checker (4.1.1.RW.5)
+    const similarityAlertThreshold = typeof options.similarityAlertThreshold === 'number' ? options.similarityAlertThreshold : 15;
+    const abntStrictMode = options.abntStrictMode !== false;
+    const geminiDeepSemantic = options.geminiDeepSemantic !== false;
+
+    // 1. Divisão estruturada do documento em parágrafos com ID explícito (Requisitos 3 e 4)
     const rawParagraphs = text
       .split(/\n\s*\n/)
       .map((p) => p.trim())
-      .filter((p) => p.length > 25);
+      .filter((p) => p.length > 20);
 
-    // Tenta análise inteligente via Google Gemini se disponível
-    try {
-      const ai = getGemini();
-
-      const prompt = `Você é um avaliador de integridade acadêmica e especialista sênior em normas ABNT (NBR 10520 e NBR 6023) para Trabalhos de Conclusão de Curso (TCC).
-Analise o texto acadêmico a seguir:
-Título do TCC: "${title}"
-Estudante: "${studentName}"
-Orientador: "${advisorName}"
-Curso: "${course}"
-
-Texto do TCC:
-"""
-${text.slice(0, 8000)}
-"""
-
-Sua tarefa:
-1. Avaliar cada parágrafo identificando:
-   - "regular": redação acadêmica original com referências adequadas.
-   - "atencao_orientador": afirmações teóricas densas sem citação, dados sem indicação de fonte, paráfrase de terceiros sem atribuição.
-   - "inconformidade_abnt": citação direta sem página, citação longa com mais de 3 linhas sem recuo de 4cm, pontuação de citação incorreta.
-   - "risco_plagio_critico": cópia literal aparente sem aspas de sites/enciclopédias/fontes abertas.
-2. Para cada parágrafo com problema, forneça uma nota detalhada de atenção para o orientador e uma sugestão de correção nas normas ABNT.
-
-Retorne estritamente um JSON no seguinte formato:
-{
-  "overallSimilarityScore": 14,
-  "originalityScore": 86,
-  "riskLevel": "baixo",
-  "executiveSummary": "Resumo sintético em 2 a 3 frases sobre o estado do TCC e pontos que o orientador deve revisar.",
-  "advisorAttentionCount": 2,
-  "abntIssuesCount": 1,
-  "generalRecommendations": [
-    "Recomendação 1",
-    "Recomendação 2"
-  ],
-  "paragraphs": [
-    {
-      "paragraphNumber": 1,
-      "excerpt": "Primeiras 120 letras do parágrafo...",
-      "status": "regular | atencao_orientador | inconformidade_abnt | risco_plagio_critico",
-      "issueType": "sem_citacao | citacao_direta_sem_pagina | citacao_longa_sem_recuo | possivel_parafrase_nao_atribuida | copia_literal_suspeita | nenhum",
-      "description": "Explicação técnica",
-      "advisorNote": "O que o orientador deve pedir ao aluno",
-      "suggestedCorrection": "Exemplo de como redigir na norma ABNT",
-      "abntRule": "ABNT NBR 10520 item X",
-      "similarityPercentage": 10
+    if (rawParagraphs.length === 0) {
+      return res.status(400).json({ error: 'O documento não contém parágrafos legíveis para análise.' });
     }
-  ]
-}
-Retorne APENAS o JSON puro sem crases de markdown.`;
 
-      const { response, usedModel } = await generateWithFallback(
-        ai,
-        'gemini-3.8-flash',
-        {
-          contents: prompt,
-          config: {
-            systemInstruction: 'Você é um avaliador de integridade acadêmica, plágio e normas ABNT (NBR 10520 e NBR 6023). Cruze o texto do TCC com fontes públicas e acadêmicas na web e retorne estritamente um JSON.',
-            tools: [{ googleSearch: {} }],
-            responseMimeType: 'application/json',
+    const taggedParagraphs = rawParagraphs.map((pText, idx) => ({
+      id: `p-${idx + 1}`,
+      paragraphNumber: idx + 1,
+      text: pText,
+    }));
+
+    // 2. Consulta a Fontes Reais Externas e Internas (MediaWiki/Wikipédia, Firestore, Crossref, OpenAlex)
+    const sourceStatusList: SourceStatusReport[] = [];
+    const allSourceDocuments: SourceQueryResult[] = [];
+
+    // Extrai palavras-chave do título e do conteúdo para busca semântica
+    const topicKeywords = title
+      .split(/\s+/)
+      .map((w: string) => w.replace(/[^\w]/g, ''))
+      .filter((w: string) => w.length > 3)
+      .slice(0, 5);
+    const searchQuery = topicKeywords.length > 0 ? topicKeywords.join(' ') : title;
+
+    // Helper interno para carregar artigos da própria Wiki no Firestore
+    async function fetchFirestoreWikiArticles(keywords: string[]): Promise<{ sources: SourceQueryResult[]; error?: string; latencyMs: number }> {
+      const start = Date.now();
+      try {
+        const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+        if (!fs.existsSync(configPath)) {
+          return { sources: [], error: 'Arquivo firebase-applet-config.json não localizado no servidor', latencyMs: 0 };
+        }
+        const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        const { initializeApp, getApps } = await import('firebase/app');
+        const { getAuth, signInAnonymously } = await import('firebase/auth');
+        const { getFirestore, collection, getDocs, limit, query } = await import('firebase/firestore');
+
+        const appName = 'wiki-similarity-internal';
+        const app = getApps().find((a) => a.name === appName) || initializeApp(cfg, appName);
+        const auth = getAuth(app);
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
+        }
+        const db = getFirestore(app, cfg.firestoreDatabaseId);
+
+        const [pagesSnap, articlesSnap] = await Promise.all([
+          getDocs(query(collection(db, 'pages'), limit(25))).catch(() => ({ forEach: () => {} })),
+          getDocs(query(collection(db, 'articles'), limit(25))).catch(() => ({ forEach: () => {} })),
+        ]);
+
+        const results: SourceQueryResult[] = [];
+        const seen = new Set<string>();
+
+        (pagesSnap as any).forEach((doc: any) => {
+          const data = doc.data();
+          const pTitle = data.title || doc.id;
+          const pContent = data.content || data.body || data.markdown || '';
+          if (pContent && !seen.has(pTitle)) {
+            seen.add(pTitle);
+            results.push({
+              sourceName: 'Acervo Local da Wiki (Firestore: pages)',
+              sourceType: 'firestore',
+              title: pTitle,
+              content: `${pTitle}. ${pContent}`,
+              url: `/wiki/${encodeURIComponent(pTitle.replace(/\s+/g, '_'))}`,
+            });
+          }
+        });
+
+        (articlesSnap as any).forEach((doc: any) => {
+          const data = doc.data();
+          const aTitle = data.title || data.name || doc.id;
+          const aContent = data.content || data.text || '';
+          if (aContent && !seen.has(aTitle)) {
+            seen.add(aTitle);
+            results.push({
+              sourceName: 'Enciclopédia WikiWorldWeb (Firestore: articles)',
+              sourceType: 'firestore',
+              title: aTitle,
+              content: `${aTitle}. ${aContent}`,
+              url: `/artigo/${encodeURIComponent(aTitle.replace(/\s+/g, '_'))}`,
+            });
+          }
+        });
+
+        return { sources: results, latencyMs: Date.now() - start };
+      } catch (err: any) {
+        return { sources: [], error: err?.message || String(err), latencyMs: Date.now() - start };
+      }
+    }
+
+    // Executa consultas concorrentes às fontes reais sem exigência de chaves
+    const [wikiRes, firestoreRes, crossrefRes, openalexRes] = await Promise.all([
+      fetchWikipediaPtSources(searchQuery, 4),
+      fetchFirestoreWikiArticles(topicKeywords),
+      fetchCrossrefSources(searchQuery, 4),
+      fetchOpenAlexSources(searchQuery, 4),
+    ]);
+
+    // Registra o status de cada fonte no relatório
+    sourceStatusList.push({
+      source: 'wikipedia',
+      displayName: 'Wikipédia Lusófona (MediaWiki API pt.wikipedia.org)',
+      status: wikiRes.error ? 'failed' : wikiRes.sources.length > 0 ? 'success' : 'no_matches',
+      itemsCount: wikiRes.sources.length,
+      error: wikiRes.error,
+      latencyMs: wikiRes.latencyMs,
+    });
+    allSourceDocuments.push(...wikiRes.sources);
+
+    sourceStatusList.push({
+      source: 'firestore',
+      displayName: 'Artigos da Própria Wiki (Firestore Banco Real)',
+      status: firestoreRes.error ? 'failed' : firestoreRes.sources.length > 0 ? 'success' : 'no_matches',
+      itemsCount: firestoreRes.sources.length,
+      error: firestoreRes.error,
+      latencyMs: firestoreRes.latencyMs,
+    });
+    allSourceDocuments.push(...firestoreRes.sources);
+
+    sourceStatusList.push({
+      source: 'crossref',
+      displayName: 'Crossref (DOIs, Títulos e Resumos Acadêmicos)',
+      status: crossrefRes.error ? 'failed' : crossrefRes.sources.length > 0 ? 'success' : 'no_matches',
+      itemsCount: crossrefRes.sources.length,
+      error: crossrefRes.error,
+      latencyMs: crossrefRes.latencyMs,
+    });
+    allSourceDocuments.push(...crossrefRes.sources);
+
+    sourceStatusList.push({
+      source: 'openalex',
+      displayName: 'OpenAlex (Base Global de Artigos Científicos)',
+      status: openalexRes.error ? 'failed' : openalexRes.sources.length > 0 ? 'success' : 'no_matches',
+      itemsCount: openalexRes.sources.length,
+      error: openalexRes.error,
+      latencyMs: openalexRes.latencyMs,
+    });
+    allSourceDocuments.push(...openalexRes.sources);
+
+    // 3. Extração de frases características de cada parágrafo para busca literal entre aspas
+    const groundingStart = Date.now();
+    let groundingError: string | undefined;
+    let groundingMatchesCount = 0;
+    const allCharacteristicPhrases: string[] = [];
+
+    for (const p of taggedParagraphs) {
+      const phrases = extractCharacteristicPhrases(p.text);
+      for (const phrase of phrases) {
+        if (phrase && phrase.length >= 18 && !allCharacteristicPhrases.includes(phrase)) {
+          allCharacteristicPhrases.push(phrase);
+        }
+      }
+    }
+
+    // Busca entre aspas das frases características via Gemini Search Grounding
+    if (allCharacteristicPhrases.length > 0) {
+      try {
+        const ai = getGemini();
+        const sampledPhrases = allCharacteristicPhrases.slice(0, 5);
+        const searchPrompt = `Pesquise na internet correspondências exatas para as seguintes frases acadêmicas entre aspas:\n${sampledPhrases.map((q) => `"${q}"`).join('\n')}\nRetorne o conteúdo e citações de artigos e repositórios encontrados.`;
+
+        const { response } = await generateWithFallback(
+          ai,
+          'gemini-3.8-flash',
+          {
+            contents: searchPrompt,
+            config: {
+              tools: [{ googleSearch: {} }],
+            },
           },
-        },
-        30000
-      );
+          30000
+        );
 
-      const parsed = JSON.parse(response.text || '{}');
-      if (parsed && Array.isArray(parsed.paragraphs) && parsed.paragraphs.length > 0) {
-        // 4.1.1.2HL.6: Extração de Metadados de Grounding do Google Search
         const groundingMeta = (response as any)?.candidates?.[0]?.groundingMetadata;
-        const webSources: any[] = [];
         if (groundingMeta && Array.isArray(groundingMeta.groundingChunks)) {
           for (const chunk of groundingMeta.groundingChunks) {
             if (chunk.web && chunk.web.uri) {
-              let domain = '';
-              try {
-                domain = new URL(chunk.web.uri).hostname;
-              } catch {}
-              webSources.push({
-                title: chunk.web.title || 'Artigo / Base Acadêmica',
+              const gTitle = chunk.web.title || 'Artigo / Repositório Web';
+              const gSnippet = chunk.web.snippet || '';
+              const gContent = `${gTitle}. ${gSnippet}`;
+              allSourceDocuments.push({
+                sourceName: 'Google Search Grounding (Frases entre aspas)',
+                sourceType: 'web',
+                title: gTitle,
                 url: chunk.web.uri,
-                snippet: chunk.web.snippet || '',
-                domain,
-                similarityPercent: Math.floor(Math.random() * 25) + 15,
-                sourceType: domain.includes('scielo') || domain.includes('.edu') || domain.includes('.gov.br')
-                  ? 'academic_paper'
-                  : domain.includes('wikipedia') || domain.includes('wiki')
-                  ? 'encyclopedia'
-                  : 'web_search',
+                content: gContent,
               });
+              groundingMatchesCount++;
             }
           }
         }
-
-        const fullReport = {
-          id: `report-gemini-${Date.now()}`,
-          analyzedAt: new Date().toISOString(),
-          tccTitle: title,
-          studentName,
-          advisorName,
-          course,
-          totalWords: text.split(/\s+/).filter(Boolean).length,
-          totalParagraphs: parsed.paragraphs.length,
-          overallSimilarityScore: parsed.overallSimilarityScore ?? 15,
-          originalityScore: parsed.originalityScore ?? 85,
-          riskLevel: parsed.riskLevel || 'baixo',
-          advisorAttentionCount: parsed.advisorAttentionCount ?? 0,
-          abntIssuesCount: parsed.abntIssuesCount ?? 0,
-          paragraphs: parsed.paragraphs.map((p: any, i: number) => {
-            // Associa fontes de grounding encontradas aos parágrafos com alerta
-            const isAlert = p.status !== 'regular' || p.similarityPercentage > 20;
-            const relevantSources = isAlert && webSources.length > 0
-              ? [webSources[i % webSources.length]]
-              : undefined;
-
-            return {
-              id: `p-${i + 1}-${Date.now().toString(36)}`,
-              paragraphNumber: p.paragraphNumber || i + 1,
-              excerpt: rawParagraphs[i] || p.excerpt || '',
-              wordCount: (rawParagraphs[i] || p.excerpt || '').split(/\s+/).filter(Boolean).length,
-              status: p.status || 'regular',
-              issueType: p.issueType || 'nenhum',
-              description: p.description || '',
-              advisorNote: p.advisorNote || 'Verificar conformidade com orientador.',
-              suggestedCorrection: p.suggestedCorrection || '',
-              abntRule: p.abntRule || 'ABNT NBR 10520',
-              similarityPercentage: p.similarityPercentage || 5,
-              matchedSourceHint: relevantSources ? relevantSources[0].domain || relevantSources[0].title : undefined,
-              matchedSources: relevantSources,
-            };
-          }),
-          executiveSummary: parsed.executiveSummary || 'Análise de TCC concluída.',
-          generalRecommendations: parsed.generalRecommendations || [
-            'Conferir paginação em todas as citações diretas (ABNT NBR 10520).',
-            'Inserir referências correspondentes na lista final (ABNT NBR 6023).',
-          ],
-          usedEngine: webSources.length > 0 ? 'gemini_search_grounding' : 'gemini_ai',
-          webGroundingSourcesCount: webSources.length,
-          groundingWebSources: webSources,
-        };
-
-        return res.json({ report: fullReport });
+      } catch (gErr: any) {
+        groundingError = gErr?.message || String(gErr);
       }
-    } catch (geminiErr: any) {
-      console.warn('[Antiplagiarism API] Gemini indisponível ou erro de parse, aplicando motor heurístico ABNT com cruzamento web:', geminiErr?.message);
     }
 
-    // Fallback: Análise Heurística Determinística no Servidor com Fontes de Cruzamento Web (SciELO, USP, CAPES, Scholar)
-    const paragraphsAnalysis: any[] = [];
+    sourceStatusList.push({
+      source: 'google_grounding',
+      displayName: 'Google Search Grounding (Frases Características entre Aspas)',
+      status: groundingError ? 'failed' : groundingMatchesCount > 0 ? 'success' : 'no_matches',
+      itemsCount: groundingMatchesCount,
+      error: groundingError,
+      latencyMs: Date.now() - groundingStart,
+    });
+
+    // 4. Preparação determinística dos documentos de fonte com Winnowing
+    const preparedSources: PreparedSourceDocument[] = allSourceDocuments.map((src) =>
+      prepareSourceDocument(src.title, src.content, src.url, src.sourceType, 5, 4)
+    );
+
+    // 5. Comparação determinística por parágrafo (k=5 shingles, containment, jaccard, trechos e isenção ABNT)
+    const deterministicAnalyses: ParagraphSimilarityAnalysis[] = taggedParagraphs.map((p) =>
+      analyzeParagraphDeterministically(p.id, p.paragraphNumber, p.text, preparedSources, 5, 4)
+    );
+
+    // 6. Score Geral Ponderado pelo número de palavras dos parágrafos (Requisito estrito)
+    const { overallSimilarityScore, totalWords } = calculateWeightedOverallSimilarity(deterministicAnalyses);
+    const originalityScore = Math.max(0, 100 - overallSimilarityScore);
+
+    // 7. Uso do Gemini SOMENTE para explicar o achado e sugerir correção ABNT (quando geminiDeepSemantic for ativo na extensão)
+    const explanationsMap = new Map<string, any>();
+    if (geminiDeepSemantic) {
+      try {
+        const ai = getGemini();
+        const explainPayload = deterministicAnalyses.map((d) => ({
+          id: d.paragraphId,
+          text: d.originalText,
+          containmentPercent: d.containmentPercent,
+          isLegitimateCitation: d.isLegitimateCitation,
+          citationDetails: d.citationDetails,
+          matchingExcerpts: d.matchingExcerpts.slice(0, 2).map((e) => ({
+            matchedText: e.matchedText,
+            sourceName: e.sourceName,
+          })),
+          matchedSources: d.matchedSources.slice(0, 2).map((s) => ({
+            title: s.title,
+            containmentPercent: s.containmentPercent,
+          })),
+        }));
+
+        const explainPrompt = `Você é um avaliador de integridade acadêmica e especialista em normas ABNT (NBR 10520 e NBR 6023).
+O motor determinístico de similaridade textual já calculou com exatidão matemática a contenção de shingles (k=5) para o TCC "${title}".
+Sua função é gerar EXCLUSIVAMENTE explicações pedagógicas para o orientador e sugestões de correção ABNT para cada parágrafo.
+Configurações ativas: abntStrictMode=${abntStrictMode}, similarityAlertThreshold=${similarityAlertThreshold}%.
+
+REGRAS RÍGIDAS:
+- NUNCA modifique ou invente porcentagens de similaridade.
+- Se isLegitimateCitation for true, mantenha status "regular" (parágrafo é citação direta legítima entre aspas com autor, ano e página).
+- Se containmentPercent >= ${similarityAlertThreshold} e isLegitimateCitation for false, aponte risco de atenção do orientador ou cópia literal.
+- Para cada item com 'id', forneça:
+  - "status": "regular" | "atencao_orientador" | "inconformidade_abnt" | "risco_plagio_critico"
+  - "issueType": "sem_citacao" | "citacao_direta_sem_pagina" | "citacao_longa_sem_recuo" | "possivel_parafrase_nao_atribuida" | "copia_literal_suspeita" | "nenhum"
+  - "description": explicação concisa do diagnóstico
+  - "advisorNote": apontamento claro e construtivo para o orientador do TCC
+  - "suggestedCorrection": sugestão de reescrita em estrita conformidade com a ABNT
+  - "abntRule": norma ABNT aplicável (ex: NBR 10520 item 5.1 ou 5.3, NBR 6023)
+
+Parágrafos auditados:
+${JSON.stringify(explainPayload, null, 2)}
+
+Retorne APENAS um JSON no seguinte formato:
+{
+  "explanations": [
+    {
+      "id": "p-1",
+      "status": "regular | atencao_orientador | inconformidade_abnt | risco_plagio_critico",
+      "issueType": "...",
+      "description": "...",
+      "advisorNote": "...",
+      "suggestedCorrection": "...",
+      "abntRule": "..."
+    }
+  ]
+}`;
+
+        const { response } = await generateWithFallback(
+          ai,
+          'gemini-3.8-flash',
+          {
+            contents: explainPrompt,
+            config: {
+              systemInstruction: 'Você gera apenas pareceres pedagógicos e correções ABNT sem alterar métricas calculadas.',
+              responseMimeType: 'application/json',
+            },
+          },
+          35000
+        );
+
+        const parsed = JSON.parse(response.text || '{}');
+        if (Array.isArray(parsed?.explanations)) {
+          for (const exp of parsed.explanations) {
+            if (exp && exp.id) {
+              explanationsMap.set(String(exp.id).trim(), exp);
+            }
+          }
+        }
+      } catch (explainErr: any) {
+        console.warn('[Antiplagiarism API] Gemini indisponível para parecer explicativo, adotando heurísticas determinísticas ABNT:', explainErr?.message);
+      }
+    } else {
+      console.log('[Antiplagiarism API] geminiDeepSemantic desativado nas opções da extensão. Etapa Gemini dispensada.');
+    }
+
+    // 8. Mescla dos dados determinísticos calculados com as explicações pedagógicas ABNT
     let advisorAttentionCount = 0;
     let abntIssuesCount = 0;
-    let totalRisk = 0;
+    let criticalCount = 0;
 
-    const topicKeywords = title.split(/\s+/).filter((w: string) => w.length > 4);
-    const mainKw = topicKeywords[0] || 'Gestão do Conhecimento';
-    const secKw = topicKeywords[1] || 'Metodologia Científica';
+    const criticalThreshold = Math.max(30, similarityAlertThreshold * 1.8);
+    const warningThreshold = similarityAlertThreshold;
 
-    const fallbackWebSources = [
-      {
-        title: `SciELO Brasil - Avanços e Modelos em ${mainKw}`,
-        url: `https://search.scielo.org/?q=${encodeURIComponent(mainKw)}`,
-        snippet: `Publicação científica revisada por pares analisando impactos contemporâneos de ${mainKw} e diretrizes metodológicas.`,
-        domain: 'scielo.br',
-        similarityPercent: 20,
-        sourceType: 'academic_paper',
-      },
-      {
-        title: `Biblioteca Digital de Teses e Dissertações (USP) - ${secKw}`,
-        url: `https://www.teses.usp.br/teses/disponiveis/consulta.php?palavras=${encodeURIComponent(secKw)}`,
-        snippet: `Repositório institucional contendo dissertações de mestrado e teses de doutorado sobre ${secKw}.`,
-        domain: 'teses.usp.br',
-        similarityPercent: 15,
-        sourceType: 'academic_paper',
-      },
-      {
-        title: `Google Acadêmico (Google Scholar) - ${title.slice(0, 45)}`,
-        url: `https://scholar.google.com.br/scholar?q=${encodeURIComponent(title)}`,
-        snippet: `Artigos indexados com citações acadêmicas e métricas de impacto acadêmico NBR 6023.`,
-        domain: 'scholar.google.com.br',
-        similarityPercent: 16,
-        sourceType: 'academic_paper',
-      },
-      {
-        title: `Portal de Periódicos CAPES / MEC`,
-        url: `https://www.periodicos.capes.gov.br/`,
-        snippet: `Base nacional de periódicos acadêmicos de alto impacto e publicações Qualis A/B.`,
-        domain: 'capes.gov.br',
-        similarityPercent: 9,
-        sourceType: 'institutional',
-      },
-    ];
+    const finalParagraphs = deterministicAnalyses.map((d) => {
+      const exp = explanationsMap.get(d.paragraphId);
+      const hasQuotes = /["“][^"”]{5,}["”]/.test(d.originalText);
+      const hasPage = /p\.\s*\d+|pp\.\s*\d+-\d+/i.test(d.originalText);
 
-    rawParagraphs.forEach((paragraph, idx) => {
-      const pNum = idx + 1;
-      const wordCount = paragraph.split(/\s+/).filter(Boolean).length;
-      let status = 'regular';
-      let issueType = 'nenhum';
-      let description = 'Parágrafo com redação acadêmica satisfatória.';
-      let advisorNote = 'Nenhum apontamento pendente.';
-      let suggestedCorrection = 'Manter texto conforme apresentado.';
-      let abntRule = 'ABNT NBR 10520 / NBR 6023';
-      let similarityPercentage = Math.floor(Math.random() * 6) + 3;
-      let matchedSources: any[] | undefined = undefined;
+      let status = exp?.status;
+      let issueType = exp?.issueType;
+      let description = exp?.description;
+      let advisorNote = exp?.advisorNote;
+      let suggestedCorrection = exp?.suggestedCorrection;
+      let abntRule = exp?.abntRule;
 
-      const hasQuotes = /["“][^"”]{5,}["”]/.test(paragraph);
-      const hasPage = /p\.\s*\d+|pp\.\s*\d+-\d+/i.test(paragraph);
-      const hasCitation = /\([A-ZÀ-Ú\s]+,\s*(?:19|20)\d{2}/.test(paragraph) || /[A-ZÀ-Ú][a-zà-ú]+\s*\((?:19|20)\d{2}\)/.test(paragraph);
-
-      if (hasQuotes && !hasPage) {
-        status = 'inconformidade_abnt';
-        issueType = 'citacao_direta_sem_pagina';
-        description = 'Citação textual direta sem especificação do número de página.';
-        advisorNote = 'Solicitar ao estudante a inserção da página exata da publicação.';
-        suggestedCorrection = paragraph.replace(/(\((?:[A-ZÀ-Ú\s]+),\s*(?:19|20)\d{2})(\))/g, '$1, p. xx$2');
-        abntRule = 'ABNT NBR 10520 - Item 5.1 (Obrigatoriedade de indicação da página em citações diretas)';
-        similarityPercentage = 35;
-        abntIssuesCount++;
-        totalRisk += 14;
-        matchedSources = [fallbackWebSources[0]];
-      } else if (!hasCitation && wordCount > 50 && /(segundo|teoria|pesquisa|constatou-se|define-se|afirma)/i.test(paragraph)) {
-        status = 'atencao_orientador';
-        issueType = 'sem_citacao';
-        description = 'Afirmações teóricas ou metodológicas sem fundamentação em autoridade científica.';
-        advisorNote = 'Avaliar se o trecho reflete resultado próprio ou se requer citação de literatura.';
-        suggestedCorrection = `${paragraph} (AUTOR, ano, p. xx).`;
-        abntRule = 'ABNT NBR 10520 - Citações indiretas (atribuição obrigatória de ideias de terceiros)';
-        similarityPercentage = 40;
-        advisorAttentionCount++;
-        totalRisk += 20;
-        matchedSources = [fallbackWebSources[1]];
-      } else if (/(pode ser definido como|ao contrário do que muitos pensam|na enciclopédia livre)/i.test(paragraph)) {
-        status = 'risco_plagio_critico';
-        issueType = 'copia_literal_suspeita';
-        description = 'Sintaxe idêntica a fontes da internet ou enciclopédias abertas.';
-        advisorNote = 'Atenção do orientador: solicitar reescrita imediata com palavras do pesquisador.';
-        suggestedCorrection = 'Reescrever completamente o período com formulação própria e citação acadêmica formal.';
-        abntRule = 'Regimento de Ética Acadêmica & ABNT';
-        similarityPercentage = 80;
-        advisorAttentionCount++;
-        totalRisk += 35;
-        matchedSources = [fallbackWebSources[2]];
+      if (d.isLegitimateCitation) {
+        status = 'regular';
+        issueType = 'nenhum';
+        description = `Citação textual direta devidamente atribuída (${d.citationDetails?.author}, ${d.citationDetails?.year}, p. ${d.citationDetails?.page}). Isenta de plágio segundo a ABNT NBR 10520.`;
+        advisorNote = 'Citação regular conforme as normas ABNT NBR 10520 (autoria, data e página indicadas).';
+        suggestedCorrection = d.originalText;
+        abntRule = 'ABNT NBR 10520 - Citações diretas com autoria, ano e página';
+      } else if (!status || !geminiDeepSemantic) {
+        if (d.containmentPercent >= criticalThreshold) {
+          status = 'risco_plagio_critico';
+          issueType = 'copia_literal_suspeita';
+          description = `Elevada contenção textual (${d.containmentPercent}% >= limite ${criticalThreshold}%) detectada em fontes consultadas sem citação formal entre aspas.`;
+          advisorNote = 'Exigir do estudante a inclusão de aspas e indicação da publicação de origem com página.';
+          suggestedCorrection = `"${d.originalText}" (AUTOR, ano, p. xx).`;
+          abntRule = 'ABNT NBR 10520 - Item 5.1 / Código de Ética Acadêmica';
+        } else if (abntStrictMode && hasQuotes && !hasPage) {
+          status = 'inconformidade_abnt';
+          issueType = 'citacao_direta_sem_pagina';
+          description = 'Citação textual direta sem indicação da página de origem (NBR 10520 item 5.1 - Modo ABNT Estrito).';
+          advisorNote = 'Solicitar ao aluno a página exata da publicação consultada para a citação literal.';
+          suggestedCorrection = d.originalText.replace(/(\((?:[A-ZÀ-Ú\s]+),\s*(?:19|20)\d{2})(\))/g, '$1, p. xx$2');
+          abntRule = 'ABNT NBR 10520 - Item 5.1 (Obrigatoriedade de indicação da página em citações diretas)';
+        } else if (d.containmentPercent >= warningThreshold) {
+          status = 'atencao_orientador';
+          issueType = 'possivel_parafrase_nao_atribuida';
+          description = `Contenção (${d.containmentPercent}%) atinge o limite de alerta configurado (${warningThreshold}%).`;
+          advisorNote = 'Verificar se o estudante realizou paráfrase de fonte externa sem atribuir autoria.';
+          suggestedCorrection = `${d.originalText} (AUTOR, ano).`;
+          abntRule = 'ABNT NBR 10520 - Item 5.2 (Citações indiretas no texto acadêmico)';
+        } else {
+          status = 'regular';
+          issueType = 'nenhum';
+          description = 'Parágrafo com redação autoral e conformidade textual.';
+          advisorNote = 'Redação satisfatória para leitura do orientador.';
+          suggestedCorrection = d.originalText;
+          abntRule = 'ABNT NBR 10520 / NBR 6023';
+        }
       }
 
-      paragraphsAnalysis.push({
-        id: `p-${idx + 1}-${Date.now().toString(36)}`,
-        paragraphNumber: pNum,
-        excerpt: paragraph,
-        wordCount,
-        status,
-        issueType,
-        description,
-        advisorNote,
-        suggestedCorrection,
-        abntRule,
-        similarityPercentage,
-        matchedSourceHint: matchedSources ? matchedSources[0].domain : undefined,
-        matchedSources,
-      });
+      if (status === 'atencao_orientador') advisorAttentionCount++;
+      if (status === 'inconformidade_abnt') abntIssuesCount++;
+      if (status === 'risco_plagio_critico') criticalCount++;
+
+      return {
+        id: d.paragraphId,
+        paragraphNumber: d.paragraphNumber,
+        excerpt: d.originalText,
+        wordCount: d.wordCount,
+        status: status || 'regular',
+        issueType: issueType || 'nenhum',
+        description: description || 'Redação acadêmica auditada.',
+        advisorNote: advisorNote || 'Sem pendências para o orientador.',
+        suggestedCorrection: suggestedCorrection || d.originalText,
+        abntRule: abntRule || 'ABNT NBR 10520 / NBR 6023',
+        similarityPercentage: d.containmentPercent,
+        containmentPercent: d.containmentPercent,
+        jaccardPercent: d.jaccardPercent,
+        isLegitimateCitation: d.isLegitimateCitation,
+        citationDetails: d.citationDetails,
+        matchingExcerpts: d.matchingExcerpts,
+        characteristicPhrases: d.characteristicPhrases,
+        matchedSourceHint: d.matchedSources.length > 0 ? d.matchedSources[0].title : undefined,
+        matchedSources: d.matchedSources.map((ms) => ({
+          title: ms.title,
+          url: ms.url || '',
+          similarityPercent: ms.containmentPercent,
+          similarity: ms.containmentPercent,
+          domain: ms.url ? (() => { try { return new URL(ms.url).hostname; } catch { return ms.title; } })() : ms.title,
+          sourceType: ms.sourceType,
+        })),
+      };
     });
 
-    const totalParagraphs = Math.max(1, paragraphsAnalysis.length);
-    const overallSimilarityScore = Math.min(90, Math.max(6, Math.round(totalRisk / (totalParagraphs * 0.4))));
-    const originalityScore = Math.max(10, 100 - overallSimilarityScore);
-    const riskLevel = overallSimilarityScore > 35 ? 'alto' : overallSimilarityScore > 20 ? 'moderado' : 'baixo';
+    let riskLevel: 'baixo' | 'moderado' | 'alto' | 'critico' = 'baixo';
+    if (criticalCount > 0 || overallSimilarityScore >= Math.max(30, similarityAlertThreshold * 1.8)) {
+      riskLevel = 'critico';
+    } else if (abntIssuesCount > 3 || overallSimilarityScore >= similarityAlertThreshold) {
+      riskLevel = 'alto';
+    } else if (advisorAttentionCount > 2 || overallSimilarityScore >= Math.max(5, similarityAlertThreshold * 0.5)) {
+      riskLevel = 'moderado';
+    }
 
-    res.json({
-      report: {
-        id: `report-server-${Date.now()}`,
-        analyzedAt: new Date().toISOString(),
-        tccTitle: title,
-        studentName,
-        advisorName,
-        course,
-        totalWords: text.split(/\s+/).filter(Boolean).length,
-        totalParagraphs,
-        overallSimilarityScore,
-        originalityScore,
-        riskLevel,
-        advisorAttentionCount,
-        abntIssuesCount,
-        paragraphs: paragraphsAnalysis,
-        executiveSummary: `Relatório de TCC concluído com ${totalParagraphs} parágrafo(s). ${advisorAttentionCount} parágrafo(s) necessitam de atenção do orientador e foram localizadas ${abntIssuesCount} inconformidades nas normas ABNT. Cruzamento web ativado contra bases Scielo, USP, CAPES e Google Scholar.`,
-        generalRecommendations: [
-          'Conferir paginação em todas as citações diretas (ABNT NBR 10520).',
-          'Recuar citações diretas com mais de 3 linhas em 4 cm da margem esquerda com fonte menor.',
-          'Cruzar todas as citações com a lista final de Referências Bibliográficas (NBR 6023).',
-          'Acessar as fontes web cruzadas para verificar se houve paráfrase sem a devida referência.',
-        ],
-        usedEngine: 'heuristic_syntax',
-        webGroundingSourcesCount: fallbackWebSources.length,
-        groundingWebSources: fallbackWebSources,
+    const groundingSourcesUnified = allSourceDocuments
+      .filter((s) => s.url)
+      .map((s) => ({
+        title: s.title,
+        url: s.url!,
+        snippet: s.content.slice(0, 180),
+        similarityPercent: undefined,
+        similarity: undefined,
+        domain: (() => { try { return new URL(s.url!).hostname; } catch { return s.sourceName; } })(),
+        sourceType: s.sourceType,
+      }));
+
+    const fullReport = {
+      id: `report-deterministic-${Date.now()}`,
+      analyzedAt: new Date().toISOString(),
+      tccTitle: title,
+      studentName,
+      advisorName,
+      advisorEmail: advisorEmail || undefined,
+      advisorUid: advisorUid || undefined,
+      course,
+      userUid: authUser.uid,
+      userEmail: authUser.email,
+      totalWords,
+      totalParagraphs: finalParagraphs.length,
+      overallSimilarityScore,
+      weightedSimilarityScore: overallSimilarityScore,
+      originalityScore,
+      riskLevel,
+      advisorAttentionCount,
+      abntIssuesCount,
+      paragraphs: finalParagraphs,
+      executiveSummary: `Auditoria determinística de integridade acadêmica concluída (${finalParagraphs.length} parágrafos, ${totalWords} palavras). Contenção global ponderada calculada por shingles (k=5): ${overallSimilarityScore}%, índice de originalidade autoral de ${originalityScore}%. Identificados ${advisorAttentionCount} apontamentos para o orientador e ${abntIssuesCount} inconformidades nas normas ABNT. Fontes consultadas: Wikipédia Lusófona, Firestore Wiki, Crossref, OpenAlex e busca de frases características via Google Search Grounding.`,
+      generalRecommendations: [
+        'Conferir paginação em todas as citações textuais diretas curtas (ABNT NBR 10520 item 5.1).',
+        'Formatar citações diretas longas (> 3 linhas) em parágrafo destacado com recuo de 4 cm e fonte reduzida.',
+        'Verificar se as fontes dos parágrafos com contenção textual foram devidamente referenciadas na lista bibliográfica final (NBR 6023).',
+        'Citações entre aspas com indicação de autor, ano e página foram reconhecidas e isentas de acusação de plágio.',
+      ],
+      usedEngine: 'deterministic_shingles_sources' as const,
+      engineLabel: geminiDeepSemantic
+        ? 'Motor Determinístico de Shingles (k=5) + Fontes Reais + Parecer Gemini'
+        : 'Motor Determinístico de Shingles (k=5) + Fontes Reais (Semântica Gemini Desativada)',
+      isFallback: false,
+      webGroundingSourcesCount: groundingSourcesUnified.length,
+      groundingWebSources: groundingSourcesUnified,
+      queriedSourcesStatus: sourceStatusList,
+      optionsUsed: {
+        similarityAlertThreshold,
+        abntStrictMode,
+        geminiDeepSemantic,
       },
-    });
+    };
+
+    return res.json({ report: fullReport });
   } catch (err: any) {
     console.error('Erro na rota /api/antiplagiarism/analyze:', err);
     res.status(500).json({ error: err.message || 'Falha ao analisar TCC.' });

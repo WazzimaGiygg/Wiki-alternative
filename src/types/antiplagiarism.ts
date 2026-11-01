@@ -11,6 +11,24 @@ export type ParagraphStatus =
   | 'inconformidade_abnt'
   | 'risco_plagio_critico';
 
+export interface MatchingExcerpt {
+  matchedText: string;
+  sourceName: string;
+  sourceUrl?: string;
+  sourceType: 'wikipedia' | 'firestore' | 'crossref' | 'openalex' | 'web';
+  shingleCount?: number;
+  containmentPercent?: number;
+}
+
+export interface SourceStatusReport {
+  source: 'wikipedia' | 'firestore' | 'crossref' | 'openalex' | 'google_grounding';
+  displayName: string;
+  status: 'success' | 'failed' | 'timeout' | 'no_matches';
+  itemsCount: number;
+  error?: string;
+  latencyMs: number;
+}
+
 export interface MatchedWebSource {
   title: string;
   url: string;
@@ -18,7 +36,7 @@ export interface MatchedWebSource {
   similarityPercent?: number;
   similarity?: number;
   domain?: string;
-  sourceType?: 'academic_paper' | 'web_search' | 'encyclopedia' | 'institutional';
+  sourceType?: 'academic_paper' | 'web_search' | 'encyclopedia' | 'institutional' | 'wikipedia' | 'firestore' | 'crossref' | 'openalex' | 'web';
 }
 
 export interface ParagraphAnalysisItem {
@@ -39,7 +57,18 @@ export interface ParagraphAnalysisItem {
   advisorNote: string;
   suggestedCorrection: string;
   abntRule: string;
-  similarityPercentage: number;
+  similarityPercentage?: number | null;
+  containmentPercent?: number | null;
+  jaccardPercent?: number | null;
+  isLegitimateCitation?: boolean;
+  citationDetails?: {
+    author?: string;
+    year?: string;
+    page?: string;
+    quotedText?: string;
+  };
+  matchingExcerpts?: MatchingExcerpt[];
+  characteristicPhrases?: string[];
   matchedSourceHint?: string;
   matchedSources?: MatchedWebSource[];
 }
@@ -53,17 +82,32 @@ export interface AntiplagiarismReport {
   course?: string;
   totalWords: number;
   totalParagraphs: number;
-  overallSimilarityScore: number; // 0 a 100%
-  originalityScore: number; // 0 a 100%
+  overallSimilarityScore?: number | null; // ponderado pelos containments reais
+  weightedSimilarityScore?: number | null;
+  originalityScore?: number | null;
   riskLevel: PlagiarismRiskLevel;
   advisorAttentionCount: number;
   abntIssuesCount: number;
   paragraphs: ParagraphAnalysisItem[];
   executiveSummary: string;
   generalRecommendations: string[];
-  usedEngine: 'gemini_ai' | 'heuristic_syntax' | 'gemini_search_grounding';
+  usedEngine: 'gemini_ai' | 'heuristic_syntax' | 'gemini_search_grounding' | 'deterministic_shingles_sources';
+  engineLabel?: string;
+  isFallback?: boolean;
+  fallbackReason?: string;
   webGroundingSourcesCount?: number;
   groundingWebSources?: MatchedWebSource[];
+  queriedSourcesStatus?: SourceStatusReport[];
   ocrProcessedPages?: number;
   formatNotice?: string;
+  userUid?: string;
+  userEmail?: string;
+  advisorEmail?: string;
+  advisorUid?: string;
+  optionsUsed?: {
+    similarityAlertThreshold?: number;
+    abntStrictMode?: boolean;
+    geminiDeepSemantic?: boolean;
+  };
 }
+

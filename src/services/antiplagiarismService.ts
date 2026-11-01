@@ -13,6 +13,21 @@ import {
   MatchedWebSource,
 } from '../types/antiplagiarism';
 import { cleanExtractedText } from '../utils/textSanitizer';
+import {
+  detectLegitimateAbntCitation,
+  extractCharacteristicPhrases,
+} from './similarityEngine';
+import { getDbSafe, getAuthSafe } from './firebase';
+import {
+  doc,
+  setDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+  deleteDoc,
+  limit,
+} from 'firebase/firestore';
 
 export interface DocumentExtractionProgress {
   message: string;
@@ -514,27 +529,63 @@ export class AntiplagiarismService {
 
   /**
    * Executa a análise do TCC chamando o backend Node.js (/api/antiplagiarism/analyze)
-   * com fallback transparente para a engine heurística local caso o servidor não responda.
+   * passando o token do Firebase Auth, com fallback transparente para a engine heurística local.
    */
   static async analyzeTcc(params: {
     text: string;
     title?: string;
     studentName?: string;
     advisorName?: string;
+    advisorEmail?: string;
+    advisorUid?: string;
     course?: string;
+    options?: {
+      similarityAlertThreshold?: number;
+      abntStrictMode?: boolean;
+      geminiDeepSemantic?: boolean;
+    };
   }): Promise<AntiplagiarismReport> {
-    const { text, title = 'Trabalho de Conclusão de Curso (TCC)', studentName, advisorName, course } = params;
+    const {
+      text,
+      title = 'Trabalho de Conclusão de Curso (TCC)',
+      studentName,
+      advisorName,
+      advisorEmail,
+      advisorUid,
+      course,
+      options,
+    } = params;
+
+    const auth = getAuthSafe();
+    let idToken: string | null = null;
+    if (auth?.currentUser) {
+      try {
+        idToken = await auth.currentUser.getIdToken();
+      } catch (tokErr) {
+        console.warn('[AntiplagiarismService] Não foi possível obter idToken:', tokErr);
+      }
+    }
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (idToken) {
+        headers['Authorization'] = `Bearer ${idToken}`;
+      }
+
       const response = await fetch('/api/antiplagiarism/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           text,
           title,
           studentName,
           advisorName,
+          advisorEmail,
+          advisorUid,
           course,
+          options,
         }),
       });
 
@@ -543,13 +594,167 @@ export class AntiplagiarismService {
         if (data && data.report) {
           return data.report as AntiplagiarismReport;
         }
+      } else {
+        const errJson = await response.json().catch(() => null);
+        const errMsg = errJson?.error || `Falha do servidor (HTTP ${response.status})`;
+        console.warn(`[AntiplagiarismService] Erro retornado pela API (${response.status}):`, errMsg);
+        if (response.status === 401 || response.status === 429 || response.status === 413) {
+          throw new Error(errMsg);
+        }
       }
-    } catch (e) {
+    } catch (e: any) {
+      if (
+        e?.message &&
+        (e.message.includes('Autenticação') ||
+          e.message.includes('Token') ||
+          e.message.includes('Limite') ||
+          e.message.includes('extenso'))
+      ) {
+        throw e;
+      }
       console.warn('[AntiplagiarismService] Falha ao comunicar com backend, usando engine heurística local:', e);
     }
 
     // Fallback heurístico local de alta precisão ABNT
     return this.runLocalHeuristicAnalysis(params);
+  }
+
+  /**
+   * Salva o relatório de auditoria antiplágio no Firestore (coleção antiplagiarism_reports).
+   * Campos obrigatórios: userUid, título, data, motor usado, fontes consultadas, score e parágrafos.
+   */
+  static async saveReportToFirestore(
+    report: AntiplagiarismReport,
+    meta?: {
+      userUid?: string;
+      userEmail?: string;
+      advisorEmail?: string;
+      advisorUid?: string;
+    }
+  ): Promise<string> {
+    const db = getDbSafe();
+    if (!db) {
+      throw new Error('Banco de dados Firestore não inicializado.');
+    }
+    const auth = getAuthSafe();
+    const currentUid = meta?.userUid || auth?.currentUser?.uid || report.userUid;
+    if (!currentUid) {
+      throw new Error('Usuário não autenticado. Faça login para salvar o relatório no Firestore.');
+    }
+
+    const reportId = report.id || `report-${Date.now()}`;
+    const reportRef = doc(db, 'antiplagiarism_reports', reportId);
+
+    const docPayload = {
+      id: reportId,
+      userUid: currentUid,
+      userEmail: meta?.userEmail || auth?.currentUser?.email || report.userEmail || '',
+      advisorEmail: meta?.advisorEmail || report.advisorEmail || '',
+      advisorUid: meta?.advisorUid || report.advisorUid || '',
+      título: report.tccTitle || 'Trabalho de Conclusão de Curso (TCC)',
+      title: report.tccTitle || 'Trabalho de Conclusão de Curso (TCC)',
+      data: report.analyzedAt || new Date().toISOString(),
+      analyzedAt: report.analyzedAt || new Date().toISOString(),
+      motorUsado: report.engineLabel || report.usedEngine || 'deterministic_shingles_sources',
+      usedEngine: report.usedEngine || 'deterministic_shingles_sources',
+      fontesConsultadas: report.groundingWebSources || [],
+      fontesConsultadasCount: report.webGroundingSourcesCount || (report.groundingWebSources?.length ?? 0),
+      queriedSourcesStatus: report.queriedSourcesStatus || [],
+      score: report.overallSimilarityScore ?? null,
+      weightedSimilarityScore: report.weightedSimilarityScore ?? null,
+      originalityScore: report.originalityScore ?? null,
+      riskLevel: report.riskLevel,
+      advisorAttentionCount: report.advisorAttentionCount,
+      abntIssuesCount: report.abntIssuesCount,
+      parágrafos: report.paragraphs,
+      paragraphs: report.paragraphs,
+      studentName: report.studentName || '',
+      advisorName: report.advisorName || '',
+      course: report.course || '',
+      totalWords: report.totalWords,
+      totalParagraphs: report.totalParagraphs,
+      executiveSummary: report.executiveSummary,
+      generalRecommendations: report.generalRecommendations,
+      optionsUsed: report.optionsUsed || null,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await setDoc(reportRef, docPayload, { merge: true });
+    return reportId;
+  }
+
+  /**
+   * Busca histórico de relatórios no Firestore para o usuário atual,
+   * orientador indicado ou administradores.
+   */
+  static async fetchUserReports(
+    userUid: string,
+    userEmail?: string,
+    isAdmin = false
+  ): Promise<AntiplagiarismReport[]> {
+    const db = getDbSafe();
+    if (!db || !userUid) return [];
+
+    try {
+      const reportsCol = collection(db, 'antiplagiarism_reports');
+      let q;
+      if (isAdmin) {
+        q = query(reportsCol, limit(50));
+      } else {
+        q = query(reportsCol, where('userUid', '==', userUid), limit(50));
+      }
+
+      const snapshot = await getDocs(q);
+      const reports: AntiplagiarismReport[] = [];
+
+      snapshot.forEach((d) => {
+        const data = d.data() as any;
+        reports.push({
+          id: d.id,
+          analyzedAt: data.data || data.analyzedAt || new Date().toISOString(),
+          tccTitle: data.título || data.title || 'TCC sem título',
+          studentName: data.studentName,
+          advisorName: data.advisorName,
+          advisorEmail: data.advisorEmail,
+          advisorUid: data.advisorUid,
+          course: data.course,
+          userUid: data.userUid,
+          userEmail: data.userEmail,
+          totalWords: data.totalWords || 0,
+          totalParagraphs: data.totalParagraphs || (Array.isArray(data.parágrafos) ? data.parágrafos.length : 0),
+          overallSimilarityScore: typeof data.score === 'number' ? data.score : (data.overallSimilarityScore ?? null),
+          weightedSimilarityScore: data.weightedSimilarityScore ?? data.score ?? null,
+          originalityScore: data.originalityScore ?? null,
+          riskLevel: data.riskLevel || 'baixo',
+          advisorAttentionCount: data.advisorAttentionCount || 0,
+          abntIssuesCount: data.abntIssuesCount || 0,
+          paragraphs: data.parágrafos || data.paragraphs || [],
+          executiveSummary: data.executiveSummary || '',
+          generalRecommendations: data.generalRecommendations || [],
+          usedEngine: data.usedEngine || 'deterministic_shingles_sources',
+          engineLabel: data.motorUsado || data.engineLabel,
+          groundingWebSources: data.fontesConsultadas || data.groundingWebSources || [],
+          webGroundingSourcesCount: data.fontesConsultadasCount || 0,
+          queriedSourcesStatus: data.queriedSourcesStatus || [],
+          optionsUsed: data.optionsUsed,
+        });
+      });
+
+      return reports.sort((a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime());
+    } catch (err) {
+      console.warn('[AntiplagiarismService] Erro ao recuperar histórico no Firestore:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Exclui um relatório do histórico no Firestore.
+   */
+  static async deleteReport(reportId: string): Promise<void> {
+    const db = getDbSafe();
+    if (!db || !reportId) return;
+    const reportRef = doc(db, 'antiplagiarism_reports', reportId);
+    await deleteDoc(reportRef);
   }
 
   /**
@@ -574,46 +779,6 @@ export class AntiplagiarismService {
     let abntIssuesCount = 0;
     let totalRisk = 0;
 
-    // Gerador de fontes simuladas de bases públicas para cruzamento (SciELO, USP, CAPES, Google Scholar)
-    const topicKeywords = title.split(/\s+/).filter((w) => w.length > 4);
-    const mainKw = topicKeywords[0] || 'Gestão do Conhecimento';
-    const secKw = topicKeywords[1] || 'Metodologia Científica';
-
-    const simulatedGroundingSources: MatchedWebSource[] = [
-      {
-        title: `SciELO Brasil - Avanços e Modelos em ${mainKw}`,
-        url: `https://search.scielo.org/?q=${encodeURIComponent(mainKw)}`,
-        snippet: `Publicação científica revisada por pares analisando impactos contemporâneos de ${mainKw} e diretrizes metodológicas.`,
-        domain: 'scielo.br',
-        similarityPercent: 18,
-        sourceType: 'academic_paper',
-      },
-      {
-        title: `Biblioteca Digital de Teses e Dissertações (USP) - ${secKw}`,
-        url: `https://www.teses.usp.br/teses/disponiveis/consulta.php?palavras=${encodeURIComponent(secKw)}`,
-        snippet: `Repositório institucional contendo dissertações de mestrado e teses de doutorado sobre ${secKw}.`,
-        domain: 'teses.usp.br',
-        similarityPercent: 12,
-        sourceType: 'academic_paper',
-      },
-      {
-        title: `Google Acadêmico (Google Scholar) - ${title.slice(0, 45)}`,
-        url: `https://scholar.google.com.br/scholar?q=${encodeURIComponent(title)}`,
-        snippet: `Artigos indexados com citações acadêmicas e métricas de impacto acadêmico NBR 6023.`,
-        domain: 'scholar.google.com.br',
-        similarityPercent: 14,
-        sourceType: 'academic_paper',
-      },
-      {
-        title: `Portal de Periódicos CAPES / MEC`,
-        url: `https://www.periodicos.capes.gov.br/`,
-        snippet: `Base nacional de periódicos acadêmicos de alto impacto e publicações Qualis A/B.`,
-        domain: 'capes.gov.br',
-        similarityPercent: 8,
-        sourceType: 'institutional',
-      },
-    ];
-
     rawParagraphs.forEach((paragraph, idx) => {
       const pNum = idx + 1;
       const words = paragraph.split(/\s+/).filter(Boolean).length;
@@ -623,8 +788,9 @@ export class AntiplagiarismService {
       let advisorNote = 'Redação satisfatória para leitura do orientador.';
       let suggestedCorrection = 'Manter parágrafo conforme apresentado na versão atual.';
       let abntRule = 'ABNT NBR 10520 & NBR 6023';
-      let similarityPercentage = Math.floor(Math.random() * 6) + 3;
-      let matchedSources: MatchedWebSource[] | undefined;
+
+      const legitCitation = detectLegitimateAbntCitation(paragraph);
+      const characteristicPhrases = extractCharacteristicPhrases(paragraph);
 
       const hasQuotes = /["“][^"”]{8,}["”]/.test(paragraph);
       const hasPage = /p\.\s*\d+|pp\.\s*\d+-\d+/i.test(paragraph);
@@ -633,17 +799,21 @@ export class AntiplagiarismService {
         /[A-ZÀ-Ú][a-zà-ú]+\s*\((?:19|20)\d{2}\)/.test(paragraph);
       const isLongQuote = words > 45 && hasQuotes;
 
-      if (hasQuotes && !hasPage) {
+      if (legitCitation.isLegitimate) {
+        status = 'regular';
+        issueType = 'nenhum';
+        description = `Citação textual direta legítima (${legitCitation.author}, ${legitCitation.year}, p. ${legitCitation.page}). Isenta de plágio conforme NBR 10520.`;
+        advisorNote = 'Citação devidamente referenciada com autor, ano e página conforme NBR 10520.';
+        suggestedCorrection = paragraph;
+        abntRule = 'ABNT NBR 10520 - Citações diretas com autoria, ano e página';
+      } else if (hasQuotes && !hasPage) {
         status = 'inconformidade_abnt';
         issueType = 'citacao_direta_sem_pagina';
         description = 'Citação textual direta sem indicação da página de origem (NBR 10520 item 5.1).';
         advisorNote = 'Solicitar ao aluno a página exata da publicação consultada para a citação literal.';
         suggestedCorrection = paragraph.replace(/(\((?:[A-ZÀ-Ú\s]+),\s*(?:19|20)\d{2})(\))/g, '$1, p. xx$2');
         abntRule = 'ABNT NBR 10520 - Item 5.1 (Obrigatoriedade de indicação da página em citações diretas)';
-        similarityPercentage = 38;
         abntIssuesCount++;
-        totalRisk += 12;
-        matchedSources = [simulatedGroundingSources[0]];
       } else if (isLongQuote) {
         status = 'inconformidade_abnt';
         issueType = 'citacao_longa_sem_recuo';
@@ -651,10 +821,7 @@ export class AntiplagiarismService {
         advisorNote = 'Exigir a formatação em bloco separado com recuo de 4 cm da margem esquerda e fonte reduzida.';
         suggestedCorrection = `[Aplicar recuo de 4cm da margem esquerda, fonte tamanho 10, espaçamento simples e sem aspas]:\n\n${paragraph}`;
         abntRule = 'ABNT NBR 10520 - Item 5.3 (Citações com mais de 3 linhas destacadas)';
-        similarityPercentage = 42;
         abntIssuesCount++;
-        totalRisk += 14;
-        matchedSources = [simulatedGroundingSources[1]];
       } else if (
         !hasCitation &&
         words > 40 &&
@@ -666,10 +833,7 @@ export class AntiplagiarismService {
         advisorNote = 'Verificar se o estudante coletou esse dado em pesquisa empírica ou se omitiu a citação do autor.';
         suggestedCorrection = `${paragraph} (AUTOR, ano, p. xx).`;
         abntRule = 'ABNT NBR 10520 - Item 4 (Regra geral de apresentação de citações em documentos)';
-        similarityPercentage = 22;
         advisorAttentionCount++;
-        totalRisk += 8;
-        matchedSources = [simulatedGroundingSources[2]];
       } else if (
         words > 60 &&
         !hasCitation &&
@@ -681,10 +845,7 @@ export class AntiplagiarismService {
         advisorNote = 'Recomendar citação indireta de autoridade no tema no início ou fim do parágrafo.';
         suggestedCorrection = `De acordo com Silva (2022), ${paragraph.charAt(0).toLowerCase() + paragraph.slice(1)}`;
         abntRule = 'ABNT NBR 10520 - Item 5.2 (Citações indiretas no texto acadêmico)';
-        similarityPercentage = 19;
         advisorAttentionCount++;
-        totalRisk += 7;
-        matchedSources = [simulatedGroundingSources[0]];
       }
 
       paragraphs.push({
@@ -698,20 +859,30 @@ export class AntiplagiarismService {
         advisorNote,
         suggestedCorrection,
         abntRule,
-        similarityPercentage,
-        matchedSourceHint: status !== 'regular' ? 'Bases Acadêmicas & Repositórios Públicos' : undefined,
-        matchedSources,
+        similarityPercentage: legitCitation.isLegitimate ? 0 : null,
+        containmentPercent: legitCitation.isLegitimate ? 0 : null,
+        isLegitimateCitation: legitCitation.isLegitimate,
+        citationDetails: legitCitation.isLegitimate ? {
+          author: legitCitation.author,
+          year: legitCitation.year,
+          page: legitCitation.page,
+          quotedText: legitCitation.quotedText,
+        } : undefined,
+        characteristicPhrases,
+        matchingExcerpts: [],
+        matchedSourceHint: undefined,
+        matchedSources: [],
       });
     });
 
     const totalWords = text.split(/\s+/).filter(Boolean).length;
-    const overallSimilarity = Math.min(100, Math.max(8, Math.round((totalRisk / (rawParagraphs.length || 1)) + 10)));
-    const originality = Math.max(0, 100 - overallSimilarity);
 
     let riskLevel: PlagiarismRiskLevel = 'baixo';
-    if (overallSimilarity > 45 || abntIssuesCount > 5) riskLevel = 'critico';
-    else if (overallSimilarity > 30 || abntIssuesCount > 3) riskLevel = 'alto';
-    else if (overallSimilarity > 18 || advisorAttentionCount > 2) riskLevel = 'moderado';
+    if (abntIssuesCount > 5 || advisorAttentionCount > 4) {
+      riskLevel = 'alto';
+    } else if (abntIssuesCount > 2 || advisorAttentionCount > 2) {
+      riskLevel = 'moderado';
+    }
 
     return {
       id: `report-heuristic-${Date.now()}`,
@@ -722,13 +893,13 @@ export class AntiplagiarismService {
       course,
       totalWords,
       totalParagraphs: paragraphs.length,
-      overallSimilarityScore: overallSimilarity,
-      originalityScore: originality,
+      overallSimilarityScore: null, // Não verificado: sem invenção de números
+      originalityScore: null,
       riskLevel,
       advisorAttentionCount,
       abntIssuesCount,
       paragraphs,
-      executiveSummary: `O TCC "${title}" apresenta índice de originalidade geral de ${originality}%, com ${paragraphs.length} parágrafos auditados. Foram identificados ${abntIssuesCount} inconformidades formais com as normas ABNT (especialmente NBR 10520) e ${advisorAttentionCount} trechos que requerem atenção direta do orientador para validação de fontes e citações de apoio.`,
+      executiveSummary: `O TCC "${title}" foi auditado pelo motor heurístico local de conformidade ABNT (${paragraphs.length} parágrafos). Foram identificadas ${abntIssuesCount} inconformidades formais com as normas ABNT (especialmente NBR 10520) e ${advisorAttentionCount} trechos que requerem atenção direta do orientador para validação de fontes e citações de apoio. A similaridade textual externa não foi verificada nesta modalidade offline.`,
       generalRecommendations: [
         'Adicionar paginação específica em todas as citações textuais diretas curtas (NBR 10520).',
         'Formatar citações diretas longas (> 3 linhas) em parágrafo recuado a 4 cm, tamanho 10, sem aspas.',
@@ -736,8 +907,12 @@ export class AntiplagiarismService {
         'Conferir a exata correspondência de todos os autores citados no texto com a lista de referências final (NBR 6023).',
       ],
       usedEngine: 'heuristic_syntax',
-      webGroundingSourcesCount: simulatedGroundingSources.length,
-      groundingWebSources: simulatedGroundingSources,
+      engineLabel: 'Análise Heurística Local ABNT (Offline)',
+      isFallback: true,
+      fallbackReason:
+        'Motor de IA e busca externa indisponíveis ou não configurados. A análise foi processada exclusivamente com base em regras sintáticas e formatação de citações da ABNT. A similaridade textual externa não foi verificada.',
+      webGroundingSourcesCount: 0,
+      groundingWebSources: [],
     };
   }
 

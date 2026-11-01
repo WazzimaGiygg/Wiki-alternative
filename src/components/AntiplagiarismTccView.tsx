@@ -5,7 +5,7 @@
  * para o orientador e sugestões de correção segundo as normas ABNT (4.1.1.8P.5 & 4.1.1.RW.5).
  */
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -39,7 +39,16 @@ import {
   Camera,
   TestTube2,
   FileCode,
+  History,
+  Lock,
+  RefreshCw,
+  Trash2,
+  SlidersHorizontal,
+  CheckSquare,
+  Square,
+  Save,
 } from 'lucide-react';
+import { ExtensionManager } from '../core/ExtensionManager';
 import {
   AntiplagiarismReport,
   ParagraphAnalysisItem,
@@ -48,6 +57,7 @@ import {
 } from '../types/antiplagiarism';
 import { AntiplagiarismService, DocumentExtractionProgress } from '../services/antiplagiarismService';
 import { runSanitizationTestSuite, SanitizationSuiteReport } from '../utils/textSanitizer';
+import { runSimilarityTestSuite, SimilaritySuiteReport } from '../services/similarityEngine';
 import { UserProfile, AppTheme } from '../types';
 
 interface AntiplagiarismTccViewProps {
@@ -73,7 +83,41 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
   const [tccTitle, setTccTitle] = useState('A Aplicação de Inteligência Artificial na Gestão de Conhecimento');
   const [studentName, setStudentName] = useState(currentUser?.displayName || 'Lucas Ribeiro dos Santos');
   const [advisorName, setAdvisorName] = useState('Profa. Dra. Mariana Helena Vasconcelos');
+  const [advisorEmail, setAdvisorEmail] = useState('');
   const [course, setCourse] = useState('Ciência da Computação & Engenharia de Software');
+
+  // 4.1.1.RW.5: Configurações Ativas da Extensão plagiarism-checker
+  const [similarityAlertThreshold, setSimilarityAlertThreshold] = useState<number>(() => {
+    const s = ExtensionManager.getInstance().getExtensionSettings('PlagiarismCheckerExtension');
+    return typeof s?.similarityAlertThreshold === 'number' ? s.similarityAlertThreshold : 15;
+  });
+  const [abntStrictMode, setAbntStrictMode] = useState<boolean>(() => {
+    const s = ExtensionManager.getInstance().getExtensionSettings('PlagiarismCheckerExtension');
+    return s?.abntStrictMode !== false;
+  });
+  const [geminiDeepSemantic, setGeminiDeepSemantic] = useState<boolean>(() => {
+    const s = ExtensionManager.getInstance().getExtensionSettings('PlagiarismCheckerExtension');
+    return s?.geminiDeepSemantic !== false;
+  });
+  const [showExtensionConfig, setShowExtensionConfig] = useState(false);
+
+  // Requisito 3: Aviso & Consentimento LGPD (Lei Nº 13.709/2018)
+  const [showLgpdModal, setShowLgpdModal] = useState(false);
+  const [lgpdConsented, setLgpdConsented] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tcc_antiplagiarism_lgpd_consented') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [lgpdConsentChecked, setLgpdConsentChecked] = useState(false);
+
+  // Requisito 1: Histórico de Relatórios no Firestore (coleção antiplagiarism_reports)
+  const [savedReports, setSavedReports] = useState<AntiplagiarismReport[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
 
   // Estado de arquivo (PDF com PDF.js, Word DOCX com Mammoth.js, e DOC legado OLE)
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -88,16 +132,55 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
   // Estado de análise e relatório
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [report, setReport] = useState<AntiplagiarismReport | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'paragraphs' | 'grounding' | 'abnt-guide' | 'opinion' | 'tests'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'paragraphs' | 'grounding' | 'abnt-guide' | 'opinion' | 'tests' | 'history'>('dashboard');
   const [paragraphFilter, setParagraphFilter] = useState<'all' | 'advisor' | 'abnt' | 'critical' | 'regular'>('all');
   const [expandedParagraphs, setExpandedParagraphs] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // 4.1.1.20Z.6: Estado da Suíte de Testes Unitários de Sanitização
+  // 4.1.1.20Z.6 & 4.1.1.RW.5: Estado das Suítes de Testes Unitários
+  const [activeTestSuiteTab, setActiveTestSuiteTab] = useState<'similarity' | 'sanitization'>('similarity');
   const [testSuiteReport, setTestSuiteReport] = useState<SanitizationSuiteReport | null>(null);
+  const [similarityReportState, setSimilarityReportState] = useState<SimilaritySuiteReport | null>(null);
   const [isRunningTests, setIsRunningTests] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sincroniza configurações da extensão no ExtensionManager
+  const updateExtensionOption = (key: 'similarityAlertThreshold' | 'abntStrictMode' | 'geminiDeepSemantic', val: any) => {
+    if (key === 'similarityAlertThreshold') setSimilarityAlertThreshold(val);
+    if (key === 'abntStrictMode') setAbntStrictMode(val);
+    if (key === 'geminiDeepSemantic') setGeminiDeepSemantic(val);
+    try {
+      ExtensionManager.getInstance().updateExtensionSettings('PlagiarismCheckerExtension', { [key]: val }, currentUser || null);
+    } catch (e) {
+      console.warn('Falha ao atualizar ExtensionManager:', e);
+    }
+  };
+
+  // Carrega histórico de relatórios salvos no Firestore
+  const loadHistory = async () => {
+    if (!currentUser?.uid) return;
+    setIsLoadingHistory(true);
+    try {
+      const list = await AntiplagiarismService.fetchUserReports(
+        currentUser.uid,
+        currentUser.email,
+        Boolean((currentUser as any)?.isAdmin || currentUser?.role === 'admin' || (currentUser as any)?.group === 'admin')
+      );
+      setSavedReports(list);
+    } catch (err: any) {
+      console.error('Falha ao recuperar histórico no Firestore:', err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  // Carrega histórico automaticamente ao mudar para a aba de histórico
+  useEffect(() => {
+    if (activeTab === 'history' && currentUser?.uid) {
+      loadHistory();
+    }
+  }, [activeTab, currentUser?.uid]);
 
   // Manipulador de upload de arquivo (PDF com PDF.js e OCR, Word .DOCX com Mammoth.js, e Word Legado .DOC OLE)
   const handleFileChange = async (file: File) => {
@@ -151,9 +234,22 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
   // 4.1.1.20Z.6: Executa a bateria de testes unitários automatizados de sanitização
   const handleRunUnitTests = () => {
     setIsRunningTests(true);
+    setActiveTestSuiteTab('sanitization');
     setTimeout(() => {
       const rep = runSanitizationTestSuite();
       setTestSuiteReport(rep);
+      setIsRunningTests(false);
+      setActiveTab('tests');
+    }, 120);
+  };
+
+  // 4.1.1.RW.5: Executa a bateria de testes do motor de similaridade determinístico
+  const handleRunSimilarityTests = () => {
+    setIsRunningTests(true);
+    setActiveTestSuiteTab('similarity');
+    setTimeout(() => {
+      const rep = runSimilarityTestSuite();
+      setSimilarityReportState(rep);
       setIsRunningTests(false);
       setActiveTab('tests');
     }, 120);
@@ -188,21 +284,30 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
     setInputMode('paste');
   };
 
-  // Executa análise completa
-  const handleRunAnalysis = async () => {
+  // Executa análise completa respeitando consentimento LGPD e salvando no Firestore
+  const executeAnalysis = async () => {
     if (!tccText || tccText.trim().length < 25) {
       alert('Por favor, insira ou faça upload do texto do TCC para análise (mínimo de 25 caracteres).');
       return;
     }
 
     setIsAnalyzing(true);
+    setSaveStatus('idle');
+    setSaveFeedback(null);
+
     try {
       const generatedReport = await AntiplagiarismService.analyzeTcc({
         text: tccText,
         title: tccTitle.trim() || 'Trabalho de Conclusão de Curso',
         studentName: studentName.trim() || 'Estudante Não Identificado',
         advisorName: advisorName.trim() || 'Orientador Não Identificado',
+        advisorEmail: advisorEmail.trim() || undefined,
         course: course.trim() || 'Graduação',
+        options: {
+          similarityAlertThreshold,
+          abntStrictMode,
+          geminiDeepSemantic,
+        },
       });
 
       setReport(generatedReport);
@@ -216,10 +321,92 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
         }
       });
       setExpandedParagraphs(initialExpanded);
+
+      // Requisito 1: Salva automaticamente no Firestore na coleção antiplagiarism_reports
+      if (currentUser?.uid) {
+        setSaveStatus('saving');
+        try {
+          await AntiplagiarismService.saveReportToFirestore(generatedReport, {
+            userUid: currentUser.uid,
+            userEmail: currentUser.email,
+            advisorEmail: advisorEmail.trim() || undefined,
+          });
+          setSaveStatus('saved');
+          setSaveFeedback('Relatório salvo com sucesso no Firestore (acesso restrito ao autor, orientador e admins).');
+        } catch (saveErr: any) {
+          console.warn('[Firestore] Erro ao salvar relatório no Firestore:', saveErr);
+          setSaveStatus('error');
+          setSaveFeedback('Aviso: O relatório foi gerado com sucesso, mas o salvamento no banco Firestore encontrou restrições.');
+        }
+      }
     } catch (err: any) {
       alert(`Falha ao concluir análise antiplágio: ${err?.message || err}`);
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // Validação prévia de LGPD antes de submeter texto a serviços externos e IA
+  const handleRunAnalysis = () => {
+    if (!tccText || tccText.trim().length < 25) {
+      alert('Por favor, insira ou faça upload do texto do TCC para análise (mínimo de 25 caracteres).');
+      return;
+    }
+    if (!lgpdConsented) {
+      setShowLgpdModal(true);
+      return;
+    }
+    executeAnalysis();
+  };
+
+  // Confirmação do termo LGPD
+  const handleConfirmLgpdConsent = () => {
+    try {
+      localStorage.setItem('tcc_antiplagiarism_lgpd_consented', 'true');
+    } catch {
+      // Ignora erro de storage
+    }
+    setLgpdConsented(true);
+    setShowLgpdModal(false);
+    executeAnalysis();
+  };
+
+  // Salvar relatório manualmente no Firestore
+  const handleManualSaveReport = async () => {
+    if (!report) return;
+    if (!currentUser?.uid) {
+      alert('Faça login na WikiWorldWeb para salvar relatórios no seu histórico.');
+      return;
+    }
+    setSaveStatus('saving');
+    try {
+      await AntiplagiarismService.saveReportToFirestore(report, {
+        userUid: currentUser.uid,
+        userEmail: currentUser.email,
+        advisorEmail: advisorEmail.trim() || report.advisorEmail || undefined,
+      });
+      setSaveStatus('saved');
+      setSaveFeedback('Relatório salvo com sucesso no Firestore!');
+      setTimeout(() => setSaveFeedback(null), 4000);
+    } catch (err: any) {
+      setSaveStatus('error');
+      alert(`Erro ao salvar no Firestore: ${err?.message || err}`);
+    }
+  };
+
+  // Excluir relatório do Firestore
+  const handleDeleteReport = async (reportId: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir permanentemente este relatório do seu histórico acadêmico?')) {
+      return;
+    }
+    try {
+      await AntiplagiarismService.deleteReport(reportId);
+      setSavedReports((prev) => prev.filter((r) => r.id !== reportId));
+      if (report?.id === reportId) {
+        setReport(null);
+      }
+    } catch (err: any) {
+      alert(`Falha ao excluir relatório: ${err?.message || err}`);
     }
   };
 
@@ -256,6 +443,182 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
   const wordCount = tccText.trim() ? tccText.trim().split(/\s+/).filter(Boolean).length : 0;
   const paragraphEstimate = tccText.trim() ? tccText.split(/\n\s*\n/).filter((p) => p.trim().length > 10).length : 0;
   const suiteReport = useMemo(() => testSuiteReport || runSanitizationTestSuite(), [testSuiteReport]);
+  const similaritySuiteReport = useMemo(() => similarityReportState || runSimilarityTestSuite(), [similarityReportState]);
+
+  const uniqueDomains = useMemo(() => {
+    if (!report?.groundingWebSources) return [];
+    const set = new Set<string>();
+    report.groundingWebSources.forEach((src) => {
+      if (src.domain) set.add(src.domain);
+    });
+    return Array.from(set);
+  }, [report]);
+
+  // Requisito 1: Tela de Histórico de Relatórios no Firestore
+  const renderHistoryView = () => {
+    const filteredHistory = savedReports.filter((r) => {
+      if (!historySearch.trim()) return true;
+      const q = historySearch.toLowerCase();
+      return (
+        r.tccTitle?.toLowerCase().includes(q) ||
+        r.studentName?.toLowerCase().includes(q) ||
+        r.advisorName?.toLowerCase().includes(q)
+      );
+    });
+
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-6 animate-in fade-in duration-300">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono">
+                COLEÇÃO FIRESTORE: antiplagiarism_reports
+              </span>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white font-serif-heading flex items-center gap-2">
+                <History size={18} className="text-blue-600 dark:text-blue-400" />
+                <span>Histórico de Auditorias Acadêmicas</span>
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Registros protegidos por regras de segurança no Firestore: acessível exclusivamente ao autor, ao orientador indicado e administradores.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadHistory}
+              disabled={isLoadingHistory}
+              className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <RefreshCw size={13} className={isLoadingHistory ? 'animate-spin' : ''} />
+              <span>Atualizar</span>
+            </button>
+
+            {report && (
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium cursor-pointer"
+              >
+                Voltar ao Parecer Atual →
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Busca e Estatísticas */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={historySearch}
+              onChange={(e) => setHistorySearch(e.target.value)}
+              placeholder="Buscar por título, aluno ou orientador..."
+              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+            <Lock size={12} className="text-emerald-500" />
+            <span>Total de relatórios salvos: <strong>{savedReports.length}</strong></span>
+          </div>
+        </div>
+
+        {/* Lista de Relatórios */}
+        {isLoadingHistory ? (
+          <div className="p-12 text-center space-y-3">
+            <Loader2 size={24} className="animate-spin text-blue-600 mx-auto" />
+            <p className="text-xs text-slate-500">Recuperando histórico protegido do Firestore...</p>
+          </div>
+        ) : filteredHistory.length === 0 ? (
+          <div className="p-12 text-center rounded-2xl bg-slate-50/50 dark:bg-slate-950/40 border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
+            <ShieldCheck size={36} className="text-slate-300 dark:text-slate-700 mx-auto" />
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              {historySearch ? 'Nenhum relatório encontrado para a busca informada.' : 'Nenhum relatório de auditoria salvo ainda.'}
+            </p>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Ao analisar um TCC estando autenticado na WikiWorldWeb, o relatório é salvo com segurança e criptografia de acesso no Firestore.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredHistory.map((rep) => {
+              const riskColors: Record<string, string> = {
+                baixo: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
+                moderado: 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800',
+                alto: 'bg-orange-100 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 border-orange-300 dark:border-orange-800',
+                critico: 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800',
+              };
+
+              return (
+                <div
+                  key={rep.id}
+                  className="p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${riskColors[rep.riskLevel] || riskColors.baixo}`}>
+                        Risco: {rep.riskLevel.toUpperCase()}
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        {rep.overallSimilarityScore !== null && rep.overallSimilarityScore !== undefined
+                          ? `Similaridade: ${rep.overallSimilarityScore}%`
+                          : 'Não verificado'}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {new Date(rep.analyzedAt).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
+
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate font-serif-heading">
+                      {rep.tccTitle}
+                    </h4>
+
+                    <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-4 gap-y-1">
+                      <span>Autor: <strong>{rep.studentName || 'Não informado'}</strong></span>
+                      <span>Orientador: <strong>{rep.advisorName || 'Não informado'}</strong></span>
+                      {rep.advisorEmail && (
+                        <span className="text-blue-600 dark:text-blue-400 font-mono text-[11px]">
+                          ({rep.advisorEmail})
+                        </span>
+                      )}
+                      <span>{rep.totalParagraphs} parágrafos ({rep.totalWords} palavras)</span>
+                    </div>
+
+                    <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                      <Info size={11} />
+                      <span className="truncate">{rep.engineLabel || rep.usedEngine}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                    <button
+                      onClick={() => {
+                        setReport(rep);
+                        setActiveTab('dashboard');
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <FileText size={13} />
+                      <span>Visualizar no Painel</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteReport(rep.id)}
+                      className="p-1.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 transition cursor-pointer"
+                      title="Excluir relatório permanentemente"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div id="antiplagiarism-tcc-view" className="max-w-6xl mx-auto px-4 py-6 space-y-6">
@@ -270,7 +633,7 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                 Módulo 4.1.1.8P.5
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-mono">
-                Extensão 4.1.1.RW.5 (Em Implementação)
+                Extensão 4.1.1.RW.5 (Motor Determinístico)
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-mono">
                 ABNT NBR 10520 & 6023
@@ -282,18 +645,39 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
               <span>Analisador Antiplágio & Parecer ABNT de TCC</span>
             </h1>
             <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              Plataforma acadêmica para análise estrutural de monografias, dissertações e Trabalhos de Conclusão de Curso (TCC). Identifica parágrafos que exigem a atenção do orientador e sugere correções pontuais nas normas da ABNT.
+              Plataforma acadêmica para análise estrutural de monografias, dissertações e Trabalhos de Conclusão de Curso (TCC). Motor determinístico com normalização, shingles (k=5), winnowing, consulta a fontes reais e sugestões de correção ABNT.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button
+              onClick={() => {
+                setActiveTab('history');
+                loadHistory();
+              }}
+              className="px-3 py-2 text-xs font-semibold rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-700 dark:text-blue-300 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              title="Acessar histórico de relatórios salvos no Firestore (acesso restrito ao autor, orientador e admins)"
+            >
+              <History size={14} />
+              <span>Histórico de Auditorias</span>
+            </button>
+
+            <button
+              onClick={handleRunSimilarityTests}
+              className="px-3 py-2 text-xs font-semibold rounded-xl border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 transition flex items-center gap-1.5 cursor-pointer"
+              title="Executar testes unitários do motor de similaridade determinístico (Shingles, Winnowing, Containment)"
+            >
+              <TestTube2 size={14} className={isRunningTests && activeTestSuiteTab === 'similarity' ? 'animate-spin' : ''} />
+              <span>Testes Motor (4.1.1.RW.5)</span>
+            </button>
+
+            <button
               onClick={handleRunUnitTests}
               className="px-3 py-2 text-xs font-semibold rounded-xl border border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 transition flex items-center gap-1.5 cursor-pointer"
               title="Executar testes unitários de sanitização de texto (4.1.1.20Z.6)"
             >
-              <TestTube2 size={14} className={isRunningTests ? 'animate-spin' : ''} />
-              <span>Testes (4.1.1.20Z.6)</span>
+              <FileCode size={14} className={isRunningTests && activeTestSuiteTab === 'sanitization' ? 'animate-spin' : ''} />
+              <span>Sanitização (4.1.1.20Z.6)</span>
             </button>
 
             {onNavigateToAcademic && (
@@ -381,7 +765,7 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
         </div>
 
         {/* Metadados Acadêmicos do TCC */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50/70 dark:bg-slate-950/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 bg-slate-50/70 dark:bg-slate-950/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
           <div>
             <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
               Título do TCC / Monografia
@@ -417,6 +801,20 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
               value={advisorName}
               onChange={(e) => setAdvisorName(e.target.value)}
               placeholder="Nome do orientador"
+              className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
+              <Lock size={10} className="text-blue-500" />
+              <span>E-mail do Orientador (Acesso)</span>
+            </label>
+            <input
+              type="email"
+              value={advisorEmail}
+              onChange={(e) => setAdvisorEmail(e.target.value)}
+              placeholder="orientador@universidade.edu.br"
               className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -608,11 +1006,134 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
           </div>
         )}
 
+        {/* 4.1.1.RW.5: Barra de Configurações da Extensão plagiarism-checker */}
+        <div className="bg-slate-50 dark:bg-slate-950/70 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal size={14} className="text-blue-600 dark:text-blue-400" />
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Parâmetros Ativos da Extensão Plagiarism Checker
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono">
+                Alerta: {similarityAlertThreshold}% • ABNT: {abntStrictMode ? 'Estrito' : 'Flexível'} • Gemini: {geminiDeepSemantic ? 'On' : 'Off'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowExtensionConfig(!showExtensionConfig)}
+              className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>{showExtensionConfig ? 'Ocultar Parâmetros' : 'Ajustar Parâmetros'}</span>
+              <ChevronDown size={13} className={`transform transition ${showExtensionConfig ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          {showExtensionConfig && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200 dark:border-slate-800 animate-in fade-in duration-200">
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-bold">
+                  <span className="text-slate-700 dark:text-slate-300">Limite de Alerta (Threshold)</span>
+                  <span className="font-mono text-blue-600 dark:text-blue-400">{similarityAlertThreshold}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="5"
+                  max="40"
+                  step="1"
+                  value={similarityAlertThreshold}
+                  onChange={(e) => updateExtensionOption('similarityAlertThreshold', parseInt(e.target.value, 10))}
+                  className="w-full cursor-pointer accent-blue-600"
+                />
+                <span className="text-[10px] text-slate-400 block">
+                  Percentual a partir do qual parágrafos recebem alerta do orientador.
+                </span>
+              </div>
+
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Auditoria Estrita ABNT</span>
+                  <input
+                    type="checkbox"
+                    checked={abntStrictMode}
+                    onChange={(e) => updateExtensionOption('abntStrictMode', e.target.checked)}
+                    className="rounded accent-blue-600 cursor-pointer"
+                  />
+                </label>
+                <span className="text-[10px] text-slate-400 block">
+                  Exige paginação obrigatória em citações diretas (NBR 10520 item 5.1).
+                </span>
+              </div>
+
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1.5">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Semântica Profunda Gemini</span>
+                  <input
+                    type="checkbox"
+                    checked={geminiDeepSemantic}
+                    onChange={(e) => updateExtensionOption('geminiDeepSemantic', e.target.checked)}
+                    className="rounded accent-blue-600 cursor-pointer"
+                  />
+                </label>
+                <span className="text-[10px] text-slate-400 block">
+                  Gera explicações pedagógicas e correções ABNT personalizadas via IA.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Requisito 3: Aviso & Termo de Consentimento LGPD (Lei Nº 13.709/2018) */}
+        <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 rounded-2xl border border-blue-200/80 dark:border-blue-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+          <label className="flex items-start sm:items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 leading-snug">
+            <input
+              type="checkbox"
+              checked={lgpdConsented}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setLgpdConsented(checked);
+                try {
+                  localStorage.setItem('tcc_antiplagiarism_lgpd_consented', String(checked));
+                } catch {}
+              }}
+              className="mt-0.5 sm:mt-0 rounded accent-blue-600 cursor-pointer"
+            />
+            <span>
+              <strong>LGPD (Lei 13.709/2018):</strong> Autorizo o processamento do texto acadêmico por bases externas e Google Gemini para fins de auditoria de plágio e ABNT.
+            </span>
+          </label>
+
+          <button
+            type="button"
+            onClick={() => setShowLgpdModal(true)}
+            className="text-[11px] font-bold text-blue-700 dark:text-blue-300 hover:underline shrink-0 cursor-pointer flex items-center gap-1"
+          >
+            <Info size={13} />
+            <span>Ver Termo Legal</span>
+          </button>
+        </div>
+
+        {/* Feedback de salvamento no Firestore */}
+        {saveFeedback && (
+          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs flex items-center justify-between gap-2">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={14} className="text-emerald-600" />
+              <span>{saveFeedback}</span>
+            </span>
+            <button
+              onClick={() => setSaveFeedback(null)}
+              className="text-[10px] font-bold text-emerald-600 hover:underline cursor-pointer"
+            >
+              Fechar ✕
+            </button>
+          </div>
+        )}
+
         {/* Botão de Ação: Executar Análise */}
         <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
             <Info size={14} className="text-blue-500 shrink-0" />
-            <span>Verificação baseada em sintaxe externa, regras ABNT e assistência por IA</span>
+            <span>Motor Determinístico Shingles (k=5) + Fontes Reais + Assistência ABNT</span>
           </div>
 
           <button
@@ -635,122 +1156,257 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
         </div>
       </div>
 
+      {/* Requisito 1: Visualização do Histórico Salvo no Firestore (sem relatório ativo) */}
+      {activeTab === 'history' && !report && renderHistoryView()}
+
       {/* 4.1.1.20Z.6: Visualização Direta da Suíte de Testes Unitários de Sanitização (acesso prévio sem necessidade de análise) */}
+      {/* 4.1.1.20Z.6 & 4.1.1.RW.5: Visualização Direta das Suítes de Testes Unitários Automatizados */}
       {activeTab === 'tests' && !report && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-5 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-mono">
-                SUÍTE UNITÁRIA 4.1.1.20Z.6
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-mono">
+                SUÍTES UNITÁRIAS 4.1.1.RW.5 & 4.1.1.20Z.6
               </span>
               <h3 className="text-base font-bold text-slate-900 dark:text-white font-serif-heading">
-                Validação Automatizada de Edge Cases do Sanitizador
+                Laboratório de Validação e Testes Automatizados
               </h3>
             </div>
             <button
               onClick={() => setActiveTab('dashboard')}
-              className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-medium cursor-pointer"
+              className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-medium cursor-pointer self-start sm:self-auto"
             >
               Fechar Painel de Testes ✕
             </button>
           </div>
 
-          <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <p className="text-xs text-purple-950 dark:text-purple-200 font-medium">
-                Execução dos 10 testes unitários de sanitização de texto acadêmico (caracteres nulos, CRLF, hifenizações de fim de página, blocos PDF residuais, numeração e preservação ABNT).
-              </p>
-            </div>
+          {/* Seletor da Suíte Ativa */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <button
-              onClick={handleRunUnitTests}
-              disabled={isRunningTests}
-              className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition flex items-center gap-1.5 disabled:opacity-50 shrink-0 cursor-pointer"
+              onClick={() => setActiveTestSuiteTab('similarity')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeTestSuiteTab === 'similarity'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
             >
-              <RotateCcw size={13} className={isRunningTests ? 'animate-spin' : ''} />
-              <span>Executar Bateria Novamente</span>
+              <TestTube2 size={13} />
+              <span>Motor Determinístico de Similaridade (10 Testes)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTestSuiteTab('sanitization')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeTestSuiteTab === 'sanitization'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <FileCode size={13} />
+              <span>Sanitizador de Texto Acadêmico (10 Testes)</span>
             </button>
           </div>
 
-          {/* Métricas */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-              <span className="text-[10px] font-bold uppercase text-slate-400 block">Total de Testes</span>
-              <span className="text-2xl font-bold text-slate-900 dark:text-white">{suiteReport.total}</span>
-            </div>
-            <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
-              <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 block">Aprovados</span>
-              <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{suiteReport.passedCount}</span>
-            </div>
-            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
-              <span className="text-[10px] font-bold uppercase text-rose-700 dark:text-rose-300 block">Falhas</span>
-              <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{suiteReport.failedCount}</span>
-            </div>
-            <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
-              <span className="text-[10px] font-bold uppercase text-blue-700 dark:text-blue-300 block">Taxa de Sucesso</span>
-              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {Math.round((suiteReport.passedCount / suiteReport.total) * 100)}%
-              </span>
-            </div>
-          </div>
-
-          {/* Lista de Casos de Teste */}
-          <div className="space-y-3">
-            {suiteReport.results.map((res, index) => (
-              <div
-                key={res.id}
-                className="p-4 rounded-2xl bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2.5"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
-                      {index + 1}
-                    </span>
-                    <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
-                      {res.name}
-                    </h4>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-slate-400">
-                      {res.durationMs}ms
-                    </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${
-                      res.passed
-                        ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                        : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
-                    }`}>
-                      {res.passed ? '✓ Aprovado (Pass)' : '✕ Falha (Fail)'}
-                    </span>
-                  </div>
+          {/* Conteúdo da Suíte Selecionada */}
+          {activeTestSuiteTab === 'similarity' ? (
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs text-indigo-950 dark:text-indigo-200 font-medium">
+                    10 testes unitários do motor determinístico (src/services/similarityEngine.ts): Normalização, Shingles k=5, Winnowing w=4, Jaccard, Containment, isenção de citações ABNT NBR 10520, frases características e ponderação por palavras.
+                  </p>
                 </div>
+                <button
+                  onClick={handleRunSimilarityTests}
+                  disabled={isRunningTests}
+                  className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center gap-1.5 disabled:opacity-50 shrink-0 cursor-pointer"
+                >
+                  <RotateCcw size={13} className={isRunningTests ? 'animate-spin' : ''} />
+                  <span>Reexecutar Bateria Similarity</span>
+                </button>
+              </div>
 
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {res.description}
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
-                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <span className="text-[10px] font-bold text-slate-400 block mb-1">Entrada Bruta com Artefato:</span>
-                    <pre className="whitespace-pre-wrap text-[11px] text-slate-700 dark:text-slate-300 break-all">
-                      {JSON.stringify(res.input)}
-                    </pre>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50">
-                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 block mb-1">Resultado Sanitizado Limpo:</span>
-                    <pre className="whitespace-pre-wrap text-[11px] text-emerald-900 dark:text-emerald-300 break-all">
-                      {JSON.stringify(res.output)}
-                    </pre>
-                  </div>
+              {/* Métricas */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Total de Testes</span>
+                  <span className="text-2xl font-bold text-slate-900 dark:text-white">{similaritySuiteReport.total}</span>
                 </div>
-
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
-                  <span>{res.expectedExplanation}</span>
+                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 block">Aprovados</span>
+                  <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{similaritySuiteReport.passedCount}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
+                  <span className="text-[10px] font-bold uppercase text-rose-700 dark:text-rose-300 block">Falhas</span>
+                  <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{similaritySuiteReport.failedCount}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800">
+                  <span className="text-[10px] font-bold uppercase text-indigo-700 dark:text-indigo-300 block">Taxa de Sucesso</span>
+                  <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {Math.round((similaritySuiteReport.passedCount / similaritySuiteReport.total) * 100)}%
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {/* Lista dos 10 Testes */}
+              <div className="space-y-3">
+                {similaritySuiteReport.results.map((res, index) => (
+                  <div
+                    key={res.id}
+                    className="p-4 rounded-2xl bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2.5"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center font-mono text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                          {index + 1}
+                        </span>
+                        <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
+                          {res.name}
+                        </h4>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {res.durationMs}ms
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${
+                          res.passed
+                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                            : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                        }`}>
+                          {res.passed ? '✓ Aprovado (Pass)' : '✕ Falha (Fail)'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {res.description}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                        <span className="text-[10px] font-bold text-slate-400 block mb-1">Entrada / Parâmetros:</span>
+                        <pre className="whitespace-pre-wrap text-[11px] text-slate-700 dark:text-slate-300 break-all">
+                          {JSON.stringify(res.input)}
+                        </pre>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/50">
+                        <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-400 block mb-1">Resultado Determinístico:</span>
+                        <pre className="whitespace-pre-wrap text-[11px] text-indigo-900 dark:text-indigo-300 break-all">
+                          {JSON.stringify(res.output)}
+                        </pre>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                      <span>{res.expectedExplanation}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs text-purple-950 dark:text-purple-200 font-medium">
+                    10 testes unitários de sanitização de texto acadêmico (caracteres nulos, CRLF, hifenizações de fim de página, blocos PDF residuais, numeração e preservação ABNT).
+                  </p>
+                </div>
+                <button
+                  onClick={handleRunUnitTests}
+                  disabled={isRunningTests}
+                  className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition flex items-center gap-1.5 disabled:opacity-50 shrink-0 cursor-pointer"
+                >
+                  <RotateCcw size={13} className={isRunningTests ? 'animate-spin' : ''} />
+                  <span>Reexecutar Bateria Sanitização</span>
+                </button>
+              </div>
+
+              {/* Métricas */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Total de Testes</span>
+                  <span className="text-2xl font-bold text-slate-900 dark:text-white">{suiteReport.total}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 block">Aprovados</span>
+                  <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{suiteReport.passedCount}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
+                  <span className="text-[10px] font-bold uppercase text-rose-700 dark:text-rose-300 block">Falhas</span>
+                  <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{suiteReport.failedCount}</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+                  <span className="text-[10px] font-bold uppercase text-blue-700 dark:text-blue-300 block">Taxa de Sucesso</span>
+                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {Math.round((suiteReport.passedCount / suiteReport.total) * 100)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Lista de Casos de Teste */}
+              <div className="space-y-3">
+                {suiteReport.results.map((res, index) => (
+                  <div
+                    key={res.id}
+                    className="p-4 rounded-2xl bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2.5"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+                          {index + 1}
+                        </span>
+                        <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
+                          {res.name}
+                        </h4>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {res.durationMs}ms
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${
+                          res.passed
+                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                            : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                        }`}>
+                          {res.passed ? '✓ Aprovado (Pass)' : '✕ Falha (Fail)'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {res.description}
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                        <span className="text-[10px] font-bold text-slate-400 block mb-1">Entrada Bruta com Artefato:</span>
+                        <pre className="whitespace-pre-wrap text-[11px] text-slate-700 dark:text-slate-300 break-all">
+                          {JSON.stringify(res.input)}
+                        </pre>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50">
+                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 block mb-1">Resultado Sanitizado Limpo:</span>
+                        <pre className="whitespace-pre-wrap text-[11px] text-emerald-900 dark:text-emerald-300 break-all">
+                          {JSON.stringify(res.output)}
+                        </pre>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                      <span>{res.expectedExplanation}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -760,9 +1416,18 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
           {/* Cabeçalho do Relatório com Tabs */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-mono">
                   RELATÓRIO CONCLUÍDO
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full font-mono flex items-center gap-1 ${
+                  report.isFallback || report.usedEngine === 'heuristic_syntax'
+                    ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                    : report.usedEngine === 'gemini_search_grounding'
+                    ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+                    : 'bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800'
+                }`}>
+                  <span>{report.engineLabel || (report.usedEngine === 'gemini_search_grounding' ? 'Motor: Gemini 3.8 + Grounding Web' : report.usedEngine === 'gemini_ai' ? 'Motor: Gemini 3.8 Flash' : 'Motor: Heurístico Local (Offline)')}</span>
                 </span>
                 <span className="text-xs text-slate-400">
                   Emitido em: {new Date(report.analyzedAt).toLocaleString('pt-BR')}
@@ -842,15 +1507,59 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                 onClick={() => setActiveTab('tests')}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'tests'
-                    ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-300 shadow-2xs'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs'
                     : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
                 <TestTube2 size={14} />
-                <span>Testes Sanitização (4.1.1.20Z.6)</span>
+                <span>Testes (4.1.1.RW.5 & 4.1.1.20Z.6)</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab('history');
+                  loadHistory();
+                }}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'history'
+                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-300 shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <History size={14} />
+                <span>Histórico</span>
+              </button>
+
+              <button
+                onClick={handleManualSaveReport}
+                disabled={saveStatus === 'saving'}
+                className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition flex items-center gap-1.5 cursor-pointer ml-auto"
+                title="Salvar relatório no Firestore (acesso restrito ao autor, orientador e admins)"
+              >
+                <Save size={13} className={saveStatus === 'saving' ? 'animate-spin' : ''} />
+                <span>{saveStatus === 'saving' ? 'Salvando...' : saveStatus === 'saved' ? 'Salvo no Firestore ✓' : 'Salvar no Firestore'}</span>
               </button>
             </div>
           </div>
+
+          {/* Alerta Destacado de Modo Fallback Heurístico / Offline */}
+          {(report.isFallback || report.usedEngine === 'heuristic_syntax') && (
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 flex items-start gap-3 text-xs leading-relaxed">
+              <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <div className="font-bold text-sm text-amber-950 dark:text-amber-100 flex items-center gap-2">
+                  <span>⚠️ Modo de Verificação Heurística Local Ativado (Fallback)</span>
+                </div>
+                <p>
+                  {report.fallbackReason || 'O cruzamento com o motor de busca web externo não foi executado. O documento foi auditado pelo analisador sintático de regras ABNT local (NBR 10520 e NBR 6023).'}
+                </p>
+                <div className="text-[11px] font-medium text-amber-800 dark:text-amber-300 flex items-center gap-1.5 pt-0.5">
+                  <Info size={13} className="shrink-0" />
+                  <span>A similaridade externa é exibida como <strong>"Não verificado"</strong> pois nenhum percentual é inventado sem comparação textual real.</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* TAB 1: PAINEL EXECUTIVO & KPIS */}
           {activeTab === 'dashboard' && (
@@ -862,30 +1571,42 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span className="font-semibold uppercase tracking-wider text-[10px]">Similaridade Global</span>
                     <span className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
-                      report.riskLevel === 'baixo'
+                      report.overallSimilarityScore === null || report.overallSimilarityScore === undefined
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        : report.riskLevel === 'baixo'
                         ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
                         : report.riskLevel === 'moderado'
                         ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
                         : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
                     }`}>
-                      Risco {report.riskLevel}
+                      {report.overallSimilarityScore === null || report.overallSimilarityScore === undefined
+                        ? 'Não verificado'
+                        : `Risco ${report.riskLevel}`}
                     </span>
                   </div>
-                  <div className="text-3xl font-bold font-mono text-slate-900 dark:text-white">
-                    {report.overallSimilarityScore}%
+                  <div className="text-2xl sm:text-3xl font-bold font-mono text-slate-900 dark:text-white">
+                    {report.overallSimilarityScore !== null && report.overallSimilarityScore !== undefined
+                      ? `${report.overallSimilarityScore}%`
+                      : 'Não verificado'}
                   </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full transition-all ${
-                        report.overallSimilarityScore < 20
-                          ? 'bg-emerald-500'
-                          : report.overallSimilarityScore < 35
-                          ? 'bg-amber-500'
-                          : 'bg-rose-500'
-                      }`}
-                      style={{ width: `${report.overallSimilarityScore}%` }}
-                    />
-                  </div>
+                  {report.overallSimilarityScore !== null && report.overallSimilarityScore !== undefined ? (
+                    <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          report.overallSimilarityScore < 20
+                            ? 'bg-emerald-500'
+                            : report.overallSimilarityScore < 35
+                            ? 'bg-amber-500'
+                            : 'bg-rose-500'
+                        }`}
+                        style={{ width: `${report.overallSimilarityScore}%` }}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400">
+                      Requer cruzamento ativo com motor web para mensuração precisa.
+                    </p>
+                  )}
                 </div>
 
                 {/* KPI 2: Originalidade */}
@@ -894,11 +1615,15 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                     <span className="font-semibold uppercase tracking-wider text-[10px]">Originalidade Autoral</span>
                     <Sparkles size={14} className="text-blue-500" />
                   </div>
-                  <div className="text-3xl font-bold font-mono text-blue-600 dark:text-blue-400">
-                    {report.originalityScore}%
+                  <div className="text-2xl sm:text-3xl font-bold font-mono text-blue-600 dark:text-blue-400">
+                    {report.originalityScore !== null && report.originalityScore !== undefined
+                      ? `${report.originalityScore}%`
+                      : 'Não verificado'}
                   </div>
                   <p className="text-[11px] text-slate-400">
-                    Percentual de redação genuína e raciocínio analítico próprio
+                    {report.originalityScore !== null && report.originalityScore !== undefined
+                      ? 'Percentual de redação genuína e raciocínio analítico próprio'
+                      : 'Auditado sob regras estruturais e de formatação ABNT'}
                   </p>
                 </div>
 
@@ -1084,9 +1809,28 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                           <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
                             {p.description}
                           </span>
+
+                          {p.isLegitimateCitation && (
+                            <span className="hidden md:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 items-center gap-1 shrink-0">
+                              <CheckCircle2 size={11} /> Citação NBR 10520 (Isenta de Plágio)
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
+                          {p.containmentPercent !== null && p.containmentPercent !== undefined ? (
+                            <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400" title="Contenção real de shingles (k=5)">
+                              Contenção: {p.containmentPercent}%
+                            </span>
+                          ) : p.similarityPercentage !== null && p.similarityPercentage !== undefined ? (
+                            <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
+                              ~{p.similarityPercentage}% similar
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
+                              Similaridade: não verificado
+                            </span>
+                          )}
                           <span className="text-xs font-mono text-slate-400">
                             {p.wordCount} palavras
                           </span>
@@ -1097,6 +1841,19 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                       {/* Corpo do Parágrafo Detalhado */}
                       {isExpanded && (
                         <div className="px-5 pb-5 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                          {/* Destaque para Citação Legítima */}
+                          {p.isLegitimateCitation && (
+                            <div className="p-3.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-1">
+                              <div className="flex items-center gap-2 text-xs font-bold text-emerald-900 dark:text-emerald-100">
+                                <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                                <span>Citação Direta Formal Identificada (NBR 10520) — Isenta de Atribuição de Plágio</span>
+                              </div>
+                              <p className="text-xs text-emerald-800/90 dark:text-emerald-300 leading-relaxed">
+                                Texto apresentado entre aspas acompanhado de autoria expressa ({p.citationDetails?.author || 'Autor identificado'}), ano ({p.citationDetails?.year || 'Ano'}) e paginação (p. {p.citationDetails?.page || 'página'}). A contenção é fixada em 0% conforme as normas acadêmicas.
+                              </p>
+                            </div>
+                          )}
+
                           {/* Texto Original */}
                           <div>
                             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
@@ -1106,6 +1863,54 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                               {p.excerpt}
                             </blockquote>
                           </div>
+
+                          {/* Frases Características Extraídas (Busca Exata entre Aspas) */}
+                          {p.characteristicPhrases && p.characteristicPhrases.length > 0 && (
+                            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
+                              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                Frases Características Extraídas (Pesquisa Exata entre Aspas no Servidor):
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {p.characteristicPhrases.map((phrase, phIdx) => (
+                                  <span key={phIdx} className="px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-mono text-slate-700 dark:text-slate-300">
+                                    "{phrase}"
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Trechos Coincidentes Determinísticos (Shingles k=5) */}
+                          {p.matchingExcerpts && p.matchingExcerpts.length > 0 && (
+                            <div className="p-3.5 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 space-y-2">
+                              <div className="text-xs font-bold text-rose-900 dark:text-rose-200 flex items-center justify-between">
+                                <span className="flex items-center gap-1.5">
+                                  <AlertTriangle size={14} className="text-rose-600" />
+                                  <span>Trechos Coincidentes Detectados pelo Motor Determinístico (Shingles k=5):</span>
+                                </span>
+                                <span className="text-[10px] font-mono text-rose-700 dark:text-rose-300">
+                                  {p.matchingExcerpts.length} passagem(ns)
+                                </span>
+                              </div>
+                              <div className="space-y-2">
+                                {p.matchingExcerpts.map((me, meIdx) => (
+                                  <div key={meIdx} className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 text-xs space-y-1">
+                                    <blockquote className="text-slate-800 dark:text-slate-200 italic border-l-2 border-rose-500 pl-2">
+                                      "{me.matchedText}"
+                                    </blockquote>
+                                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-slate-500 font-mono">
+                                      <span>Fonte: <strong className="text-slate-700 dark:text-slate-300">{me.sourceName}</strong> ({me.shingleCount || 1} shingles coincidentes)</span>
+                                      {me.sourceUrl && (
+                                        <a href={me.sourceUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                                          Ver fonte <ExternalLink size={10} />
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Seção de Apontamentos do Orientador (Requisito 4.1.1.8P.5) */}
                           {isAlert && (
@@ -1200,7 +2005,7 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                                       )}
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                      {ms.similarity !== undefined && (
+                                      {ms.similarity !== undefined && ms.similarity !== null && (
                                         <span className="text-[11px] font-mono font-bold text-amber-600 dark:text-amber-400">
                                           ~{ms.similarity}% similar
                                         </span>
@@ -1346,11 +2151,19 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                 <div className="grid grid-cols-4 gap-2 text-center text-xs p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono">
                   <div>
                     <span className="text-[10px] text-slate-500 block">Similaridade:</span>
-                    <strong>{report.overallSimilarityScore}%</strong>
+                    <strong>
+                      {report.overallSimilarityScore !== null && report.overallSimilarityScore !== undefined
+                        ? `${report.overallSimilarityScore}%`
+                        : 'Não verificado'}
+                    </strong>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 block">Originalidade:</span>
-                    <strong>{report.originalityScore}%</strong>
+                    <strong>
+                      {report.originalityScore !== null && report.originalityScore !== undefined
+                        ? `${report.originalityScore}%`
+                        : 'Não verificado'}
+                    </strong>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 block">Alertas Orientador:</span>
@@ -1406,36 +2219,61 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
           {/* TAB 5: BASES WEB & CRUZAMENTO DE FONTES (4.1.1.2HL.6) */}
           {activeTab === 'grounding' && (
             <div className="space-y-5">
-              <div className="p-5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 space-y-2">
+              <div className={`p-5 rounded-2xl border space-y-2.5 ${
+                report.isFallback || report.usedEngine === 'heuristic_syntax'
+                  ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50'
+                  : 'bg-blue-50/70 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/50'
+              }`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
-                    <Globe size={18} className="text-blue-600 dark:text-blue-400" />
-                    <span>Expansão de Fontes e Cruzamento com Repositórios Acadêmicos (4.1.1.2HL.6)</span>
+                  <h3 className={`text-sm font-bold flex items-center gap-2 ${
+                    report.isFallback || report.usedEngine === 'heuristic_syntax'
+                      ? 'text-amber-900 dark:text-amber-100'
+                      : 'text-blue-900 dark:text-blue-100'
+                  }`}>
+                    <Globe size={18} className={report.isFallback || report.usedEngine === 'heuristic_syntax' ? 'text-amber-600' : 'text-blue-600'} />
+                    <span>Auditoria de Fontes e Cruzamento Web</span>
                   </h3>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 uppercase">
-                    Google Search Grounding + Gemini 3.8
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full uppercase ${
+                    report.isFallback || report.usedEngine === 'heuristic_syntax'
+                      ? 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200'
+                      : 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                  }`}>
+                    {report.engineLabel || (report.usedEngine === 'gemini_search_grounding' ? 'Google Search Grounding + Gemini 3.8' : 'Motor Heurístico Local (Offline)')}
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Além da análise estrutural e sintática baseada nas normas ABNT, esta camada cruza os trechos do TCC diretamente com bases públicas indexadas na web (SciELO Brasil, Repositório Digital de Teses da USP, Portal de Periódicos CAPES, Google Scholar e documentos acadêmicos abertos).
-                </p>
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300">
-                    📚 SciELO Brasil
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300">
-                    🏛️ Teses & Dissertações USP
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300">
-                    🔬 Portal CAPES
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300">
-                    🌐 Google Scholar
-                  </span>
-                </div>
+
+                {report.isFallback || report.usedEngine === 'heuristic_syntax' ? (
+                  <div className="text-xs text-amber-900 dark:text-amber-200 space-y-1 leading-relaxed">
+                    <p className="font-semibold">
+                      ⚠️ O cruzamento web contra bases indexadas (SciELO, USP, CAPES, Scholar) não ocorreu nesta análise.
+                    </p>
+                    <p className="text-[11px] text-amber-800/90 dark:text-amber-300/90">
+                      O sistema operou em modo de fallback heurístico local. A auditoria cobriu exclusivamente as normas e formatações ABNT (NBR 10520 e 6023). Nenhuma base de dados externa foi consultada e nenhum percentual fictício é exibido.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed">
+                    <p>
+                      Cruzamento web executado através de pesquisa em tempo real com <strong>Gemini 3.8 Flash e Google Search Grounding</strong>.
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      As correspondências e fontes abaixo refletem os dados consultados na web durante a análise dos blocos de texto do documento.
+                    </p>
+                    {uniqueDomains.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase mr-1">Domínios consultados:</span>
+                        {uniqueDomains.map((dom, i) => (
+                          <span key={i} className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-slate-700 dark:text-slate-300">
+                            🌐 {dom}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Indicadores de Fontes */}
+              {/* Indicadores de Fontes & Similaridade Determinística */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
@@ -1445,19 +2283,27 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                     {report.groundingWebSources?.length || report.webGroundingSourcesCount || 0}
                   </span>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Artigos e dissertações públicas correlacionadas
+                    {report.isFallback || report.usedEngine === 'heuristic_syntax'
+                      ? 'Nenhuma consulta externa realizada'
+                      : 'Fontes com correspondência textual identificada'}
                   </p>
                 </div>
 
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                    Similaridade Média Web
+                    Similaridade Global Determinística
                   </span>
                   <span className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400">
-                    {report.overallSimilarityScore}%
+                    {report.overallSimilarityScore !== null && report.overallSimilarityScore !== undefined
+                      ? `${report.overallSimilarityScore}%`
+                      : 'Não verificado'}
                   </span>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Grau de correspondência com indexadores
+                    {report.weightedSimilarityScore !== undefined && report.weightedSimilarityScore !== null
+                      ? `Ponderação por palavras: ${report.weightedSimilarityScore}%`
+                      : report.overallSimilarityScore !== null
+                      ? 'Calculado estritamente por contenção de shingles (k=5)'
+                      : 'Não aplicável sem consulta externa'}
                   </p>
                 </div>
 
@@ -1476,7 +2322,69 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                 </div>
               </div>
 
-              {/* Lista de Fontes Externas */}
+              {/* Status das Fontes Reais Consultadas no Servidor (4.1.1.RW.5) */}
+              {report.queriedSourcesStatus && report.queriedSourcesStatus.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <Layers size={14} className="text-indigo-500" />
+                      <span>Auditoria de Conexão com Fontes Reais (Sem Chaves de API Requeridas):</span>
+                    </h4>
+                    <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
+                      Valores transparentes — sem dados inventados
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {report.queriedSourcesStatus.map((srcStatus, sIdx) => {
+                      const isSuccess = srcStatus.status === 'success';
+                      const isNoMatches = srcStatus.status === 'no_matches';
+                      const isFailed = srcStatus.status === 'failed' || srcStatus.status === 'timeout';
+
+                      return (
+                        <div
+                          key={sIdx}
+                          className={`p-3.5 rounded-2xl border space-y-1.5 transition ${
+                            isSuccess
+                              ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50'
+                              : isNoMatches
+                              ? 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50'
+                              : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                              {srcStatus.displayName}
+                            </span>
+                            <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                              isSuccess
+                                ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200'
+                                : isNoMatches
+                                ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                                : 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200'
+                            }`}>
+                              {isSuccess ? '✓ Ativa' : isNoMatches ? '0 Coincidências' : '⚠️ ' + srcStatus.status}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                            <span>Itens recuperados:</span>
+                            <strong className="text-slate-900 dark:text-white">{srcStatus.itemsCount}</strong>
+                          </div>
+
+                          {srcStatus.error && (
+                            <p className="text-[10px] text-amber-700 dark:text-amber-300 leading-snug">
+                              {srcStatus.error}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Lista de Fontes Externas com Coincidência */}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                   Publicações e Referências com Coincidência Textual Detectada:
@@ -1540,97 +2448,127 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
             </div>
           )}
 
-          {/* TAB 6: SUÍTE DE TESTES UNITÁRIOS DE SANITIZAÇÃO (4.1.1.20Z.6) */}
+          {/* TAB 6: SUÍTES DE TESTES UNITÁRIOS (4.1.1.RW.5 & 4.1.1.20Z.6) */}
           {activeTab === 'tests' && (
             <div className="space-y-5">
-              <div className="p-5 rounded-2xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
-                    <TestTube2 size={18} className="text-purple-600 dark:text-purple-400" />
-                    <span>Suíte de Testes Unitários Automatizados da Sanitização (4.1.1.20Z.6)</span>
-                  </h3>
-                  <button
-                    onClick={handleRunUnitTests}
-                    disabled={isRunningTests}
-                    className="px-3 py-1.5 text-xs font-bold rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                  >
-                    <RotateCcw size={13} className={isRunningTests ? 'animate-spin' : ''} />
-                    <span>Reexecutar Bateria ({suiteReport.total} Testes)</span>
-                  </button>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Cobre exaustivamente edge cases da função de sanitização de texto acadêmico (<code>cleanExtractedText</code>): caracteres nulos (\x00), quebras de linha Windows/Mac, hifenizações complexas de fim de linha, remoção residual de blocos PDF, números soltos de página e preservação integral de citações e travessões da ABNT.
-                </p>
+              {/* Seletor de Suíte */}
+              <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <button
+                  onClick={() => setActiveTestSuiteTab('similarity')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    activeTestSuiteTab === 'similarity'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <TestTube2 size={13} />
+                  <span>Motor Determinístico de Similaridade (10 Testes)</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTestSuiteTab('sanitization')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    activeTestSuiteTab === 'sanitization'
+                      ? 'bg-purple-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <FileCode size={13} />
+                  <span>Sanitizador de Texto Acadêmico (10 Testes)</span>
+                </button>
               </div>
 
-              {/* Métricas dos Testes */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Total de Testes</span>
-                  <span className="text-2xl font-bold text-slate-900 dark:text-white">{suiteReport.total}</span>
-                </div>
-                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
-                  <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 block">Aprovados</span>
-                  <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{suiteReport.passedCount}</span>
-                </div>
-                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
-                  <span className="text-[10px] font-bold uppercase text-rose-700 dark:text-rose-300 block">Falhas</span>
-                  <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{suiteReport.failedCount}</span>
-                </div>
-                <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
-                  <span className="text-[10px] font-bold uppercase text-blue-700 dark:text-blue-300 block">Taxa de Cobertura</span>
-                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {Math.round((suiteReport.passedCount / suiteReport.total) * 100)}%
-                  </span>
-                </div>
-              </div>
-
-              {/* Casos de Teste Detalhados */}
-              <div className="space-y-3">
-                {suiteReport.results.map((res, index) => (
-                  <div
-                    key={res.id}
-                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
-                          {index + 1}
-                        </span>
-                        <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
-                          {res.name}
-                        </h4>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-slate-400">
-                          {res.durationMs}ms
-                        </span>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${
-                          res.passed
-                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                            : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
-                        }`}>
-                          {res.passed ? '✓ Aprovado (Pass)' : '✕ Falha (Fail)'}
-                        </span>
-                      </div>
+              {/* Aba: Testes do Motor de Similaridade Determinístico */}
+              {activeTestSuiteTab === 'similarity' ? (
+                <div className="space-y-4">
+                  <div className="p-5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
+                        <TestTube2 size={18} className="text-indigo-600 dark:text-indigo-400" />
+                        <span>Suíte de Testes Unitários do Motor Determinístico (4.1.1.RW.5)</span>
+                      </h3>
+                      <button
+                        onClick={handleRunSimilarityTests}
+                        disabled={isRunningTests}
+                        className="px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                      >
+                        <RotateCcw size={13} className={isRunningTests ? 'animate-spin' : ''} />
+                        <span>Reexecutar Bateria ({similaritySuiteReport.total} Testes)</span>
+                      </button>
                     </div>
-
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {res.description}
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Validação formal de: Normalização de texto (minúsculas, sem acentos, sem pontuação), Shingles de 5 palavras (k=5), Winnowing com janela w=4, Métricas Jaccard e Containment, Isenção legítima ABNT NBR 10520, Extração de frases características e Cálculo ponderado por palavras.
                     </p>
+                  </div>
+
+                  {/* Métricas dos Testes */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block">Total de Testes</span>
+                      <span className="text-2xl font-bold text-slate-900 dark:text-white">{similaritySuiteReport.total}</span>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                      <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 block">Aprovados</span>
+                      <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{similaritySuiteReport.passedCount}</span>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
+                      <span className="text-[10px] font-bold uppercase text-rose-700 dark:text-rose-300 block">Falhas</span>
+                      <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{similaritySuiteReport.failedCount}</span>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800">
+                      <span className="text-[10px] font-bold uppercase text-indigo-700 dark:text-indigo-300 block">Taxa de Cobertura</span>
+                      <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                        {Math.round((similaritySuiteReport.passedCount / similaritySuiteReport.total) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Casos de Teste Detalhados */}
+                  <div className="space-y-3">
+                    {similaritySuiteReport.results.map((res, index) => (
+                      <div
+                        key={res.id}
+                        className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center font-mono text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                              {index + 1}
+                            </span>
+                            <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
+                              {res.name}
+                            </h4>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono text-slate-400">
+                              {res.durationMs}ms
+                            </span>
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${
+                              res.passed
+                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                                : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                            }`}>
+                              {res.passed ? '✓ Aprovado (Pass)' : '✕ Falha (Fail)'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {res.description}
+                        </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
                       <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                        <span className="text-[10px] font-bold text-slate-400 block mb-1">Entrada Bruta com Artefato:</span>
+                        <span className="text-[10px] font-bold text-slate-400 block mb-1">Entrada / Parâmetros:</span>
                         <pre className="whitespace-pre-wrap text-[11px] text-slate-700 dark:text-slate-300 break-all">
                           {JSON.stringify(res.input)}
                         </pre>
                       </div>
 
-                      <div className="p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50">
-                        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 block mb-1">Resultado Sanitizado Limpo:</span>
-                        <pre className="whitespace-pre-wrap text-[11px] text-emerald-900 dark:text-emerald-300 break-all">
+                      <div className="p-2.5 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/50">
+                        <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-400 block mb-1">Resultado Determinístico:</span>
+                        <pre className="whitespace-pre-wrap text-[11px] text-indigo-900 dark:text-indigo-300 break-all">
                           {JSON.stringify(res.output)}
                         </pre>
                       </div>
@@ -1640,11 +2578,188 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                       <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
                       <span>{res.expectedExplanation}</span>
                     </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-5 rounded-2xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-sm font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                        <FileCode size={18} className="text-purple-600 dark:text-purple-400" />
+                        <span>Suíte de Testes Unitários da Sanitização (4.1.1.20Z.6)</span>
+                      </h3>
+                      <button
+                        onClick={handleRunUnitTests}
+                        disabled={isRunningTests}
+                        className="px-3 py-1.5 text-xs font-bold rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                      >
+                        <RotateCcw size={13} className={isRunningTests ? 'animate-spin' : ''} />
+                        <span>Reexecutar Bateria ({suiteReport.total} Testes)</span>
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                      Cobre exaustivamente edge cases da função de sanitização de texto acadêmico (<code>cleanExtractedText</code>): caracteres nulos (\x00), quebras de linha Windows/Mac, hifenizações complexas de fim de linha, remoção residual de blocos PDF, números soltos de página e preservação integral de citações e travessões da ABNT.
+                    </p>
+                  </div>
+
+                  {/* Métricas dos Testes */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                      <span className="text-[10px] font-bold uppercase text-slate-400 block">Total de Testes</span>
+                      <span className="text-2xl font-bold text-slate-900 dark:text-white">{suiteReport.total}</span>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                      <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 block">Aprovados</span>
+                      <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{suiteReport.passedCount}</span>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800">
+                      <span className="text-[10px] font-bold uppercase text-rose-700 dark:text-rose-300 block">Falhas</span>
+                      <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{suiteReport.failedCount}</span>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+                      <span className="text-[10px] font-bold uppercase text-blue-700 dark:text-blue-300 block">Taxa de Cobertura</span>
+                      <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        {Math.round((suiteReport.passedCount / suiteReport.total) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Casos de Teste Detalhados */}
+                  <div className="space-y-3">
+                    {suiteReport.results.map((res, index) => (
+                      <div
+                        key={res.id}
+                        className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
+                              {index + 1}
+                            </span>
+                            <h4 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white">
+                              {res.name}
+                            </h4>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono text-slate-400">
+                              {res.durationMs}ms
+                            </span>
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${
+                              res.passed
+                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                                : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                            }`}>
+                              {res.passed ? '✓ Aprovado (Pass)' : '✕ Falha (Fail)'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {res.description}
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
+                          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                            <span className="text-[10px] font-bold text-slate-400 block mb-1">Entrada Bruta com Artefato:</span>
+                            <pre className="whitespace-pre-wrap text-[11px] text-slate-700 dark:text-slate-300 break-all">
+                              {JSON.stringify(res.input)}
+                            </pre>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50">
+                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 block mb-1">Resultado Sanitizado Limpo:</span>
+                            <pre className="whitespace-pre-wrap text-[11px] text-emerald-900 dark:text-emerald-300 break-all">
+                              {JSON.stringify(res.output)}
+                            </pre>
+                          </div>
+                        </div>
+
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                          <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                          <span>{res.expectedExplanation}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
+          {/* TAB 7: HISTÓRICO DE AUDITORIAS SALVAS NO FIRESTORE */}
+          {activeTab === 'history' && renderHistoryView()}
+        </div>
+      )}
+
+      {/* Requisito 3: Modal de Consentimento LGPD (Lei Nº 13.709/2018) */}
+      {showLgpdModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <ShieldCheck size={22} />
+              </div>
+              <div className="flex-1">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono">
+                  LEI Nº 13.709/2018 (LGPD)
+                </span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white font-serif-heading mt-1">
+                  Termo de Consentimento para Tratamento de Dados Textuais
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Transparência no processamento e envio do trabalho acadêmico a motores de busca e inteligência artificial.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 space-y-2.5 max-h-60 overflow-y-auto leading-relaxed">
+              <p>
+                Para a execução do serviço de auditoria de originalidade e integridade acadêmica (TCC), bem como verificação de normas técnicas ABNT (NBR 10520 e NBR 6023), o conteúdo textual submetido será transmitido e processado pelas seguintes entidades:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-slate-700 dark:text-slate-200 pl-1 font-medium">
+                <li><strong>Bases Acadêmicas Públicas:</strong> Wikipédia Lusófona (MediaWiki), Crossref e OpenAlex (para cálculo determinístico de sobreposição de shingles e citações).</li>
+                <li><strong>Inteligência Artificial (Google GenAI / Gemini):</strong> Processamento semântico de parágrafos para geração de apontamentos ao orientador e sugestões de reescrita nas normas ABNT.</li>
+              </ul>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Garantias de Privacidade: O texto é utilizado exclusivamente para a emissão deste relatório e não é comercializado nem disponibilizado a terceiros para fins de marketing.
+              </p>
+            </div>
+
+            <label className="flex items-start gap-3 p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 cursor-pointer text-xs">
+              <input
+                type="checkbox"
+                checked={lgpdConsentChecked}
+                onChange={(e) => setLgpdConsentChecked(e.target.checked)}
+                className="mt-0.5 rounded accent-blue-600 cursor-pointer"
+              />
+              <span className="text-slate-800 dark:text-slate-200 font-medium">
+                Declaro que li, compreendi e autorizo expressamente o envio e processamento do texto acadêmico pelos serviços externos de busca e IA conforme a LGPD.
+              </span>
+            </label>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowLgpdModal(false)}
+                className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmLgpdConsent}
+                disabled={!lgpdConsentChecked}
+                className="px-5 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
+              >
+                <Check size={14} />
+                <span>Confirmar e Iniciar Auditoria</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

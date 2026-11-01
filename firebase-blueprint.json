@@ -359,6 +359,38 @@
         "reactions": { "type": "object" }
       },
       "required": ["id", "chatId", "senderUid", "recipientUid", "text", "timestamp"]
+    },
+    "AntiplagiarismReport": {
+      "title": "AntiplagiarismReport",
+      "description": "Relatórios de auditoria de integridade acadêmica, similaridade e conformidade ABNT de TCCs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userUid": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "tccTitle": { "type": "string" },
+        "studentName": { "type": "string" },
+        "advisorName": { "type": "string" },
+        "advisorEmail": { "type": "string" },
+        "advisorUid": { "type": "string" },
+        "course": { "type": "string" },
+        "analyzedAt": { "type": "string" },
+        "usedEngine": { "type": "string" },
+        "engineLabel": { "type": "string" },
+        "overallSimilarityScore": { "type": "number" },
+        "weightedSimilarityScore": { "type": "number" },
+        "originalityScore": { "type": "number" },
+        "riskLevel": { "type": "string" },
+        "advisorAttentionCount": { "type": "number" },
+        "abntIssuesCount": { "type": "number" },
+        "wordCount": { "type": "number" },
+        "groundingWebSources": { "type": "array" },
+        "queriedSourcesStatus": { "type": "array" },
+        "executiveSummary": { "type": "string" },
+        "generalRecommendations": { "type": "array" },
+        "paragraphs": { "type": "array" }
+      },
+      "required": ["id", "userUid", "tccTitle", "analyzedAt", "usedEngine", "overallSimilarityScore", "paragraphs"]
     }
   },
   "firestore": {
@@ -461,6 +493,10 @@
     "/wiki_extension_registry/{docId}": {
       "schema": "object",
       "description": "Registro global de estados de ativação/desativação de extensões e hash de segurança"
+    },
+    "/antiplagiarism_reports/{reportId}": {
+      "schema": "AntiplagiarismReport",
+      "description": "Relatórios de auditoria antiplágio e análise de TCC acessíveis apenas pelo autor, orientador e admins"
     }
   }
 }

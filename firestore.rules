@@ -352,10 +352,35 @@ service cloud.firestore {
       }
     }
 
-    // ✅ Regra fallback - leitura pública, escrita apenas para registrados
+    // ✅ Relatórios de Auditoria Antiplágio & Análise de TCC (4.1.1.8P.5 & 4.1.1.RW.5)
+    // Acesso restrito ao Autor do trabalho, ao Orientador indicado e aos Administradores
+    match /antiplagiarism_reports/{reportId} {
+      allow get: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.userUid == request.auth.uid ||
+        (resource.data.advisorEmail != null && resource.data.advisorEmail != '' && resource.data.advisorEmail == request.auth.token.email) ||
+        (resource.data.advisorUid != null && resource.data.advisorUid != '' && resource.data.advisorUid == request.auth.uid)
+      );
+      allow list: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.userUid == request.auth.uid ||
+        (resource.data.advisorEmail != null && resource.data.advisorEmail != '' && resource.data.advisorEmail == request.auth.token.email) ||
+        (resource.data.advisorUid != null && resource.data.advisorUid != '' && resource.data.advisorUid == request.auth.uid)
+      );
+      allow create: if isAuthenticated() && isNotBanned() && (
+        request.resource.data.userUid == request.auth.uid || isAdmin()
+      );
+      allow update: if isAuthenticated() && isNotBanned() && (
+        resource.data.userUid == request.auth.uid || isAdmin()
+      );
+      allow delete: if isAuthenticated() && isNotBanned() && (
+        resource.data.userUid == request.auth.uid || isAdmin()
+      );
+    }
+
+    // ✅ Regra fallback default deny para coleções não listadas
     match /{document=**} {
-      allow read: if true;  // ✅ QUALQUER UM PODE LER TUDO
-      allow write: if isRegistered();
+      allow read, write: if false;
     }
   }
 }
