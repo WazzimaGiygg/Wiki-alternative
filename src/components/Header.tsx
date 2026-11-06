@@ -39,6 +39,9 @@ import {
   Trophy,
   ArrowLeft,
   ArrowRight,
+  Wifi,
+  WifiOff,
+  Activity,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -50,6 +53,8 @@ import { PushNotificationService, PushPreferences } from '../services/pushNotifi
 import { UserChatService } from '../services/userChatService';
 import { fullscreenManager } from '../utils/fullscreenManager';
 import { getFriendlyUidLabel, buildUidPermalink } from '../utils/urlRouter';
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { NetworkDiagnosticModal } from './NetworkDiagnosticModal';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -156,11 +161,19 @@ export const Header: React.FC<HeaderProps> = ({
     ExtensionManager.getInstance().isDailyChecklistEnabled()
   );
 
+  // 4.1.1.D6.6: Verificação se computador está online, em tempo real
+  const network = useNetworkStatus();
+  const [showNetworkDiagnostic, setShowNetworkDiagnostic] = useState(false);
+  const [isNetworkVerifierEnabled, setIsNetworkVerifierEnabled] = useState<boolean>(() =>
+    ExtensionManager.getInstance().isOnlineStatusVerifierEnabled()
+  );
+
   useEffect(() => {
     const unsub = ExtensionManager.getInstance().subscribe(() => {
       setIsChatEnabled(ExtensionManager.getInstance().isUserChatEnabled());
       setIsHelpExtensionEnabled(ExtensionManager.getInstance().isGeneralHelpEnabled());
       setIsChecklistEnabled(ExtensionManager.getInstance().isDailyChecklistEnabled());
+      setIsNetworkVerifierEnabled(ExtensionManager.getInstance().isOnlineStatusVerifierEnabled());
     });
     return unsub;
   }, []);
@@ -2519,6 +2532,71 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           )}
 
+          {/* 4.1.1.D6.6: Verificação de status online do computador em tempo real */}
+          {isNetworkVerifierEnabled && (
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowNetworkDiagnostic(true)}
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded border transition min-h-[32px] cursor-pointer text-xs font-semibold ${
+                  !network.isOnline
+                    ? 'border-rose-400 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/70 dark:text-rose-300 animate-pulse'
+                    : network.quality === 'poor' || network.quality === 'fair'
+                    ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+                title={
+                  network.isOnline
+                    ? `Computador Online em tempo real (RTT: ${network.latencyMs !== null ? `${network.latencyMs}ms` : 'verificado'}). Clique para abrir o diagnóstico completo (4.1.1.D6.6).`
+                    : 'Computador Offline em tempo real! Sem conexão com o servidor. Clique para ver detalhes (4.1.1.D6.6).'
+                }
+                aria-label="Diagnóstico de conectividade em tempo real"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span
+                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                      !network.isOnline
+                        ? 'bg-rose-500'
+                        : network.quality === 'poor' || network.quality === 'fair'
+                        ? 'bg-amber-500'
+                        : 'bg-emerald-500'
+                    }`}
+                  />
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${
+                      !network.isOnline
+                        ? 'bg-rose-600'
+                        : network.quality === 'poor' || network.quality === 'fair'
+                        ? 'bg-amber-500'
+                        : 'bg-emerald-500'
+                    }`}
+                  />
+                </span>
+
+                {network.isOnline ? (
+                  <Wifi
+                    size={14}
+                    className={
+                      network.quality === 'excellent' || network.quality === 'good'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-amber-600 dark:text-amber-400'
+                    }
+                  />
+                ) : (
+                  <WifiOff size={14} className="text-rose-600 dark:text-rose-400" />
+                )}
+
+                <span className="font-mono text-[10px] hidden sm:inline">
+                  {network.isOnline
+                    ? network.latencyMs !== null
+                      ? `${network.latencyMs}ms`
+                      : 'Online'
+                    : 'Offline'}
+                </span>
+              </button>
+            </div>
+          )}
+
           {/* Real-Time User Chat Trigger Button (3.09.a) */}
           <div className="relative shrink-0">
             <button
@@ -2974,6 +3052,12 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+
+      {/* 4.1.1.D6.6: Modal de Diagnóstico de Conectividade do Computador em Tempo Real */}
+      <NetworkDiagnosticModal
+        isOpen={showNetworkDiagnostic}
+        onClose={() => setShowNetworkDiagnostic(false)}
+      />
     </header>
   );
 };

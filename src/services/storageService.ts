@@ -92,6 +92,7 @@ import { ACTIVE_FIREBASE_CONFIG, getActiveFirebaseConfig } from '../config/fireb
 import { FirebaseUsageMetricsService } from './firebaseUsageMetricsService';
 import { PushNotificationService } from './pushNotificationService';
 import { CURATED_FEATURED_ARTICLES } from '../data/curatedArticles';
+import { INITIAL_SYSTEM_UPDATES } from '../data/seedData';
 
 // Configuração ativa do Firebase derivada do arquivo de configuração do desenvolvedor (src/config/firebaseCustomConfig.ts)
 export const firebaseConfig = {
@@ -188,7 +189,7 @@ export const DAILY_EDITOR_EDIT_LIMIT = 5;
 const PURGE_PREDEFINED_FLAG = 'wikizero_purged_predefined_v9_pure_firebase_no_speculative';
 
 function purgePredefinedNonDatabaseData() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
   if (localStorage.getItem(PURGE_PREDEFINED_FLAG)) return;
 
   // Limpar todo e qualquer dado residual que possa conter mocks pré-definidos do AI Studio
@@ -220,6 +221,7 @@ function purgePredefinedNonDatabaseData() {
 
 // Helper seguro para leitura de arrays do localStorage sem risco de null/undefined
 export function safeGetArray<T>(key: string, fallback: T[] = []): T[] {
+  if (typeof localStorage === 'undefined') return fallback;
   try {
     const raw = localStorage.getItem(key);
     if (!raw || raw === 'null' || raw === 'undefined') return fallback;
@@ -232,6 +234,7 @@ export function safeGetArray<T>(key: string, fallback: T[] = []): T[] {
 
 // Inicializar armazenamento local apenas com estruturas limpas e dados legítimos
 function initializeLocalStorage() {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
   purgePredefinedNonDatabaseData();
 
   const ensureKey = (key: string, isObj = false) => {
@@ -6114,10 +6117,25 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         const snap = await getDocs(collection(db, 'system_updates'));
         const list: SystemUpdateEntry[] = [];
         snap.forEach((d) => list.push(d.data() as SystemUpdateEntry));
-        localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(list));
-        return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        if (list.length > 0) {
+          localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(list));
+          return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        }
       } catch (err) {
         console.warn('Firestore getSystemUpdates error:', err);
+      }
+    }
+
+    if (updates.length === 0) {
+      updates = [...INITIAL_SYSTEM_UPDATES];
+      try {
+        localStorage.setItem(STORAGE_KEYS.SYSTEM_UPDATES, JSON.stringify(updates));
+      } catch {}
+    } else {
+      for (const initUpd of INITIAL_SYSTEM_UPDATES) {
+        if (!updates.some((u) => u.version.toLowerCase() === initUpd.version.toLowerCase())) {
+          updates.unshift(initUpd);
+        }
       }
     }
 
@@ -6129,9 +6147,13 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       initializeLocalStorage();
       try {
         const raw = localStorage.getItem(STORAGE_KEYS.SYSTEM_UPDATES);
-        callback(raw ? JSON.parse(raw) : []);
+        let list = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(list) || list.length === 0) {
+          list = [...INITIAL_SYSTEM_UPDATES];
+        }
+        callback(list);
       } catch {
-        callback([]);
+        callback([...INITIAL_SYSTEM_UPDATES]);
       }
       return () => {};
     }

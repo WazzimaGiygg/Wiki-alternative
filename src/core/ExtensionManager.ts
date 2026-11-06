@@ -97,6 +97,7 @@ import GeminiApiKeyExtension from '../extensions/gemini-api-key';
 import BotAgentExtension from '../extensions/bot-agent';
 import FirstVisitNewsPopupExtension from '../extensions/first-visit-news-popup';
 import PlagiarismCheckerExtension from '../extensions/plagiarism-checker';
+import OnlineStatusVerifierExtension from '../extensions/online-status-verifier';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -224,6 +225,7 @@ export class ExtensionManager {
       BotAgentExtension,
       FirstVisitNewsPopupExtension,
       PlagiarismCheckerExtension,
+      OnlineStatusVerifierExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -2386,6 +2388,28 @@ ${tc.customCss || ''}
 
   public static isGeminiApiKeyEnabled(): boolean {
     return ExtensionManager.getInstance().isGeminiApiKeyEnabled();
+  }
+
+  /**
+   * 4.1.1.D6.6: Retorna se a extensão de verificação de status online está ativa.
+   */
+  public isOnlineStatusVerifierEnabled(): boolean {
+    return this.isExtensionEnabled('OnlineStatusVerifierExtension');
+  }
+
+  /**
+   * 4.1.1.D6.6: Retorna as configurações do verificador de status online.
+   */
+  public getOnlineStatusVerifierSettings(): Record<string, any> {
+    return this.extensionSettings['OnlineStatusVerifierExtension'] || {};
+  }
+
+  public static isOnlineStatusVerifierEnabled(): boolean {
+    return ExtensionManager.getInstance().isOnlineStatusVerifierEnabled();
+  }
+
+  public static getOnlineStatusVerifierSettings(): Record<string, any> {
+    return ExtensionManager.getInstance().getOnlineStatusVerifierSettings();
   }
 }
 

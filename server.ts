@@ -692,7 +692,21 @@ app.all('/api/auth/check-wikimedia-admin', (req: Request, res: Response) => {
 // -------------------------------------------------------------
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
+  res.json({ status: 'ok', uptime: process.uptime(), timestamp: Date.now() });
+});
+
+app.get('/api/ping', (req: Request, res: Response) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  });
+  res.json({
+    status: 'online',
+    timestamp: Date.now(),
+    serverTime: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
 });
 
 // -------------------------------------------------------------
