@@ -30,6 +30,15 @@ export interface NetworkInformationData {
   type?: 'wifi' | 'cellular' | 'ethernet' | 'bluetooth' | 'other' | 'none' | 'unknown' | string;
 }
 
+export interface GitHubConnectionStatus {
+  isReachable: boolean;
+  latencyMs: number | null;
+  target: string;
+  checkedAt: number | null;
+  statusCode?: number;
+  error?: string;
+}
+
 export interface NetworkStatus {
   isOnline: boolean;              // Computador online e com rota ativa para o servidor/internet
   isNavigatorOnline: boolean;     // navigator.onLine nativo do sistema operacional
@@ -43,6 +52,8 @@ export interface NetworkStatus {
   networkInfo: NetworkInformationData;
   history: PingRecord[];          // Histórico das últimas verificações
   isChecking: boolean;            // Probe em execução
+  isEnabled: boolean;             // Extensão ativada/desativada (4.1.1.1GZ.8)
+  github: GitHubConnectionStatus; // Sincronização em tempo real com o GitHub (4.1.1.1GZ.8)
 }
 
 export type NetworkStatusListener = (status: NetworkStatus) => void;
@@ -50,6 +61,7 @@ export type NetworkStatusListener = (status: NetworkStatus) => void;
 class NetworkStatusServiceClass {
   private static instance: NetworkStatusServiceClass | null = null;
 
+  private isEnabled: boolean = true;
   private isOnline: boolean =
     typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean'
       ? navigator.onLine
@@ -67,6 +79,12 @@ class NetworkStatusServiceClass {
   private reconnectCount: number = 0;
   private isChecking: boolean = false;
   private history: PingRecord[] = [];
+  private githubStatus: GitHubConnectionStatus = {
+    isReachable: true,
+    latencyMs: null,
+    target: 'https://github.com/WazzimaGiygg/Wiki-alternative',
+    checkedAt: null,
+  };
 
   private listeners: Set<NetworkStatusListener> = new Set();
   private heartbeatIntervalTimer: any = null;
@@ -196,6 +214,10 @@ class NetworkStatusServiceClass {
    * Executa uma verificação ativa de conectividade e latência em tempo real.
    */
   public async checkNow(options?: { reason?: string }): Promise<NetworkStatus> {
+    if (!this.isEnabled) {
+      return this.getStatus();
+    }
+
     if (this.isChecking) {
       return this.getStatus();
     }
@@ -214,7 +236,7 @@ class NetworkStatusServiceClass {
     this.isNavigatorOnline = true;
     const startTime = performance.now();
     const probeEndpoints = [
-      `/api/ping?_t=${Date.now()}`,
+      `/api/ping?_t=${Date.now()}&github=true`,
       `/api/health?_t=${Date.now()}`,
     ];
 
@@ -244,10 +266,67 @@ class NetworkStatusServiceClass {
           measuredLatency = Math.max(1, Math.round(endTime - startTime));
           success = true;
           successfulEndpoint = ep.split('?')[0];
+
+          // Extrai telemetria de conexão em tempo real com o GitHub (4.1.1.1GZ.8)
+          try {
+            const data = await response.json();
+            if (data && data.github) {
+              this.githubStatus = {
+                isReachable: Boolean(data.github.isReachable),
+                latencyMs: typeof data.github.latencyMs === 'number' ? data.github.latencyMs : null,
+                target: data.github.target || 'https://github.com/WazzimaGiygg/Wiki-alternative',
+                checkedAt: data.github.checkedAt || Date.now(),
+                statusCode: data.github.statusCode,
+                error: data.github.error,
+              };
+            }
+          } catch {
+            // Continua se JSON não for retornado (ex: health endpoint de texto)
+          }
           break;
         }
       } catch (probeErr) {
         // Tenta o próximo endpoint
+      }
+    }
+
+    // Se falhar no servidor local mas o computador tiver conexão, tenta GitHub diretamente
+    if (!success && typeof window !== 'undefined' && typeof fetch !== 'undefined') {
+      try {
+        const ghStart = performance.now();
+        const ghController = new AbortController();
+        const ghTimeout = setTimeout(() => ghController.abort(), 3500);
+
+        const ghRes = await fetch('https://api.github.com/repos/WazzimaGiygg/Wiki-alternative', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+          },
+          signal: ghController.signal,
+        });
+        clearTimeout(ghTimeout);
+
+        const ghLat = Math.max(1, Math.round(performance.now() - ghStart));
+        if (ghRes.status < 500) {
+          success = true;
+          measuredLatency = ghLat;
+          successfulEndpoint = 'https://api.github.com';
+          this.githubStatus = {
+            isReachable: true,
+            latencyMs: ghLat,
+            target: 'https://github.com/WazzimaGiygg/Wiki-alternative',
+            checkedAt: Date.now(),
+            statusCode: ghRes.status,
+          };
+        }
+      } catch (ghErr: any) {
+        this.githubStatus = {
+          isReachable: false,
+          latencyMs: null,
+          target: 'https://github.com/WazzimaGiygg/Wiki-alternative',
+          checkedAt: Date.now(),
+          error: ghErr?.message || 'Falha de conexão com GitHub',
+        };
       }
     }
 
@@ -276,7 +355,7 @@ class NetworkStatusServiceClass {
         quality: this.quality,
       });
     } else {
-      // Falha ao alcançar o servidor mesmo com navigator.onLine true
+      // Falha ao alcançar o servidor e GitHub mesmo com navigator.onLine true
       this.isOnline = false;
       this.isReachable = false;
       this.latencyMs = null;
@@ -324,7 +403,29 @@ class NetworkStatusServiceClass {
       networkInfo: this.getNetworkInfo(),
       history: [...this.history],
       isChecking: this.isChecking,
+      isEnabled: this.isEnabled,
+      github: { ...this.githubStatus },
     };
+  }
+
+  public isServiceEnabled(): boolean {
+    return this.isEnabled;
+  }
+
+  public setEnabled(enabled: boolean): void {
+    if (this.isEnabled === enabled) return;
+    this.isEnabled = enabled;
+    if (enabled) {
+      this.startHeartbeat();
+      this.checkNow({ reason: 'extension_enabled' });
+    } else {
+      this.stopHeartbeat();
+      this.notifyListeners();
+    }
+  }
+
+  public getGitHubStatus(): GitHubConnectionStatus {
+    return { ...this.githubStatus };
   }
 
   public getHistory(): PingRecord[] {

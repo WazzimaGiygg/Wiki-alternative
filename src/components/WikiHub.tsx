@@ -186,14 +186,26 @@ export const WikiHub: React.FC<WikiHubProps> = ({
                 {welcomeTitle}
               </h1>
 
-              {/* Frase Principal da Wiki (Lema Oficial) */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 shadow-2xs">
+              {/* Frase Principal da Wiki (Lema Oficial - 1.0.0-WZ.084) */}
+              <div
+                data-uid="1.0.0-WZ.084"
+                title="[UID: 1.0.0-WZ.084] Frase Principal da Wiki"
+                className="flex items-center gap-3 p-3 rounded-lg bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 shadow-2xs"
+              >
                 <span className="text-xl select-none" role="img" aria-label="Conhecimento">🏛️</span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-serif italic font-bold text-sm sm:text-base text-blue-950 dark:text-blue-200 tracking-wide">
+                  <p
+                    data-uid="1.0.0-WZ.082"
+                    title="[UID: 1.0.0-WZ.082] «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»"
+                    className="font-serif italic font-bold text-sm sm:text-base text-blue-950 dark:text-blue-200 tracking-wide"
+                  >
                     {welcomeMotto}
                   </p>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-0.5">
+                  <p
+                    data-uid="1.0.0-WZ.083"
+                    title='[UID: 1.0.0-WZ.083] "Não, o Tempo não é o senhor do conhecimento!"'
+                    className="text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-0.5"
+                  >
                     <strong className="text-blue-700 dark:text-blue-400 font-semibold">Frase Principal da Wiki</strong> • "Não, o Tempo não é o senhor do conhecimento!"
                   </p>
                 </div>
@@ -224,21 +236,37 @@ export const WikiHub: React.FC<WikiHubProps> = ({
           </div>
         </div>
 
-        {/* Dense Statistics Bar */}
+        {/* Dense Statistics Bar with Standard UIDs (1.0.0-WZ.085 a 1.0.0-WZ.088) */}
         <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-          <div className="bg-white dark:bg-slate-800/60 p-2 rounded border border-slate-200 dark:border-slate-700/60">
+          <div
+            data-uid="1.0.0-WZ.085"
+            title="[UID: 1.0.0-WZ.085] Coleções Ativas (estatística)"
+            className="bg-white dark:bg-slate-800/60 p-2 rounded border border-slate-200 dark:border-slate-700/60"
+          >
             <span className="text-slate-400 block text-[10px]">{t('hub.stat_active_collections')}</span>
             <span className="text-base font-bold text-slate-900 dark:text-white">{pages.length}</span>
           </div>
-          <div className="bg-white dark:bg-slate-800/60 p-2 rounded border border-slate-200 dark:border-slate-700/60">
+          <div
+            data-uid="1.0.0-WZ.086"
+            title="[UID: 1.0.0-WZ.086] Artigos Publicados (estatística)"
+            className="bg-white dark:bg-slate-800/60 p-2 rounded border border-slate-200 dark:border-slate-700/60"
+          >
             <span className="text-slate-400 block text-[10px]">{t('hub.stat_published_articles')}</span>
             <span className="text-base font-bold text-slate-900 dark:text-white">{articles.length}</span>
           </div>
-          <div className="bg-white dark:bg-slate-800/60 p-2 rounded border border-slate-200 dark:border-slate-700/60">
+          <div
+            data-uid="1.0.0-WZ.087"
+            title="[UID: 1.0.0-WZ.087] Leituras Totais (estatística)"
+            className="bg-white dark:bg-slate-800/60 p-2 rounded border border-slate-200 dark:border-slate-700/60"
+          >
             <span className="text-slate-400 block text-[10px]">{t('hub.stat_total_reads')}</span>
             <span className="text-base font-bold text-slate-900 dark:text-white">{(totalViews + 1420).toLocaleString()}</span>
           </div>
-          <div className="bg-white dark:bg-slate-800/60 p-2 rounded border border-slate-200 dark:border-slate-700/60">
+          <div
+            data-uid="1.0.0-WZ.090"
+            title="[UID: 1.0.0-WZ.090] Licença GNU GPL v3"
+            className="bg-white dark:bg-slate-800/60 p-2 rounded border border-slate-200 dark:border-slate-700/60"
+          >
             <span className="text-slate-400 block text-[10px]">{t('hub.stat_license')}</span>
             <span className="text-base font-bold text-blue-600 dark:text-blue-400">GNU GPL v3</span>
           </div>

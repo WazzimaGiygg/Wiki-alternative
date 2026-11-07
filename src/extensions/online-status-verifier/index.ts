@@ -78,12 +78,13 @@ export default class OnlineStatusVerifierExtension implements WikiExtension {
     const settings = context?.settings || {};
 
     if (settings.enabled !== false) {
+      NetworkStatusService.setEnabled(true);
       const intervalSec = typeof settings.heartbeatIntervalSeconds === 'number'
         ? settings.heartbeatIntervalSeconds
         : 20;
       NetworkStatusService.startHeartbeat(Math.max(5, intervalSec) * 1000);
     } else {
-      NetworkStatusService.stopHeartbeat();
+      NetworkStatusService.setEnabled(false);
     }
 
     hooks.addFilter<boolean>(
@@ -100,6 +101,7 @@ export default class OnlineStatusVerifierExtension implements WikiExtension {
   }
 
   onUnregister(hooks: HookRegistry): void {
+    NetworkStatusService.setEnabled(false);
     hooks.removeFiltersForExtension(this.getName());
   }
 }

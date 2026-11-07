@@ -1,4 +1,5 @@
 import { WikiArticle, WikiPage, ViewMode } from '../types';
+import { getStandardEntryByUid } from './standardUidRegistry';
 
 export type ResolvedNavigationTarget =
   | { type: 'article'; articleId: string; article?: WikiArticle }
@@ -119,6 +120,13 @@ export function getFriendlyUidLabel(uid: string | null | undefined): string {
   if (!uid || uid === 'hub' || uid === 'home') return 'Página Principal';
 
   const clean = uid.trim();
+
+  // 4.1.1.54.7: Aplicação primária de UID (1.0.0-XX.YYY)
+  const stdEntry = getStandardEntryByUid(clean);
+  if (stdEntry) {
+    return `${stdEntry.name} (${stdEntry.uid})`;
+  }
+
   if (clean.startsWith('Special:')) {
     const specialPart = clean.substring(8);
     const map: Record<string, string> = {
@@ -388,6 +396,23 @@ export function resolveNavigationUid(
   }
 
   const normalized = normalizeString(uid);
+
+  // 4.1.1.54.7: Aplicação primária de UID (1.0.0-XX.YYY)
+  const stdEntry = getStandardEntryByUid(uid);
+  if (stdEntry) {
+    if (stdEntry.targetView) {
+      return {
+        type: 'view',
+        view: stdEntry.targetView,
+        initialTab: stdEntry.targetTab,
+      };
+    }
+    return {
+      type: 'view',
+      view: 'special-pages',
+      initialTab: 'tools',
+    };
+  }
 
   // 1. Hub / Home
   if (['hub', 'home', 'inicio', 'principal', 'special:mainpage', 'special:home'].includes(normalized)) {

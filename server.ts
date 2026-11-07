@@ -695,19 +695,109 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', uptime: process.uptime(), timestamp: Date.now() });
 });
 
-app.get('/api/ping', (req: Request, res: Response) => {
+app.get('/api/ping', async (req: Request, res: Response) => {
   res.set({
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
     'Pragma': 'no-cache',
     'Expires': '0',
   });
+
+  const checkGitHub = req.query.github !== 'false';
+  let githubTelemetry: {
+    isReachable: boolean;
+    latencyMs: number | null;
+    target: string;
+    checkedAt: number;
+    statusCode?: number;
+    error?: string;
+  } | null = null;
+
+  if (checkGitHub) {
+    const ghTarget = 'https://api.github.com/repos/WazzimaGiygg/Wiki-alternative';
+    const ghStart = performance.now();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+      const ghRes = await fetch(ghTarget, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'WikiWorldWeb-V4.1-OnlineStatusVerifier/1.0',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      const ghLatency = Math.max(1, Math.round(performance.now() - ghStart));
+      // Mesmo com rate-limit HTTP 403 ou redirect 301, a rota para o GitHub está 100% online
+      const isReachable = ghRes.status < 500;
+      githubTelemetry = {
+        isReachable,
+        latencyMs: ghLatency,
+        target: 'https://github.com/WazzimaGiygg/Wiki-alternative',
+        checkedAt: Date.now(),
+        statusCode: ghRes.status,
+      };
+    } catch (err: any) {
+      githubTelemetry = {
+        isReachable: false,
+        latencyMs: null,
+        target: 'https://github.com/WazzimaGiygg/Wiki-alternative',
+        checkedAt: Date.now(),
+        error: err?.name === 'AbortError' ? 'Timeout na conexão com o GitHub' : (err?.message || 'Falha de rede ao contatar GitHub'),
+      };
+    }
+  }
+
   res.json({
     status: 'online',
     timestamp: Date.now(),
     serverTime: new Date().toISOString(),
     uptime: process.uptime(),
+    github: githubTelemetry,
   });
 });
+
+app.get('/api/network/github', async (req: Request, res: Response) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  });
+  const ghTarget = 'https://api.github.com/repos/WazzimaGiygg/Wiki-alternative';
+  const start = performance.now();
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const ghRes = await fetch(ghTarget, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'WikiWorldWeb-V4.1-OnlineStatusVerifier/1.0',
+        'Accept': 'application/vnd.github.v3+json',
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    const latency = Math.max(1, Math.round(performance.now() - start));
+    res.json({
+      isReachable: ghRes.status < 500,
+      latencyMs: latency,
+      target: 'https://github.com/WazzimaGiygg/Wiki-alternative',
+      statusCode: ghRes.status,
+      checkedAt: Date.now(),
+    });
+  } catch (err: any) {
+    res.json({
+      isReachable: false,
+      latencyMs: null,
+      target: 'https://github.com/WazzimaGiygg/Wiki-alternative',
+      error: err?.message || 'Falha de conexão ao GitHub',
+      checkedAt: Date.now(),
+    });
+  }
+});
+
 
 // -------------------------------------------------------------
 // API Routes: Firebase Rules & Security Backup (Requisitos 3.05.9.c & 3.05.9.d)

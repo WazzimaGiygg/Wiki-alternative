@@ -50,6 +50,7 @@ import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
 import { buildUidPermalink } from '../utils/urlRouter';
 import { PdfExportModal } from './PdfExportModal';
+import { StandardUidDictionaryModal } from './StandardUidDictionaryModal';
 import { WikiStatisticsPanel } from './WikiStatisticsPanel';
 
 interface SpecialPagesViewProps {
@@ -124,6 +125,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>(() => StorageService.getWatchlist());
   const [copiedShortcut, setCopiedShortcut] = useState<string | null>(null);
   const [selectedArticleForPdf, setSelectedArticleForPdf] = useState<WikiArticle | null>(null);
+  const [showUidModal, setShowUidModal] = useState(false);
 
   const handleCopyShortcut = (uid: string) => {
     const permalink = buildUidPermalink(uid);
@@ -759,6 +761,29 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
           </button>
         )}
 
+        <button
+          id="btn-specialpages-uids"
+          onClick={() => setShowUidModal(true)}
+          className="p-3 rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+        >
+          <div className="p-2 rounded-md bg-blue-600 text-white shrink-0 shadow-2xs">
+            <Hash size={16} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-blue-900 dark:text-blue-200 truncate group-hover:underline">
+                Special:UIDs
+              </span>
+              <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-blue-600 text-white">
+                4.1.1.54.7
+              </span>
+            </div>
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+              Dicionário Oficial de UIDs Padronizados (161 registros)
+            </div>
+          </div>
+        </button>
+
         {onNavigateToTools && (
           <button
             id="btn-specialpages-bots"
@@ -1350,6 +1375,28 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
           onClose={() => setSelectedArticleForPdf(null)}
         />
       )}
+
+      {/* Dicionário Oficial de UIDs Padronizados (4.1.1.54.7) */}
+      <StandardUidDictionaryModal
+        isOpen={showUidModal}
+        onClose={() => setShowUidModal(false)}
+        onNavigateToView={(view) => {
+          if (view === 'admin-dashboard' && onNavigateToAdminDashboard) onNavigateToAdminDashboard();
+          else if (view === 'admin-council' && onNavigateToAdminCouncil) onNavigateToAdminCouncil();
+          else if (view === 'admin-users' && onNavigateToUsersList) onNavigateToUsersList();
+          else if (view === 'admin-firebase' && onNavigateToAdminFirebase) onNavigateToAdminFirebase();
+          else if (view === 'admin-extensions' && onNavigateToExtensions) onNavigateToExtensions();
+          else if (view === 'tools' && onNavigateToTools) onNavigateToTools();
+          else if (view === 'library' && onNavigateToLibrary) onNavigateToLibrary();
+          else if (view === 'academic' && onNavigateToAcademic) onNavigateToAcademic();
+          else if (view === 'news' && onNavigateToNews) onNavigateToNews();
+          else if (view === 'antiplagio' && onNavigateToAntiplagio) onNavigateToAntiplagio();
+          else if (view === 'arbitration' && onNavigateToArbitration) onNavigateToArbitration();
+          else if (view === 'appearance' && onNavigateToAppearance) onNavigateToAppearance();
+          else if (view === 'files-list' && onNavigateToFilesList) onNavigateToFilesList();
+          else if (view === 'upload' && onNavigateToUpload) onNavigateToUpload();
+        }}
+      />
     </div>
   );
 };

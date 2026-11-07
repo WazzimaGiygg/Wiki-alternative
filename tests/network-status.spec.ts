@@ -100,5 +100,28 @@ describe('Suíte de Testes da Verificação de Status Online em Tempo Real (4.1.
       const settings = manager.getOnlineStatusVerifierSettings();
       expect(settings).toBeDefined();
     });
+
+    it('deve sincronizar com o GitHub em tempo real (4.1.1.1GZ.8)', () => {
+      const status = NetworkStatusService.getStatus();
+      expect(status.github).toBeDefined();
+      expect(status.github.target).toContain('WazzimaGiygg/Wiki-alternative');
+      expect(typeof status.github.isReachable).toBe('boolean');
+    });
+
+    it('deve permitir ativar e desativar o recurso como extensão (4.1.1.1GZ.8)', () => {
+      const manager = ExtensionManager.getInstance();
+
+      // Desativa a extensão
+      manager.setOnlineStatusVerifierEnabled(false);
+      expect(manager.isOnlineStatusVerifierEnabled()).toBe(false);
+      expect(NetworkStatusService.isServiceEnabled()).toBe(false);
+      expect(NetworkStatusService.getStatus().isEnabled).toBe(false);
+
+      // Reativa a extensão
+      manager.setOnlineStatusVerifierEnabled(true);
+      expect(manager.isOnlineStatusVerifierEnabled()).toBe(true);
+      expect(NetworkStatusService.isServiceEnabled()).toBe(true);
+      expect(NetworkStatusService.getStatus().isEnabled).toBe(true);
+    });
   });
 });

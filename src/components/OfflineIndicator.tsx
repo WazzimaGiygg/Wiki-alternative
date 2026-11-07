@@ -2,12 +2,23 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Wifi, WifiOff, RefreshCw, X, ArrowUpRight } from 'lucide-react';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { NetworkDiagnosticModal } from './NetworkDiagnosticModal';
+import { ExtensionManager } from '../core/ExtensionManager';
 
 export const OfflineIndicator: React.FC = () => {
   const { isOnline, latencyMs, isChecking, checkNow, status } = useNetworkStatus();
   const [showReconnectedToast, setShowReconnectedToast] = useState(false);
   const [showDiagnosticModal, setShowDiagnosticModal] = useState(false);
+  const [isVerifierEnabled, setIsVerifierEnabled] = useState<boolean>(() =>
+    ExtensionManager.isOnlineStatusVerifierEnabled()
+  );
   const prevOnlineRef = useRef<boolean>(isOnline);
+
+  useEffect(() => {
+    const unsub = ExtensionManager.getInstance().subscribe(() => {
+      setIsVerifierEnabled(ExtensionManager.isOnlineStatusVerifierEnabled());
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     // Detect reconnection transition from offline to online
@@ -20,6 +31,10 @@ export const OfflineIndicator: React.FC = () => {
     }
     prevOnlineRef.current = isOnline;
   }, [isOnline]);
+
+  if (!isVerifierEnabled || status.isEnabled === false) {
+    return null;
+  }
 
   return (
     <>

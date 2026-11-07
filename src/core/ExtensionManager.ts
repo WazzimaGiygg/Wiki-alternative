@@ -98,6 +98,7 @@ import BotAgentExtension from '../extensions/bot-agent';
 import FirstVisitNewsPopupExtension from '../extensions/first-visit-news-popup';
 import PlagiarismCheckerExtension from '../extensions/plagiarism-checker';
 import OnlineStatusVerifierExtension from '../extensions/online-status-verifier';
+import { NetworkStatusService } from '../services/networkStatusService';
 
 /**
  * Função utilitária central para validar se um usuário possui o status de Burocrata.
@@ -2404,8 +2405,50 @@ ${tc.customCss || ''}
     return this.extensionSettings['OnlineStatusVerifierExtension'] || {};
   }
 
+  /**
+   * 4.1.1.1GZ.8: Ativa ou desativa a extensão de verificação de status online e sincroniza o NetworkStatusService.
+   */
+  public setOnlineStatusVerifierEnabled(enabled: boolean): boolean {
+    const ext = this.findExtension('OnlineStatusVerifierExtension');
+    this.extensionStates['OnlineStatusVerifierExtension'] = enabled;
+
+    if (enabled) {
+      if (ext && !this.loadedExtensions.has('OnlineStatusVerifierExtension')) {
+        try {
+          const settings = this.extensionSettings['OnlineStatusVerifierExtension'] || {};
+          ext.onRegister(this.hookRegistry, { settings, manager: this });
+          this.loadedExtensions.set('OnlineStatusVerifierExtension', ext);
+        } catch (err) {
+          console.error('[ExtensionManager] Erro ao ativar OnlineStatusVerifierExtension:', err);
+        }
+      }
+      NetworkStatusService.setEnabled(true);
+    } else {
+      if (ext && this.loadedExtensions.has('OnlineStatusVerifierExtension')) {
+        try {
+          this.hookRegistry.removeAllHooksForExtension('OnlineStatusVerifierExtension');
+          if (typeof ext.onUnregister === 'function') {
+            ext.onUnregister(this.hookRegistry);
+          }
+          this.loadedExtensions.delete('OnlineStatusVerifierExtension');
+        } catch (err) {
+          console.error('[ExtensionManager] Erro ao desativar OnlineStatusVerifierExtension:', err);
+        }
+      }
+      NetworkStatusService.setEnabled(false);
+    }
+
+    this.persistStates();
+    this.notifyListeners();
+    return enabled;
+  }
+
   public static isOnlineStatusVerifierEnabled(): boolean {
     return ExtensionManager.getInstance().isOnlineStatusVerifierEnabled();
+  }
+
+  public static setOnlineStatusVerifierEnabled(enabled: boolean): boolean {
+    return ExtensionManager.getInstance().setOnlineStatusVerifierEnabled(enabled);
   }
 
   public static getOnlineStatusVerifierSettings(): Record<string, any> {

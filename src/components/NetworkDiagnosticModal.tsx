@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Wifi,
   WifiOff,
@@ -13,9 +13,14 @@ import {
   Cpu,
   Trash2,
   X,
+  GitBranch,
+  ExternalLink,
+  Power,
+  PowerOff,
 } from 'lucide-react';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { ConnectionQuality } from '../services/networkStatusService';
+import { ExtensionManager } from '../core/ExtensionManager';
 
 interface NetworkDiagnosticModalProps {
   isOpen: boolean;
@@ -28,6 +33,19 @@ export const NetworkDiagnosticModal: React.FC<NetworkDiagnosticModalProps> = ({
 }) => {
   const { status, isOnline, latencyMs, quality, isChecking, checkNow, clearHistory } =
     useNetworkStatus();
+
+  const [isExtensionActive, setIsExtensionActive] = useState<boolean>(() =>
+    ExtensionManager.isOnlineStatusVerifierEnabled()
+  );
+
+  useEffect(() => {
+    setIsExtensionActive(status.isEnabled !== false && ExtensionManager.isOnlineStatusVerifierEnabled());
+  }, [status.isEnabled]);
+
+  const handleToggleExtension = (enabled: boolean) => {
+    ExtensionManager.setOnlineStatusVerifierEnabled(enabled);
+    setIsExtensionActive(enabled);
+  };
 
   if (!isOpen) return null;
 
@@ -146,6 +164,48 @@ export const NetworkDiagnosticModal: React.FC<NetworkDiagnosticModalProps> = ({
 
         {/* Content Body */}
         <div className="p-5 space-y-4 overflow-y-auto">
+          {/* Extension Activation / Deactivation Switch (4.1.1.1GZ.8) */}
+          <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/40 flex items-center justify-between transition">
+            <div className="flex items-center gap-2.5">
+              <div
+                className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                  isExtensionActive
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                {isExtensionActive ? <Power size={14} /> : <PowerOff size={14} />}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                    Extensão Verificador Online
+                  </span>
+                  <span className="font-mono text-[9px] px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-semibold">
+                    4.1.1.1GZ.8
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                  {isExtensionActive
+                    ? 'Ativa: Heartbeat e probes contínuos em segundo plano.'
+                    : 'Desativada: Probes suspensos. Ative para restaurar verificação.'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleToggleExtension(!isExtensionActive)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                isExtensionActive
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700'
+              }`}
+            >
+              <span>{isExtensionActive ? 'Ativada' : 'Desativada'}</span>
+            </button>
+          </div>
+
           {/* Main Status Hero Card */}
           <div className={`p-4 rounded-xl border ${qDetails.bg} transition`}>
             <div className="flex items-center justify-between mb-2">
@@ -198,6 +258,63 @@ export const NetworkDiagnosticModal: React.FC<NetworkDiagnosticModalProps> = ({
             <p className="text-[11px] mt-2 text-slate-600 dark:text-slate-300">
               {qDetails.desc}
             </p>
+          </div>
+
+          {/* Sincronização em Tempo Real com GitHub (4.1.1.1GZ.8) */}
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <GitBranch size={15} className="text-slate-700 dark:text-slate-300" />
+                <span className="text-xs font-bold">Conexão com GitHub em Tempo Real</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded font-mono bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                  4.1.1.1GZ.8
+                </span>
+              </div>
+              <a
+                href="https://github.com/WazzimaGiygg/Wiki-alternative"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
+              >
+                <span>Repositório</span>
+                <ExternalLink size={11} />
+              </a>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 block">Status Rota GitHub</span>
+                <div className="flex items-center gap-1.5 font-bold mt-0.5">
+                  {status.github?.isReachable ? (
+                    <>
+                      <CheckCircle2 size={13} className="text-emerald-500" />
+                      <span className="text-emerald-600 dark:text-emerald-400">Online</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle size={13} className="text-rose-500" />
+                      <span className="text-rose-600 dark:text-rose-400">Inacessível</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 block">Latência GitHub (RTT)</span>
+                <div className="font-mono font-bold mt-0.5 text-slate-700 dark:text-slate-200">
+                  {status.github?.latencyMs !== null && status.github?.latencyMs !== undefined
+                    ? `${status.github.latencyMs}ms`
+                    : '—'}
+                </div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 col-span-2 sm:col-span-1">
+                <span className="text-[10px] text-slate-400 block">Alvo Sincronizado</span>
+                <div className="font-mono text-[10px] truncate mt-0.5 text-slate-600 dark:text-slate-300" title="WazzimaGiygg/Wiki-alternative">
+                  WazzimaGiygg/Wiki-alternative
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Metrics Grid */}
@@ -355,8 +472,17 @@ export const NetworkDiagnosticModal: React.FC<NetworkDiagnosticModalProps> = ({
         {/* Footer Actions */}
         <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/40">
           <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <Radio size={12} className="text-emerald-500 animate-pulse" />
-            <span>Heartbeat contínuo ativo</span>
+            {isExtensionActive ? (
+              <>
+                <Radio size={12} className="text-emerald-500 animate-pulse" />
+                <span>Heartbeat e sincronização GitHub ativos</span>
+              </>
+            ) : (
+              <>
+                <Radio size={12} className="text-slate-400" />
+                <span>Verificador em repouso (extensão desativada)</span>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
