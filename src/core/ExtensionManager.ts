@@ -98,6 +98,7 @@ import BotAgentExtension from '../extensions/bot-agent';
 import FirstVisitNewsPopupExtension from '../extensions/first-visit-news-popup';
 import PlagiarismCheckerExtension from '../extensions/plagiarism-checker';
 import OnlineStatusVerifierExtension from '../extensions/online-status-verifier';
+import OnlineStatusExtension from './extensions/OnlineStatusExtension';
 import { NetworkStatusService } from '../services/networkStatusService';
 
 /**
@@ -227,6 +228,7 @@ export class ExtensionManager {
       FirstVisitNewsPopupExtension,
       PlagiarismCheckerExtension,
       OnlineStatusVerifierExtension,
+      OnlineStatusExtension,
     ];
 
     for (const ExtensionClass of builtins) {
@@ -2453,6 +2455,79 @@ ${tc.customCss || ''}
 
   public static getOnlineStatusVerifierSettings(): Record<string, any> {
     return ExtensionManager.getInstance().getOnlineStatusVerifierSettings();
+  }
+
+  /**
+   * Retorna se a extensão OnlineStatusExtension está ativa.
+   */
+  public isOnlineStatusExtensionEnabled(): boolean {
+    return this.isExtensionEnabled('OnlineStatusExtension');
+  }
+
+  /**
+   * Retorna a instância carregada de OnlineStatusExtension se ativa.
+   */
+  public getOnlineStatusExtension(): OnlineStatusExtension | undefined {
+    return this.loadedExtensions.get('OnlineStatusExtension') as OnlineStatusExtension | undefined;
+  }
+
+  /**
+   * Retorna as configurações da extensão OnlineStatusExtension.
+   */
+  public getOnlineStatusExtensionSettings(): Record<string, any> {
+    return this.extensionSettings['OnlineStatusExtension'] || {};
+  }
+
+  /**
+   * Ativa ou desativa a extensão OnlineStatusExtension e sincroniza o seu ciclo de vida.
+   */
+  public setOnlineStatusExtensionEnabled(enabled: boolean): boolean {
+    const ext = this.findExtension('OnlineStatusExtension');
+    this.extensionStates['OnlineStatusExtension'] = enabled;
+
+    if (enabled) {
+      if (ext && !this.loadedExtensions.has('OnlineStatusExtension')) {
+        try {
+          const settings = this.extensionSettings['OnlineStatusExtension'] || {};
+          ext.onRegister(this.hookRegistry, { settings, manager: this });
+          this.loadedExtensions.set('OnlineStatusExtension', ext);
+        } catch (err) {
+          console.error('[ExtensionManager] Erro ao ativar OnlineStatusExtension:', err);
+        }
+      }
+    } else {
+      if (ext && this.loadedExtensions.has('OnlineStatusExtension')) {
+        try {
+          this.hookRegistry.removeAllHooksForExtension('OnlineStatusExtension');
+          if (typeof ext.onUnregister === 'function') {
+            ext.onUnregister(this.hookRegistry);
+          }
+          this.loadedExtensions.delete('OnlineStatusExtension');
+        } catch (err) {
+          console.error('[ExtensionManager] Erro ao desativar OnlineStatusExtension:', err);
+        }
+      }
+    }
+
+    this.persistStates();
+    this.notifyListeners();
+    return enabled;
+  }
+
+  public static isOnlineStatusExtensionEnabled(): boolean {
+    return ExtensionManager.getInstance().isOnlineStatusExtensionEnabled();
+  }
+
+  public static getOnlineStatusExtension(): OnlineStatusExtension | undefined {
+    return ExtensionManager.getInstance().getOnlineStatusExtension();
+  }
+
+  public static setOnlineStatusExtensionEnabled(enabled: boolean): boolean {
+    return ExtensionManager.getInstance().setOnlineStatusExtensionEnabled(enabled);
+  }
+
+  public static getOnlineStatusExtensionSettings(): Record<string, any> {
+    return ExtensionManager.getInstance().getOnlineStatusExtensionSettings();
   }
 }
 
