@@ -2538,7 +2538,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={() => setShowNetworkDiagnostic(true)}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded border transition min-h-[32px] cursor-pointer text-xs font-semibold ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition min-h-[38px] sm:min-h-[32px] cursor-pointer text-xs font-semibold active:scale-95 ${
                   !network.isOnline
                     ? 'border-rose-400 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/70 dark:text-rose-300 animate-pulse'
                     : network.quality === 'poor' || network.quality === 'fair'

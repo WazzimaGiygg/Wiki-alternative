@@ -5128,6 +5128,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
   getSavedExtensionStates(): Record<string, boolean> {
     try {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') return {};
       const raw = localStorage.getItem(STORAGE_KEYS.EXTENSIONS_STATES);
       return raw ? JSON.parse(raw) : {};
     } catch {
@@ -5137,6 +5138,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
   saveExtensionStates(states: Record<string, boolean>): void {
     try {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
       localStorage.setItem(STORAGE_KEYS.EXTENSIONS_STATES, JSON.stringify(states));
     } catch (e) {
       console.warn('Erro ao salvar estados de extensões:', e);

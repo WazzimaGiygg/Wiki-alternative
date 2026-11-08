@@ -55,6 +55,9 @@ import {
   FileDown,
   MessageSquare,
   Award,
+  Wifi,
+  WifiOff,
+  GitBranch,
 } from 'lucide-react';
 import {
   getSqlDatabaseBackupConfig,
@@ -103,6 +106,11 @@ import { ExtensionMalwareScannerModal } from './ExtensionMalwareScannerModal';
 import { extensionSyncSecurityDevice } from '../services/extensionSyncSecurityDevice';
 import { extensionMalwareScannerDevice } from '../services/extensionMalwareScannerDevice';
 import { siteAutoUpdateService } from '../services/siteAutoUpdateService';
+import {
+  OnlineStatusExtension,
+  OnlineStatusExtensionState,
+} from '../core/extensions/OnlineStatusExtension';
+import { ConnectivityStatusTooltip } from './ConnectivityStatusTooltip';
 
 interface AdminExtensionsManagementViewProps {
   currentUser: UserProfile | null;
@@ -133,6 +141,14 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
   const [inspectingExtension, setInspectingExtension] = useState<InstalledExtensionMeta | null>(null);
   const [editingSettingsExtension, setEditingSettingsExtension] = useState<InstalledExtensionMeta | null>(null);
   const [extensionToDelete, setExtensionToDelete] = useState<InstalledExtensionMeta | null>(null);
+
+  // 4.1.1.1GZ.8: Extensão OnlineStatusExtension e Monitor de Conectividade com GitHub
+  const onlineStatusExt = OnlineStatusExtension.getInstance();
+  const [onlineStatusData, setOnlineStatusData] = useState<OnlineStatusExtensionState>(() =>
+    onlineStatusExt.getState()
+  );
+  const [isTestingGithubConnection, setIsTestingGithubConnection] = useState<boolean>(false);
+  const [manualGithubTestResult, setManualGithubTestResult] = useState<string | null>(null);
 
   // 3.05.3.aa: Modal e Gerenciamento de Backup Geral SQL Nativo
   const [showSqlBackupModal, setShowSqlBackupModal] = useState<boolean>(false);
@@ -300,9 +316,13 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
         extensionSyncSecurityDevice.getQuarantinedExtensions().filter((q) => q.status === 'quarantined').length
       );
     });
+    const unsubOnline = onlineStatusExt.subscribe((state) => {
+      setOnlineStatusData(state);
+    });
     return () => {
       unsubscribe();
       unsubSec();
+      unsubOnline();
     };
   }, []);
 
@@ -1086,6 +1106,28 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       setFeedback({ type: 'error', message: `Erro ao salvar configurações: ${err?.message || 'Falha inesperada'}` });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // 4.1.1.1GZ.8: Teste manual imediato de conectividade com o GitHub
+  const handleTestGithubNow = async () => {
+    setIsTestingGithubConnection(true);
+    setManualGithubTestResult(null);
+    try {
+      const res = await onlineStatusExt.checkConnectivity();
+      if (res.status === 'online') {
+        setManualGithubTestResult(
+          `Conexão com GitHub confirmada: Estável (${res.latencyMs}ms, HTTP ${res.statusCode || 200})`
+        );
+      } else {
+        setManualGithubTestResult(
+          `Conexão com GitHub: Offline (${res.error || 'Falha de comunicação ou timeout'})`
+        );
+      }
+    } catch (err: any) {
+      setManualGithubTestResult(`Erro ao testar conectividade: ${err?.message || 'Falha na rede'}`);
+    } finally {
+      setIsTestingGithubConnection(false);
     }
   };
 
@@ -2059,7 +2101,39 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                     </div>
 
                     {/* Status Pill */}
-                    <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {ext.name === 'OnlineStatusExtension' && (
+                        <ConnectivityStatusTooltip
+                          status={onlineStatusData.isOnline ? 'online' : 'offline'}
+                          latencyMs={onlineStatusData.latencyMs}
+                          lastCheckedAt={onlineStatusData.lastCheckedAt}
+                          statusCode={onlineStatusData.statusCode}
+                          error={onlineStatusData.error}
+                          targetUrl={onlineStatusData.targetUrl}
+                          isStable={onlineStatusExt.isStable}
+                          position="top"
+                        >
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border cursor-help transition-all hover:scale-105 ${
+                              onlineStatusData.isOnline
+                                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                                : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+                            }`}
+                          >
+                            {onlineStatusData.isOnline ? (
+                              <>
+                                <Wifi className="w-3 h-3 text-emerald-500 animate-pulse" />
+                                <span>GitHub: Estável {onlineStatusData.latencyMs !== null ? `(${onlineStatusData.latencyMs}ms)` : ''}</span>
+                              </>
+                            ) : (
+                              <>
+                                <WifiOff className="w-3 h-3 text-rose-500" />
+                                <span>GitHub: Offline</span>
+                              </>
+                            )}
+                          </span>
+                        </ConnectivityStatusTooltip>
+                      )}
                       {ext.enabled ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -2266,16 +2340,50 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                       </span>
                     </td>
                     <td className="px-3 py-3.5">
-                      {ext.enabled ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                          Ativa
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                          Inativa
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {ext.name === 'OnlineStatusExtension' && (
+                          <ConnectivityStatusTooltip
+                            status={onlineStatusData.isOnline ? 'online' : 'offline'}
+                            latencyMs={onlineStatusData.latencyMs}
+                            lastCheckedAt={onlineStatusData.lastCheckedAt}
+                            statusCode={onlineStatusData.statusCode}
+                            error={onlineStatusData.error}
+                            targetUrl={onlineStatusData.targetUrl}
+                            isStable={onlineStatusExt.isStable}
+                            position="top"
+                          >
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border cursor-help transition-all hover:scale-105 ${
+                                onlineStatusData.isOnline
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                                  : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+                              }`}
+                            >
+                              {onlineStatusData.isOnline ? (
+                                <>
+                                  <Wifi className="w-3 h-3 text-emerald-500 animate-pulse" />
+                                  <span>GitHub: Estável {onlineStatusData.latencyMs !== null ? `(${onlineStatusData.latencyMs}ms)` : ''}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <WifiOff className="w-3 h-3 text-rose-500" />
+                                  <span>GitHub: Offline</span>
+                                </>
+                              )}
+                            </span>
+                          </ConnectivityStatusTooltip>
+                        )}
+                        {ext.enabled ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Ativa
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                            Inativa
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
@@ -3226,11 +3334,11 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       {/* MODAL 2: CONFIGURAÇÕES E AJUSTES DE PARÂMETROS           */}
       {/* ======================================================== */}
       {showSettingsModal && editingSettingsExtension && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden my-6">
-            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden my-2 sm:my-6 max-h-[92vh] flex flex-col">
+            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-purple-600 text-white">
+                <div className="p-2 rounded-xl bg-purple-600 text-white shrink-0">
                   <Settings className="w-5 h-5" />
                 </div>
                 <div>
@@ -3245,13 +3353,297 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
               <button
                 type="button"
                 onClick={() => setShowSettingsModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[40px] min-w-[40px] flex items-center justify-center"
+                aria-label="Fechar ajustes"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveSettings} className="p-6 space-y-4">
+            <form onSubmit={handleSaveSettings} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
+              {/* 4.1.1.1GZ.8: Seletor Visual de Status com GitHub para OnlineStatusExtension */}
+              {(editingSettingsExtension.name === 'OnlineStatusExtension' ||
+                editingSettingsExtension.id === 'online-status-extension') && (
+                <div className="rounded-2xl border p-3.5 sm:p-4 bg-slate-50/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/80 space-y-4">
+                  {/* Cabeçalho do Seletor Otimizado para Mobile */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-2">
+                      <ConnectivityStatusTooltip
+                        status={onlineStatusData.isOnline ? 'online' : 'offline'}
+                        latencyMs={onlineStatusData.latencyMs}
+                        lastCheckedAt={onlineStatusData.lastCheckedAt}
+                        statusCode={onlineStatusData.statusCode}
+                        error={onlineStatusData.error}
+                        targetUrl={onlineStatusData.targetUrl}
+                        isStable={onlineStatusExt.isStable}
+                        position="bottom"
+                      >
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          aria-label="Ver detalhes de conectividade com o GitHub"
+                          className="p-2 rounded-lg bg-slate-900 text-white dark:bg-slate-700 cursor-help hover:bg-slate-800 transition-all hover:scale-105 active:scale-95"
+                        >
+                          <GitBranch className="w-4 h-4" />
+                        </div>
+                      </ConnectivityStatusTooltip>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider truncate">
+                          Monitor de Conexão com GitHub em Tempo Real
+                        </h4>
+                        <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate max-w-xs sm:max-w-sm">
+                          {onlineStatusData.targetUrl || 'https://api.github.com/repos/WazzimaGiygg/Wiki-alternative'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isTestingGithubConnection}
+                      onClick={handleTestGithubNow}
+                      className="w-full sm:w-auto px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center gap-1.5 shadow-xs transition active:scale-95 disabled:opacity-60 min-h-[44px] sm:min-h-0"
+                      title="Executa um ping fetch imediato ao GitHub"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isTestingGithubConnection ? 'animate-spin text-purple-600' : 'text-slate-500'}`} />
+                      <span>{isTestingGithubConnection ? 'Testando...' : 'Testar Conexão Agora'}</span>
+                    </button>
+                  </div>
+
+                  {/* Feedback do Teste Manual */}
+                  {manualGithubTestResult && (
+                    <div
+                      className={`p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 border animate-in fade-in ${
+                        manualGithubTestResult.includes('confirmada') || manualGithubTestResult.includes('Sucesso')
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+                          : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800'
+                      }`}
+                    >
+                      {manualGithubTestResult.includes('confirmada') || manualGithubTestResult.includes('Sucesso') ? (
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                      )}
+                      <span>{manualGithubTestResult}</span>
+                    </div>
+                  )}
+
+                  {/* Seletor Visual de Status: Estável vs. Offline */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      Indicador Visual de Diagnóstico da Conexão (Passe o mouse no ícone para detalhes)
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Cartão Estável */}
+                      <div
+                        className={`relative rounded-xl p-3 border-2 transition-all flex flex-col justify-between ${
+                          onlineStatusData.isOnline
+                            ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-xs'
+                            : 'border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <ConnectivityStatusTooltip
+                              status="online"
+                              latencyMs={onlineStatusData.latencyMs}
+                              lastCheckedAt={onlineStatusData.lastCheckedAt}
+                              statusCode={onlineStatusData.statusCode}
+                              error={onlineStatusData.error}
+                              targetUrl={onlineStatusData.targetUrl}
+                              isStable={onlineStatusExt.isStable}
+                              position="top"
+                            >
+                              <div
+                                tabIndex={0}
+                                role="button"
+                                aria-label="Ver detalhes da conexão estável com o GitHub"
+                                className={`p-2 rounded-lg cursor-help transition-all duration-150 hover:scale-110 active:scale-95 ${
+                                  onlineStatusData.isOnline
+                                    ? 'bg-emerald-500 text-white shadow-xs hover:bg-emerald-600 ring-2 ring-emerald-400/50'
+                                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                                }`}
+                              >
+                                <Wifi className="w-4 h-4" />
+                              </div>
+                            </ConnectivityStatusTooltip>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-xs text-slate-900 dark:text-white">
+                                  Conexão Estável
+                                </span>
+                                {onlineStatusData.isOnline && (
+                                  <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                                RTT / Latência baixa e estável
+                              </p>
+                            </div>
+                          </div>
+                          {onlineStatusData.isOnline && (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-600 text-white uppercase tracking-wider">
+                              Ativo
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-3 pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 dark:text-slate-400">Latência:</span>
+                          <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300">
+                            {onlineStatusData.latencyMs !== null ? `${onlineStatusData.latencyMs} ms` : 'calculando...'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Cartão Offline */}
+                      <div
+                        className={`relative rounded-xl p-3 border-2 transition-all flex flex-col justify-between ${
+                          !onlineStatusData.isOnline
+                            ? 'border-rose-500 bg-rose-50/80 dark:bg-rose-950/40 shadow-xs'
+                            : 'border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <ConnectivityStatusTooltip
+                              status="offline"
+                              latencyMs={onlineStatusData.latencyMs}
+                              lastCheckedAt={onlineStatusData.lastCheckedAt}
+                              statusCode={onlineStatusData.statusCode}
+                              error={onlineStatusData.error}
+                              targetUrl={onlineStatusData.targetUrl}
+                              isStable={false}
+                              position="top"
+                            >
+                              <div
+                                tabIndex={0}
+                                role="button"
+                                aria-label="Ver detalhes de diagnóstico offline do GitHub"
+                                className={`p-2 rounded-lg cursor-help transition-all duration-150 hover:scale-110 active:scale-95 ${
+                                  !onlineStatusData.isOnline
+                                    ? 'bg-rose-500 text-white shadow-xs hover:bg-rose-600 ring-2 ring-rose-400/50'
+                                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                                }`}
+                              >
+                                <WifiOff className="w-4 h-4" />
+                              </div>
+                            </ConnectivityStatusTooltip>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-xs text-slate-900 dark:text-white">
+                                  Conexão Offline
+                                </span>
+                                {!onlineStatusData.isOnline && (
+                                  <span className="inline-block w-2 h-2 rounded-full bg-rose-500"></span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                                Sem resposta ou timeout na rota
+                              </p>
+                            </div>
+                          </div>
+                          {!onlineStatusData.isOnline && (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-600 text-white uppercase tracking-wider">
+                              Offline
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-3 pt-2 border-t border-rose-200/60 dark:border-rose-800/60 flex items-center justify-between text-[11px]">
+                          <span className="text-slate-600 dark:text-slate-400">Diagnóstico:</span>
+                          <span className="font-mono text-[10px] text-rose-700 dark:text-rose-300 truncate max-w-[130px]">
+                            {onlineStatusData.error || (onlineStatusData.isOnline ? 'Nenhum erro' : 'Inacessível')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Seletor Rápido de Ativação / Modo da Extensão */}
+                  <div className="space-y-1.5 pt-1">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      Modo Operacional da Verificação no GitHub
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1.5 bg-slate-200/80 dark:bg-slate-800/80 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSettingsFormData({
+                            ...settingsFormData,
+                            enabled: true,
+                          })
+                        }
+                        className={`py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] active:scale-98 ${
+                          Boolean(settingsFormData.enabled !== false)
+                            ? 'bg-purple-600 text-white shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        <Power className="w-3.5 h-3.5" />
+                        <span>Verificação Ativada (On)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSettingsFormData({
+                            ...settingsFormData,
+                            enabled: false,
+                          })
+                        }
+                        className={`py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px] active:scale-98 ${
+                          Boolean(settingsFormData.enabled === false)
+                            ? 'bg-slate-700 text-white shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                        }`}
+                      >
+                        <Power className="w-3.5 h-3.5 opacity-50" />
+                        <span>Verificação Pausada (Off)</span>
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {Boolean(settingsFormData.enabled !== false)
+                        ? 'O sistema consulta o site do GitHub a cada intervalo para assegurar conectividade em tempo real.'
+                        : 'A verificação periódica está suspensa; o status não emitirá chamadas fetch ao GitHub em background.'}
+                    </p>
+                  </div>
+
+                  {/* Telemetria e Histórico Recente Otimizado para Mobile */}
+                  {onlineStatusData.history && onlineStatusData.history.length > 0 && (
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700/80">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-500 mb-1.5 font-mono">
+                        <span>Últimas medições de ping:</span>
+                        <span className="text-[10px]">
+                          {onlineStatusData.lastCheckedAt
+                            ? `Último: ${new Date(onlineStatusData.lastCheckedAt).toLocaleTimeString()}`
+                            : 'Nenhum teste recente'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 overflow-x-auto py-1 -mx-1 px-1 touch-pan-x scrollbar-thin">
+                        {onlineStatusData.history.slice(0, 8).map((ping, idx) => (
+                          <div
+                            key={idx}
+                            className={`px-2 py-0.5 rounded text-[10px] font-mono shrink-0 flex items-center gap-1 border ${
+                              ping.status === 'online'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                            }`}
+                            title={`Status: ${ping.status} | Latência: ${ping.latencyMs}ms | ${new Date(ping.timestamp).toLocaleTimeString()}`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${ping.status === 'online' ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                            ></span>
+                            <span>{ping.latencyMs}ms</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {editingSettingsExtension.settingsSchema && editingSettingsExtension.settingsSchema.length > 0 ? (
                 editingSettingsExtension.settingsSchema.map((field) => {
                   const currentValue =
@@ -3340,18 +3732,18 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowSettingsModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100"
+                  className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-h-[44px] sm:min-h-0 flex items-center justify-center active:scale-98"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={!userIsBureaucrat}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition"
+                  className="w-full sm:w-auto px-5 py-2.5 sm:py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm transition min-h-[44px] sm:min-h-0 flex items-center justify-center active:scale-98 disabled:opacity-50"
                 >
                   Salvar Parâmetros
                 </button>

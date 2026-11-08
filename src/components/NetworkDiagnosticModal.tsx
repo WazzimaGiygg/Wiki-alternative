@@ -125,12 +125,12 @@ export const NetworkDiagnosticModal: React.FC<NetworkDiagnosticModalProps> = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100 my-2 sm:my-6">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/40">
-          <div className="flex items-center gap-2.5">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/40 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+              className={`w-9 h-9 rounded-xl flex items-center justify-center border shrink-0 ${
                 isOnline
                   ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
                   : 'bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800'
@@ -138,25 +138,26 @@ export const NetworkDiagnosticModal: React.FC<NetworkDiagnosticModalProps> = ({
             >
               {isOnline ? <Wifi size={18} /> : <WifiOff size={18} />}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 id="network-diag-title" className="text-sm font-bold">
-                  Diagnóstico de Conectividade em Tempo Real
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 id="network-diag-title" className="text-sm font-bold truncate">
+                  Diagnóstico de Conectividade
                 </h2>
-                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-900">
+                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-900 shrink-0">
                   4.1.1.D6.6
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Verificação de conectividade física, rota de dados e telemetria de latência
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
+                Conectividade física, rota de dados e telemetria
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center shrink-0"
             title="Fechar diagnóstico"
+            aria-label="Fechar diagnóstico"
           >
             <X size={18} />
           </button>
@@ -469,28 +470,28 @@ export const NetworkDiagnosticModal: React.FC<NetworkDiagnosticModalProps> = ({
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/40">
+        {/* Footer Actions Otimizado para Mobile */}
+        <div className="px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-800/40 shrink-0">
           <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
             {isExtensionActive ? (
               <>
-                <Radio size={12} className="text-emerald-500 animate-pulse" />
-                <span>Heartbeat e sincronização GitHub ativos</span>
+                <Radio size={12} className="text-emerald-500 animate-pulse shrink-0" />
+                <span className="truncate">Heartbeat e sincronização GitHub ativos</span>
               </>
             ) : (
               <>
-                <Radio size={12} className="text-slate-400" />
-                <span>Verificador em repouso (extensão desativada)</span>
+                <Radio size={12} className="text-slate-400 shrink-0" />
+                <span className="truncate">Verificador em repouso (extensão desativada)</span>
               </>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               disabled={isChecking}
               onClick={() => checkNow()}
-              className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+              className="flex-1 sm:flex-none px-3.5 py-2.5 sm:py-1.5 rounded-xl sm:rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50 min-h-[44px] sm:min-h-0 active:scale-98"
             >
               <RefreshCw size={13} className={isChecking ? 'animate-spin' : ''} />
               <span>{isChecking ? 'Verificando...' : 'Testar Agora'}</span>
@@ -498,7 +499,7 @@ export const NetworkDiagnosticModal: React.FC<NetworkDiagnosticModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition cursor-pointer"
+              className="flex-1 sm:flex-none px-3.5 py-2.5 sm:py-1.5 rounded-xl sm:rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 text-xs font-medium transition cursor-pointer min-h-[44px] sm:min-h-0 flex items-center justify-center active:scale-98"
             >
               Fechar
             </button>

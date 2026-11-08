@@ -157,4 +157,49 @@ describe('Suíte de Testes da OnlineStatusExtension (src/core/extensions/)', () 
       expect(typeof settings).toBe('object');
     });
   });
+
+  describe('Flags de Conexão Estável e Qualidade de Conectividade', () => {
+    it('deve expor flag isOnline e isStable como verdadeiro quando conectado com baixa latência', async () => {
+      const mockFetch = vi.fn().mockImplementation(async () => {
+        return { status: 200, ok: true };
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      await extension.checkConnectivity();
+
+      expect(extension.isOnline).toBe(true);
+      expect(extension.isStable).toBe(true);
+      expect(extension.getConnectionQuality()).toBe('stable');
+    });
+
+    it('deve indicar conexão offline quando fetch falhar', async () => {
+      const mockFetch = vi.fn().mockRejectedValue(new Error('Connection timed out'));
+      vi.stubGlobal('fetch', mockFetch);
+
+      await extension.checkConnectivity();
+
+      expect(extension.isOnline).toBe(false);
+      expect(extension.isStable).toBe(false);
+      expect(extension.getConnectionQuality()).toBe('offline');
+    });
+
+    it('deve notificar listeners registrados via subscribe em tempo real', async () => {
+      const listener = vi.fn();
+      const unsub = extension.subscribe(listener);
+
+      // Primeiro callback síncrono com o estado inicial
+      expect(listener).toHaveBeenCalledTimes(1);
+
+      const mockFetch = vi.fn().mockResolvedValue({ status: 200, ok: true });
+      vi.stubGlobal('fetch', mockFetch);
+
+      await extension.checkConnectivity();
+
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(listener.mock.calls[1][0].isOnline).toBe(true);
+
+      unsub();
+    });
+  });
 });
+

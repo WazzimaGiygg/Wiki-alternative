@@ -31,6 +31,7 @@ export interface OnlineStatusExtensionState {
 export class OnlineStatusExtension implements WikiExtension {
   public static readonly EXTENSION_NAME = 'OnlineStatusExtension';
   public static readonly EXTENSION_VERSION = '4.1.1';
+  private static instance: OnlineStatusExtension | null = null;
 
   public readonly id = 'online-status-extension';
   public readonly name = OnlineStatusExtension.EXTENSION_NAME;
@@ -38,6 +39,8 @@ export class OnlineStatusExtension implements WikiExtension {
 
   private timerId: any = null;
   private hooksRegistry: HookRegistry | null = null;
+  private listeners: Set<(state: OnlineStatusExtensionState) => void> = new Set();
+
   private currentSettings: Record<string, any> = {
     enabled: true,
     intervalSeconds: 20,
@@ -55,6 +58,62 @@ export class OnlineStatusExtension implements WikiExtension {
     targetUrl: 'https://api.github.com/repos/WazzimaGiygg/Wiki-alternative',
     history: [],
   };
+
+  public constructor() {
+    OnlineStatusExtension.instance = this;
+  }
+
+  public static getInstance(): OnlineStatusExtension {
+    if (!OnlineStatusExtension.instance) {
+      OnlineStatusExtension.instance = new OnlineStatusExtension();
+    }
+    return OnlineStatusExtension.instance;
+  }
+
+  /**
+   * Flag de status online em tempo real.
+   */
+  public get isOnline(): boolean {
+    return this.state.isOnline;
+  }
+
+  /**
+   * Flag indicando se a conexão com o GitHub está estável (online e com boa latência).
+   */
+  public get isStable(): boolean {
+    return this.state.isOnline && (this.state.latencyMs === null || this.state.latencyMs <= 450);
+  }
+
+  /**
+   * Avalia a qualidade da conexão com o GitHub.
+   */
+  public getConnectionQuality(): 'stable' | 'slow' | 'offline' {
+    if (!this.state.isOnline) return 'offline';
+    if (this.state.latencyMs !== null && this.state.latencyMs > 450) return 'slow';
+    return 'stable';
+  }
+
+  /**
+   * Assina atualizações em tempo real do estado de conectividade.
+   */
+  public subscribe(listener: (state: OnlineStatusExtensionState) => void): () => void {
+    this.listeners.add(listener);
+    listener(this.getState());
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private notifyListeners(): void {
+    const currentState = this.getState();
+    this.listeners.forEach((fn) => {
+      try {
+        fn(currentState);
+      } catch (e) {
+        console.warn('[OnlineStatusExtension] Erro em listener:', e);
+      }
+    });
+  }
 
   public getName(): string {
     return OnlineStatusExtension.EXTENSION_NAME;
@@ -278,6 +337,8 @@ export class OnlineStatusExtension implements WikiExtension {
     if (this.state.history.length > 20) {
       this.state.history = this.state.history.slice(0, 20);
     }
+
+    this.notifyListeners();
 
     // Dispara ação caso o estado tenha mudado
     if (wasOnline !== this.state.isOnline && this.hooksRegistry) {
