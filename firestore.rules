@@ -36,10 +36,11 @@ service cloud.firestore {
     // Proteção de Superadministrador: Prioriza Custom Claims e e-mail legítimo verificado
     function isSuperAdmin() {
       return isAuthenticated() && (
-        (request.auth.token.email == 'pedrohenriquecardonaperes@gmail.com' &&
-         (request.auth.token.email_verified == true || !('email_verified' in request.auth.token))) ||
-        request.auth.token.superadmin == true ||
-        request.auth.token.role == 'superadmin' ||
+        ('email' in request.auth.token &&
+         request.auth.token.email == 'pedrohenriquecardonaperes@gmail.com' &&
+         (!('email_verified' in request.auth.token) || request.auth.token.email_verified == true)) ||
+        ('superadmin' in request.auth.token && request.auth.token.superadmin == true) ||
+        ('role' in request.auth.token && request.auth.token.role == 'superadmin') ||
         exists(/databases/$(database)/documents/superadmins/$(request.auth.uid))
       );
     }
@@ -48,8 +49,8 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && (
         isSuperAdmin() ||
-        request.auth.token.admin == true ||
-        request.auth.token.role in ['admin', 'administrador', 'superadmin'] ||
+        ('admin' in request.auth.token && request.auth.token.admin == true) ||
+        ('role' in request.auth.token && request.auth.token.role in ['admin', 'administrador', 'superadmin']) ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
         (userDocExists() && (
           getUserData().group in ['admin', 'administrador', 'superadmin'] ||
@@ -62,8 +63,8 @@ service cloud.firestore {
     function isCheckUser() {
       return isAuthenticated() && (
         isAdmin() ||
-        request.auth.token.checkuser == true ||
-        request.auth.token.role == 'checkuser' ||
+        ('checkuser' in request.auth.token && request.auth.token.checkuser == true) ||
+        ('role' in request.auth.token && request.auth.token.role == 'checkuser') ||
         (userDocExists() && (
           getUserData().group in ['checkuser', 'admin', 'administrador', 'superadmin'] ||
           getUserData().role in ['checkuser', 'admin', 'administrador', 'superadmin']
@@ -75,8 +76,8 @@ service cloud.firestore {
     function isArbCom() {
       return isAuthenticated() && (
         isAdmin() ||
-        request.auth.token.arbcom == true ||
-        request.auth.token.role in ['arbcom', 'arbitrador'] ||
+        ('arbcom' in request.auth.token && request.auth.token.arbcom == true) ||
+        ('role' in request.auth.token && request.auth.token.role in ['arbcom', 'arbitrador']) ||
         exists(/databases/$(database)/documents/arbitration_members/$(request.auth.uid)) ||
         (userDocExists() && (
           getUserData().group in ['arbcom', 'arbitrador', 'admin', 'administrador', 'superadmin'] ||
@@ -88,8 +89,8 @@ service cloud.firestore {
     function isEditor() {
       return isRegistered() && (
         isAdmin() ||
-        request.auth.token.editor == true ||
-        request.auth.token.role in ['editor', 'moderador', 'admin', 'administrador'] ||
+        ('editor' in request.auth.token && request.auth.token.editor == true) ||
+        ('role' in request.auth.token && request.auth.token.role in ['editor', 'moderador', 'admin', 'administrador']) ||
         (userDocExists() && (
           getUserData().group in ['editor', 'admin', 'moderador', 'administrador'] ||
           getUserData().role in ['editor', 'moderador', 'admin', 'administrador']
