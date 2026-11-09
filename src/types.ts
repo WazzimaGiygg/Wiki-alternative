@@ -874,6 +874,12 @@ export interface Page {
   createdAt: string;
   updatedAt: string;
   version: number;
+  isLocked?: boolean;
+  lockedBy?: string;
+  lockedByUid?: string;
+  lockedAt?: string;
+  lockReason?: string;
+  protectionLevel?: 'moderators_only' | 'all';
 }
 
 export interface CreatePageInput {

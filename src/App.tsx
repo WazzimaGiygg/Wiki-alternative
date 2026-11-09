@@ -23,6 +23,7 @@ import { CreatePageModal } from './components/CreatePageModal';
 import { GeminiChatbotDrawer } from './components/GeminiChatbotDrawer';
 import { GeminiPremiumModal } from './components/GeminiPremiumModal';
 import { GeminiNotebook } from './components/GeminiNotebook';
+import { PermissionService } from './services/PermissionService';
 import { CookieBanner } from './components/CookieBanner';
 import { BannedOverlay } from './components/BannedOverlay';
 import { LgpdConsentModal } from './components/LgpdConsentModal';
@@ -1590,12 +1591,14 @@ export default function App() {
 
   const handleOpenEditorForEdit = (article: WikiArticle) => {
     confirmNavigationIfDirty(() => {
-      const isModOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
-      if (article.isLocked && !isModOrAdmin) {
-        handleNotify(
-          `O artigo "${article.titulo}" está protegido pela moderação (${article.lockReason || 'bloqueio administrativo'}). Apenas moderadores e administradores podem editar.`,
-          'warning'
-        );
+      const editPerm = PermissionService.getEditPermissionStatus(user, article);
+      if (!editPerm.allowed) {
+        if (editPerm.requiresLogin) {
+          handleNotify(editPerm.message, 'warning');
+          setShowLoginModal(true);
+          return;
+        }
+        handleNotify(editPerm.message, 'warning');
         return;
       }
       setEditingArticle(article);
@@ -1607,16 +1610,16 @@ export default function App() {
 
   const handleOpenNewEditor = (defaultUid?: string) => {
     confirmNavigationIfDirty(() => {
-      const isModOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
-      if (defaultUid && !isModOrAdmin) {
-        const targetPage = pages.find((p) => p.uid.toLowerCase() === defaultUid.toLowerCase());
-        if (targetPage && targetPage.isLocked) {
-          handleNotify(
-            `A coleção "${targetPage.titulo}" está protegida pela moderação. Não é permitido criar novos artigos nela.`,
-            'warning'
-          );
+      const targetPage = defaultUid ? pages.find((p) => p.uid.toLowerCase() === defaultUid.toLowerCase()) : null;
+      const editPerm = PermissionService.getEditPermissionStatus(user, targetPage ? { ...targetPage, namespace: 'main' } : null);
+      if (!editPerm.allowed) {
+        if (editPerm.requiresLogin) {
+          handleNotify(editPerm.message, 'warning');
+          setShowLoginModal(true);
           return;
         }
+        handleNotify(editPerm.message, 'warning');
+        return;
       }
       setEditingArticle(null);
       setEditorHasUnsavedChanges(false);
@@ -1963,6 +1966,7 @@ export default function App() {
                   setArticles((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
                 }
                 onOpenLanguagesModal={() => setShowLanguageModal(true)}
+                onOpenLoginModal={handleLoginClick}
               />
             ) : (
               <NotFoundView

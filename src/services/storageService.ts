@@ -921,12 +921,13 @@ export const StorageService = {
         versao: newVersion,
         historico: [historyItem, ...(existing.historico || [])],
         // Preserva metadados de bloqueio
-        isLocked: existing.isLocked,
-        lockedBy: existing.lockedBy,
-        lockedByUid: existing.lockedByUid,
-        lockedAt: existing.lockedAt,
-        lockReason: existing.lockReason,
-        protectionLevel: existing.protectionLevel,
+        // Preserva metadados de bloqueio contra adulteração de usuários comuns
+        isLocked: isModOrAdmin && articleData.isLocked !== undefined ? articleData.isLocked : existing.isLocked,
+        lockedBy: isModOrAdmin && articleData.lockedBy !== undefined ? articleData.lockedBy : existing.lockedBy,
+        lockedByUid: isModOrAdmin && articleData.lockedByUid !== undefined ? articleData.lockedByUid : existing.lockedByUid,
+        lockedAt: isModOrAdmin && articleData.lockedAt !== undefined ? articleData.lockedAt : existing.lockedAt,
+        lockReason: isModOrAdmin && articleData.lockReason !== undefined ? articleData.lockReason : existing.lockReason,
+        protectionLevel: isModOrAdmin && articleData.protectionLevel !== undefined ? articleData.protectionLevel : existing.protectionLevel,
       };
       articles[existingIndex] = article;
     } else {
@@ -1343,9 +1344,10 @@ export const StorageService = {
 
   // === USER AUTH & BAN CHECK ===
   getCurrentUser(): UserProfile | null {
-    const raw = localStorage.getItem(STORAGE_KEYS.USER);
-    if (!raw) return null;
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return null;
     try {
+      const raw = localStorage.getItem(STORAGE_KEYS.USER);
+      if (!raw) return null;
       const parsed = JSON.parse(raw);
       // Política restritiva: Bloqueio permanente de sessão de usuários convidados ou não registrados
       if (parsed?.isGuest || parsed?.role === 'convidado') {
@@ -1359,15 +1361,23 @@ export const StorageService = {
   },
 
   saveUser(user: UserProfile) {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
     if (user?.isGuest || user?.role === 'convidado') {
-      localStorage.removeItem(STORAGE_KEYS.USER);
+      try {
+        localStorage.removeItem(STORAGE_KEYS.USER);
+      } catch {}
       return;
     }
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    try {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    } catch {}
   },
 
   clearUser() {
-    localStorage.removeItem(STORAGE_KEYS.USER);
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+    try {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+    } catch {}
   },
 
   async createGuestUser(): Promise<UserProfile> {

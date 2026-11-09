@@ -32,7 +32,12 @@
         "titulo": { "type": "string" },
         "descricao": { "type": "string" },
         "categoria": { "type": "string" },
-        "status": { "type": "string" }
+        "status": { "type": "string" },
+        "isLocked": { "type": "boolean" },
+        "lockedBy": { "type": "string" },
+        "lockedByUid": { "type": "string" },
+        "lockedAt": { "type": "string" },
+        "lockReason": { "type": "string" }
       },
       "required": ["uid", "titulo"]
     },
@@ -46,7 +51,13 @@
         "titulo": { "type": "string" },
         "descricao": { "type": "string" },
         "autor": { "type": "string" },
-        "categoria": { "type": "string" }
+        "categoria": { "type": "string" },
+        "isLocked": { "type": "boolean" },
+        "lockedBy": { "type": "string" },
+        "lockedByUid": { "type": "string" },
+        "lockedAt": { "type": "string" },
+        "lockReason": { "type": "string" },
+        "protectionLevel": { "type": "string", "enum": ["moderators_only", "all"] }
       },
       "required": ["id", "pageUid", "titulo"]
     },
@@ -61,6 +72,12 @@
         "content": { "type": "string" },
         "categories": { "type": "array" },
         "templateName": { "type": "string" },
+        "isLocked": { "type": "boolean" },
+        "lockedBy": { "type": "string" },
+        "lockedByUid": { "type": "string" },
+        "lockedAt": { "type": "string" },
+        "lockReason": { "type": "string" },
+        "protectionLevel": { "type": "string", "enum": ["moderators_only", "all"] },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" },
         "version": { "type": "number" }

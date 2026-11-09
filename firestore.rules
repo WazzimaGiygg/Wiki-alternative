@@ -72,38 +72,105 @@ service cloud.firestore {
       );
     }
 
+    // Usuário autorizado a editar (autenticado, não banido e sem permissão canEdit revogada)
+    function canUserEdit() {
+      return isRegistered() && (
+        !userDocExists() || (
+          (!('isBanned' in getUserData()) || getUserData().isBanned != true) &&
+          (!('permissions' in getUserData()) || !('canEdit' in getUserData().permissions) || getUserData().permissions.canEdit != false)
+        )
+      );
+    }
+
+    function isModeratorOrAdmin() {
+      return isAuthenticated() && (
+        isAdmin() ||
+        (userDocExists() && (
+          getUserData().group in ['admin', 'administrador', 'superadmin', 'moderador', 'moderator', 'editor'] ||
+          getUserData().role in ['admin', 'administrador', 'superadmin', 'moderador', 'moderator', 'editor']
+        ))
+      );
+    }
+
     // ==========================================
     // COLEÇÕES - TODAS COM LEITURA PÚBLICA
     // ==========================================
 
-    // ✅ Coleção principal de páginas - leitura pública
+    // ✅ Coleção principal de páginas - leitura pública, escrita protegida
     match /pages/{pageId} {
-      allow read: if true;  // ✅ Qualquer um pode ler
-      allow create, update: if isAuthenticated() && isNotBanned();
+      allow read: if true;
+      allow create: if canUserEdit() && (
+        isModeratorOrAdmin() || (
+          (!('namespace' in request.resource.data) || (request.resource.data.namespace != 'special' && request.resource.data.namespace != 'mediawiki')) &&
+          (!('isLocked' in request.resource.data) || request.resource.data.isLocked != true)
+        )
+      );
+      allow update: if canUserEdit() && (
+        isModeratorOrAdmin() || (
+          // Não pode alterar páginas especiais/mediawiki
+          (!('namespace' in resource.data) || (resource.data.namespace != 'special' && resource.data.namespace != 'mediawiki')) &&
+          // Não pode editar página bloqueada pela moderação
+          (!('isLocked' in resource.data) || resource.data.isLocked != true) &&
+          // Usuário comum não pode bloquear/desbloquear
+          (!('isLocked' in request.resource.data) || request.resource.data.isLocked == resource.data.isLocked)
+        )
+      );
       allow delete: if isAdmin();
 
       match /versions/{versionId} {
-        allow read: if true;  // ✅ Qualquer um pode ler histórico
-        allow create, update: if isAuthenticated() && isNotBanned();
-        allow delete: if isAdmin();
+        allow read: if true;
+        allow create: if canUserEdit() && (
+          isModeratorOrAdmin() ||
+          !exists(/databases/$(database)/documents/pages/$(pageId)) ||
+          (!('isLocked' in get(/databases/$(database)/documents/pages/$(pageId)).data) || get(/databases/$(database)/documents/pages/$(pageId)).data.isLocked != true)
+        );
+        allow update, delete: if isAdmin();
       }
     }
 
-    // ✅ Coleção principal de artigos WikiZero - leitura pública, sincronização em tempo real
+    // ✅ Coleção principal de artigos WikiZero - leitura pública, escrita protegida
     match /articles/{articleId} {
-      allow read: if true;  // ✅ Qualquer um pode ler
-      allow create, update: if isAuthenticated() && isNotBanned();
+      allow read: if true;
+      allow create: if canUserEdit() && (
+        isModeratorOrAdmin() || (!('isLocked' in request.resource.data) || request.resource.data.isLocked != true)
+      );
+      allow update: if canUserEdit() && (
+        isModeratorOrAdmin() || (
+          // Artigo existente não pode estar protegido/bloqueado
+          (!('isLocked' in resource.data) || resource.data.isLocked != true) &&
+          (!('protectionLevel' in resource.data) || resource.data.protectionLevel != 'moderators_only') &&
+          // Usuário comum não pode alterar status ou metadados de proteção
+          (!('isLocked' in request.resource.data) || request.resource.data.isLocked == false) &&
+          (!('protectionLevel' in request.resource.data) || request.resource.data.protectionLevel == null)
+        )
+      );
       allow delete: if isAdmin();
     }
 
-    // ✅ Coleção de documentos e artigos em tópicos - leitura pública
+    // ✅ Coleção de documentos e tópicos temáticos - leitura pública, escrita protegida
     match /documentos/{pageUid} {
       allow read: if true;
-      allow write: if isAuthenticated() && isNotBanned();
+      allow create, update: if canUserEdit() && (
+        isModeratorOrAdmin() || (
+          (!('isLocked' in resource.data) || resource.data.isLocked != true) &&
+          (!('isLocked' in request.resource.data) || request.resource.data.isLocked == false)
+        )
+      );
+      allow delete: if isAdmin();
       
       match /inevitavel/{articleId} {
         allow read: if true;
-        allow create, update: if isAuthenticated() && isNotBanned();
+        allow create: if canUserEdit() && (
+          isModeratorOrAdmin() || (!('isLocked' in request.resource.data) || request.resource.data.isLocked != true)
+        );
+        allow update: if canUserEdit() && (
+          isModeratorOrAdmin() || (
+            (!('isLocked' in resource.data) || resource.data.isLocked != true) &&
+            (!('protectionLevel' in resource.data) || resource.data.protectionLevel != 'moderators_only') &&
+            (!('isLocked' in request.resource.data) || request.resource.data.isLocked == false) &&
+            (!('protectionLevel' in request.resource.data) || request.resource.data.protectionLevel == null)
+          )
+        );
         allow delete: if isAdmin();
       }
     }
@@ -376,6 +443,12 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && isNotBanned() && (
         resource.data.userUid == request.auth.uid || isAdmin()
       );
+    }
+
+    // ✅ Registros de limites diários de edição de usuários (5 edições/dia para editores)
+    match /user_daily_edits/{docId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid || isAdmin());
+      allow write: if canUserEdit() && request.resource.data.uid == request.auth.uid;
     }
 
     // ✅ Regra fallback default deny para coleções não listadas

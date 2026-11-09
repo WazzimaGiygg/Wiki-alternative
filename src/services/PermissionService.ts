@@ -16,6 +16,25 @@ export interface BaseUserObject {
   email?: string | null;
 }
 
+export type EditPermissionReasonCode =
+  | 'OK'
+  | 'ANONYMOUS'
+  | 'BANNED'
+  | 'REVOKED'
+  | 'LOCKED_ARTICLE'
+  | 'LOCKED_PAGE'
+  | 'RESTRICTED_NAMESPACE'
+  | 'DAILY_LIMIT_EXCEEDED';
+
+export interface EditPermissionStatus {
+  allowed: boolean;
+  reasonCode: EditPermissionReasonCode;
+  message: string;
+  requiresLogin?: boolean;
+  canRequestUnblock?: boolean;
+  canContactAdmin?: boolean;
+}
+
 export class PermissionService {
   /**
    * Configuração estática de permissões por ação do sistema
@@ -29,10 +48,28 @@ export class PermissionService {
     rollback: [UserGroup.EDITOR, UserGroup.ADMIN],
     manage_templates: [UserGroup.EDITOR, UserGroup.ADMIN],
     delete: [UserGroup.ADMIN],
-    protect: [UserGroup.ADMIN],
+    protect: [UserGroup.ADMIN, UserGroup.EDITOR],
     manage_users: [UserGroup.ADMIN],
     audit_logs: [UserGroup.ADMIN],
   };
+
+  /**
+   * Verifica se o usuário possui cargo de moderador ou administrador
+   */
+  public static isModeratorOrAdmin(user: (UserProfile | BaseUserObject | null | undefined)): boolean {
+    if (!user || user.isGuest || !user.uid) return false;
+    const groupVal = (user.group || '').toString().toLowerCase();
+    const roleVal = (user.role || '').toString().toLowerCase();
+    const emailVal = (user.email || '').toString().toLowerCase();
+
+    if (emailVal === 'pedrohenriquecardonaperes@gmail.com') return true;
+    if (groupVal === UserGroup.ADMIN || groupVal === 'admin' || groupVal === 'administrador' || groupVal === 'superadmin') return true;
+    if (groupVal === 'moderador' || groupVal === 'moderator') return true;
+    if (roleVal === 'admin' || roleVal === 'administrador' || roleVal === 'superadmin') return true;
+    if (roleVal === 'moderador' || roleVal === 'moderator') return true;
+
+    return false;
+  }
 
   /**
    * Obtém o grupo de acesso (UserGroup) associado ao usuário.
@@ -75,6 +112,77 @@ export class PermissionService {
   }
 
   /**
+   * Diagnóstico aprofundado e amigável da permissão de edição para um determinado recurso.
+   */
+  public static getEditPermissionStatus(
+    user: (UserProfile | BaseUserObject | null | undefined),
+    resource?: (Page | { isLocked?: boolean; lockReason?: string; protectionLevel?: string; namespace?: string } | null)
+  ): EditPermissionStatus {
+    // 1. Visitante / Não Autenticado
+    if (!user || user.isGuest || !user.uid) {
+      return {
+        allowed: false,
+        reasonCode: 'ANONYMOUS',
+        message: 'Somente usuários autenticados podem editar ou criar páginas na WikiWorldWeb.',
+        requiresLogin: true,
+      };
+    }
+
+    // 2. Usuário Banido / Suspenso
+    if (user.isBanned) {
+      return {
+        allowed: false,
+        reasonCode: 'BANNED',
+        message: 'Sua conta está suspensa pela moderação. Não é permitido realizar edições.',
+        canRequestUnblock: true,
+      };
+    }
+
+    // 3. Permissão 'canEdit' revogada na conta
+    const perms = (user as UserProfile).permissions;
+    if (perms && perms.canEdit === false) {
+      return {
+        allowed: false,
+        reasonCode: 'REVOKED',
+        message: 'Sua permissão de edição foi revogada administrativamente nesta wiki.',
+        canContactAdmin: true,
+      };
+    }
+
+    const isModOrAdmin = this.isModeratorOrAdmin(user);
+
+    // 4. Validação por recurso específico
+    if (resource) {
+      // Namespaces restritos (MediaWiki / Special)
+      const ns = resource.namespace?.toLowerCase();
+      if ((ns === 'special' || ns === 'mediawiki') && this.getUserGroup(user) !== UserGroup.ADMIN) {
+        return {
+          allowed: false,
+          reasonCode: 'RESTRICTED_NAMESPACE',
+          message: 'Páginas especiais e mensagens do MediaWiki são restritas a administradores.',
+        };
+      }
+
+      // Bloqueio / Proteção de Artigo ou Página
+      if ((resource.isLocked || resource.protectionLevel === 'moderators_only') && !isModOrAdmin) {
+        return {
+          allowed: false,
+          reasonCode: 'LOCKED_ARTICLE',
+          message: resource.lockReason
+            ? `Artigo Protegido pela Moderação: ${resource.lockReason}. Edição restrita a moderadores e administradores.`
+            : 'Este artigo está protegido pela moderação e só pode ser editado por moderadores ou administradores.',
+        };
+      }
+    }
+
+    return {
+      allowed: true,
+      reasonCode: 'OK',
+      message: 'Usuário autorizado a editar.',
+    };
+  }
+
+  /**
    * Verifica se o usuário possui autorização para executar determinada ação.
    *
    * @param user Usuário (UserProfile, objeto de autenticação ou null)
@@ -85,12 +193,23 @@ export class PermissionService {
   public static can(
     user: (UserProfile | BaseUserObject | null | undefined),
     action: PermissionAction | string,
-    resource?: Page | null
+    resource?: (Page | { isLocked?: boolean; lockReason?: string; protectionLevel?: string; namespace?: string } | null)
   ): boolean {
     const cleanAction = action.toLowerCase().trim();
 
-    // Regra universal: usuários banidos não podem realizar nenhuma ação além de visualização passiva
-    if (user?.isBanned && cleanAction !== 'view' && cleanAction !== 'view_history') {
+    // Visualização é sempre pública
+    if (cleanAction === 'view' || cleanAction === 'view_history') {
+      return true;
+    }
+
+    // Diagnóstico completo para operações de escrita/edição
+    if (cleanAction === 'edit' || cleanAction === 'create_page') {
+      const status = this.getEditPermissionStatus(user, resource);
+      return status.allowed;
+    }
+
+    // Regra universal: usuários banidos ou anônimos não podem realizar mutações
+    if (!user || user.isGuest || !user.uid || user.isBanned) {
       return false;
     }
 
@@ -102,7 +221,7 @@ export class PermissionService {
       return userGroup === UserGroup.ADMIN;
     }
 
-    // Regra global booleana (ex: view: true)
+    // Regra global booleana
     if (typeof rule === 'boolean') {
       return rule;
     }
