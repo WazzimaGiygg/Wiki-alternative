@@ -1453,6 +1453,14 @@ export default function App() {
         setCurrentView('privacy');
         return;
       }
+      if (notif.link === 'recentchanges' || notif.link === '#recentchanges' || notif.link === 'recent-changes') {
+        setCurrentView('recent-changes');
+        return;
+      }
+      if (notif.link === 'site-updates' || notif.link === '#site-updates') {
+        setCurrentView('site-updates');
+        return;
+      }
       handleNavigateToArticleByTitle(notif.link);
     }
   };

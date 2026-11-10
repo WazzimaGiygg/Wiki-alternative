@@ -116,3 +116,18 @@ export function getAuthSafe() {
   return authInstance;
 }
 
+export async function getFirebaseIdTokenSafe(): Promise<string | null> {
+  try {
+    const auth = getAuthSafe();
+    if (!auth) return null;
+    if (auth.currentUser) {
+      return await auth.currentUser.getIdToken();
+    }
+    return null;
+  } catch (err) {
+    console.warn('[Firebase] Não foi possível obter o ID token do usuário atual:', err);
+    return null;
+  }
+}
+
+

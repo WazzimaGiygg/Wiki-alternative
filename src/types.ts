@@ -382,6 +382,8 @@ export interface TalkReply {
   autor: string;
   autorEmail?: string;
   autorRole?: string;
+  autorUid?: string;
+  userId?: string;
   conteudo: string;
   data: string;
   upvotes?: number;
@@ -394,6 +396,8 @@ export interface TalkThread {
   autor: string;
   autorEmail?: string;
   autorRole?: string;
+  autorUid?: string;
+  userId?: string;
   data: string;
   conteudo: string;
   status: 'aberto' | 'em_discussao' | 'resolvido' | 'consenso';
@@ -1456,6 +1460,7 @@ export interface LibraryItem {
 
   // Metadados do cadastro e auditoria
   cadastradoPorUid?: string;
+  userId?: string;
   cadastradoPorNome?: string;
   dataCadastro: string;
   ultimaModificacao?: string;

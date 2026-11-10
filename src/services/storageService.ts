@@ -2045,17 +2045,26 @@ export const StorageService = {
       notif.title.toLowerCase().includes('privacidade') ||
       notif.title.toLowerCase().includes('consentimento');
 
-    // Restrito a notas de versão, atualizações do sistema e notificações oficiais de privacidade LGPD
-    const isSystemUpdate =
+    const isRecentChangeNotif =
+      notif.link === 'recentchanges' ||
+      notif.link === '#recentchanges' ||
+      notif.link?.startsWith('recent') ||
+      notif.title.toLowerCase().includes('modifica') ||
+      notif.title.toLowerCase().includes('edição') ||
+      notif.title.toLowerCase().includes('mudança');
+
+    // Restrito a notas de versão, atualizações do sistema, notificações oficiais de privacidade LGPD e últimas modificações
+    const isAllowedNotification =
       isLgpdNotif ||
+      isRecentChangeNotif ||
       notif.link === 'site-updates' ||
       notif.title.toLowerCase().includes('v3.') ||
       notif.title.toLowerCase().includes('atualização') ||
       notif.title.toLowerCase().includes('versão') ||
       notif.title.toLowerCase().includes('release');
 
-    if (!isSystemUpdate) {
-      // Ignorar notificações de eventos pontuais no sininho (mantendo o sininho 100% focado em notas e LGPD)
+    if (!isAllowedNotification) {
+      // Ignorar notificações não permitidas no sininho
       return this.getNotifications();
     }
 
@@ -2069,10 +2078,14 @@ export const StorageService = {
     const randomSalt = Math.random().toString(36).substring(2, 8);
     const item: NotificationItem = {
       ...notif,
-      id: isLgpdNotif ? `lgpd-notif-${Date.now()}-${randomSalt}` : `upd-notif-${Date.now()}-${randomSalt}`,
+      id: isLgpdNotif
+        ? `lgpd-notif-${Date.now()}-${randomSalt}`
+        : isRecentChangeNotif
+        ? `rc-notif-${Date.now()}-${randomSalt}`
+        : `upd-notif-${Date.now()}-${randomSalt}`,
       date: 'Agora',
       read: false,
-      link: notif.link || (isLgpdNotif ? '#mydata' : 'site-updates'),
+      link: notif.link || (isLgpdNotif ? '#mydata' : isRecentChangeNotif ? 'recentchanges' : 'site-updates'),
     };
     const updated = [item, ...list];
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(updated));
@@ -2413,8 +2426,10 @@ export const StorageService = {
   },
 
   async recordRecentChange(entry: Omit<RecentChangeEntry, 'id' | 'data'>): Promise<RecentChangeEntry> {
+    const currentUid = auth?.currentUser?.uid || null;
     const fullEntry: RecentChangeEntry = {
       ...entry,
+      autorUid: entry.autorUid || currentUid || undefined,
       id: `rc-live-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       data: new Date().toISOString(),
     };
@@ -2427,6 +2442,18 @@ export const StorageService = {
       localStorage.setItem(STORAGE_KEYS.RECENT_CHANGES, JSON.stringify(list.slice(0, 200)));
     } catch (e) {
       console.warn('Error recording recent change:', e);
+    }
+
+    // Adiciona as últimas modificações no sistema de notificações (Requisito: Adicionar as ultimas modificações nas notificações)
+    try {
+      const actionText = fullEntry.type === 'new_article' || fullEntry.type === 'new_collection' ? 'criou' : 'editou';
+      this.addNotification({
+        title: `Modificação: ${fullEntry.articleTitle}`,
+        message: `${fullEntry.autor} ${actionText} "${fullEntry.articleTitle}"${fullEntry.resumo ? ': ' + fullEntry.resumo : '.'}`,
+        link: 'recentchanges',
+      });
+    } catch (notifErr) {
+      console.warn('Erro ao disparar notificação de modificação recente:', notifErr);
     }
 
     if (firebaseActive && db) {
@@ -2524,6 +2551,8 @@ export const StorageService = {
     const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
     const list: TalkThread[] = raw ? JSON.parse(raw) : [];
 
+    const currentUid = auth?.currentUser?.uid || effectiveUser.id || effectiveUser.uid || null;
+
     const newThread: TalkThread = {
       id: `talk-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       articleId,
@@ -2532,6 +2561,8 @@ export const StorageService = {
       autor: effectiveUser.displayName || effectiveUser.username || effectiveUser.email.split('@')[0],
       autorEmail: effectiveUser.email,
       autorRole: effectiveUser.role || 'editor',
+      autorUid: currentUid || undefined,
+      userId: currentUid || undefined,
       data: new Date().toISOString(),
       status: 'aberto',
       respostas: [],
@@ -2588,11 +2619,15 @@ export const StorageService = {
     const thread = list.find((t) => t.id === threadId);
     if (!thread) return null;
 
+    const currentReplyUid = auth?.currentUser?.uid || effectiveUser.id || effectiveUser.uid || null;
+
     const newReply: TalkReply = {
       id: `reply-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       autor: effectiveUser.displayName || effectiveUser.username || effectiveUser.email.split('@')[0],
       autorEmail: effectiveUser.email,
       autorRole: effectiveUser.role || 'editor',
+      autorUid: currentReplyUid || undefined,
+      userId: currentReplyUid || undefined,
       conteudo,
       data: new Date().toISOString(),
       upvotes: 0,

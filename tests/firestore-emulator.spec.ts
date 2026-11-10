@@ -398,4 +398,155 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
       );
     });
   });
+
+  // =========================================================================
+  // 5. TESTES DE PROPRIEDADE: TALK_THREADS, RECENT_CHANGES, LIBRARY_ITEMS, NOTEBOOKS
+  // =========================================================================
+  describe('Proteção de Propriedade de Documentos Comunitários', () => {
+    it('deve impedir que usuário comum delete ou adultere discussão de terceiros em talk_threads', async () => {
+      const autorDb = testEnv
+        .authenticatedContext('usr_normal', { email: 'autor@wikizero.org' })
+        .firestore();
+
+      const impostorDb = testEnv
+        .authenticatedContext('usr_impostor', { email: 'impostor@wikizero.org' })
+        .firestore();
+
+      // Autor cria tópico de discussão
+      await assertSucceeds(
+        autorDb.collection('talk_threads').doc('thread_1').set({
+          articleId: 'art_1',
+          titulo: 'Discussão sobre fontes',
+          autor: 'Usuario Normal',
+          autorUid: 'usr_normal',
+          userId: 'usr_normal',
+          conteudo: 'Proposta inicial',
+          status: 'aberto',
+          respostas: [],
+        })
+      );
+
+      // Terceiro tenta deletar o tópico: DEVE FALHAR
+      await assertFails(
+        impostorDb.collection('talk_threads').doc('thread_1').delete()
+      );
+
+      // Terceiro tenta alterar o título ou conteúdo: DEVE FALHAR
+      await assertFails(
+        impostorDb.collection('talk_threads').doc('thread_1').update({
+          titulo: 'Título Hackeado',
+        })
+      );
+
+      // Terceiro adiciona resposta legítima na discussão: DEVE SUCEDER
+      await assertSucceeds(
+        impostorDb.collection('talk_threads').doc('thread_1').update({
+          respostas: [
+            {
+              id: 'rep_1',
+              autor: 'Impostor',
+              autorUid: 'usr_impostor',
+              conteudo: 'Concordo com a proposta.',
+            },
+          ],
+        })
+      );
+    });
+
+    it('deve impedir que usuário comum altere ou delete registros em recent_changes', async () => {
+      const userDb = testEnv
+        .authenticatedContext('usr_normal', { email: 'user@wikizero.org' })
+        .firestore();
+
+      // Usuário cria registro de auditoria transparente
+      await assertSucceeds(
+        userDb.collection('recent_changes').doc('rc_audit_1').set({
+          articleTitle: 'Novo Artigo',
+          autor: 'Usuario Normal',
+          autorUid: 'usr_normal',
+          tipo: 'create',
+          data: new Date().toISOString(),
+        })
+      );
+
+      // Usuário comum tenta deletar ou alterar o log de auditoria: DEVE FALHAR
+      await assertFails(
+        userDb.collection('recent_changes').doc('rc_audit_1').delete()
+      );
+
+      await assertFails(
+        userDb.collection('recent_changes').doc('rc_audit_1').update({
+          autor: 'Outro Autor Falso',
+        })
+      );
+    });
+
+    it('deve restringir alteração e exclusão de library_items ao catalogador ou administrador', async () => {
+      const catalogadorDb = testEnv
+        .authenticatedContext('usr_normal', { email: 'catalog@wikizero.org' })
+        .firestore();
+
+      const terceiroDb = testEnv
+        .authenticatedContext('usr_terceiro', { email: 'terceiro@wikizero.org' })
+        .firestore();
+
+      // Cria item do acervo
+      await assertSucceeds(
+        catalogadorDb.collection('library_items').doc('livro_1').set({
+          titulo: 'Enciclopédia Geral',
+          tipo: 'livro',
+          cadastradoPorUid: 'usr_normal',
+          userId: 'usr_normal',
+        })
+      );
+
+      // Terceiro tenta deletar ou editar o item: DEVE FALHAR
+      await assertFails(
+        terceiroDb.collection('library_items').doc('livro_1').delete()
+      );
+
+      await assertFails(
+        terceiroDb.collection('library_items').doc('livro_1').update({
+          titulo: 'Livro Vandalizado',
+        })
+      );
+
+      // Catalogador edita seu próprio item: DEVE SUCEDER
+      await assertSucceeds(
+        catalogadorDb.collection('library_items').doc('livro_1').update({
+          titulo: 'Enciclopédia Geral - 2ª Edição',
+        })
+      );
+    });
+
+    it('deve isolar gemini_notebooks estritamente ao proprietário', async () => {
+      const donoDb = testEnv
+        .authenticatedContext('usr_normal', { email: 'dono@wikizero.org' })
+        .firestore();
+
+      const invasorDb = testEnv
+        .authenticatedContext('usr_invasor', { email: 'invasor@wikizero.org' })
+        .firestore();
+
+      // Dono cria caderno pessoal
+      await assertSucceeds(
+        donoDb.collection('gemini_notebooks').doc('caderno_1').set({
+          userId: 'usr_normal',
+          title: 'Anotações Confidenciais de Pesquisa',
+        })
+      );
+
+      // Invasor tenta ler caderno de terceiro: DEVE FALHAR
+      await assertFails(
+        invasorDb.collection('gemini_notebooks').doc('caderno_1').get()
+      );
+
+      // Invasor tenta atualizar caderno de terceiro: DEVE FALHAR
+      await assertFails(
+        invasorDb.collection('gemini_notebooks').doc('caderno_1').update({
+          title: 'Caderno Comprometido',
+        })
+      );
+    });
+  });
 });

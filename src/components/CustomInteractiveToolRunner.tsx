@@ -19,6 +19,7 @@ import {
   triggerDownloadAppletConfigFile,
   applyImportedFirebaseConfig,
 } from '../extensions/firebase-applet-config-importer/config';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 
 interface CustomInteractiveToolRunnerProps {
   tool: CustomToolConfig;
@@ -350,7 +351,7 @@ export const CustomInteractiveToolRunner: React.FC<CustomInteractiveToolRunnerPr
             </div>
             <div
               className="wiki-custom-tool-widget font-sans text-xs"
-              dangerouslySetInnerHTML={{ __html: tool.htmlWidget }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(tool.htmlWidget) }}
             />
           </div>
         )}

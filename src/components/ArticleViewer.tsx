@@ -73,6 +73,7 @@ import { TableOfContents } from './TableOfContents';
 import { ResearchEthicsBadge } from './ResearchEthicsBadge';
 import { StorageService } from '../services/storageService';
 import { PermissionService, EditPermissionStatus } from '../services/PermissionService';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 
 interface ArticleViewerProps {
   article: WikiArticle;
@@ -1246,7 +1247,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 ? 'font-mono font-reader-mono'
                 : 'font-sans font-reader-sans'
             }`}
-            dangerouslySetInnerHTML={{ __html: html }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
           />
 
           {/* End-of-article Navigation & Licensing Footer */}
@@ -2157,7 +2158,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               ref={contentRef}
               style={{ fontSize: `${fontSize}px` }}
               className="wiki-rendered-content font-wiki-body"
-              dangerouslySetInnerHTML={{ __html: html }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
             />
 
             {/* Embedded Visual Timeline inside Article */}

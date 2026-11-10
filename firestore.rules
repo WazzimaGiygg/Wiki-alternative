@@ -453,8 +453,21 @@ service cloud.firestore {
     // ✅ Mensagens em páginas de discussão de usuários (públicas)
     match /user_talk_messages/{messageId} {
       allow read: if true;
-      allow create, update: if isAuthenticated() && isNotBanned();
-      allow delete: if isAdmin();
+      allow create: if isAuthenticated() && isNotBanned() && (
+        !('senderUid' in request.resource.data) ||
+        request.resource.data.senderUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && isNotBanned() && (
+        resource.data.senderUid == request.auth.uid ||
+        resource.data.targetUserUid == request.auth.uid ||
+        isAdmin() ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['respostas', 'status'])
+      );
+      allow delete: if isAdmin() || (isAuthenticated() && (
+        resource.data.senderUid == request.auth.uid ||
+        resource.data.targetUserUid == request.auth.uid
+      ));
     }
 
     // ✅ Notificações do sistema - apenas destinatário ou administrador
@@ -487,55 +500,106 @@ service cloud.firestore {
       allow delete: if isRegistered() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // ✅ Discussões e tópicos comunitários
+    // ✅ Discussões e tópicos comunitários - criação vinculada ao autor, alteração restrita ao autor da thread ou admin
     match /talk_threads/{threadId} {
       allow read: if true;
-      allow create, update: if isAuthenticated() && isNotBanned();
-      allow delete: if isAdmin();
+      allow create: if isAuthenticated() && isNotBanned() && (
+        !('autorUid' in request.resource.data) ||
+        request.resource.data.autorUid == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && isNotBanned() && (
+        resource.data.autorUid == request.auth.uid ||
+        resource.data.userId == request.auth.uid ||
+        isAdmin() ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['respostas'])
+      );
+      allow delete: if isAdmin() || (isAuthenticated() && (
+        resource.data.autorUid == request.auth.uid ||
+        resource.data.userId == request.auth.uid
+      ));
     }
 
-    // ✅ Avaliações comunitárias de artigos
+    // ✅ Avaliações comunitárias de artigos - criação/atualização de votos aberta, deleção apenas por administradores
     match /ratings/{articleId} {
       allow read: if true;
-      allow write: if isAuthenticated() && isNotBanned();
-    }
-
-    // ✅ Gemini Notebooks - pesquisa e notas
-    match /gemini_notebooks/{notebookId} {
-      allow read: if true;
       allow create, update: if isAuthenticated() && isNotBanned();
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
     }
 
-    // ✅ Mudanças recentes
+    // ✅ Gemini Notebooks - pesquisa e notas (privado por proprietário)
+    match /gemini_notebooks/{notebookId} {
+      allow read: if isRegistered() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isRegistered() && request.resource.data.userId == request.auth.uid;
+      allow update: if isRegistered() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isRegistered() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ✅ Mudanças recentes - auditoria transparente: criação vinculada ao autor, alteração/exclusão exclusiva de administradores
     match /recent_changes/{changeId} {
       allow read: if true;
-      allow create, update: if isAuthenticated() && isNotBanned();
-      allow delete: if isAdmin();
+      allow create: if isAuthenticated() && isNotBanned() && (
+        !('autorUid' in request.resource.data) ||
+        request.resource.data.autorUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow update, delete: if isAdmin();
     }
 
-    // ✅ Acervo bibliográfico e resenhas
+    // ✅ Acervo bibliográfico e resenhas - modificação e exclusão apenas pelo catalogador ou administrador
     match /library_items/{itemId} {
       allow read: if true;
-      allow create, update: if isAuthenticated() && isNotBanned();
-      allow delete: if isAdmin();
+      allow create: if isRegistered() && (
+        !('cadastradoPorUid' in request.resource.data) ||
+        request.resource.data.cadastradoPorUid == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow update, delete: if isAdmin() || (isRegistered() && (
+        resource.data.cadastradoPorUid == request.auth.uid ||
+        resource.data.userId == request.auth.uid
+      ));
     }
     match /library_reviews/{reviewId} {
       allow read: if true;
-      allow create, update: if isAuthenticated() && isNotBanned();
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isRegistered() && (
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isRegistered() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
-    // ✅ Repositório Acadêmico e Avaliação por Pares
+    // ✅ Repositório Acadêmico e Avaliação por Pares - vinculado ao autor
     match /academic_publications/{pubId} {
       allow read: if true;
-      allow create, update: if isAuthenticated() && isNotBanned();
+      allow create: if isRegistered() && (
+        !('submittedByUid' in request.resource.data) ||
+        request.resource.data.submittedByUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isAdmin() || (isRegistered() && resource.data.submittedByUid == request.auth.uid);
       allow delete: if isAdmin() || (isAuthenticated() && resource.data.submittedByUid == request.auth.uid);
     }
     match /academic_peer_reviews/{reviewId} {
       allow read: if true;
-      allow create, update: if isAuthenticated() && isNotBanned();
-      allow delete: if isAuthenticated() && (resource.data.reviewerUid == request.auth.uid || isAdmin());
+      allow create: if isRegistered() && (
+        !('reviewerUid' in request.resource.data) ||
+        request.resource.data.reviewerUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isAdmin() || (isRegistered() && resource.data.reviewerUid == request.auth.uid);
+      allow delete: if isAuthenticated() && (
+        resource.data.reviewerUid == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // ✅ Chat direto entre usuários

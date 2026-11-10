@@ -51,6 +51,7 @@ import { ExtensionManager } from '../core/ExtensionManager';
 import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
 import { PermissionService, EditPermissionStatus } from '../services/PermissionService';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 import { BotAgentService } from '../services/botAgentService';
 import { SaveReasonModal } from './SaveReasonModal';
 import { PdfExportModal } from './PdfExportModal';
@@ -2402,7 +2403,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 </div>
                 <div
                   className="wiki-rendered-content font-wiki-body text-xs"
-                  dangerouslySetInnerHTML={{ __html: renderedHtml }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderedHtml) }}
                 />
               </div>
             </div>
@@ -2420,7 +2421,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
               </div>
               <div
                 className="wiki-rendered-content font-wiki-body text-xs"
-                dangerouslySetInnerHTML={{ __html: renderedHtml }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderedHtml) }}
               />
             </div>
           )}
@@ -2658,7 +2659,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                   <div
                     className="wiki-rendered-content font-wiki-body text-xs p-4 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 min-h-[160px] overflow-x-auto"
                     dangerouslySetInnerHTML={{
-                      __html: parseWikitext(customWikitextCode || '*(nenhum código informado ainda)*').html,
+                      __html: sanitizeHtml(parseWikitext(customWikitextCode || '*(nenhum código informado ainda)*').html),
                     }}
                   />
                 </div>
