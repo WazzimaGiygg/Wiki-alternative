@@ -71,6 +71,7 @@ import { ToolsView } from './components/ToolsView';
 import { LibraryCatalogView } from './components/LibraryCatalogView';
 import { AcademicCatalogView } from './components/AcademicCatalogView';
 import { JornalNewsView } from './components/JornalNewsView';
+import { FullTextSearchService } from './services/fullTextSearchService';
 
 // 4.1.1.222.6: Otimização de Pacotes (Code-Splitting sob demanda para AntiplagiarismTccView)
 const AntiplagiarismTccView = React.lazy(() =>
@@ -884,6 +885,13 @@ export default function App() {
     };
   }, []);
 
+  // Sincroniza índice de busca em texto completo com MiniSearch
+  useEffect(() => {
+    if (Array.isArray(articles) && articles.length > 0) {
+      FullTextSearchService.getInstance().indexArticles(articles);
+    }
+  }, [articles]);
+
   // Sincronização em tempo real de avatar removido sob LGPD
   useEffect(() => {
     const handleAvatarUpdated = (e: Event) => {
@@ -1538,9 +1546,14 @@ export default function App() {
   const handleSaveArticle = async (
     articleData: Partial<WikiArticle> & { titulo: string; pageUid: string; descricao: string },
     editSummary: string,
-    isMinor?: boolean
+    isMinor?: boolean,
+    conflictOptions?: {
+      baseVersion?: number;
+      baseContent?: string;
+      forceOverwrite?: boolean;
+    }
   ) => {
-    const saved = await StorageService.saveArticle(articleData, user, editSummary, isMinor);
+    const saved = await StorageService.saveArticle(articleData, user, editSummary, isMinor, conflictOptions);
     const updatedArticles = await StorageService.getArticles();
     const updatedPages = await StorageService.getPages();
 
@@ -1788,6 +1801,7 @@ export default function App() {
         onGoBack={handleGoBack}
         onGoForward={handleGoForward}
         onNotify={handleNotify}
+        onSelectArticle={handleSelectArticle}
       />
 
       {/* 2. Main Workspace Layout */}

@@ -14,8 +14,11 @@ import {
   query,
   where,
   limit,
+  orderBy,
+  startAfter,
   serverTimestamp,
   writeBatch,
+  runTransaction,
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -24,6 +27,31 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
+
+export class EditConflictError extends Error {
+  currentServerArticle: WikiArticle;
+  baseVersion: number;
+  yourContent: string;
+  serverContent: string;
+  baseContent: string;
+
+  constructor(
+    currentServerArticle: WikiArticle,
+    baseVersion: number,
+    yourContent: string,
+    baseContent: string
+  ) {
+    super(
+      `Conflito de edição detectado no verbete "${currentServerArticle.titulo}": a revisão #${currentServerArticle.versao || 1} foi salva concorrentemente por ${currentServerArticle.autor || 'outro colaborador'}.`
+    );
+    this.name = 'EditConflictError';
+    this.currentServerArticle = currentServerArticle;
+    this.baseVersion = baseVersion;
+    this.yourContent = yourContent;
+    this.serverContent = currentServerArticle.descricao || '';
+    this.baseContent = baseContent || '';
+  }
+}
 import {
   WikiArticle,
   WikiPage,
@@ -555,6 +583,40 @@ export const StorageService = {
     return fallbackList;
   },
 
+  /**
+   * Consulta paginada de artigos para otimizar desempenho e custo de leitura no Firestore
+   */
+  async getArticlesPaged(
+    page: number = 1,
+    pageSize: number = 20,
+    options?: { pageUid?: string; categoria?: string }
+  ): Promise<{ items: WikiArticle[]; totalCount: number; hasMore: boolean; page: number; totalPages: number }> {
+    const allArticles = await this.getArticles();
+    let filtered = allArticles;
+
+    if (options?.pageUid) {
+      filtered = filtered.filter((a) => a.pageUid.toLowerCase() === options.pageUid!.toLowerCase());
+    }
+    if (options?.categoria) {
+      filtered = filtered.filter((a) => a.categoria.toLowerCase() === options.categoria!.toLowerCase());
+    }
+
+    const totalCount = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const safePage = Math.max(1, Math.min(page, totalPages));
+    const startIndex = (safePage - 1) * pageSize;
+    const items = filtered.slice(startIndex, startIndex + pageSize);
+    const hasMore = safePage < totalPages;
+
+    return {
+      items,
+      totalCount,
+      hasMore,
+      page: safePage,
+      totalPages,
+    };
+  },
+
   // Inscrições em tempo real para sincronização instantânea com o Firestore
   subscribeToArticles(callback: (articles: WikiArticle[]) => void): () => void {
     if (!firebaseActive || !db) return () => {};
@@ -845,7 +907,12 @@ export const StorageService = {
     articleData: Partial<WikiArticle> & { titulo: string; pageUid: string; descricao: string },
     user?: UserProfile | null,
     editSummary?: string,
-    isMinor?: boolean
+    isMinor?: boolean,
+    conflictOptions?: {
+      baseVersion?: number;
+      baseContent?: string;
+      forceOverwrite?: boolean;
+    }
   ): Promise<WikiArticle> {
     const effectiveUser = user || this.getCurrentUser();
     if (!effectiveUser || effectiveUser.isGuest) {
@@ -878,6 +945,20 @@ export const StorageService = {
     if (existingIndex >= 0) {
       // Update existing
       const existing = articles[existingIndex];
+
+      // Verificação de conflito de edição local (Edit Conflict)
+      if (
+        !conflictOptions?.forceOverwrite &&
+        conflictOptions?.baseVersion !== undefined &&
+        (existing.versao || 1) > conflictOptions.baseVersion
+      ) {
+        throw new EditConflictError(
+          existing,
+          conflictOptions.baseVersion,
+          articleData.descricao,
+          conflictOptions.baseContent || ''
+        );
+      }
 
       // Verificação de artigo bloqueado/protegido pela moderação
       if (existing.isLocked && !isModOrAdmin) {
@@ -1013,11 +1094,28 @@ export const StorageService = {
           atualizadoEm: serverTimestamp(),
         };
 
-        // 1. Coleção principal /articles/{id} para leitura rápida global
-        await setDoc(doc(db, 'articles', article.id), firestorePayload);
+        // 1. Coleção principal /articles/{id} salva atomicamente com runTransaction para garantir controle de concorrência estrito
+        const articleRef = doc(db, 'articles', article.id);
+        await runTransaction(db, async (transaction) => {
+          const remoteDoc = await transaction.get(articleRef);
+          if (remoteDoc.exists()) {
+            const remoteData = remoteDoc.data() as WikiArticle;
+            const remoteVersion = remoteData.versao || 1;
+            const baseVer = conflictOptions?.baseVersion;
+            if (!conflictOptions?.forceOverwrite && baseVer !== undefined && remoteVersion > baseVer) {
+              throw new EditConflictError(
+                remoteData,
+                baseVer,
+                articleData.descricao,
+                conflictOptions?.baseContent || ''
+              );
+            }
+          }
+          transaction.set(articleRef, firestorePayload);
+        });
 
         // Registrar gravação na telemetria em tempo real
-        FirebaseUsageMetricsService.recordWrite('articles', 1, `Gravação do artigo "${article.titulo}" no Firestore`);
+        FirebaseUsageMetricsService.recordWrite('articles', 1, `Gravação transacional do artigo "${article.titulo}" no Firestore`);
 
         // 2. Coleção estruturada por tópico /documentos/{pageUid}/inevitavel/{id}
         await setDoc(doc(db, 'documentos', article.pageUid, 'inevitavel', article.id), {
@@ -2398,6 +2496,30 @@ export const StorageService = {
     return Array.from(uniqueMap.values()).sort(
       (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
     );
+  },
+
+  /**
+   * Consulta paginada de mudanças recentes com limite para economizar quota
+   */
+  async getRecentChangesPaged(
+    page: number = 1,
+    pageSize: number = 25
+  ): Promise<{ items: RecentChangeEntry[]; totalCount: number; hasMore: boolean; page: number; totalPages: number }> {
+    const all = await this.getRecentChanges();
+    const totalCount = all.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const safePage = Math.max(1, Math.min(page, totalPages));
+    const startIndex = (safePage - 1) * pageSize;
+    const items = all.slice(startIndex, startIndex + pageSize);
+    const hasMore = safePage < totalPages;
+
+    return {
+      items,
+      totalCount,
+      hasMore,
+      page: safePage,
+      totalPages,
+    };
   },
 
   subscribeToRecentChanges(callback: (changes: RecentChangeEntry[]) => void): () => void {

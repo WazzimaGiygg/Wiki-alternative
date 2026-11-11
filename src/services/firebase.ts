@@ -1,5 +1,13 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, initializeFirestore, Firestore, setLogLevel } from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  Firestore,
+  setLogLevel,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  memoryLocalCache,
+} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { ACTIVE_FIREBASE_CONFIG, getActiveFirebaseConfig } from '../config/firebaseCustomConfig';
 
@@ -78,10 +86,29 @@ export function getDb(): Firestore {
     const app = getFirebaseApp();
     const activeCfg = getActiveFirebaseConfig();
     const dbId = activeCfg.firestoreDatabaseId || ACTIVE_FIREBASE_CONFIG.firestoreDatabaseId;
-    const settings = {
+
+    // persistentLocalCache reduz dramaticamente o custo de leitura e quota do Firestore
+    // compartilhando os dados cacheados em IndexedDB entre abas abertas da wiki
+    const isBrowser = typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
+    let cacheConfig;
+    if (isBrowser) {
+      try {
+        cacheConfig = persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        });
+      } catch {
+        cacheConfig = memoryLocalCache();
+      }
+    } else {
+      cacheConfig = memoryLocalCache();
+    }
+
+    const settings: any = {
+      localCache: cacheConfig,
       experimentalAutoDetectLongPolling: true,
       ignoreUndefinedProperties: true,
     };
+
     try {
       dbInstance = dbId && dbId !== '(default)'
         ? initializeFirestore(app, settings, dbId)

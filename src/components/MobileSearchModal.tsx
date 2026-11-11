@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, ArrowLeft, BookOpen, Clock, Sparkles, Folder, ChevronRight } from 'lucide-react';
 import { WikiArticle, WikiPage } from '../types';
 import { getCleanExcerpt } from '../utils/wikitextParser';
+import { FullTextSearchService } from '../services/fullTextSearchService';
 
 interface MobileSearchModalProps {
   isOpen: boolean;
@@ -44,17 +45,18 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
   const safeArticles = articles || [];
   const safePages = pages || [];
 
-  // Filter matching articles
+  // Filter matching articles using FullTextSearchService with fallback
   const matchedArticles = normalizedQuery
-    ? safeArticles.filter(
-        (a) =>
-          a &&
-          ((a.titulo && a.titulo.toLowerCase().includes(normalizedQuery)) ||
-          (a.descricao && a.descricao.toLowerCase().includes(normalizedQuery)) ||
-          (a.categoria && a.categoria.toLowerCase().includes(normalizedQuery)) ||
-          (a.resumo && a.resumo.toLowerCase().includes(normalizedQuery)))
-      ).slice(0, 15)
-    : safeArticles.slice(0, 8); // Recent/recommended articles
+    ? FullTextSearchService.getInstance().search(query, { limit: 15 })
+    : safeArticles.slice(0, 8).map((a) => ({
+        id: a.id,
+        titulo: a.titulo,
+        pageUid: a.pageUid,
+        categoria: a.categoria,
+        resumo: a.resumo || getCleanExcerpt(a.descricao, 120),
+        score: 1,
+        matchSnippet: getCleanExcerpt(a.descricao, 120),
+      }));
 
   // Filter matching collections/pages
   const matchedPages = normalizedQuery
@@ -233,7 +235,7 @@ export const MobileSearchModal: React.FC<MobileSearchModalProps> = ({
                       )}
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                      {art.resumo || getCleanExcerpt(art.descricao, 120)}
+                      {art.matchSnippet || art.resumo || ''}
                     </p>
                   </div>
                 </button>

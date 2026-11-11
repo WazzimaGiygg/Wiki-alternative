@@ -473,10 +473,10 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     }
   };
 
-  // Parse wikitext (with callouts, refs, categories, infoboxes)
-  const { html, toc, references, categories } = useMemo(
-    () => parseWikitext(currentContent),
-    [currentContent]
+  // Parse wikitext (with callouts, refs, categories, infoboxes, math, parser functions, redirects, toc controls)
+  const { html, toc, references, categories, redirectTarget, hasNotoc, hasExplicitToc } = useMemo(
+    () => parseWikitext(currentContent, undefined, currentTitle),
+    [currentContent, currentTitle]
   );
 
   // Calculate reading time estimate based on article text length
@@ -1202,36 +1202,38 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             </div>
           </header>
 
-          {/* Gerador de Índice Automático no Topo do Modo de Leitura */}
-          <ArticleTopTableOfContents
-            toc={toc}
-            wordCount={wordCount}
-            onNavigateToSection={(id) => {
-              const target = document.getElementById(id);
-              if (target && readerScrollRef.current) {
-                const headerOffset = 70;
-                const containerTop = readerScrollRef.current.getBoundingClientRect().top;
-                const targetTop = target.getBoundingClientRect().top;
-                const scrollPos = readerScrollRef.current.scrollTop + (targetTop - containerTop) - headerOffset;
-                readerScrollRef.current.scrollTo({
-                  top: Math.max(0, scrollPos),
-                  behavior: 'smooth',
-                });
-                setActiveSectionId(id);
-                target.classList.remove('heading-target-highlight');
-                void target.offsetWidth;
-                target.classList.add('heading-target-highlight');
-                setTimeout(() => {
+          {/* Gerador de Índice Automático no Topo do Modo de Leitura (suprimido se __NOTOC__ ou __TOC__ explícito) */}
+          {!hasNotoc && !hasExplicitToc && (
+            <ArticleTopTableOfContents
+              toc={toc}
+              wordCount={wordCount}
+              onNavigateToSection={(id) => {
+                const target = document.getElementById(id);
+                if (target && readerScrollRef.current) {
+                  const headerOffset = 70;
+                  const containerTop = readerScrollRef.current.getBoundingClientRect().top;
+                  const targetTop = target.getBoundingClientRect().top;
+                  const scrollPos = readerScrollRef.current.scrollTop + (targetTop - containerTop) - headerOffset;
+                  readerScrollRef.current.scrollTo({
+                    top: Math.max(0, scrollPos),
+                    behavior: 'smooth',
+                  });
+                  setActiveSectionId(id);
                   target.classList.remove('heading-target-highlight');
-                }, 2500);
-              } else {
-                scrollToSection(id);
-              }
-            }}
-            activeSectionId={activeSectionId}
-            themeMode="reader"
-            readerTheme={readerTheme}
-          />
+                  void target.offsetWidth;
+                  target.classList.add('heading-target-highlight');
+                  setTimeout(() => {
+                    target.classList.remove('heading-target-highlight');
+                  }, 2500);
+                } else {
+                  scrollToSection(id);
+                }
+              }}
+              activeSectionId={activeSectionId}
+              themeMode="reader"
+              readerTheme={readerTheme}
+            />
+          )}
 
           {/* Cleaned Immersive Wikitext Rendered Content */}
           <div
@@ -2139,19 +2141,21 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </div>
             )}
 
-            {/* Gerador de Índice Automático (Table of Contents) no Topo do Artigo */}
-            <TableOfContents
-              containerRef={contentRef}
-              containerSelector=".wiki-rendered-content"
-              articleId={localArticle.id}
-              articleTitle={currentTitle}
-              htmlContent={html}
-              initialToc={toc}
-              onNavigateToSection={scrollToSection}
-              activeSectionId={activeSectionId}
-              variant="top"
-              wordCount={wordCount}
-            />
+            {/* Gerador de Índice Automático (Table of Contents) no Topo do Artigo (suprimido se __NOTOC__ ou __TOC__ explícito) */}
+            {!hasNotoc && !hasExplicitToc && (
+              <TableOfContents
+                containerRef={contentRef}
+                containerSelector=".wiki-rendered-content"
+                articleId={localArticle.id}
+                articleTitle={currentTitle}
+                htmlContent={html}
+                initialToc={toc}
+                onNavigateToSection={scrollToSection}
+                activeSectionId={activeSectionId}
+                variant="top"
+                wordCount={wordCount}
+              />
+            )}
 
             {/* Rendered HTML Content */}
             <div

@@ -1,3 +1,4 @@
+import katex from 'katex';
 import { ExtensionManager } from '../core/ExtensionManager';
 import { formatExternalUrl } from './linkUtils';
 import { FileStorageService } from '../services/fileStorageService';
@@ -14,6 +15,9 @@ export interface ParseResult {
   toc: TocItem[];
   references: string[];
   categories: string[];
+  redirectTarget?: string;
+  hasNotoc?: boolean;
+  hasExplicitToc?: boolean;
 }
 
 export function parseWikitext(
@@ -58,6 +62,56 @@ export function parseWikitext(
   };
 
   let text = wikitext;
+
+  // 0. Extract Redirects (#REDIRECT [[Target]] or #REDIRECIONAMENTO [[Target]])
+  let redirectTarget: string | undefined;
+  const redirectMatch = text.match(/^\s*#(?:REDIRECT|REDIRECIONAMENTO)\s*\[\[(.*?)\]\]/i);
+  if (redirectMatch) {
+    redirectTarget = redirectMatch[1].trim();
+  }
+
+  // 0.1 Check for __NOTOC__ / __SEM_SUMÁRIO__
+  let hasNotoc = false;
+  if (/__NOTOC__|__SEM_SUM[AÁ]RIO__/i.test(text)) {
+    hasNotoc = true;
+    text = text.replace(/__(?:NOTOC|SEM_SUM[AÁ]RIO)__/gi, '');
+  }
+
+  // 0.2 Check for __TOC__ / __SUMÁRIO__
+  let hasExplicitToc = false;
+  if (/__TOC__|__SUM[AÁ]RIO__/i.test(text)) {
+    hasExplicitToc = true;
+    text = text.replace(/__(?:TOC|SUM[AÁ]RIO)__/gi, '\n\n___WIKI_EXPLICIT_TOC___\n\n');
+  }
+
+  // 0.3 Preprocess MediaWiki Parser Functions (#if, #ifeq, #switch, #expr) and Magic Variables
+  text = processParserFunctionsAndVariables(text, articleTitle);
+
+  // 0.4 Extract Math Formulas (<math>...</math> and <math display="block">...</math>) using KaTeX
+  text = text.replace(/<math(?:\s+display=["']?(inline|block)["']?)?>([\s\S]*?)<\/math>/gi, (_m, displayAttr, mathContent) => {
+    const isBlock = displayAttr?.toLowerCase() === 'block' || mathContent.includes('\n');
+    try {
+      const rendered = katex.renderToString(mathContent.trim(), {
+        throwOnError: false,
+        displayMode: isBlock,
+        output: 'htmlAndMathml',
+      });
+      if (isBlock) {
+        const mathHtml = `
+          <div class="wiki-math-block my-4 p-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto text-center not-prose shadow-xs">
+            ${rendered}
+          </div>
+        `;
+        return addBlockPlaceholder(mathHtml);
+      } else {
+        const mathHtml = `<span class="wiki-math-inline align-middle mx-1 inline-block">${rendered}</span>`;
+        return addInlinePlaceholder(mathHtml);
+      }
+    } catch {
+      const fallbackHtml = `<code class="font-mono text-xs text-rose-500 bg-rose-50 dark:bg-rose-950/40 px-1 py-0.5 rounded border border-rose-200 dark:border-rose-800">${escapeHtml(mathContent.trim())}</code>`;
+      return isBlock ? addBlockPlaceholder(fallbackHtml) : addInlinePlaceholder(fallbackHtml);
+    }
+  });
 
   // 1. Extract Categories: [[Categoria:Nome]] or [[Category:Name]]
   text = text.replace(/\[\[(?:Categoria|Category):(.*?)\]\]/gi, (_m, cat) => {
@@ -475,6 +529,30 @@ export function parseWikitext(
     finalHtml = finalHtml.split(placeholder).join(inlineHtml);
   });
 
+  // Render explicit inline TOC if __TOC__ was present
+  if (hasExplicitToc && finalHtml.includes('___WIKI_EXPLICIT_TOC___')) {
+    finalHtml = finalHtml.split('___WIKI_EXPLICIT_TOC___').join(renderInlineTableOfContents(toc));
+  } else {
+    finalHtml = finalHtml.split('___WIKI_EXPLICIT_TOC___').join('');
+  }
+
+  // Prepend Wikipedia-style redirect banner if this page is a redirect
+  if (redirectTarget) {
+    const redirectBanner = `
+      <div class="wiki-redirect-banner my-4 p-4 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/80 dark:bg-blue-950/40 flex items-center gap-3 shadow-xs not-prose">
+        <span class="text-3xl text-blue-600 dark:text-blue-400 font-bold leading-none select-none">↳</span>
+        <div class="flex-1">
+          <div class="text-[11px] uppercase font-mono font-bold tracking-wider text-blue-600 dark:text-blue-400 mb-0.5">Redirecionamento de Página</div>
+          <a href="#wiki:${encodeURIComponent(redirectTarget)}" data-wiki-target="${escapeHtml(redirectTarget)}" class="text-base sm:text-lg font-serif-heading font-bold text-blue-700 dark:text-blue-300 hover:underline inline-flex items-center gap-1.5">
+            <span>${escapeHtml(redirectTarget)}</span>
+            <span class="text-sm">→</span>
+          </a>
+        </div>
+      </div>
+    `;
+    finalHtml = redirectBanner + finalHtml;
+  }
+
   // Aplica filtros de pós-processamento HTML registrados por extensões
   const filteredHtml = ExtensionManager.getInstance()
     .getHooks()
@@ -485,6 +563,9 @@ export function parseWikitext(
     toc,
     references,
     categories,
+    redirectTarget,
+    hasNotoc,
+    hasExplicitToc,
   };
 }
 
@@ -1260,4 +1341,329 @@ export function getCleanExcerpt(wikitext: string, maxLength: number = 120): stri
   if (clean.length <= maxLength) return clean;
   return clean.slice(0, maxLength).trim() + '...';
 }
+
+/**
+ * Renders an inline MediaWiki-style Table of Contents box when __TOC__ is present
+ */
+export function renderInlineTableOfContents(toc: TocItem[]): string {
+  if (!toc || toc.length === 0) return '';
+  const items = toc
+    .map((item) => {
+      const indentClass =
+        item.level === 1
+          ? 'font-bold text-slate-800 dark:text-slate-100'
+          : item.level === 2
+          ? 'ml-3.5 text-slate-700 dark:text-slate-300'
+          : 'ml-7 text-slate-500 dark:text-slate-400';
+      return `
+        <li class="${indentClass} leading-snug py-0.5">
+          <a href="#${item.id}" class="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-baseline gap-1.5">
+            <span class="font-mono text-[11px] text-slate-400 dark:text-slate-500 font-normal select-none">${item.number}</span>
+            <span>${escapeHtml(item.text)}</span>
+          </a>
+        </li>
+      `;
+    })
+    .join('');
+
+  return `
+    <nav class="wiki-toc-inline my-4 p-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg max-w-md not-prose shadow-xs">
+      <div class="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-200 dark:border-slate-800">
+        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200 font-serif-heading flex items-center gap-1.5">
+          <span>📋</span>
+          <span>Índice / Conteúdo</span>
+        </h4>
+        <span class="text-[10px] text-slate-400 font-mono select-none">(${toc.length} tópicos)</span>
+      </div>
+      <ol class="space-y-0.5 text-xs list-none pl-0 max-h-96 overflow-y-auto">
+        ${items}
+      </ol>
+    </nav>
+  `;
+}
+
+/**
+ * Safe expression evaluator for MediaWiki {{#expr: ...}}
+ * Supports arithmetic (+, -, *, /, %, ^), comparisons, logic (and, or, not), parentheses, pi, e
+ */
+export function evaluateExpr(expr: string): string {
+  const clean = expr.trim();
+  if (!clean) return '0';
+
+  const tokens: string[] = [];
+  const regex = /\s*(\d+(?:\.\d+)?|\bpi\b|\be\b|\band\b|\bor\b|\bnot\b|==|!=|<>|<=|>=|<|>|\+|\-|\*|\/|%|\^|\(|\))\s*/gi;
+  let match: RegExpExecArray | null;
+  let lastIndex = 0;
+
+  while ((match = regex.exec(clean)) !== null) {
+    if (match.index !== lastIndex) {
+      return 'Erro: caractere inválido na expressão';
+    }
+    tokens.push(match[1]);
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex !== clean.length) {
+    return 'Erro: sintaxe inválida';
+  }
+
+  let pos = 0;
+  const peek = (): string | undefined => tokens[pos];
+  const consume = (expected?: string): string => {
+    const t = tokens[pos++];
+    if (expected && t?.toLowerCase() !== expected.toLowerCase()) {
+      throw new Error(`Esperado '${expected}', encontrado '${t}'`);
+    }
+    return t;
+  };
+
+  const parsePrimary = (): number => {
+    const t = peek();
+    if (!t) throw new Error('Expressão incompleta');
+
+    if (t === '(') {
+      consume('(');
+      const val = parseOr();
+      consume(')');
+      return val;
+    }
+
+    if (t.toLowerCase() === 'pi') {
+      consume();
+      return Math.PI;
+    }
+    if (t.toLowerCase() === 'e') {
+      consume();
+      return Math.E;
+    }
+
+    if (/^\d+(?:\.\d+)?$/.test(t)) {
+      consume();
+      return parseFloat(t);
+    }
+
+    throw new Error(`Token inesperado: ${t}`);
+  };
+
+  const parseUnary = (): number => {
+    const t = peek()?.toLowerCase();
+    if (t === '+') {
+      consume();
+      return parseUnary();
+    }
+    if (t === '-') {
+      consume();
+      return -parseUnary();
+    }
+    if (t === 'not') {
+      consume();
+      return parseUnary() === 0 ? 1 : 0;
+    }
+    return parsePrimary();
+  };
+
+  const parsePower = (): number => {
+    let left = parseUnary();
+    while (peek() === '^') {
+      consume('^');
+      const right = parseUnary();
+      left = Math.pow(left, right);
+    }
+    return left;
+  };
+
+  const parseMulDivMod = (): number => {
+    let left = parsePower();
+    while (peek() === '*' || peek() === '/' || peek() === '%') {
+      const op = consume();
+      const right = parsePower();
+      if (op === '*') left = left * right;
+      else if (op === '/') {
+        if (right === 0) throw new Error('Divisão por zero');
+        left = left / right;
+      } else if (op === '%') {
+        left = left % right;
+      }
+    }
+    return left;
+  };
+
+  const parseAddSub = (): number => {
+    let left = parseMulDivMod();
+    while (peek() === '+' || peek() === '-') {
+      const op = consume();
+      const right = parseMulDivMod();
+      if (op === '+') left = left + right;
+      else left = left - right;
+    }
+    return left;
+  };
+
+  const parseComparison = (): number => {
+    let left = parseAddSub();
+    while (
+      peek() === '==' ||
+      peek() === '=' ||
+      peek() === '!=' ||
+      peek() === '<>' ||
+      peek() === '<=' ||
+      peek() === '>=' ||
+      peek() === '<' ||
+      peek() === '>'
+    ) {
+      const op = consume();
+      const right = parseAddSub();
+      if (op === '==' || op === '=') left = left === right ? 1 : 0;
+      else if (op === '!=' || op === '<>') left = left !== right ? 1 : 0;
+      else if (op === '<=') left = left <= right ? 1 : 0;
+      else if (op === '>=') left = left >= right ? 1 : 0;
+      else if (op === '<') left = left < right ? 1 : 0;
+      else if (op === '>') left = left > right ? 1 : 0;
+    }
+    return left;
+  };
+
+  const parseAnd = (): number => {
+    let left = parseComparison();
+    while (peek()?.toLowerCase() === 'and') {
+      consume();
+      const right = parseComparison();
+      left = left !== 0 && right !== 0 ? 1 : 0;
+    }
+    return left;
+  };
+
+  const parseOr = (): number => {
+    let left = parseAnd();
+    while (peek()?.toLowerCase() === 'or') {
+      consume();
+      const right = parseAnd();
+      left = left !== 0 || right !== 0 ? 1 : 0;
+    }
+    return left;
+  };
+
+  try {
+    const result = parseOr();
+    if (pos < tokens.length) {
+      return 'Erro: sintaxe após fim da expressão';
+    }
+    const rounded = Math.round(result * 1e10) / 1e10;
+    return String(rounded);
+  } catch (err: any) {
+    return `Erro: ${err.message || 'Expressão inválida'}`;
+  }
+}
+
+/**
+ * Evaluates MediaWiki parser functions ({{#if:}}, {{#ifeq:}}, {{#switch:}}, {{#expr:}})
+ * and standard MediaWiki magic variables ({{PAGENAME}}, {{CURRENTYEAR}}, etc.)
+ */
+export function processParserFunctionsAndVariables(wikitext: string, articleTitle?: string): string {
+  if (!wikitext) return '';
+  const now = new Date();
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
+  const title = articleTitle?.trim() || 'Página';
+
+  const replaceVariables = (txt: string): string => {
+    return txt
+      .replace(/\{\{PAGENAME\}\}/gi, title)
+      .replace(/\{\{FULLPAGENAME\}\}/gi, title)
+      .replace(/\{\{TALKPAGENAME\}\}/gi, `Discussão:${title}`)
+      .replace(/\{\{CURRENTYEAR\}\}/gi, String(now.getFullYear()))
+      .replace(/\{\{CURRENTMONTH\}\}/gi, String(now.getMonth() + 1).padStart(2, '0'))
+      .replace(/\{\{CURRENTMONTHNAME\}\}/gi, monthNames[now.getMonth()])
+      .replace(/\{\{CURRENTDAY\}\}/gi, String(now.getDate()))
+      .replace(/\{\{CURRENTTIME\}\}/gi, `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`)
+      .replace(/\{\{SITENAME\}\}/gi, 'WikiZero');
+  };
+
+  let current = replaceVariables(wikitext);
+
+  // Multi-pass expansion of parser functions from inner to outer
+  for (let pass = 0; pass < 10; pass++) {
+    let replacedInPass = false;
+    const funcRegex = /\{\{#(if|ifeq|switch|expr)\s*:\s*([^\{\}]+?)\}\}/gi;
+
+    if (!funcRegex.test(current)) {
+      break;
+    }
+
+    current = current.replace(funcRegex, (_full, funcName, rawArgs) => {
+      replacedInPass = true;
+      const fn = funcName.toLowerCase();
+
+      if (fn === 'expr') {
+        return evaluateExpr(rawArgs);
+      }
+
+      if (fn === 'if') {
+        const parts = rawArgs.split('|');
+        const condition = parts[0]?.trim() || '';
+        const thenBranch = parts[1] !== undefined ? parts[1].trim() : '';
+        const elseBranch = parts.length > 2 ? parts.slice(2).join('|').trim() : '';
+        return condition ? thenBranch : elseBranch;
+      }
+
+      if (fn === 'ifeq') {
+        const parts = rawArgs.split('|');
+        const str1 = parts[0]?.trim() || '';
+        const str2 = parts[1]?.trim() || '';
+        const thenBranch = parts[2] !== undefined ? parts[2].trim() : '';
+        const elseBranch = parts.length > 3 ? parts.slice(3).join('|').trim() : '';
+
+        const isNum1 = !isNaN(Number(str1)) && str1 !== '';
+        const isNum2 = !isNaN(Number(str2)) && str2 !== '';
+        const equal = isNum1 && isNum2 ? Number(str1) === Number(str2) : str1 === str2;
+        return equal ? thenBranch : elseBranch;
+      }
+
+      if (fn === 'switch') {
+        const parts = rawArgs.split('|');
+        const testVal = parts[0]?.trim() || '';
+        const caseParts = parts.slice(1);
+
+        let defaultVal = '';
+        let matchedVal: string | null = null;
+        let fallthrough = false;
+
+        for (let i = 0; i < caseParts.length; i++) {
+          const item = caseParts[i];
+          const eqIdx = item.indexOf('=');
+
+          if (eqIdx !== -1) {
+            const rawKey = item.substring(0, eqIdx).trim();
+            const val = item.substring(eqIdx + 1).trim();
+
+            if (rawKey.toLowerCase() === '#default') {
+              defaultVal = val;
+            } else if (rawKey === testVal || fallthrough) {
+              matchedVal = val;
+              break;
+            }
+          } else {
+            const key = item.trim();
+            if (i === caseParts.length - 1) {
+              defaultVal = key;
+            } else if (key === testVal) {
+              fallthrough = true;
+            }
+          }
+        }
+
+        return matchedVal !== null ? matchedVal : defaultVal;
+      }
+
+      return '';
+    });
+
+    if (!replacedInPass) break;
+  }
+
+  return replaceVariables(current);
+}
+
 

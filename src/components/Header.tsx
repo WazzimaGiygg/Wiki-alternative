@@ -55,6 +55,8 @@ import { fullscreenManager } from '../utils/fullscreenManager';
 import { getFriendlyUidLabel, buildUidPermalink } from '../utils/urlRouter';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { NetworkDiagnosticModal } from './NetworkDiagnosticModal';
+import { FullTextSearchService, SearchSuggestItem } from '../services/fullTextSearchService';
+import { SearchSuggestionsDropdown } from './SearchSuggestionsDropdown';
 
 interface HeaderProps {
   user: UserProfile | null;
@@ -99,6 +101,7 @@ interface HeaderProps {
   onGoBack?: () => void;
   onGoForward?: () => void;
   onNotify?: (message: string, type: 'info' | 'warning' | 'success') => void;
+  onSelectArticle?: (articleId: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -143,6 +146,7 @@ export const Header: React.FC<HeaderProps> = ({
   onGoBack,
   onGoForward,
   onNotify,
+  onSelectArticle,
 }) => {
   const { currentLanguage, setLanguage, t, allLanguages } = useLanguage();
   const [showNotifs, setShowNotifs] = useState(false);
@@ -320,23 +324,68 @@ export const Header: React.FC<HeaderProps> = ({
       if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
         setShowLangMenu(false);
       }
-      if (onlineMenuRef.current && !onlineMenuRef.current.contains(event.target as Node)) {
-        setShowOnlineMenu(false);
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // MiniSearch full-text search-as-you-type suggestions
+  const [suggestions, setSuggestions] = useState<SearchSuggestItem[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(-1);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (searchQuery && searchQuery.trim().length >= 1) {
+      const results = FullTextSearchService.getInstance().suggest(searchQuery, 6);
+      setSuggestions(results);
+      setShowSuggestions(results.length > 0);
+      setSelectedSuggestionIndex(-1);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setSelectedSuggestionIndex(-1);
+    }
+  }, [searchQuery]);
+
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      onSearchSubmit();
+    if (e.key === 'ArrowDown') {
+      if (suggestions.length > 0) {
+        e.preventDefault();
+        setShowSuggestions(true);
+        setSelectedSuggestionIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
+      }
+    } else if (e.key === 'ArrowUp') {
+      if (suggestions.length > 0) {
+        e.preventDefault();
+        setShowSuggestions(true);
+        setSelectedSuggestionIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
+      }
+    } else if (e.key === 'Enter') {
+      if (showSuggestions && selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]) {
+        e.preventDefault();
+        const chosen = suggestions[selectedSuggestionIndex];
+        setShowSuggestions(false);
+        if (onSelectArticle) {
+          onSelectArticle(chosen.id);
+        } else {
+          onSearchSubmit();
+        }
+      } else {
+        setShowSuggestions(false);
+        onSearchSubmit();
+      }
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
     }
   };
 
   const handleSearchInputClick = () => {
-    if (currentView !== 'search') {
-      onNavigate('search');
+    if (searchQuery.trim().length >= 1 && suggestions.length > 0) {
+      setShowSuggestions(true);
     }
   };
 
@@ -2105,6 +2154,7 @@ export const Header: React.FC<HeaderProps> = ({
         ) : (
           <div className="flex-1 max-w-lg min-w-0 mx-2 hidden md:block">
             <div
+              ref={searchContainerRef}
               onClick={handleSearchInputClick}
               className="relative cursor-pointer"
             >
@@ -2136,6 +2186,27 @@ export const Header: React.FC<HeaderProps> = ({
                   <Shuffle size={12} />
                 </button>
               </div>
+
+              {/* Instant Search Suggestions Dropdown */}
+              <SearchSuggestionsDropdown
+                isOpen={showSuggestions}
+                query={searchQuery}
+                suggestions={suggestions}
+                selectedIndex={selectedSuggestionIndex}
+                onSelectSuggestion={(item) => {
+                  setShowSuggestions(false);
+                  if (onSelectArticle) {
+                    onSelectArticle(item.id);
+                  } else {
+                    onSearchSubmit();
+                  }
+                }}
+                onSelectAllResults={() => {
+                  setShowSuggestions(false);
+                  onSearchSubmit();
+                }}
+                onClose={() => setShowSuggestions(false)}
+              />
             </div>
           </div>
         )}

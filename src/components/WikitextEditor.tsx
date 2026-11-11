@@ -69,6 +69,7 @@ import {
   fixAllCitationsWithPlaceholders,
 } from '../utils/citationValidator';
 import { CitationHoverTooltip, CitationTooltipData } from './CitationHoverTooltip';
+import { EditConflictModal } from './EditConflictModal';
 
 interface WikitextEditorProps {
   initialArticle?: WikiArticle | null;
@@ -78,7 +79,12 @@ interface WikitextEditorProps {
   onSave: (
     articleData: Partial<WikiArticle> & { titulo: string; pageUid: string; descricao: string },
     editSummary: string,
-    isMinor?: boolean
+    isMinor?: boolean,
+    conflictOptions?: {
+      baseVersion?: number;
+      baseContent?: string;
+      forceOverwrite?: boolean;
+    }
   ) => Promise<void>;
   onCancel: () => void;
   onOpenLoginModal?: () => void;
@@ -105,6 +111,26 @@ export const WikitextEditor: React.FC<WikitextEditorProps> = ({
   );
   const [categoria, setCategoria] = useState(initialArticle?.categoria || 'Geral');
   const [idioma, setIdioma] = useState(initialArticle?.idioma || 'Português');
+
+  // Rastreamento da revisão-base ao abrir o editor para detecção de conflitos de concorrência
+  const baseVersionRef = useRef<number>(initialArticle?.versao || 1);
+  const baseContentRef = useRef<string>(initialArticle?.descricao || '');
+
+  useEffect(() => {
+    baseVersionRef.current = initialArticle?.versao || 1;
+    baseContentRef.current = initialArticle?.descricao || '';
+  }, [initialArticle]);
+
+  // Estado do modal interativo de resolução de conflito de edição
+  const [conflictModalData, setConflictModalData] = useState<{
+    serverArticle: WikiArticle;
+    baseVersion: number;
+    yourWikitext: string;
+    baseWikitext: string;
+    editSummary: string;
+    isMinor?: boolean;
+  } | null>(null);
+
   const [descricao, setDescricao] = useState(
     initialArticle?.descricao ||
       `= Título da Página =
@@ -873,8 +899,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
   const handleConfirmSave = async (editSummary: string, isMinor: boolean) => {
     setIsSaving(true);
+    let finalDescricao = descricao;
     try {
-      let finalDescricao = descricao;
       if (viewMode === 'visual' && visualEditorRef.current) {
         const converted = htmlToWikitext(visualEditorRef.current.innerHTML);
         if (converted.trim()) {
@@ -929,7 +955,11 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           comiteEtica,
         },
         editSummary,
-        isMinor
+        isMinor,
+        {
+          baseVersion: baseVersionRef.current,
+          baseContent: baseContentRef.current,
+        }
       );
 
       // Launch celebration confetti
@@ -948,6 +978,20 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       onDirtyChange?.(false, isNewArticle);
     } catch (err: any) {
       console.error('Erro ao salvar artigo:', err);
+
+      // Detecção de Conflito de Edição Concorrente
+      if (err?.name === 'EditConflictError' || err?.currentServerArticle) {
+        setConflictModalData({
+          serverArticle: err.currentServerArticle,
+          baseVersion: err.baseVersion ?? baseVersionRef.current,
+          yourWikitext: finalDescricao,
+          baseWikitext: err.baseContent ?? baseContentRef.current,
+          editSummary,
+          isMinor,
+        });
+        return;
+      }
+
       setSecurityWarningModal({
         title: 'Erro ao Salvar Artigo',
         message: err?.message || 'Ocorreu um erro ao salvar o artigo.',
@@ -2808,6 +2852,58 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           setHoverTooltipPos(null);
         }}
       />
+
+      {/* Modal Interativo de Conflito de Edição (Diff e 3-Way Merge) */}
+      {conflictModalData && (
+        <EditConflictModal
+          isOpen={!!conflictModalData}
+          serverArticle={conflictModalData.serverArticle}
+          baseVersion={conflictModalData.baseVersion}
+          yourWikitext={conflictModalData.yourWikitext}
+          baseWikitext={conflictModalData.baseWikitext}
+          onClose={() => setConflictModalData(null)}
+          onApplyMergedText={(mergedText) => {
+            setDescricao(mergedText);
+            baseVersionRef.current = conflictModalData.serverArticle.versao || baseVersionRef.current;
+            baseContentRef.current = conflictModalData.serverArticle.descricao || '';
+            setConflictModalData(null);
+          }}
+          onForceOverwrite={async () => {
+            const dataToForce = {
+              id: initialArticle?.id,
+              titulo: titulo.trim(),
+              pageUid,
+              categoria,
+              idioma,
+              descricao,
+              resumo: conflictModalData.editSummary || descricao.slice(0, 140) + '...',
+              comiteEtica,
+            };
+            setConflictModalData(null);
+            setIsSaving(true);
+            try {
+              await onSave(dataToForce, conflictModalData.editSummary, conflictModalData.isMinor, {
+                forceOverwrite: true,
+              });
+              setIsSavedSuccessfully(true);
+              onDirtyChange?.(false, isNewArticle);
+            } catch (forceErr: any) {
+              setSecurityWarningModal({
+                title: 'Erro ao Forçar Gravação',
+                message: forceErr?.message || 'Falha ao forçar sobrescrita.',
+              });
+            } finally {
+              setIsSaving(false);
+            }
+          }}
+          onDiscardMyChanges={() => {
+            setDescricao(conflictModalData.serverArticle.descricao || '');
+            baseVersionRef.current = conflictModalData.serverArticle.versao || 1;
+            baseContentRef.current = conflictModalData.serverArticle.descricao || '';
+            setConflictModalData(null);
+          }}
+        />
+      )}
     </div>
   );
 };
