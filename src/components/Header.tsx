@@ -42,6 +42,8 @@ import {
   Wifi,
   WifiOff,
   Activity,
+  LayoutGrid,
+  Link2,
 } from 'lucide-react';
 import { UserProfile, NotificationItem, ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -153,6 +155,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showOnlineMenu, setShowOnlineMenu] = useState(false);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<UserProfile[]>([]);
 
   // Chat em Tempo Real com Outros Usuários (3.09.a)
@@ -271,6 +274,7 @@ export const Header: React.FC<HeaderProps> = ({
   const userMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const onlineMenuRef = useRef<HTMLDivElement>(null);
+  const toolsMenuRef = useRef<HTMLDivElement>(null);
 
   const isGoogleTheme = theme === 'google' || theme === 'google-dark';
   const isWin1 = theme === 'win1';
@@ -323,6 +327,12 @@ export const Header: React.FC<HeaderProps> = ({
       }
       if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
         setShowLangMenu(false);
+      }
+      if (onlineMenuRef.current && !onlineMenuRef.current.contains(event.target as Node)) {
+        setShowOnlineMenu(false);
+      }
+      if (toolsMenuRef.current && !toolsMenuRef.current.contains(event.target as Node)) {
+        setShowToolsMenu(false);
       }
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
@@ -996,10 +1006,11 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
-      {/* High Density Top Micro Notice Bar / Win95 Menu Strip */}
-      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isHalfLife ? 'bg-[#121512] text-[#ff9900] border-b border-[#ff9900]/40' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isAndroid23 ? 'bg-[#0f1013] text-[#A4C639] border-b border-[#22242a]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-slate-100 dark:bg-[#090d16] text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800'} text-[11px] py-1 px-2.5 sm:px-4 font-mono w-full max-w-full overflow-hidden`}>
-        <div className="max-w-7xl mx-auto px-0 sm:px-2 lg:px-4 flex justify-between items-center w-full min-w-0">
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 truncate">
+      {/* Simplified Top Micro Notice Bar / Theme Strip */}
+      {(isWin95 || isNokia || isMinecraft || isRoblox || isRepo || isGenshin || isAndroid || isAndroid23 || isStardew || isGoogleTheme || isWikidiota) && (
+      <div className={`${isWin95 ? 'bg-[#c0c0c0] text-black border-b border-[#808080]' : isHalfLife ? 'bg-[#121512] text-[#ff9900] border-b border-[#ff9900]/40' : isNokia ? 'bg-[#b4c995] text-[#1f281b] border-b-2 border-[#1f281b]' : isGenshin ? 'bg-[#121524] text-[#d3bc8e] border-b border-[#d3bc8e]/30' : isAndroid ? 'bg-[#1a1b1e] text-[#A4C639] border-b border-[#303338]' : isAndroid23 ? 'bg-[#0f1013] text-[#A4C639] border-b border-[#22242a]' : isStardew ? 'bg-[#4a2b12] text-[#fce4a6] border-b border-[#8a5522]' : isRepo ? 'bg-[#090d14] text-[#f59e0b] border-b border-[#f59e0b]/40' : isMinecraft ? 'bg-[#14110f] text-[#55ff55] border-b border-[#3a342e]' : isRoblox ? 'bg-[#16171d] text-[#00b06f] border-b border-[#292b30]' : 'bg-slate-100 dark:bg-[#090d16] text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800'} text-[11px] py-1 px-3 sm:px-4 font-mono w-full max-w-full overflow-hidden`}>
+        <div className="max-w-7xl mx-auto flex justify-between items-center w-full min-w-0 gap-2">
+          <div className="flex items-center gap-2 min-w-0 truncate">
             {isWin95 ? (
               <div className="flex items-center gap-2">
                 <span className="bg-[#000080] text-white px-1.5 py-0.2 text-[10px] font-bold border-t border-l border-white border-r border-b border-black">
@@ -1019,11 +1030,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <Smartphone size={10} className="text-[#c2d6a4]" />
                   NOKIA // 3310
                 </span>
-                <span className="text-[#1f281b] hidden xs:inline font-bold">[ MENU ]</span>
-                <span className="text-[#1f281b]/60 hidden xs:inline">|</span>
-                <span className="text-[#1f281b] text-[10px] hidden sm:inline font-bold">
-                  CONNECTING PEOPLE // SNAKE II
-                </span>
+                <span className="text-[#1f281b] hidden sm:inline font-bold">CONNECTING PEOPLE</span>
               </div>
             ) : isMinecraft ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#55ff55] text-black tracking-wider font-mono">
@@ -1042,119 +1049,49 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             ) : isGenshin ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold genshin-primogem-badge">
-                <Sparkles size={10} className="text-amber-300 animate-pulse" />
+                <Sparkles size={10} className="text-amber-300" />
                 GENSHIN IMPACT ✦ TEYVAT ARCHIVES
               </span>
             ) : isAndroid ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#A4C639] text-black">
-                <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
-                  <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
-                </svg>
                 ANDROID 1.5 CUPCAKE
               </span>
             ) : isAndroid23 ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#A4C639] text-black">
-                <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
-                  <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 2.23 12.95 2 12 2c-.96 0-1.86.23-2.66.63L7.85.94c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.73 3.91 5.5 5.79 5.25 8h13.5c-.25-2.21-1.48-4.09-3.22-5.04zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
-                </svg>
                 ANDROID 2.3 GINGERBREAD
               </span>
             ) : isStardew ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#c6892e] text-[#2c1605] border border-[#f5cb74]">
-                <span>★</span> STARDEW VALLEY ✦ PELICAN TOWN
+                ★ STARDEW VALLEY ✦ PELICAN TOWN
               </span>
             ) : isGoogleTheme ? (
               <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#4285F4] text-white">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
-                GOOGLE THEME v3.05
-              </span>
-            ) : isWikidiota ? (
-              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#eaecf0] text-[#202122] border border-[#a2a9b1] font-serif">
-                <span>🌐</span> WIKIDIOTA • WIKIOMITE FOUNDATION
+                GOOGLE THEME
               </span>
             ) : (
-              <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded-xs text-[10px] font-bold shrink-0">{branding.systemName.toUpperCase()} v3.05</span>
+              <span className="flex items-center gap-1.5 px-2 py-0.2 rounded-xs text-[10px] font-bold bg-[#eaecf0] text-[#202122] border border-[#a2a9b1] font-serif">
+                🌐 WIKIDIOTA • WIKIOMITE FOUNDATION
+              </span>
             )}
-            {!isWin95 && <span className={`${isRepo ? "text-[#22d3ee]/80" : isGenshin ? "text-[#a0947d]" : isAndroid ? "text-[#888]" : isStardew ? "text-[#fed88b]" : "text-slate-400"} hidden md:inline truncate`}>{t('header.open_encyclopedia')}</span>}
           </div>
-          <div className={`flex items-center gap-2 sm:gap-4 shrink-0 ${isWin95 ? 'text-black' : isGenshin ? 'text-[#d3bc8e]' : isStardew ? 'text-[#fed88b]' : 'text-slate-400'} text-[11px]`}>
-            {/* Seletor de idioma na micro barra superior: visível em todas as resoluções como atalho global permanente */}
-            <button
-              onClick={onOpenLanguagesModal}
-              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-500 dark:hover:text-blue-300 text-slate-600 dark:text-slate-300'} flex items-center gap-1 transition cursor-pointer font-medium`}
-              title="Mudar idioma da enciclopédia"
-            >
-              <Globe2 size={11} className={isWin95 ? 'text-[#000080]' : isGenshin ? 'text-[#72e2db]' : 'text-blue-400'} />
-              <span>{currentLanguage.flag} <span className="hidden sm:inline">{currentLanguage.nativeName}</span> ({currentLanguage.code})</span>
-            </button>
-            {currentLanguage.code !== 'pt' && (
-              <button
-                type="button"
-                onClick={() => setLanguage('pt')}
-                className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                title="Restaurar idioma para Português (Brasil)"
-              >
-                <span>🇧🇷</span>
-                <span className="hidden xs:inline">Voltar PT</span>
-              </button>
-            )}
-            <span className={`${isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'text-slate-300 dark:text-slate-700'}`}>|</span>
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              className="hover:text-blue-600 dark:hover:text-amber-300 text-slate-700 dark:text-slate-300 flex items-center gap-1 transition cursor-pointer select-none font-medium"
-              title={isDark ? 'Alternar para tema claro' : 'Alternar para tema escuro'}
-              aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
-            >
-              {isDark ? (
-                <Sun size={11} className="text-amber-400 animate-pulse" />
-              ) : (
-                <Moon size={11} className="text-slate-700 dark:text-slate-300" />
-              )}
-              <span className="hidden sm:inline font-sans">{isDark ? 'Tema Claro' : 'Tema Escuro'}</span>
-            </button>
-            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
-            <button
-              type="button"
-              onClick={onOpenHelp}
-              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-400 text-slate-300'} hidden sm:flex items-center gap-1 cursor-pointer`}
-              title="Central de Ajuda Geral (F1)"
-            >
-              <HelpCircle size={11} className={isHelpExtensionEnabled ? "text-blue-400" : "text-slate-500"} />
-              <span>Ajuda (F1)</span>
-            </button>
-            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden sm:inline text-slate-600'}>|</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (onToggleFullscreen) onToggleFullscreen();
-                else fullscreenManager.toggleFullscreen();
-              }}
-              className={`${isWin95 ? 'hover:underline text-black' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-amber-300 text-slate-300'} hidden md:flex items-center gap-1 cursor-pointer`}
-              title="Alternar Modo Tela Cheia (F11)"
-            >
-              {isFullscreen ? <Minimize size={11} className="text-amber-400" /> : <Maximize size={11} className="text-slate-400" />}
-              <span>{isFullscreen ? 'Sair Tela Cheia' : 'Tela Cheia'}</span>
-            </button>
-            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden md:inline text-slate-600'}>|</span>
-            <span className="hidden lg:inline">GNU GPL v3.0</span>
-            <span className={isWin95 ? 'text-[#808080]' : isGenshin ? 'text-[#d3bc8e]/40' : 'hidden lg:inline text-slate-600'}>|</span>
+          <div className="flex items-center gap-3 shrink-0 text-[11px]">
             <a
               href={formatExternalUrl("https://github.com/WazzimaGiygg/Wiki-alternative")}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${isWin95 ? 'hover:underline text-[#000080]' : isGenshin ? 'hover:text-[#72e2db] text-[#d3bc8e]' : 'hover:text-blue-400 text-slate-300'} hidden sm:flex items-center gap-1`}
+              className="hover:underline flex items-center gap-1 opacity-80 hover:opacity-100"
             >
               GitHub <ExternalLink size={10} />
             </a>
           </div>
         </div>
       </div>
+      )}
 
-      {/* Main High Density Header Content */}
-      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-1.5 sm:gap-3 w-full min-w-0 max-w-full">
+      {/* Main Clean Single-Row Header */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2 sm:gap-4 w-full min-w-0 max-w-full">
         {/* Left Side: Mobile Menu Button + Brand Logo & Title */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* Hamburger Menu Trigger for Mobile Drawer */}
           <button
             id="btn-header-mobile-drawer"
@@ -1459,8 +1396,8 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <div
               onClick={() => onNavigate('hub')}
-              className="flex items-center gap-2.5 cursor-pointer group flex-shrink-0"
-              title={`${branding.wikiName} (${branding.systemName}) - Página Principal`}
+              className="flex items-center gap-2.5 cursor-pointer group min-w-0"
+              title={`${branding.wikiName} (${branding.systemName}) — ${branding.tagline || '«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»'}`}
             >
               <img
                 src={branding.customLogoUrl || "/logo.png"}
@@ -1471,37 +1408,23 @@ export const Header: React.FC<HeaderProps> = ({
                     e.currentTarget.src = '/logo.png';
                   }
                 }}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded object-contain drop-shadow-xs group-hover:scale-105 transition"
+                className="w-8 h-8 rounded object-contain shrink-0 group-hover:scale-105 transition"
               />
-              <div>
-                <div className="flex items-center gap-1.5 leading-none">
-                  <h1 className="font-serif-heading font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
-                    {branding.wikiName}
-                  </h1>
-                  <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-1.5 py-0.5 rounded-xs font-mono">
-                    {branding.systemName} V4.1
-                  </span>
-                </div>
-                <p
-                  className="text-[10.5px] text-blue-700 dark:text-blue-300 font-serif italic font-medium leading-none mt-0.5 hidden xs:block tracking-wide"
-                  title="Frase Principal da Wiki: 'Não, o Tempo não é o senhor do conhecimento!'"
-                >
-                  {branding.tagline || '«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»'}
-                </p>
-              </div>
+              <span className="font-serif-heading font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight whitespace-nowrap truncate max-w-[145px] sm:max-w-[200px]">
+                {branding.wikiName}
+              </span>
             </div>
           )}
         </div>
 
-        {/* 3.05.6.d: Navegação por UID no URL da Wiki (Retornar e Avançar) */}
-        <div className="flex items-center gap-1 shrink-0">
-          {/* Botão Retornar (Voltar no Histórico por UID) */}
+        {/* 3.05.6.d: Compact UID History Navigation (Back / Forward) */}
+        <div className="hidden sm:flex items-center gap-1 shrink-0">
           <button
             id="btn-nav-uid-back"
             type="button"
             onClick={onGoBack}
             disabled={!canGoBack}
-            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition cursor-pointer select-none border ${
+            className={`w-8 h-8 flex items-center justify-center rounded-lg transition cursor-pointer select-none border ${
               isWin95
                 ? 'win95-button text-[11px] disabled:opacity-40'
                 : isWinXP
@@ -1509,17 +1432,13 @@ export const Header: React.FC<HeaderProps> = ({
                 : isWin7
                 ? 'win7-button text-[11px] disabled:opacity-40'
                 : isGoogleTheme
-                ? 'rounded-full px-2.5 py-1 bg-white dark:bg-[#303134] text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-[#3c4043] disabled:opacity-40 shadow-2xs'
+                ? 'rounded-full bg-white dark:bg-[#303134] text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-[#3c4043] disabled:opacity-40'
                 : isNokia
-                ? 'border-2 border-[#1f281b] bg-[#b4c995] text-[#1f281b] font-mono text-[10px] disabled:opacity-40'
+                ? 'border-2 border-[#1f281b] bg-[#b4c995] text-[#1f281b] disabled:opacity-40'
                 : isHalfLife
-                ? 'border border-[#ff9900]/50 bg-[#121512] text-[#ff9900] font-mono text-[10px] disabled:opacity-40'
-                : isMinecraft
-                ? 'minecraft-btn text-[10px] disabled:opacity-40'
-                : isRoblox
-                ? 'roblox-btn text-[10px] disabled:opacity-40'
+                ? 'border border-[#ff9900]/50 bg-[#121512] text-[#ff9900] disabled:opacity-40'
                 : canGoBack
-                ? 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 active:scale-95 shadow-2xs'
+                ? 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 active:scale-95'
                 : 'opacity-40 cursor-not-allowed bg-slate-50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800'
             }`}
             title={
@@ -1529,17 +1448,15 @@ export const Header: React.FC<HeaderProps> = ({
             }
             aria-label="Retornar para a página anterior no histórico por UID"
           >
-            <ArrowLeft size={13} className="shrink-0" />
-            <span className="hidden sm:inline">Retornar</span>
+            <ArrowLeft size={14} />
           </button>
 
-          {/* Botão Avançar no Histórico por UID */}
           <button
             id="btn-nav-uid-forward"
             type="button"
             onClick={onGoForward}
             disabled={!canGoForward}
-            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold transition cursor-pointer select-none border ${
+            className={`w-8 h-8 flex items-center justify-center rounded-lg transition cursor-pointer select-none border ${
               isWin95
                 ? 'win95-button text-[11px] disabled:opacity-40'
                 : isWinXP
@@ -1547,17 +1464,13 @@ export const Header: React.FC<HeaderProps> = ({
                 : isWin7
                 ? 'win7-button text-[11px] disabled:opacity-40'
                 : isGoogleTheme
-                ? 'rounded-full px-2.5 py-1 bg-white dark:bg-[#303134] text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-[#3c4043] disabled:opacity-40 shadow-2xs'
+                ? 'rounded-full bg-white dark:bg-[#303134] text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-[#3c4043] disabled:opacity-40'
                 : isNokia
-                ? 'border-2 border-[#1f281b] bg-[#b4c995] text-[#1f281b] font-mono text-[10px] disabled:opacity-40'
+                ? 'border-2 border-[#1f281b] bg-[#b4c995] text-[#1f281b] disabled:opacity-40'
                 : isHalfLife
-                ? 'border border-[#ff9900]/50 bg-[#121512] text-[#ff9900] font-mono text-[10px] disabled:opacity-40'
-                : isMinecraft
-                ? 'minecraft-btn text-[10px] disabled:opacity-40'
-                : isRoblox
-                ? 'roblox-btn text-[10px] disabled:opacity-40'
+                ? 'border border-[#ff9900]/50 bg-[#121512] text-[#ff9900] disabled:opacity-40'
                 : canGoForward
-                ? 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 active:scale-95 shadow-2xs'
+                ? 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 active:scale-95'
                 : 'opacity-40 cursor-not-allowed bg-slate-50 dark:bg-slate-900/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800'
             }`}
             title={
@@ -1567,27 +1480,8 @@ export const Header: React.FC<HeaderProps> = ({
             }
             aria-label="Avançar para a próxima página no histórico por UID"
           >
-            <span className="hidden sm:inline">Avançar</span>
-            <ArrowRight size={13} className="shrink-0" />
+            <ArrowRight size={14} />
           </button>
-
-          {/* Badge Interativo com o UID atual da URL */}
-          {currentUid && (
-            <button
-              id="btn-nav-uid-badge"
-              type="button"
-              onClick={() => {
-                const permalink = buildUidPermalink(currentUid);
-                navigator.clipboard?.writeText(permalink);
-                onNotify?.(`Permalink copiado com sucesso: ?uid=${currentUid}`, 'info');
-              }}
-              className="hidden xl:flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-mono font-medium bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition cursor-pointer max-w-[170px] truncate"
-              title={`UID atual na barra de endereços: ?uid=${currentUid}\nClique para copiar o link permanente (permalink)`}
-            >
-              <span className="text-blue-500 dark:text-blue-400 font-bold shrink-0">UID:</span>
-              <span className="truncate">{currentUid}</span>
-            </button>
-          )}
         </div>
 
         {/* Dense Global Search Bar (Desktop) */}
@@ -2211,172 +2105,351 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
-        {/* High Density Navigation Links & Controls */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {/* Quick Mobile Search Button (Visible on mobile/tablet) */}
+        {/* Clean, Non-Overlapping Right Controls Zone */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Quick Mobile Search Button */}
           <button
             id="btn-header-mobile-search"
             onClick={onOpenMobileSearch}
-            className="p-1.5 sm:p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden transition active:scale-95 min-w-[34px] min-h-[34px] flex items-center justify-center shrink-0"
+            className="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden transition active:scale-95 flex items-center justify-center shrink-0"
             aria-label="Pesquisar artigos"
             title="Buscar"
           >
-            <Search size={16} />
+            <Search size={17} />
           </button>
-          <nav className="hidden lg:flex items-center gap-1 text-xs font-medium mr-1 border-r border-slate-200 dark:border-slate-800 pr-2">
+
+          {/* Concise Primary Nav Links (Desktop xl+) */}
+          <nav className="hidden xl:flex items-center gap-1 text-xs font-medium mr-1 border-r border-slate-200 dark:border-slate-800 pr-2.5">
             <button
               onClick={() => onNavigate('hub')}
-              className={`px-2.5 py-1 rounded text-xs transition font-semibold ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs transition font-semibold whitespace-nowrap shrink-0 cursor-pointer ${
                 currentView === 'hub'
-                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               {t('header.nav_hub')}
             </button>
             <button
-              onClick={() => onNavigate('search')}
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1 transition font-semibold ${
-                currentView === 'search'
-                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-              title="Busca Avançada de Artigos"
-            >
-              <Search size={13} />
-              <span>Busca Avançada</span>
-            </button>
-            <button
               onClick={() => onNavigate('editor')}
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1 transition font-semibold ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition font-semibold whitespace-nowrap shrink-0 cursor-pointer ${
                 currentView === 'editor'
-                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                  ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Edit3 size={13} />
-              {t('header.nav_editor')}
+              <span>{t('header.nav_editor')}</span>
             </button>
           </nav>
 
-          {/* Light / Dark Mode Toggle Button */}
+          {/* Light / Dark Mode Toggle (Tablet/Desktop) */}
           <button
             id="btn-header-theme-toggle"
             type="button"
             onClick={onToggleTheme}
-            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 min-w-[32px] min-h-[32px] justify-center ${
+            className={`hidden sm:flex w-9 h-9 rounded-lg border items-center justify-center transition-all cursor-pointer active:scale-95 shrink-0 ${
               isDark
-                ? 'bg-slate-800/90 hover:bg-slate-700/90 text-amber-300 border-slate-700 ring-1 ring-amber-400/30'
-                : 'bg-white hover:bg-slate-100 text-slate-900 border-slate-300 shadow-2xs'
+                ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
             }`}
             title={
               !isCustomizationAllowed
-                ? 'Mudança de aparência fixada no tema padrão com contraste adaptado pelo burocrata'
+                ? 'Mudança de aparência fixada no tema padrão pelo burocrata'
                 : isDark
-                ? 'Alternar para tema claro adaptado (Light Mode)'
-                : 'Alternar para tema escuro (Dark Mode)'
+                ? 'Alternar para tema claro'
+                : 'Alternar para tema escuro'
             }
             aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
           >
-            {isDark ? (
-              <Sun size={14} className="text-amber-400 transition-transform duration-300 hover:rotate-45" />
-            ) : (
-              <Moon size={14} className="text-slate-800 transition-transform duration-300 hover:-rotate-12" />
-            )}
-            <span className="hidden xl:inline text-[11px] font-sans">
-              {isDark ? 'Modo Claro' : 'Modo Escuro'}
-            </span>
+            {isDark ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-slate-700" />}
           </button>
 
-          {/* Fullscreen Toggle Button (3.05.8.b & F11) */}
-          <button
-            id="btn-header-fullscreen-toggle"
-            type="button"
-            onClick={() => {
-              if (onToggleFullscreen) {
-                onToggleFullscreen();
-              } else {
-                fullscreenManager.toggleFullscreen();
-              }
-            }}
-            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 min-w-[32px] min-h-[32px] justify-center ${
-              isFullscreen
-                ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/30'
-                : 'bg-white hover:bg-slate-100 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 shadow-2xs'
-            }`}
-            title={isFullscreen ? 'Sair da Tela Cheia (F11)' : 'Alternar Modo Tela Cheia do Wiki-Site (F11)'}
-            aria-label={isFullscreen ? 'Sair da Tela Cheia' : 'Entrar em Tela Cheia'}
-          >
-            {isFullscreen ? (
-              <Minimize size={14} className="text-amber-500 dark:text-amber-400" />
-            ) : (
-              <Maximize size={14} className="text-slate-700 dark:text-slate-300" />
-            )}
-            <span className="hidden xl:inline text-[11px] font-sans">
-              {isFullscreen ? 'Sair Tela Cheia' : 'Tela Cheia'}
-            </span>
-          </button>
-
-          {/* Daily Checklist Button (3.05.3.af & 3.05.8.b) */}
-          {isChecklistEnabled && (
+          {/* Consolidated Tools, Status & Utilities Menu */}
+          <div className="relative shrink-0" ref={toolsMenuRef}>
             <button
-              id="btn-header-checklist"
+              id="btn-header-tools-menu"
               type="button"
-              onClick={onOpenChecklist}
-              className="p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 min-w-[32px] min-h-[32px] justify-center bg-amber-50/80 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-              title="Checklist Diário & Pontos Mensais (Requisito 3.05.8.b)"
-              aria-label="Checklist Diário"
+              onClick={() => {
+                setShowToolsMenu((v) => !v);
+                setShowNotifs(false);
+                setShowUserMenu(false);
+                setShowLangMenu(false);
+              }}
+              className={`w-9 h-9 relative rounded-lg border transition flex items-center justify-center shrink-0 cursor-pointer active:scale-95 ${
+                showToolsMenu
+                  ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400'
+                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+              title="Ferramentas, Idioma, Chat, Rede e Ajuda"
+              aria-label="Abrir menu de ferramentas e utilitários"
+              aria-expanded={showToolsMenu}
             >
-              <Trophy size={14} className="text-amber-500" />
-              <span className="hidden xl:inline text-[11px] font-sans">
-                Checklist
-              </span>
-            </button>
-          )}
-
-          {/* General Help Button (3.05.7.b & F1) */}
-          <button
-            id="btn-header-help"
-            type="button"
-            onClick={onOpenHelp}
-            className={`p-1.5 sm:px-2.5 sm:py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 min-w-[32px] min-h-[32px] justify-center ${
-              isHelpExtensionEnabled
-                ? 'bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700 opacity-80'
-            }`}
-            title={
-              isHelpExtensionEnabled
-                ? 'Abrir Central de Ajuda Geral & Manual da Wiki (F1)'
-                : 'Ajuda Geral (F1) desativada por Burocrata (Clique para detalhes)'
-            }
-            aria-label="Ajuda Geral (F1)"
-          >
-            <HelpCircle size={14} className={isHelpExtensionEnabled ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'} />
-            <span className="hidden xl:inline text-[11px] font-sans">
-              Ajuda (F1)
-            </span>
-          </button>
-
-          {/* Language Switcher Dropdown (Visível em todas as resoluções com suporte a RTL) */}
-          <div className="relative shrink-0" ref={langMenuRef}>
-            <button
-              id="btn-header-language-toggle"
-              type="button"
-              onClick={() => setShowLangMenu(!showLangMenu)}
-              className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-200 cursor-pointer shadow-2xs active:scale-95"
-              title={t('header.change_language')}
-            >
-              <span className="text-sm">{currentLanguage.flag}</span>
-              <span className="font-mono text-[11px] uppercase hidden sm:inline">{currentLanguage.code}</span>
-              <ChevronDown size={11} className="text-slate-400" />
+              <LayoutGrid size={16} />
+              {((isNetworkVerifierEnabled && !network.isOnline) || (chatUnreadCount > 0 && isChatEnabled)) && (
+                <span
+                  className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${
+                    isNetworkVerifierEnabled && !network.isOnline ? 'bg-rose-500' : 'bg-blue-600'
+                  }`}
+                />
+              )}
             </button>
 
+            {showToolsMenu && (
+              <div className="fixed sm:absolute inset-x-3 sm:inset-x-auto sm:right-0 top-14 sm:top-auto sm:mt-2 w-auto sm:w-80 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl p-2 z-50 text-xs space-y-1">
+                <div className="px-2.5 py-1.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-[11px] uppercase tracking-wider">
+                    Ferramentas & Status
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    {currentLanguage.flag} {currentLanguage.code.toUpperCase()}
+                  </span>
+                </div>
+
+                {/* Mobile quick navigation */}
+                <div className="grid grid-cols-2 gap-1 sm:hidden pb-1 border-b border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onGoBack?.();
+                      setShowToolsMenu(false);
+                    }}
+                    disabled={!canGoBack}
+                    className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium disabled:opacity-40"
+                  >
+                    <ArrowLeft size={13} />
+                    <span>Retornar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onGoForward?.();
+                      setShowToolsMenu(false);
+                    }}
+                    disabled={!canGoForward}
+                    className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium disabled:opacity-40"
+                  >
+                    <span>Avançar</span>
+                    <ArrowRight size={13} />
+                  </button>
+                </div>
+
+                {/* Language Selector */}
+                <button
+                  id="btn-header-language-toggle"
+                  type="button"
+                  onClick={() => {
+                    setShowToolsMenu(false);
+                    setShowLangMenu((v) => !v);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5 font-medium">
+                    <Globe2 size={15} className="text-blue-500" />
+                    <span>Idioma ({currentLanguage.nativeName})</span>
+                  </span>
+                  <span className="text-[11px] text-slate-400">{currentLanguage.flag} ▾</span>
+                </button>
+
+                {/* Theme Toggle (also useful on mobile) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onToggleTheme();
+                    setShowToolsMenu(false);
+                  }}
+                  className="w-full flex sm:hidden items-center justify-between px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5 font-medium">
+                    {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-slate-600" />}
+                    <span>{isDark ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}</span>
+                  </span>
+                </button>
+
+                {/* Real-Time User Chat */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowToolsMenu(false);
+                    onOpenUserChat?.();
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5 font-medium">
+                    <MessageSquare size={15} className={!isChatEnabled ? 'text-slate-400' : 'text-blue-600 dark:text-blue-400'} />
+                    <span>Chat em Tempo Real</span>
+                  </span>
+                  {chatUnreadCount > 0 && isChatEnabled ? (
+                    <span className="px-1.5 py-0.5 bg-blue-600 text-white rounded-full text-[10px] font-bold">
+                      {chatUnreadCount}
+                    </span>
+                  ) : !isChatEnabled ? (
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Desativado</span>
+                  ) : null}
+                </button>
+
+                {/* Daily Checklist */}
+                {isChecklistEnabled && (
+                  <button
+                    id="btn-header-checklist"
+                    type="button"
+                    onClick={() => {
+                      setShowToolsMenu(false);
+                      onOpenChecklist?.();
+                    }}
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/40 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2.5 font-medium">
+                      <Trophy size={15} className="text-amber-500" />
+                      <span>Checklist Diário & Pontos</span>
+                    </span>
+                  </button>
+                )}
+
+                {/* Fullscreen */}
+                <button
+                  id="btn-header-fullscreen-toggle"
+                  type="button"
+                  onClick={() => {
+                    if (onToggleFullscreen) onToggleFullscreen();
+                    else fullscreenManager.toggleFullscreen();
+                    setShowToolsMenu(false);
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5 font-medium">
+                    {isFullscreen ? <Minimize size={15} className="text-amber-500" /> : <Maximize size={15} className="text-slate-500" />}
+                    <span>{isFullscreen ? 'Sair da Tela Cheia (F11)' : 'Modo Tela Cheia (F11)'}</span>
+                  </span>
+                </button>
+
+                {/* General Help */}
+                <button
+                  id="btn-header-help"
+                  type="button"
+                  onClick={() => {
+                    setShowToolsMenu(false);
+                    onOpenHelp?.();
+                  }}
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5 font-medium">
+                    <HelpCircle size={15} className={isHelpExtensionEnabled ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'} />
+                    <span>Central de Ajuda Geral (F1)</span>
+                  </span>
+                </button>
+
+                {/* Online Users (hidden if HideOnlineUsersExtension active) */}
+                {!isHideOnlineUsersActive && (
+                  <div className="pt-1 border-t border-slate-100 dark:border-slate-800" ref={onlineMenuRef} data-online-users-trigger="true">
+                    <button
+                      id="btn-header-online-users"
+                      type="button"
+                      onClick={() => setShowOnlineMenu((v) => !v)}
+                      className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2.5 font-medium">
+                        <Users size={15} className="text-emerald-600 dark:text-emerald-400" />
+                        <span>Usuários Online</span>
+                      </span>
+                      <span className="font-mono text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                        {onlineUsers.length} ativo{onlineUsers.length === 1 ? '' : 's'}
+                      </span>
+                    </button>
+
+                    {showOnlineMenu && (
+                      <div className="mt-1 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2 text-[11px]">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            Conexões ativas (45 min)
+                          </span>
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                            {onlineUsers.length} online
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                          Identidades individuais não são expostas publicamente (Diretriz 3.05.5.c). Usuários banidos são excluídos da contagem.
+                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => StorageService.getOnlineUsers().then((users) => setOnlineUsers(users))}
+                            className="px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-[10px] flex items-center gap-1 cursor-pointer"
+                          >
+                            <RefreshCw size={10} /> Atualizar
+                          </button>
+                          {(!user || user.isGuest) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowToolsMenu(false);
+                                setShowOnlineMenu(false);
+                                onLoginClick();
+                              }}
+                              className="px-2.5 py-1 rounded bg-blue-600 text-white font-semibold text-[10px] cursor-pointer"
+                            >
+                              Fazer Login
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Real-time Network Verifier */}
+                {isNetworkVerifierEnabled && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowToolsMenu(false);
+                      setShowNetworkDiagnostic(true);
+                    }}
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2.5 font-medium">
+                      {network.isOnline ? (
+                        <Wifi size={15} className="text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <WifiOff size={15} className="text-rose-600 dark:text-rose-400" />
+                      )}
+                      <span>Diagnóstico de Rede</span>
+                    </span>
+                    <span className={`font-mono text-[10px] font-bold ${network.isOnline ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                      {network.isOnline ? (network.latencyMs !== null ? `${network.latencyMs}ms` : 'Online') : 'Offline'}
+                    </span>
+                  </button>
+                )}
+
+                {/* Copy current UID permalink */}
+                {currentUid && (
+                  <button
+                    id="btn-nav-uid-badge"
+                    type="button"
+                    onClick={() => {
+                      const permalink = buildUidPermalink(currentUid);
+                      navigator.clipboard?.writeText(permalink);
+                      onNotify?.(`Permalink copiado com sucesso: ?uid=${currentUid}`, 'info');
+                      setShowToolsMenu(false);
+                    }}
+                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-700 dark:text-blue-300 transition cursor-pointer border-t border-slate-100 dark:border-slate-800"
+                    title={`Copiar permalink: ?uid=${currentUid}`}
+                  >
+                    <span className="flex items-center gap-2 font-medium truncate">
+                      <Link2 size={14} className="shrink-0" />
+                      <span className="truncate">Copiar link (?uid={currentUid})</span>
+                    </span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Quick Language Dropdown (triggered from Tools -> Idioma) */}
             {showLangMenu && (
               <div
+                ref={langMenuRef}
                 dir="ltr"
-                className={`fixed sm:absolute inset-x-2 sm:inset-x-auto top-14 sm:top-auto sm:mt-1.5 w-auto sm:w-64 max-w-[calc(100vw-1rem)] ${
-                  currentLanguage.dir === 'rtl' ? 'sm:left-0 sm:right-auto' : 'sm:right-0 sm:left-auto'
-                } bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 text-xs overflow-hidden`}
+                className="fixed sm:absolute inset-x-3 sm:inset-x-auto sm:right-0 top-14 sm:top-auto sm:mt-2 w-auto sm:w-64 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl py-1 z-50 text-xs overflow-hidden"
               >
                 <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
                   <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[10px] font-mono flex items-center gap-1.5">
@@ -2386,7 +2459,6 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">45+ globais</span>
                 </div>
 
-                {/* Atalho direto de retorno ao Português e Inglês se um idioma não-padrão (árabe, persa, etc.) estiver ativo */}
                 {currentLanguage.code !== 'pt' && (
                   <div className="p-2 border-b border-blue-100 dark:border-blue-900/60 bg-blue-50/90 dark:bg-blue-950/50 space-y-1.5">
                     <button
@@ -2395,26 +2467,11 @@ export const Header: React.FC<HeaderProps> = ({
                         setLanguage('pt');
                         setShowLangMenu(false);
                       }}
-                      className="w-full text-center py-1.5 px-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
-                      title="Restaurar Português do Brasil como idioma ativo da enciclopédia"
+                      className="w-full text-center py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
                     >
                       <span className="text-sm">🇧🇷</span>
                       <span>Voltar para Português</span>
                     </button>
-                    {currentLanguage.code !== 'en' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLanguage('en');
-                          setShowLangMenu(false);
-                        }}
-                        className="w-full text-center py-1 px-3 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
-                        title="Switch to English"
-                      >
-                        <span className="text-sm">🇺🇸</span>
-                        <span>English (Inglês)</span>
-                      </button>
-                    )}
                   </div>
                 )}
 
@@ -2455,7 +2512,7 @@ export const Header: React.FC<HeaderProps> = ({
                       setShowLangMenu(false);
                       if (onOpenLanguagesModal) onOpenLanguagesModal();
                     }}
-                    className="w-full text-center py-2 px-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs"
+                    className="w-full text-center py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
                   >
                     <Globe2 size={13} />
                     <span>{t('header.all_languages')}</span>
@@ -2465,244 +2522,22 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Online Users Trigger & Modal/Dropdown (Ocultado se a extensão HideOnlineUsersExtension estiver ativa) */}
-          {!isHideOnlineUsersActive && (
-          <div className="relative" ref={onlineMenuRef} data-online-users-trigger="true">
-            <button
-              id="btn-header-online-users"
-              onClick={() => setShowOnlineMenu(!showOnlineMenu)}
-              className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-200"
-              title="Ver quem está logado na WikiWorldWeb"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <Users size={13} className="text-slate-500 dark:text-slate-400" />
-              <span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                {onlineUsers.length}
-              </span>
-              <span className="text-[11px] hidden md:inline font-normal text-slate-500 dark:text-slate-400">
-                online
-              </span>
-            </button>
-
-            {showOnlineMenu && (
-              <div
-                style={{ [currentLanguage.dir === 'rtl' ? 'left' : 'right']: 0 }}
-                className={`absolute ${currentLanguage.dir === 'rtl' ? 'left-0' : 'right-0'} mt-1.5 w-80 bg-white dark:bg-slate-900 rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xl p-3.5 z-50 animate-in fade-in text-xs space-y-3`}
-              >
-                {/* Header: Status Pulse & Tag */}
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                    </span>
-                    <span className="font-bold text-slate-900 dark:text-white text-xs">
-                      Usuários Logados & Ativos
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Tempo Real
-                  </span>
-                </div>
-
-                {/* Dynamic Counter Hero (Sem expor quem está logado - Requisito 3.05.5.c) */}
-                <div className="bg-gradient-to-br from-slate-50 to-blue-50/60 dark:from-slate-800/80 dark:to-blue-950/30 p-3.5 rounded-lg border border-slate-200 dark:border-slate-700/80 text-center space-y-1 relative overflow-hidden">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Total de Conexões Ativas
-                  </div>
-                  <div className="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5">
-                    <span>{onlineUsers.length}</span>
-                    <span className="text-xs font-sans text-slate-500 dark:text-slate-400 font-normal">
-                      usuário{onlineUsers.length === 1 ? '' : 's'} online
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-300">
-                    Sessões autenticadas e ativas nos últimos 45 minutos.
-                  </p>
-
-                  {/* Dynamic Activity Pulse Bars */}
-                  <div className="pt-2 flex items-center justify-center gap-1.5">
-                    <span className="w-1.5 h-4 bg-emerald-500 rounded-full animate-pulse"></span>
-                    <span className="w-1.5 h-6 bg-emerald-400 rounded-full animate-pulse delay-75"></span>
-                    <span className="w-1.5 h-3 bg-emerald-600 rounded-full animate-pulse delay-150"></span>
-                    <span className="w-1.5 h-5 bg-emerald-500 rounded-full animate-pulse delay-100"></span>
-                    <span className="w-1.5 h-2 bg-emerald-400 rounded-full animate-pulse delay-200"></span>
-                  </div>
-                </div>
-
-                {/* Telemetria Agregada & Distribuição de Sessões */}
-                <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-0.5">
-                    <span className="text-[10px] text-slate-400 block font-mono">Modo Leitura</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {Math.max(1, Math.round(onlineUsers.length * 0.65))} simultâneos
-                    </span>
-                  </div>
-                  <div className="p-2 rounded bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-0.5">
-                    <span className="text-[10px] text-slate-400 block font-mono">Modo Edição/Aporte</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {Math.max(0, onlineUsers.length - Math.round(onlineUsers.length * 0.65))} simultâneos
-                    </span>
-                  </div>
-                </div>
-
-                {/* Regra 3.05.5.b: Usuários banidos não são considerados */}
-                <div className="p-2 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[10px] text-emerald-800 dark:text-emerald-300 flex items-start gap-1.5">
-                  <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                  <div>
-                    <strong className="block font-semibold">Filtro de Integridade Ativo (Regra 3.05.5.b):</strong>
-                    <span>Usuários banidos ou suspensos são estritamente excluídos da contagem de usuários logados.</span>
-                  </div>
-                </div>
-
-                {/* Regra 3.05.5.c: Sem expor quem está logado, apenas a quantidade */}
-                <div className="p-2.5 rounded bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 text-[10px] text-blue-900 dark:text-blue-300 space-y-1">
-                  <div className="font-bold flex items-center gap-1 text-blue-800 dark:text-blue-200">
-                    <span>🔒</span>
-                    <span>Privacidade Preservada (Diretriz 3.05.5.c)</span>
-                  </div>
-                  <p className="leading-relaxed text-slate-600 dark:text-slate-400">
-                    Para resguardar a privacidade e prevenir vigilância arbitrária de editores, as identidades individuais e apelidos não são revelados publicamente nesta caixa. Apenas a volumetria dinâmica agregada é exibida.
-                  </p>
-                </div>
-
-                {/* Ações e Atualização */}
-                <div className="pt-1 flex items-center justify-between gap-2 border-t border-slate-200 dark:border-slate-800">
-                  <button
-                    onClick={() => {
-                      StorageService.getOnlineUsers().then((users) => setOnlineUsers(users));
-                    }}
-                    className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-[11px] transition flex items-center gap-1 cursor-pointer"
-                    title="Recarregar métricas em tempo real"
-                  >
-                    <RefreshCw size={11} /> Atualizar
-                  </button>
-
-                  {(!user || user.isGuest) ? (
-                    <button
-                      onClick={() => {
-                        setShowOnlineMenu(false);
-                        onLoginClick();
-                      }}
-                      className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[11px] transition cursor-pointer"
-                    >
-                      Fazer Login
-                    </button>
-                  ) : (
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      Sua sessão está ativa
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-          )}
-
-          {/* 4.1.1.D6.6: Verificação de status online do computador em tempo real */}
-          {isNetworkVerifierEnabled && (
-            <div className="relative shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowNetworkDiagnostic(true)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition min-h-[38px] sm:min-h-[32px] cursor-pointer text-xs font-semibold active:scale-95 ${
-                  !network.isOnline
-                    ? 'border-rose-400 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/70 dark:text-rose-300 animate-pulse'
-                    : network.quality === 'poor' || network.quality === 'fair'
-                    ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-                title={
-                  network.isOnline
-                    ? `Computador Online em tempo real (RTT: ${network.latencyMs !== null ? `${network.latencyMs}ms` : 'verificado'}). Clique para abrir o diagnóstico completo (4.1.1.D6.6).`
-                    : 'Computador Offline em tempo real! Sem conexão com o servidor. Clique para ver detalhes (4.1.1.D6.6).'
-                }
-                aria-label="Diagnóstico de conectividade em tempo real"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span
-                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                      !network.isOnline
-                        ? 'bg-rose-500'
-                        : network.quality === 'poor' || network.quality === 'fair'
-                        ? 'bg-amber-500'
-                        : 'bg-emerald-500'
-                    }`}
-                  />
-                  <span
-                    className={`relative inline-flex rounded-full h-2 w-2 ${
-                      !network.isOnline
-                        ? 'bg-rose-600'
-                        : network.quality === 'poor' || network.quality === 'fair'
-                        ? 'bg-amber-500'
-                        : 'bg-emerald-500'
-                    }`}
-                  />
-                </span>
-
-                {network.isOnline ? (
-                  <Wifi
-                    size={14}
-                    className={
-                      network.quality === 'excellent' || network.quality === 'good'
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-amber-600 dark:text-amber-400'
-                    }
-                  />
-                ) : (
-                  <WifiOff size={14} className="text-rose-600 dark:text-rose-400" />
-                )}
-
-                <span className="font-mono text-[10px] hidden sm:inline">
-                  {network.isOnline
-                    ? network.latencyMs !== null
-                      ? `${network.latencyMs}ms`
-                      : 'Online'
-                    : 'Offline'}
-                </span>
-              </button>
-            </div>
-          )}
-
-          {/* Real-Time User Chat Trigger Button (3.09.a) */}
-          <div className="relative shrink-0">
-            <button
-              onClick={() => onOpenUserChat?.()}
-              className="p-1.5 relative rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0 cursor-pointer"
-              title={
-                !isChatEnabled
-                  ? 'Chat entre usuários desabilitado por Burocrata no Firebase'
-                  : chatUnreadCount > 0
-                  ? `Chat: ${chatUnreadCount} mensagem(ns) não lida(s)`
-                  : 'Chat em tempo real com outros usuários registrados'
-              }
-            >
-              <MessageSquare size={15} className={!isChatEnabled ? 'text-slate-400 opacity-60' : chatUnreadCount > 0 ? 'text-blue-600 dark:text-blue-400' : ''} />
-              {chatUnreadCount > 0 && isChatEnabled && (
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center animate-pulse">
-                  {chatUnreadCount}
-                </span>
-              )}
-              {!isChatEnabled && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border border-white dark:border-slate-900" title="Desativado por burocrata" />
-              )}
-            </button>
-          </div>
-
           {/* Notification Bell */}
           <div className="relative shrink-0" ref={notifRef}>
             <button
-              onClick={() => setShowNotifs(!showNotifs)}
-              className="p-1.5 relative rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0"
+              onClick={() => {
+                setShowNotifs(!showNotifs);
+                setShowToolsMenu(false);
+                setShowUserMenu(false);
+                setShowLangMenu(false);
+              }}
+              className="w-9 h-9 relative rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center justify-center shrink-0 cursor-pointer"
               title={t('header.notifications')}
+              aria-label={t('header.notifications')}
             >
-              <Bell size={15} />
+              <Bell size={16} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-red-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
                   {unreadCount}
                 </span>
               )}
@@ -2945,23 +2780,28 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* User Profile / Auth Area */}
           {user ? (
-            <div className="relative" ref={userMenuRef}>
+            <div className="relative shrink-0" ref={userMenuRef}>
               <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-1.5 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs"
+                onClick={() => {
+                  setShowUserMenu(!showUserMenu);
+                  setShowToolsMenu(false);
+                  setShowNotifs(false);
+                  setShowLangMenu(false);
+                }}
+                className="h-9 flex items-center gap-1.5 px-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-xs cursor-pointer"
               >
                 {user.photoURL && !user.avatarRemovedByAdmin ? (
                   <img
                     src={user.photoURL}
                     alt={user.displayName}
-                    className="w-5 h-5 rounded-xs object-cover"
+                    className="w-6 h-6 rounded object-cover shrink-0"
                   />
                 ) : (
-                  <div className="w-5 h-5 rounded-xs bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                  <div className="w-6 h-6 rounded bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                     {(user.displayName || user.username || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="font-semibold text-slate-800 dark:text-slate-200 hidden sm:inline max-w-[90px] truncate">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 hidden md:inline max-w-[90px] truncate">
                   {user.displayName}
                 </span>
               </button>
@@ -3111,12 +2951,12 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center shrink-0">
               <button
                 onClick={onLoginClick}
-                className="px-2 sm:px-2.5 py-1 text-xs font-semibold rounded bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1 shadow-xs shrink-0"
+                className="h-9 px-3 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap cursor-pointer"
               >
-                <UserIcon size={12} />
+                <UserIcon size={14} />
                 <span>{t('header.login')}</span>
               </button>
             </div>
