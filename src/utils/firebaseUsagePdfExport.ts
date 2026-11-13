@@ -1,4 +1,4 @@
-import type { jsPDF } from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { FirebaseUsageMetrics } from '../types';
 import {
   drawPdfStandardHeroBanner,
@@ -330,7 +330,6 @@ export async function generateFirebaseUsagePdf(
 ): Promise<void> {
   const computed = computePeriodMetrics(baseMetrics, options);
 
-  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',

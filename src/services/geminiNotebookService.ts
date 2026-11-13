@@ -1,5 +1,5 @@
 import { GeminiNotebookItem, GeminiNotebookSource, GeminiNotebookNote, UserProfile } from '../types';
-import { getDbSafe, getFirebaseIdTokenSafe } from './firebase';
+import { getDbSafe } from './firebase';
 import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { GeminiQuotaService } from './geminiQuotaService';
 
@@ -154,15 +154,9 @@ export class GeminiNotebookService {
       isPremium: !!(params.user?.isGeminiPremium || params.user?.geminiPlan === 'premium'),
     };
 
-    const idToken = await getFirebaseIdTokenSafe();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (idToken) {
-      headers['Authorization'] = `Bearer ${idToken}`;
-    }
-
     const res = await fetch('/api/gemini/notebook-synthesize', {
       method: 'POST',
-      headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
 

@@ -24,7 +24,6 @@ import {
 import { JornalArticle, JornalCategory } from '../types/news';
 import { jornalService } from '../services/jornalService';
 import { updateSEO } from '../utils/seoManager';
-import { sanitizeHtml } from '../utils/sanitizeHtml';
 
 interface JornalNewsViewProps {
   onNavigateBack: () => void;
@@ -635,7 +634,7 @@ export const JornalNewsView: React.FC<JornalNewsViewProps> = ({
               {/* Rich Body */}
               <div
                 className="prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-slate-200 text-sm sm:text-base leading-relaxed space-y-4"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedArticle.conteudo) }}
+                dangerouslySetInnerHTML={{ __html: selectedArticle.conteudo }}
               />
 
               {/* Bottom Actions & Wiki Integration */}

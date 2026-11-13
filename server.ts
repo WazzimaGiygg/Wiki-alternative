@@ -5,7 +5,6 @@ try {
   // Ignora se não suportado na versão
 }
 import express, { Request, Response } from 'express';
-import compression from 'compression';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -39,7 +38,6 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
-app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 
 // Lazy initialization of GoogleGenAI client to avoid crashes if GEMINI_API_KEY is not yet set
@@ -185,63 +183,6 @@ function checkAntiplagiarismRateLimit(
   }
   record.count += 1;
   return { allowed: true };
-}
-
-// Limite em memória por usuário para requisições Gemini: máximo 25 requisições a cada 5 minutos
-const geminiRateLimits = new Map<string, { count: number; resetAt: number }>();
-function checkGeminiRateLimit(
-  userUid: string,
-  maxRequests = 25,
-  windowMs = 5 * 60 * 1000
-): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const record = geminiRateLimits.get(userUid);
-  if (!record || now > record.resetAt) {
-    geminiRateLimits.set(userUid, { count: 1, resetAt: now + windowMs });
-    return { allowed: true };
-  }
-  if (record.count >= maxRequests) {
-    const retryAfter = Math.ceil((record.resetAt - now) / 1000);
-    return { allowed: false, retryAfter };
-  }
-  record.count += 1;
-  return { allowed: true };
-}
-
-export async function authenticateGeminiRequest(
-  req: Request,
-  res: Response
-): Promise<{ uid: string; email?: string } | null> {
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith('Bearer ')
-    ? authHeader.slice(7)
-    : (req.body?.idToken || (req.query?.token as string));
-
-  if (!token) {
-    res.status(401).json({
-      error: 'Autenticação necessária. É obrigatório fornecer um token de autenticação válido do Firebase (Bearer token) para utilizar os recursos de IA Gemini.',
-    });
-    return null;
-  }
-
-  const verified = await verifyFirebaseIdToken(token);
-  if (!verified) {
-    res.status(403).json({
-      error: 'Token de autenticação do Firebase inválido ou expirado.',
-    });
-    return null;
-  }
-
-  const rateCheck = checkGeminiRateLimit(verified.uid);
-  if (!rateCheck.allowed) {
-    res.status(429).json({
-      error: `Limite de requisições de IA atingido temporariamente. Por favor aguarde ${rateCheck.retryAfter} segundos antes de tentar novamente.`,
-      retryAfter: rateCheck.retryAfter,
-    });
-    return null;
-  }
-
-  return verified;
 }
 
 // -------------------------------------------------------------
@@ -863,26 +804,8 @@ app.get('/api/network/github', async (req: Request, res: Response) => {
 // -------------------------------------------------------------
 
 // Obter regras ativas do Firestore e metadados em JSON (3.05.9.c)
-app.get('/api/firebase/rules', async (req: Request, res: Response) => {
+app.get('/api/firebase/rules', (req: Request, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.slice(7)
-      : (req.query?.token as string);
-
-    if (!token) {
-      return res.status(401).json({ success: false, error: 'Autenticação necessária via Firebase ID Token.' });
-    }
-
-    const verified = await verifyFirebaseIdToken(token);
-    const SUPERADMIN_EMAIL = 'pedrohenriquecardonaperes@gmail.com';
-    if (!verified || verified.email !== SUPERADMIN_EMAIL) {
-      return res.status(403).json({
-        success: false,
-        error: 'Acesso negado. Apenas o Superadministrador autorizado pode visualizar a configuração interna do Firestore.',
-      });
-    }
-
     const rulesPath = path.resolve(process.cwd(), 'firestore.rules');
     const blueprintPath = path.resolve(process.cwd(), 'firebase-blueprint.json');
     const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
@@ -924,27 +847,8 @@ app.get('/api/firebase/rules', async (req: Request, res: Response) => {
 });
 
 // Salvar / atualizar regras do Firestore enviadas em JSON (3.05.9.d)
-// PROTEÇÃO CRÍTICA: Restrito ao superadministrador legítimo via token verificado
-app.post('/api/firebase/rules', async (req: Request, res: Response) => {
+app.post('/api/firebase/rules', (req: Request, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.slice(7)
-      : (req.body?.idToken || (req.query?.token as string));
-
-    if (!token) {
-      return res.status(401).json({ success: false, error: 'Autenticação necessária via Firebase ID Token.' });
-    }
-
-    const verified = await verifyFirebaseIdToken(token);
-    const SUPERADMIN_EMAIL = 'pedrohenriquecardonaperes@gmail.com';
-    if (!verified || verified.email !== SUPERADMIN_EMAIL) {
-      return res.status(403).json({
-        success: false,
-        error: 'Acesso negado. Apenas o Superadministrador autorizado pode salvar ou atualizar as regras do Firestore.',
-      });
-    }
-
     const { rulesContent, rules } = req.body;
     const contentToSave = rulesContent || rules;
 
@@ -1009,9 +913,6 @@ app.get('/api/gemini/status', (req: Request, res: Response) => {
 // 1.1 Teste de Ping e Diagnóstico da variável GEMINI_API_KEY (Requisito 3.05.3.ag)
 app.post('/api/gemini/test-ping', async (req: Request, res: Response) => {
   try {
-    const verifiedUser = await authenticateGeminiRequest(req, res);
-    if (!verifiedUser) return;
-
     const startTime = Date.now();
     const ai = getGemini();
     const testModel = req.body?.model || 'gemini-3.8-flash';
@@ -1052,9 +953,6 @@ app.post('/api/gemini/test-ping', async (req: Request, res: Response) => {
 // 2. Chatbot Geral & Assistente de Criação de Conteúdo com Identidade de Usuário, Imagens e Oferta de Planos
 app.post('/api/gemini/chat', async (req: Request, res: Response) => {
   try {
-    const verifiedUser = await authenticateGeminiRequest(req, res);
-    if (!verifiedUser) return;
-
     const {
       message,
       history = [],
@@ -1252,9 +1150,6 @@ Quando o usuário pedir texto, seções ou um artigo completo, forneça sempre a
 // 2.1 Rota especializada: Gemini Notebook - Síntese e Inserção de Artigos no Wiki
 app.post('/api/gemini/notebook-synthesize', async (req: Request, res: Response) => {
   try {
-    const verifiedUser = await authenticateGeminiRequest(req, res);
-    if (!verifiedUser) return;
-
     const {
       sources = [],
       action = 'full_article',
@@ -1364,9 +1259,6 @@ ${targetArticleTitle ? `\nArtigo de destino na WikiZero: "${targetArticleTitle}"
 // 3. Rota especializada: Gerador de Artigo Completo em Wikitext
 app.post('/api/gemini/generate-article', async (req: Request, res: Response) => {
   try {
-    const verifiedUser = await authenticateGeminiRequest(req, res);
-    if (!verifiedUser) return;
-
     const {
       topic,
       category = 'Geral',
@@ -1435,9 +1327,6 @@ Responda APENAS com o texto em wikitext formatado, sem preâmbulos e sem blocos 
 // 4. Rota especializada: Gerador Estruturado de Coleção de Páginas
 app.post('/api/gemini/generate-collection', async (req: Request, res: Response) => {
   try {
-    const verifiedUser = await authenticateGeminiRequest(req, res);
-    if (!verifiedUser) return;
-
     const {
       theme,
       chatbotId = '0a14dc90-3ab3-47bc-8306-ca5bc2953699',
@@ -2139,27 +2028,8 @@ if (typeof customElements !== 'undefined' && !customElements.get('vite-error-ove
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(
-      '/assets',
-      express.static(path.join(distPath, 'assets'), {
-        maxAge: '1y',
-        immutable: true,
-        setHeaders: (res) => {
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        },
-      })
-    );
-    app.use(
-      express.static(distPath, {
-        setHeaders: (res, filePath) => {
-          if (filePath.endsWith('.html') || filePath.endsWith('sw.js') || filePath.endsWith('workbox-')) {
-            res.setHeader('Cache-Control', 'no-cache');
-          }
-        },
-      })
-    );
+    app.use(express.static(distPath));
     app.get('*', (req: Request, res: Response) => {
-      res.setHeader('Cache-Control', 'no-cache');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

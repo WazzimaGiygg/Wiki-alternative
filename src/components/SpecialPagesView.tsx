@@ -51,9 +51,7 @@ import { StorageService } from '../services/storageService';
 import { buildUidPermalink } from '../utils/urlRouter';
 import { PdfExportModal } from './PdfExportModal';
 import { StandardUidDictionaryModal } from './StandardUidDictionaryModal';
-const WikiStatisticsPanel = React.lazy(() =>
-  import('./WikiStatisticsPanel').then((m) => ({ default: m.WikiStatisticsPanel }))
-);
+import { WikiStatisticsPanel } from './WikiStatisticsPanel';
 
 interface SpecialPagesViewProps {
   articles: WikiArticle[];
@@ -1330,21 +1328,12 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
       {/* Tab 6: Statistics */}
       {activeTab === 'stats' && (
         <div className="space-y-6">
-          <React.Suspense
-            fallback={
-              <div className="p-8 text-center text-slate-500 font-sans flex items-center justify-center gap-2">
-                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                <span>Carregando estatísticas e gráficos da enciclopédia...</span>
-              </div>
-            }
-          >
-            <WikiStatisticsPanel
-              pages={pages}
-              articles={articles}
-              currentUser={user}
-              onSelectArticle={onNavigateToArticle}
-            />
-          </React.Suspense>
+          <WikiStatisticsPanel
+            pages={pages}
+            articles={articles}
+            currentUser={user}
+            onSelectArticle={onNavigateToArticle}
+          />
 
           <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 font-sans">
             <h4 className="font-bold text-xs text-slate-900 dark:text-white uppercase font-mono tracking-wider flex items-center gap-1.5">

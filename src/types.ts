@@ -382,8 +382,6 @@ export interface TalkReply {
   autor: string;
   autorEmail?: string;
   autorRole?: string;
-  autorUid?: string;
-  userId?: string;
   conteudo: string;
   data: string;
   upvotes?: number;
@@ -396,8 +394,6 @@ export interface TalkThread {
   autor: string;
   autorEmail?: string;
   autorRole?: string;
-  autorUid?: string;
-  userId?: string;
   data: string;
   conteudo: string;
   status: 'aberto' | 'em_discussao' | 'resolvido' | 'consenso';
@@ -878,12 +874,6 @@ export interface Page {
   createdAt: string;
   updatedAt: string;
   version: number;
-  isLocked?: boolean;
-  lockedBy?: string;
-  lockedByUid?: string;
-  lockedAt?: string;
-  lockReason?: string;
-  protectionLevel?: 'moderators_only' | 'all';
 }
 
 export interface CreatePageInput {
@@ -1460,7 +1450,6 @@ export interface LibraryItem {
 
   // Metadados do cadastro e auditoria
   cadastradoPorUid?: string;
-  userId?: string;
   cadastradoPorNome?: string;
   dataCadastro: string;
   ultimaModificacao?: string;

@@ -9,8 +9,34 @@
 
 import { HookRegistry, WikiExtension } from '../../core/Extension';
 import { ExtensionCategory, ExtensionSettingField } from '../../types';
-import { DEFAULT_FIRST_VISIT_HTML } from './defaultHtml';
-export { DEFAULT_FIRST_VISIT_HTML };
+
+export const DEFAULT_FIRST_VISIT_HTML = `<div class="space-y-4 text-slate-700 dark:text-slate-200">
+  <div class="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-500/20">
+    <h3 class="text-base font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+      <span>🚀</span>
+      <span>Novidades da Versão 4.1.1 da WikiZero</span>
+    </h3>
+    <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+      Seja muito bem-vindo à enciclopédia livre, acadêmica e moderna com inteligência artificial, conformidade estrita com a LGPD e sistema de bots autônomos.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+      <strong class="text-slate-900 dark:text-white block mb-1">🤖 Agente de Bots & Varredura</strong>
+      <p class="text-slate-500 dark:text-slate-400">Proteção contra vandalismo em tempo real, verificação automática de citações e proteção LGPD.</p>
+    </div>
+    <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+      <strong class="text-slate-900 dark:text-white block mb-1">🎓 Módulo Antiplágio & TCC</strong>
+      <p class="text-slate-500 dark:text-slate-400">Análise de monografias, normas ABNT NBR 10520/6023 e parecer detalhado para orientadores.</p>
+    </div>
+  </div>
+
+  <div class="text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-3">
+    <em>Nota do Conselho de Burocratas: Este comunicado pode ser personalizado ou desativado no painel administrativo de extensões.</em>
+  </div>
+</div>`;
+
 export default class FirstVisitNewsPopupExtension implements WikiExtension {
   getName(): string {
     return 'FirstVisitNewsPopupExtension';

@@ -1,4 +1,4 @@
-import type { jsPDF } from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { LgpdAccountDeletionRequest, LgpdDeletionRequestStatus } from '../types';
 import {
   drawPdfStandardHeroBanner,
@@ -33,7 +33,6 @@ export async function generateLgpdRemovalPdf(
     filteredRequests = filteredRequests.filter((r) => r.status === statusFilter);
   }
 
-  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',

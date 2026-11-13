@@ -19,8 +19,7 @@ import {
 } from 'lucide-react';
 import { ExtensionManager } from '../core/ExtensionManager';
 import { UserProfile } from '../types';
-import { DEFAULT_FIRST_VISIT_HTML } from '../extensions/first-visit-news-popup/defaultHtml';
-import { sanitizeHtml } from '../utils/sanitizeHtml';
+import { DEFAULT_FIRST_VISIT_HTML } from '../extensions/first-visit-news-popup';
 
 interface FirstVisitNewsPopupModalProps {
   currentUser?: UserProfile | null;
@@ -180,7 +179,7 @@ export const FirstVisitNewsPopupModal: React.FC<FirstVisitNewsPopupModalProps> =
           {/* Renderização do HTML Personalizado inserido pelo Burocrata */}
           <div
             className="prose dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-slate-900 dark:prose-headings:text-white prose-p:my-2 prose-a:text-blue-600 dark:prose-a:text-blue-400"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(htmlContent) }}
+            dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
         </div>
 

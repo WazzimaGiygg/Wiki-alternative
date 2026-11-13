@@ -1,4 +1,4 @@
-import type { jsPDF } from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { WIKIZERO_STANDARD_LOGO_DATA_URL } from './pdfStandardLogoAsset';
 
 export interface PdfKpiCard {

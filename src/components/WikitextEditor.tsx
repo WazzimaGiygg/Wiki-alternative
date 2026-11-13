@@ -42,16 +42,12 @@ import {
   WholeWord,
   Wrench,
   Puzzle,
-  LogIn,
-  ShieldAlert,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus, CustomEditorPluginConfig } from '../types';
 import { ExtensionManager } from '../core/ExtensionManager';
 import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
-import { PermissionService, EditPermissionStatus } from '../services/PermissionService';
-import { sanitizeHtml } from '../utils/sanitizeHtml';
 import { BotAgentService } from '../services/botAgentService';
 import { SaveReasonModal } from './SaveReasonModal';
 import { PdfExportModal } from './PdfExportModal';
@@ -69,7 +65,6 @@ import {
   fixAllCitationsWithPlaceholders,
 } from '../utils/citationValidator';
 import { CitationHoverTooltip, CitationTooltipData } from './CitationHoverTooltip';
-import { EditConflictModal } from './EditConflictModal';
 
 interface WikitextEditorProps {
   initialArticle?: WikiArticle | null;
@@ -79,12 +74,7 @@ interface WikitextEditorProps {
   onSave: (
     articleData: Partial<WikiArticle> & { titulo: string; pageUid: string; descricao: string },
     editSummary: string,
-    isMinor?: boolean,
-    conflictOptions?: {
-      baseVersion?: number;
-      baseContent?: string;
-      forceOverwrite?: boolean;
-    }
+    isMinor?: boolean
   ) => Promise<void>;
   onCancel: () => void;
   onOpenLoginModal?: () => void;
@@ -111,26 +101,6 @@ export const WikitextEditor: React.FC<WikitextEditorProps> = ({
   );
   const [categoria, setCategoria] = useState(initialArticle?.categoria || 'Geral');
   const [idioma, setIdioma] = useState(initialArticle?.idioma || 'Português');
-
-  // Rastreamento da revisão-base ao abrir o editor para detecção de conflitos de concorrência
-  const baseVersionRef = useRef<number>(initialArticle?.versao || 1);
-  const baseContentRef = useRef<string>(initialArticle?.descricao || '');
-
-  useEffect(() => {
-    baseVersionRef.current = initialArticle?.versao || 1;
-    baseContentRef.current = initialArticle?.descricao || '';
-  }, [initialArticle]);
-
-  // Estado do modal interativo de resolução de conflito de edição
-  const [conflictModalData, setConflictModalData] = useState<{
-    serverArticle: WikiArticle;
-    baseVersion: number;
-    yourWikitext: string;
-    baseWikitext: string;
-    editSummary: string;
-    isMinor?: boolean;
-  } | null>(null);
-
   const [descricao, setDescricao] = useState(
     initialArticle?.descricao ||
       `= Título da Página =
@@ -210,15 +180,6 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const isArticleLocked = !!initialArticle?.isLocked;
   const isPageLocked = !!currentSelectedPage?.isLocked;
   const isTargetLocked = (isArticleLocked || isPageLocked) && !isModeratorOrAdmin;
-
-  const editPermission = useMemo<EditPermissionStatus>(() => {
-    return PermissionService.getEditPermissionStatus(
-      user,
-      initialArticle || (currentSelectedPage ? { ...currentSelectedPage, namespace: 'main' } : null)
-    );
-  }, [user, initialArticle, currentSelectedPage]);
-
-  const [securityWarningModal, setSecurityWarningModal] = useState<{ title: string; message: string; requiresLogin?: boolean } | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
@@ -823,24 +784,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   };
 
   const handleOpenSaveModal = async () => {
-    if (!editPermission.allowed) {
-      if (editPermission.requiresLogin && onOpenLoginModal) {
-        onOpenLoginModal();
-        return;
-      }
-      setSecurityWarningModal({
-        title: 'Edição Não Autorizada',
-        message: editPermission.message,
-        requiresLogin: editPermission.requiresLogin,
-      });
-      return;
-    }
-
     if (!titulo.trim()) {
-      setSecurityWarningModal({
-        title: 'Título Obrigatório',
-        message: 'Por favor, informe o título do artigo antes de salvar.',
-      });
+      alert('Por favor, informe o título do artigo antes de salvar.');
       return;
     }
 
@@ -855,10 +800,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     }
 
     if (!currentContent.trim()) {
-      setSecurityWarningModal({
-        title: 'Conteúdo Obrigatório',
-        message: 'O conteúdo do artigo não pode ficar vazio.',
-      });
+      alert('O conteúdo do artigo não pode ficar vazio.');
       return;
     }
 
@@ -868,10 +810,9 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         const status = await StorageService.getDailyEditLimitStatus(user);
         setDailyLimitStatus(status);
         if (!status.allowed && !status.isExempt) {
-          setSecurityWarningModal({
-            title: 'Limite Diário Atingido',
-            message: 'Limite diário atingido: Usuários com papel de editor podem realizar até 5 edições por dia (com exceção de moderadores e administradores). Seu limite será renovado à meia-noite.',
-          });
+          alert(
+            'Limite diário atingido: Usuários com papel de editor podem realizar até 5 edições por dia (com exceção de moderadores e administradores). Seu limite será renovado à meia-noite.'
+          );
           return;
         }
       } catch (e) {
@@ -899,8 +840,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
   const handleConfirmSave = async (editSummary: string, isMinor: boolean) => {
     setIsSaving(true);
-    let finalDescricao = descricao;
     try {
+      let finalDescricao = descricao;
       if (viewMode === 'visual' && visualEditorRef.current) {
         const converted = htmlToWikitext(visualEditorRef.current.innerHTML);
         if (converted.trim()) {
@@ -924,10 +865,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
       if (!botCheck.canSave) {
         setIsSaving(false);
-        setSecurityWarningModal({
-          title: 'Bloqueio de Integridade',
-          message: botCheck.rejectionReason || 'Edição bloqueada pelo sistema de robôs e integridade da WikiZero.',
-        });
+        alert(botCheck.rejectionReason || 'Edição bloqueada pelo sistema de robôs e integridade da WikiZero.');
         return;
       }
 
@@ -955,11 +893,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           comiteEtica,
         },
         editSummary,
-        isMinor,
-        {
-          baseVersion: baseVersionRef.current,
-          baseContent: baseContentRef.current,
-        }
+        isMinor
       );
 
       // Launch celebration confetti
@@ -978,24 +912,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       onDirtyChange?.(false, isNewArticle);
     } catch (err: any) {
       console.error('Erro ao salvar artigo:', err);
-
-      // Detecção de Conflito de Edição Concorrente
-      if (err?.name === 'EditConflictError' || err?.currentServerArticle) {
-        setConflictModalData({
-          serverArticle: err.currentServerArticle,
-          baseVersion: err.baseVersion ?? baseVersionRef.current,
-          yourWikitext: finalDescricao,
-          baseWikitext: err.baseContent ?? baseContentRef.current,
-          editSummary,
-          isMinor,
-        });
-        return;
-      }
-
-      setSecurityWarningModal({
-        title: 'Erro ao Salvar Artigo',
-        message: err?.message || 'Ocorreu um erro ao salvar o artigo.',
-      });
+      alert(err?.message || 'Ocorreu um erro ao salvar o artigo.');
     } finally {
       setIsSaving(false);
       refreshDailyLimit();
@@ -1157,20 +1074,13 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         e.preventDefault();
         e.stopPropagation();
 
-        if (!editPermission.allowed) {
-          setSecurityWarningModal({
-            title: 'Edição Não Autorizada',
-            message: editPermission.message,
-            requiresLogin: editPermission.requiresLogin,
-          });
+        if (isTargetLocked) {
+          alert('Bloqueado pela moderação: Apenas moderadores e administradores podem salvar alterações neste verbete ou coleção.');
           return;
         }
 
         if (dailyLimitStatus && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed) {
-          setSecurityWarningModal({
-            title: 'Limite Diário Atingido',
-            message: 'Você atingiu o limite de 5 edições diárias para o perfil de editor. Suas edições serão renovadas à meia-noite.',
-          });
+          alert('Você atingiu o limite de 5 edições diárias para o perfil de editor. Suas edições serão renovadas à meia-noite.');
           return;
         }
 
@@ -1269,10 +1179,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 type="button"
                 onClick={() => {
                   if (!comiteEtica || !comiteEtica.envolveSeresHumanos) {
-                    setSecurityWarningModal({
-                      title: 'Comitê de Ética',
-                      message: 'Configure os dados do Comitê de Ética antes de inserir a predefinição.',
-                    });
+                    alert('Configure os dados do Comitê de Ética antes de inserir a predefinição.');
                     return;
                   }
                   const cepCode = `\n\n== Comitê de Ética em Pesquisa com Seres Humanos ==\n` +
@@ -1299,116 +1206,6 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Security Warning Modal */}
-      {securityWarningModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
-          onClick={() => setSecurityWarningModal(null)}
-        >
-          <div
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 shrink-0">
-                  <ShieldAlert size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                    {securityWarningModal.title}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-mono">Segurança &middot; RBAC WikiZero</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSecurityWarningModal(null)}
-                aria-label="Fechar"
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              {securityWarningModal.message}
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              {securityWarningModal.requiresLogin && onOpenLoginModal && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSecurityWarningModal(null);
-                    onOpenLoginModal();
-                  }}
-                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-98"
-                >
-                  <LogIn size={13} />
-                  <span>Fazer Login com Google</span>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setSecurityWarningModal(null)}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium transition cursor-pointer"
-              >
-                Entendido
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Security Status Banner when editing is unauthorized */}
-      {!editPermission.allowed && (
-        <div
-          role="alert"
-          className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-in fade-in ${
-            editPermission.reasonCode === 'ANONYMOUS'
-              ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100'
-              : editPermission.reasonCode === 'LOCKED_ARTICLE'
-              ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100'
-              : 'bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800 text-red-900 dark:text-red-100'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-white/80 dark:bg-black/40 shrink-0">
-              {editPermission.reasonCode === 'ANONYMOUS' && <LogIn size={18} className="text-blue-600 dark:text-blue-400" />}
-              {editPermission.reasonCode === 'LOCKED_ARTICLE' && <Lock size={18} className="text-amber-600 dark:text-amber-400" />}
-              {editPermission.reasonCode !== 'ANONYMOUS' && editPermission.reasonCode !== 'LOCKED_ARTICLE' && (
-                <ShieldAlert size={18} className="text-red-600 dark:text-red-400" />
-              )}
-            </div>
-            <div>
-              <p className="text-xs font-bold">
-                {editPermission.reasonCode === 'ANONYMOUS' && 'Modo Visualização (Usuário Não Autenticado)'}
-                {editPermission.reasonCode === 'LOCKED_ARTICLE' && 'Artigo Protegido pela Moderação'}
-                {editPermission.reasonCode === 'BANNED' && 'Conta Suspensa'}
-                {editPermission.reasonCode === 'REVOKED' && 'Permissão de Edição Revogada'}
-                {editPermission.reasonCode === 'RESTRICTED_NAMESPACE' && 'Namespace Administrativo Restrito'}
-              </p>
-              <p className="text-[11px] opacity-90 mt-0.5">
-                {editPermission.message}
-              </p>
-            </div>
-          </div>
-          {editPermission.requiresLogin && onOpenLoginModal && (
-            <button
-              type="button"
-              onClick={onOpenLoginModal}
-              className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer shrink-0 active:scale-98"
-            >
-              <LogIn size={13} />
-              <span>Fazer Login com Google</span>
-            </button>
-          )}
         </div>
       )}
 
@@ -2447,7 +2244,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 </div>
                 <div
                   className="wiki-rendered-content font-wiki-body text-xs"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderedHtml) }}
+                  dangerouslySetInnerHTML={{ __html: renderedHtml }}
                 />
               </div>
             </div>
@@ -2465,7 +2262,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
               </div>
               <div
                 className="wiki-rendered-content font-wiki-body text-xs"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderedHtml) }}
+                dangerouslySetInnerHTML={{ __html: renderedHtml }}
               />
             </div>
           )}
@@ -2515,41 +2312,25 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             <button
               type="button"
               onClick={handleOpenSaveModal}
-              disabled={isSaving || !editPermission.allowed || (dailyLimitStatus !== null && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed)}
+              disabled={isSaving || (dailyLimitStatus !== null && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed) || isTargetLocked}
               title={
-                !editPermission.allowed
-                  ? editPermission.message
+                isTargetLocked
+                  ? 'Bloqueado pela moderação: Apenas moderadores e administradores podem salvar alterações neste verbete ou coleção.'
                   : dailyLimitStatus && !dailyLimitStatus.isExempt && !dailyLimitStatus.allowed
                   ? 'Você atingiu o limite de 5 edições diárias para o perfil de editor. Moderadores e administradores têm edições ilimitadas.'
                   : 'Salvar e Publicar Alterações (Atalho: Ctrl+S)'
               }
               className={`px-4 py-1.5 text-xs font-semibold rounded transition flex items-center gap-1.5 flex-shrink-0 shadow-xs cursor-pointer ${
-                !editPermission.allowed
-                  ? 'bg-slate-400 dark:bg-slate-700 text-white cursor-not-allowed opacity-80'
+                isTargetLocked
+                  ? 'bg-amber-600/70 text-white cursor-not-allowed opacity-75'
                   : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
               }`}
             >
-              {!editPermission.allowed ? (
-                editPermission.reasonCode === 'ANONYMOUS' ? <LogIn size={13} /> : <Lock size={13} />
-              ) : (
-                <Save size={13} />
-              )}
-              <span>
-                {isSaving
-                  ? 'Salvando...'
-                  : !editPermission.allowed
-                  ? editPermission.reasonCode === 'ANONYMOUS'
-                    ? 'Entrar para Salvar'
-                    : editPermission.reasonCode === 'LOCKED_ARTICLE'
-                    ? 'Bloqueado pela Moderação'
-                    : 'Edição Não Autorizada'
-                  : 'Salvar e Publicar Alterações'}
-              </span>
-              {editPermission.allowed && (
-                <kbd className="hidden sm:inline text-[9px] font-mono px-1 py-0.2 rounded bg-black/25 text-white/90 ml-1">
-                  Ctrl+S
-                </kbd>
-              )}
+              {isTargetLocked ? <Lock size={13} /> : <Save size={13} />}
+              <span>{isSaving ? 'Salvando...' : isTargetLocked ? 'Bloqueado pela Moderação' : 'Salvar e Publicar Alterações'}</span>
+              <kbd className="hidden sm:inline text-[9px] font-mono px-1 py-0.2 rounded bg-black/25 text-white/90 ml-1">
+                Ctrl+S
+              </kbd>
             </button>
           </div>
         </div>
@@ -2703,7 +2484,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                   <div
                     className="wiki-rendered-content font-wiki-body text-xs p-4 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 min-h-[160px] overflow-x-auto"
                     dangerouslySetInnerHTML={{
-                      __html: sanitizeHtml(parseWikitext(customWikitextCode || '*(nenhum código informado ainda)*').html),
+                      __html: parseWikitext(customWikitextCode || '*(nenhum código informado ainda)*').html,
                     }}
                   />
                 </div>
@@ -2852,58 +2633,6 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           setHoverTooltipPos(null);
         }}
       />
-
-      {/* Modal Interativo de Conflito de Edição (Diff e 3-Way Merge) */}
-      {conflictModalData && (
-        <EditConflictModal
-          isOpen={!!conflictModalData}
-          serverArticle={conflictModalData.serverArticle}
-          baseVersion={conflictModalData.baseVersion}
-          yourWikitext={conflictModalData.yourWikitext}
-          baseWikitext={conflictModalData.baseWikitext}
-          onClose={() => setConflictModalData(null)}
-          onApplyMergedText={(mergedText) => {
-            setDescricao(mergedText);
-            baseVersionRef.current = conflictModalData.serverArticle.versao || baseVersionRef.current;
-            baseContentRef.current = conflictModalData.serverArticle.descricao || '';
-            setConflictModalData(null);
-          }}
-          onForceOverwrite={async () => {
-            const dataToForce = {
-              id: initialArticle?.id,
-              titulo: titulo.trim(),
-              pageUid,
-              categoria,
-              idioma,
-              descricao,
-              resumo: conflictModalData.editSummary || descricao.slice(0, 140) + '...',
-              comiteEtica,
-            };
-            setConflictModalData(null);
-            setIsSaving(true);
-            try {
-              await onSave(dataToForce, conflictModalData.editSummary, conflictModalData.isMinor, {
-                forceOverwrite: true,
-              });
-              setIsSavedSuccessfully(true);
-              onDirtyChange?.(false, isNewArticle);
-            } catch (forceErr: any) {
-              setSecurityWarningModal({
-                title: 'Erro ao Forçar Gravação',
-                message: forceErr?.message || 'Falha ao forçar sobrescrita.',
-              });
-            } finally {
-              setIsSaving(false);
-            }
-          }}
-          onDiscardMyChanges={() => {
-            setDescricao(conflictModalData.serverArticle.descricao || '');
-            baseVersionRef.current = conflictModalData.serverArticle.versao || 1;
-            baseContentRef.current = conflictModalData.serverArticle.descricao || '';
-            setConflictModalData(null);
-          }}
-        />
-      )}
     </div>
   );
 };

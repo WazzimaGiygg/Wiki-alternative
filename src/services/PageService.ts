@@ -20,7 +20,6 @@ import {
 import { getDb, getAuthSafe, handleFirestoreError, OperationType } from './firebase';
 import { Page, PageNamespace, CreatePageInput, UpdatePageInput } from '../types';
 import { TemplateService } from './TemplateService';
-import { PermissionService } from './PermissionService';
 
 const COLLECTION_NAME = 'pages';
 const LOCAL_STORAGE_KEY = 'wikizero_pages_v3_namespaces';
@@ -229,17 +228,6 @@ export class PageService {
 
     const auth = getAuthSafe();
     const currentUser = auth?.currentUser;
-    let userProfile = null;
-    try {
-      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('wikizero_current_user') : null;
-      if (raw) userProfile = JSON.parse(raw);
-    } catch {}
-
-    const effectiveUser = userProfile || (currentUser ? { uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName } : null);
-    const permStatus = PermissionService.getEditPermissionStatus(effectiveUser, { namespace, isLocked: false });
-    if (!permStatus.allowed) {
-      throw new Error(permStatus.message);
-    }
 
     const newPage: Page = {
       id: pageId,
@@ -249,8 +237,8 @@ export class PageService {
       categories: combinedCategories,
       templateName: data.templateName || undefined,
       templateParams: data.templateParams || undefined,
-      authorUid: data.authorUid || currentUser?.uid || effectiveUser?.uid || 'user',
-      authorName: data.authorName || currentUser?.displayName || effectiveUser?.displayName || 'Editor WikiZero',
+      authorUid: data.authorUid || currentUser?.uid || 'anonymous',
+      authorName: data.authorName || currentUser?.displayName || 'Editor WikiZero',
       createdAt: now,
       updatedAt: now,
       version: 1,
@@ -526,20 +514,6 @@ export class PageService {
       throw new Error(`Página com ID "${id}" não encontrada.`);
     }
 
-    const auth = getAuthSafe();
-    const currentUser = auth?.currentUser;
-    let userProfile = null;
-    try {
-      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('wikizero_current_user') : null;
-      if (raw) userProfile = JSON.parse(raw);
-    } catch {}
-
-    const effectiveUser = userProfile || (currentUser ? { uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName } : null);
-    const permStatus = PermissionService.getEditPermissionStatus(effectiveUser, existing);
-    if (!permStatus.allowed) {
-      throw new Error(permStatus.message);
-    }
-
     const newContent = data.content !== undefined ? data.content : existing.content;
     const contentCategories = this.extractCategoriesFromContent(newContent);
     const newCategories = data.categories !== undefined
@@ -584,19 +558,6 @@ export class PageService {
    * Exclui uma página pelo ID.
    */
   public static async deletePage(id: string): Promise<boolean> {
-    const auth = getAuthSafe();
-    const currentUser = auth?.currentUser;
-    let userProfile = null;
-    try {
-      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('wikizero_current_user') : null;
-      if (raw) userProfile = JSON.parse(raw);
-    } catch {}
-
-    const effectiveUser = userProfile || (currentUser ? { uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName } : null);
-    if (!PermissionService.can(effectiveUser, 'delete')) {
-      throw new Error('Apenas administradores possuem autorização para excluir páginas.');
-    }
-
     this.deleteFromLocalCache(id);
 
     try {

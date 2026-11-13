@@ -18,7 +18,6 @@ import {
 import { WikiArticle, ArticleHistoryItem } from '../types';
 import { parseWikitext } from '../utils/wikitextParser';
 import { computeLineDiff, DiffLine } from '../utils/diffUtils';
-import { sanitizeHtml } from '../utils/sanitizeHtml';
 
 interface ArticleHistoryViewProps {
   article: WikiArticle;
@@ -615,7 +614,7 @@ export const ArticleHistoryView: React.FC<ArticleHistoryViewProps> = ({
           {/* Rendered Historical Article Page */}
           <div
             className="wiki-rendered-content font-wiki-body text-xs"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(previewHtml) }}
+            dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
         </div>
       )}

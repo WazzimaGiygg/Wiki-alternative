@@ -148,25 +148,16 @@ export async function fetchGeminiKeyStatus(): Promise<GeminiKeyStatusResponse> {
   }
 }
 
-import { getFirebaseIdTokenSafe } from '../../services/firebase';
-
 /**
  * Executa teste de conectividade e ping via GEMINI_API_KEY no servidor
  */
 export async function testGeminiKeyPing(prompt?: string): Promise<GeminiTestPingResponse> {
   try {
-    const idToken = await getFirebaseIdTokenSafe();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (idToken) {
-      headers['Authorization'] = `Bearer ${idToken}`;
-    }
-
     const res = await fetch('/api/gemini/test-ping', {
       method: 'POST',
-      headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt: prompt || 'Responda em uma frase curta confirmando que a variável GEMINI_API_KEY está ativa e funcionando no servidor da Wiki.',
-        idToken: idToken || undefined,
       }),
     });
 
@@ -184,4 +175,3 @@ export async function testGeminiKeyPing(prompt?: string): Promise<GeminiTestPing
     };
   }
 }
-

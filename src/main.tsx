@@ -9,7 +9,6 @@ import { StorageService } from './services/storageService';
 import { siteAutoUpdateService } from './services/siteAutoUpdateService';
 import './index.css';
 import './print.css';
-import 'katex/dist/katex.min.css';
 
 // Inicializa o carregamento dinâmico das extensões do WikiZero
 ExtensionManager.getInstance().loadExtensionsFromGlob().catch((err) => {

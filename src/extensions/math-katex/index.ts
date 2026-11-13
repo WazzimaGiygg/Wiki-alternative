@@ -1,9 +1,8 @@
 import { HookRegistry, WikiExtension } from '../../core/Extension';
-import katex from 'katex';
 
 /**
  * Extension: MathKatex
- * Converte marcações matemáticas <math>...</math> em fórmulas tipográficas com o motor real KaTeX.
+ * Converte marcações matemáticas <math>...</math> em fórmulas estilizadas e legíveis.
  */
 export default class MathKatex implements WikiExtension {
   getName(): string {
@@ -11,11 +10,11 @@ export default class MathKatex implements WikiExtension {
   }
 
   getVersion(): string {
-    return '2.0.0';
+    return '1.2.0';
   }
 
   getDescription(): string {
-    return 'Renderiza expressões e equações matemáticas com o motor real KaTeX em notação visual tipograficamente refinada.';
+    return 'Renderiza expressões e equações matemáticas (LaTeX/KaTeX) em notação visual tipograficamente refinada.';
   }
 
   getAuthor(): string {
@@ -35,29 +34,37 @@ export default class MathKatex implements WikiExtension {
   }
 
   onRegister(hooks: HookRegistry): void {
-    // Transforma tags <math>formula</math> em HTML estilizado do KaTeX
+    // Transforma tags <math>formula</math> em HTML estilizado de fórmula
     hooks.addFilter<string>(
       'render:wikitext',
       (rawWikitext: string) => {
         if (!rawWikitext || typeof rawWikitext !== 'string') return rawWikitext;
 
         return rawWikitext.replace(
-          /<math(?:\s+display=["']?(inline|block)["']?)?>([\s\S]*?)<\/math>/gi,
-          (_match, displayAttr, formula) => {
-            const isBlock = displayAttr?.toLowerCase() === 'block' || (formula && formula.includes('\n'));
-            try {
-              const rendered = katex.renderToString((formula || '').trim(), {
-                throwOnError: false,
-                displayMode: isBlock,
-                output: 'htmlAndMathml',
-              });
-              if (isBlock) {
-                return `\n\n<div class="wiki-math-block my-4 p-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto text-center not-prose shadow-xs">${rendered}</div>\n\n`;
-              }
-              return `<span class="wiki-math-inline align-middle mx-1 inline-block">${rendered}</span>`;
-            } catch {
-              return `<code class="font-mono text-xs text-rose-500">${(formula || '').trim()}</code>`;
-            }
+          /<math(?:\s+chem)?>([\s\S]*?)<\/math>/gi,
+          (_match, formula) => {
+            const cleanFormula = (formula || '')
+              .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1 / $2)')
+              .replace(/\\sqrt\{([^}]+)\}/g, '√($1)')
+              .replace(/\\sum/g, '∑')
+              .replace(/\\int/g, '∫')
+              .replace(/\\infty/g, '∞')
+              .replace(/\\times/g, '×')
+              .replace(/\\approx/g, '≈')
+              .replace(/\\le/g, '≤')
+              .replace(/\\ge/g, '≥')
+              .replace(/\\ne/g, '≠')
+              .replace(/\\pm/g, '±')
+              .replace(/\\alpha/g, 'α')
+              .replace(/\\beta/g, 'β')
+              .replace(/\\gamma/g, 'γ')
+              .replace(/\\delta/g, 'δ')
+              .replace(/\\pi/g, 'π')
+              .replace(/\\sigma/g, 'σ')
+              .replace(/\\omega/g, 'ω')
+              .trim();
+
+            return `<span class="inline-flex items-center px-2 py-0.5 my-0.5 mx-1 font-mono text-[13px] font-semibold bg-indigo-50/80 dark:bg-indigo-950/50 text-indigo-900 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-800 rounded shadow-xs" title="Fórmula Matemática LaTeX: ${cleanFormula}">∑ ${cleanFormula}</span>`;
           }
         );
       },
