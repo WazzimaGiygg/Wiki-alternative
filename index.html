@@ -339,7 +339,7 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Noto+Sans:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <!-- Google Reader Revenue Manager (Subscribe with Google / SwG Contributions) -->
     <script async type="application/javascript" src="https://news.google.com/swg/js/v1/swg-basic.js"></script>
@@ -348,6 +348,144 @@
     <link rel="stylesheet" href="/src/print.css" media="print" />
   </head>
   <body class="bg-slate-50 text-slate-900 antialiased selection:bg-blue-100 selection:text-blue-900">
+    <!-- Early ES5 Browser Compatibility Gate (with Force Entry bypass for false positives) -->
+    <div id="wikizero-compat-gate" style="display:none; position:fixed; inset:0; top:0; left:0; right:0; bottom:0; z-index:999999; background:#0f172a; background:rgba(15,23,42,0.96); color:#f8fafc; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; padding:24px; overflow-y:auto;">
+      <div style="max-width:560px; margin:40px auto; background:#1e293b; border:1px solid #334155; border-radius:16px; padding:28px; box-shadow:0 20px 50px rgba(0,0,0,0.45);">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <div style="width:44px; height:44px; border-radius:12px; background:#f59e0b; color:#1e293b; font-size:22px; font-weight:800; text-align:center; line-height:44px; flex-shrink:0;">!</div>
+          <div>
+            <h1 style="margin:0; font-size:20px; font-weight:700; color:#ffffff;">Navegador possivelmente incompatível</h1>
+            <p style="margin:4px 0 0 0; font-size:13px; color:#94a3b8;">WikiZero / WikiWorldWeb — Verificação de Compatibilidade</p>
+          </div>
+        </div>
+        <p style="font-size:14px; line-height:1.6; color:#cbd5e1; margin:0 0 14px 0;">
+          Detectamos que o seu navegador ou dispositivo pode não suportar todos os recursos modernos necessários para o funcionamento completo do Wiki-site (como JavaScript ES Modules, CSS Grid ou APIs Web modernas).
+        </p>
+        <div id="wikizero-compat-reasons" style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:12px; color:#fbbf24; line-height:1.5;"></div>
+        <p style="font-size:13px; line-height:1.5; color:#94a3b8; margin:0 0 20px 0;">
+          Para melhor experiência, recomendamos atualizar ou usar uma versão recente do <strong>Google Chrome</strong>, <strong>Mozilla Firefox</strong>, <strong>Microsoft Edge</strong> ou <strong>Apple Safari</strong>. Se você acredita que isto é um <strong>falso positivo</strong>, você pode forçar a entrada abaixo.
+        </p>
+        <div style="display:flex; flex-wrap:wrap; gap:10px;">
+          <button id="wikizero-force-entry-btn" type="button" onclick="window.__wikizeroForceEntry && window.__wikizeroForceEntry()" style="cursor:pointer; background:#2563eb; color:#ffffff; border:none; border-radius:10px; padding:11px 18px; font-size:14px; font-weight:600;">
+            Continuar mesmo assim (Forçar Entrada)
+          </button>
+          <button type="button" onclick="window.location.reload()" style="cursor:pointer; background:#334155; color:#e2e8f0; border:1px solid #475569; border-radius:10px; padding:11px 16px; font-size:13px; font-weight:500;">
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var FORCE_KEY = 'wikizero_force_compat';
+        function isForced() {
+          try {
+            if (window.location && window.location.search && window.location.search.indexOf('force_entry=1') !== -1) {
+              return true;
+            }
+          } catch (_) {}
+          try {
+            if (window.sessionStorage && window.sessionStorage.getItem(FORCE_KEY) === 'true') return true;
+          } catch (_) {}
+          try {
+            if (window.localStorage && window.localStorage.getItem(FORCE_KEY) === 'true') return true;
+          } catch (_) {}
+          return false;
+        }
+
+        window.__wikizeroForceEntry = function () {
+          try { if (window.sessionStorage) window.sessionStorage.setItem(FORCE_KEY, 'true'); } catch (_) {}
+          try { if (window.localStorage) window.localStorage.setItem(FORCE_KEY, 'true'); } catch (_) {}
+          var gate = document.getElementById('wikizero-compat-gate');
+          if (gate) gate.style.display = 'none';
+        };
+
+        window.__wikizeroShowCompatGate = function (reasons) {
+          if (isForced()) return;
+          var gate = document.getElementById('wikizero-compat-gate');
+          var box = document.getElementById('wikizero-compat-reasons');
+          if (box) {
+            var html = '<strong>Motivos detectados:</strong><ul style="margin:6px 0 0 18px; padding:0;">';
+            for (var i = 0; i < reasons.length; i++) {
+              html += '<li>' + String(reasons[i]).replace(/</g, '&lt;') + '</li>';
+            }
+            html += '</ul>';
+            box.innerHTML = html;
+          }
+          if (gate) gate.style.display = 'block';
+        };
+
+        function checkCompatibility() {
+          var reasons = [];
+          var ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
+          var search = (typeof window !== 'undefined' && window.location && window.location.search) ? window.location.search : '';
+
+          if (search.indexOf('compat=check') !== -1 && !isForced()) {
+            reasons.push('Simulação manual de verificação de compatibilidade (?compat=check).');
+          }
+
+          // Obsolete engines
+          if (ua.indexOf('MSIE ') !== -1 || ua.indexOf('Trident/') !== -1) {
+            reasons.push('Internet Explorer detectado (motor Trident sem suporte a padrões modernos).');
+          }
+          var legacyEdgeMatch = ua.match(/Edge\/(\d+)/);
+          if (legacyEdgeMatch && parseInt(legacyEdgeMatch[1], 10) < 79) {
+            reasons.push('Microsoft Edge legado (versão ' + legacyEdgeMatch[1] + ' anterior ao Chromium).');
+          }
+          if (ua.indexOf('Opera Mini') !== -1 || ua.indexOf('UCBrowser') !== -1) {
+            reasons.push('Navegador proxy/compacto limitado detectado (' + (ua.indexOf('Opera Mini') !== -1 ? 'Opera Mini' : 'UC Browser') + ').');
+          }
+
+          var chromeMatch = ua.match(/Chrome\/(\d+)/);
+          if (chromeMatch && ua.indexOf('Edg/') === -1 && parseInt(chromeMatch[1], 10) < 80) {
+            reasons.push('Versão antiga baseada em Chromium (' + chromeMatch[1] + '). Recomendado >= 80.');
+          }
+
+          var ffMatch = ua.match(/Firefox\/(\d+)/);
+          if (ffMatch && parseInt(ffMatch[1], 10) < 78) {
+            reasons.push('Versão antiga do Mozilla Firefox (' + ffMatch[1] + '). Recomendado >= 78.');
+          }
+
+          if (ua.indexOf('Safari/') !== -1 && ua.indexOf('Chrome/') === -1 && ua.indexOf('Chromium/') === -1 && ua.indexOf('Android') === -1) {
+            var safariVer = ua.match(/Version\/(\d+)/);
+            if (safariVer && parseInt(safariVer[1], 10) < 13) {
+              reasons.push('Safari desatualizado (versão ' + safariVer[1] + '). Recomendado >= 13.');
+            }
+          }
+
+          // Core Web APIs
+          if (typeof Promise === 'undefined') reasons.push('API Promise ausente.');
+          if (typeof fetch === 'undefined') reasons.push('API Fetch ausente.');
+          if (typeof Symbol === 'undefined') reasons.push('Suporte a ES6 Symbol ausente.');
+          if (typeof Map === 'undefined' || typeof Set === 'undefined') reasons.push('Coleções ES6 Map/Set ausentes.');
+          if (typeof Object.assign !== 'function') reasons.push('Object.assign não suportado.');
+          if (typeof IntersectionObserver === 'undefined') reasons.push('IntersectionObserver não suportado.');
+
+          try {
+            var scriptEl = document.createElement('script');
+            if (!('noModule' in scriptEl)) {
+              reasons.push('Navegador não oferece suporte nativo a JavaScript ES Modules (<script type="module">).');
+            }
+          } catch (_) {}
+
+          try {
+            if (!(window.CSS && window.CSS.supports && window.CSS.supports('display', 'grid'))) {
+              reasons.push('CSS Grid Layout não suportado pelo motor de renderização.');
+            }
+          } catch (_) {
+            reasons.push('Verificação de CSS Grid falhou.');
+          }
+
+          if (reasons.length > 0) {
+            window.__wikizeroShowCompatGate(reasons);
+          }
+        }
+
+        checkCompatibility();
+      })();
+    </script>
+
     <div id="root">
       <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; color: #1e293b;">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
@@ -363,6 +501,11 @@
         </style>
       </div>
     </div>
+    <script nomodule>
+      if (window.__wikizeroShowCompatGate) {
+        window.__wikizeroShowCompatGate(['Seu navegador não suporta JavaScript ES Modules modernos (<script type="module">).']);
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

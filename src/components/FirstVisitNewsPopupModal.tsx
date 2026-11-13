@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { ExtensionManager } from '../core/ExtensionManager';
 import { UserProfile } from '../types';
-import { DEFAULT_FIRST_VISIT_HTML } from '../extensions/first-visit-news-popup';
+import { DEFAULT_FIRST_VISIT_HTML } from '../extensions/first-visit-news-popup/defaultHtml';
 import { sanitizeHtml } from '../utils/sanitizeHtml';
 
 interface FirstVisitNewsPopupModalProps {

@@ -45,7 +45,9 @@ import { WorldClockTool } from './WorldClockTool';
 import { GeminiAssistantTool } from './GeminiAssistantTool';
 import { GeminiApiKeyTool } from './GeminiApiKeyTool';
 import { BotAgentDashboard } from './BotAgentDashboard';
-import { AntiplagiarismTccView } from './AntiplagiarismTccView';
+const AntiplagiarismTccView = React.lazy(() =>
+  import('./AntiplagiarismTccView').then((m) => ({ default: m.AntiplagiarismTccView }))
+);
 import { CustomInteractiveToolRunner } from './CustomInteractiveToolRunner';
 import { ExtensionManager } from '../core/ExtensionManager';
 
@@ -1073,12 +1075,14 @@ export const ToolsView: React.FC<ToolsViewProps> = ({
       {/* Renderização do Verificador Antiplágio & Análise de TCC (4.1.1.8P.5 & 4.1.1.RW.5) */}
       {activeTab === 'anti-plagio' && (
         isPlagiarismActive ? (
-          <AntiplagiarismTccView
-            theme={theme}
-            currentUser={currentUser}
-            onNavigateHome={onNavigateHome}
-            onOpenEditor={onOpenEditor}
-          />
+          <React.Suspense fallback={<div className="p-8 text-center text-slate-500 font-mono text-xs">Carregando Verificador de Antiplágio e TCC...</div>}>
+            <AntiplagiarismTccView
+              theme={theme}
+              currentUser={currentUser}
+              onNavigateHome={onNavigateHome}
+              onOpenEditor={onOpenEditor}
+            />
+          </React.Suspense>
         ) : (
           <DeactivatedToolNotice
             toolName="Verificador Antiplágio & Análise de TCC"

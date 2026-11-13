@@ -5,6 +5,7 @@ try {
   // Ignora se não suportado na versão
 }
 import express, { Request, Response } from 'express';
+import compression from 'compression';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -38,6 +39,7 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 
 // Lazy initialization of GoogleGenAI client to avoid crashes if GEMINI_API_KEY is not yet set
@@ -2137,8 +2139,27 @@ if (typeof customElements !== 'undefined' && !customElements.get('vite-error-ove
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    app.use(
+      '/assets',
+      express.static(path.join(distPath, 'assets'), {
+        maxAge: '1y',
+        immutable: true,
+        setHeaders: (res) => {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        },
+      })
+    );
+    app.use(
+      express.static(distPath, {
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('.html') || filePath.endsWith('sw.js') || filePath.endsWith('workbox-')) {
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
+      })
+    );
     app.get('*', (req: Request, res: Response) => {
+      res.setHeader('Cache-Control', 'no-cache');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
