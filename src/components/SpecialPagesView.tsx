@@ -81,6 +81,7 @@ interface SpecialPagesViewProps {
   onNavigateToEditingEthics?: (tab?: any) => void;
   onNavigateToAIEthics?: () => void;
   onNavigateToFirebaseEthics?: (tab?: any) => void;
+  onNavigateToRealNamesLgpd?: (tab?: any) => void;
   onNavigateToAppearance?: () => void;
   onNavigateToAdminFirebase?: () => void;
   onNavigateToNotFound?: () => void;
@@ -105,6 +106,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToEditingEthics,
   onNavigateToAIEthics,
   onNavigateToFirebaseEthics,
+  onNavigateToRealNamesLgpd,
   onNavigateToPromotionRequests,
   onNavigateToUnblockRequests,
   onNavigateToDataRemovalRequests,
@@ -540,6 +542,56 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Ética Firebase, Não Uso de Dados WMF e Abusos de Chronus
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToFirebaseEthics && (
+          <button
+            id="btn-specialpages-firebase-terms"
+            onClick={() => onNavigateToFirebaseEthics?.('firebase_terms')}
+            className="p-3 rounded-lg border border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/70 dark:hover:bg-amber-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-slate-800 text-amber-400 shrink-0">
+              <FileText size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-amber-900 dark:text-amber-200 truncate group-hover:underline">
+                  Special:FirebaseTerms
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-slate-800 text-white">
+                  TERMOS
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Termos de Uso dos Serviços Google Firebase (TF-01 a TF-06)
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToRealNamesLgpd && (
+          <button
+            id="btn-specialpages-real-names-lgpd"
+            onClick={() => onNavigateToRealNamesLgpd?.('prohibition')}
+            className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-emerald-700 text-white shrink-0">
+              <UserX size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate group-hover:underline">
+                  Special:NoRealNamesLGPD
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-emerald-700 text-white">
+                  LGPD ABSOLUTA
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Não Uso de Nomes de Pessoas Reais &amp; Alinhamento LGPD
               </div>
             </div>
           </button>

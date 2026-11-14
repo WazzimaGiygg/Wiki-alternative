@@ -168,6 +168,15 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
             </button>
 
             <button
+              onClick={() => onNavigate('real-names-lgpd')}
+              className="px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition flex items-center gap-1.5 cursor-pointer"
+              title="Proibição de Uso de Nomes de Pessoas Reais e Alinhamento Absoluto com a LGPD"
+            >
+              <UserX size={14} />
+              <span>Sem Nomes Reais</span>
+            </button>
+
+            <button
               onClick={onOpenEditor}
               className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
             >

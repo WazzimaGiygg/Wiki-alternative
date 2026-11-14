@@ -315,6 +315,9 @@ export function getCanonicalUid(
     case 'firebase-ethics':
       return 'Special:FirebaseEthics';
 
+    case 'real-names-lgpd':
+      return 'Special:NoRealNamesLGPD';
+
     case 'other-rules':
       return 'Special:OtherRules';
 
@@ -647,6 +650,12 @@ export function resolveNavigationUid(
     'special:eticafirebase': { view: 'firebase-ethics' },
     'special:etica-firebase': { view: 'firebase-ethics' },
     'special:governancafirebase': { view: 'firebase-ethics' },
+    'special:firebaseterms': { view: 'firebase-ethics', initialTab: 'firebase_terms' },
+    'special:termosfirebase': { view: 'firebase-ethics', initialTab: 'firebase_terms' },
+    'special:termosdeusofirebase': { view: 'firebase-ethics', initialTab: 'firebase_terms' },
+    'firebase-terms': { view: 'firebase-ethics', initialTab: 'firebase_terms' },
+    'termos-firebase': { view: 'firebase-ethics', initialTab: 'firebase_terms' },
+    'termos-de-uso-firebase': { view: 'firebase-ethics', initialTab: 'firebase_terms' },
     'firebase-ethics': { view: 'firebase-ethics' },
     'etica-firebase': { view: 'firebase-ethics' },
     'etica-uso-firebase': { view: 'firebase-ethics' },
@@ -657,6 +666,20 @@ export function resolveNavigationUid(
     'special:abusoschronus': { view: 'firebase-ethics', initialTab: 'chronus_abuses' },
     'caso-chronus': { view: 'firebase-ethics', initialTab: 'chronus_abuses' },
     'abusos-chronus': { view: 'firebase-ethics', initialTab: 'chronus_abuses' },
+
+    'special:norealnameslgpd': { view: 'real-names-lgpd' },
+    'special:realnameslgpd': { view: 'real-names-lgpd' },
+    'special:semnomesreais': { view: 'real-names-lgpd' },
+    'special:semnomesreaislgpd': { view: 'real-names-lgpd' },
+    'special:nomesreaislgpd': { view: 'real-names-lgpd' },
+    'special:eticalgpd': { view: 'real-names-lgpd', initialTab: 'lgpd_alignment' },
+    'real-names-lgpd': { view: 'real-names-lgpd' },
+    'sem-nomes-reais': { view: 'real-names-lgpd' },
+    'sem-nomes-reais-lgpd': { view: 'real-names-lgpd' },
+    'nao-uso-nomes-reais': { view: 'real-names-lgpd' },
+    'etica-nomes-reais': { view: 'real-names-lgpd' },
+    'alinhamento-lgpd': { view: 'real-names-lgpd', initialTab: 'lgpd_alignment' },
+    'lgpd-absoluta': { view: 'real-names-lgpd', initialTab: 'lgpd_alignment' },
 
     'special:otherrules': { view: 'other-rules' },
     'special:other-rules': { view: 'other-rules' },

@@ -68,12 +68,13 @@ const AI_ETHICS_RULES: AIRuleItem[] = [
   },
   {
     code: 'IA-04',
-    title: 'Higiene de Prompts e Proteção de Dados (LGPD / GDPR)',
+    title: 'Higiene de Prompts, Vedação a Nomes Reais e Proteção LGPD / GDPR',
     category: 'privacidade',
     status: 'proibido',
-    summary: 'Nunca insira dados pessoais privados, CPF, endereços, segredos de justiça ou dados de menores em prompts de IA.',
+    summary:
+      'Nunca insira nomes civis de pessoas reais privadas, CPF, endereços, segredos de justiça ou dados de menores em prompts de IA.',
     details:
-      'O envio de informações privadas ou sigilosas de terceiros para processamento automatizado viola os princípios de minimização e finalidade da LGPD (Lei nº 13.709/2018) e do GDPR (Regulamento UE 2016/679).',
+      'O envio de nomes completos de pessoas naturais sem base legal ou informações sigilosas de terceiros para processamento automatizado viola os princípios de minimização e finalidade da LGPD (Lei nº 13.709/2018) e do GDPR (Regulamento UE 2016/679). Utilize sempre pseudônimos ou siglas.',
   },
   {
     code: 'IA-05',
@@ -716,6 +717,13 @@ export const AIEthicsView: React.FC<AIEthicsViewProps> = ({
             className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer whitespace-nowrap"
           >
             Ética Firebase &amp; Caso Chronus
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('real-names-lgpd')}
+            className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer whitespace-nowrap"
+          >
+            Sem Nomes Reais &amp; LGPD
           </button>
           <button
             type="button"

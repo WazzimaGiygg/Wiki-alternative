@@ -25,6 +25,7 @@ import { IrregularidadesDossierModal, DossierDocType } from './IrregularidadesDo
 
 export type FirebaseGovernanceTabKey =
   | 'firebase_ethics'
+  | 'firebase_terms'
   | 'no_wikimedia'
   | 'chronus_abuses'
   | 'checklist';
@@ -37,7 +38,7 @@ interface FirebaseGovernanceEthicsViewProps {
 
 interface GovernanceRuleItem {
   code: string;
-  section: 'firebase' | 'wikimedia' | 'chronus';
+  section: 'firebase' | 'firebase_terms' | 'wikimedia' | 'chronus';
   title: string;
   classification: 'obrigatorio' | 'proibido' | 'documentado';
   summary: string;
@@ -58,12 +59,12 @@ const GOVERNANCE_RULES: GovernanceRuleItem[] = [
   {
     code: 'FB-02',
     section: 'firebase',
-    title: 'Minimização de Dados e Conformidade LGPD / GDPR',
+    title: 'Minimização, Não Uso de Nomes Reais e Alinhamento Absoluto à LGPD',
     classification: 'obrigatorio',
     summary:
-      'Nenhum dado pessoal excessivo, sensível ou sigiloso de terceiros pode ser gravado no Firebase sem base legal.',
+      'Nenhum nome civil de pessoa real privada ou dado sensível sem base legal pode ser gravado no Firebase.',
     details:
-      'Em respeito aos Arts. 5º, 6º e 18 da LGPD (Lei nº 13.709/2018) e ao GDPR europeu, documentos enciclopédicos e logs administrativos não devem armazenar CPF, endereços residenciais, documentos civis ou dados de menores. Titulares possuem direito efetivo de exportação (Special:MyData) e remoção (Special:DataRemovalRequests).',
+      'Em alinhamento absoluto com os Arts. 5º, 6º, 14 e 18 da LGPD (Lei nº 13.709/2018) e o GDPR europeu, documentos enciclopédicos e logs administrativos devem empregar pseudônimos e nunca expor nomes civis privados, CPF, endereços ou dados de menores. Titulares possuem direito imediato de exportação (Special:MyData) e remoção definitiva (Special:DataRemovalRequests).',
   },
   {
     code: 'FB-03',
@@ -104,6 +105,66 @@ const GOVERNANCE_RULES: GovernanceRuleItem[] = [
       'Os dados públicos da enciclopédia mantêm portabilidade integral sob licença livre CC BY-SA 4.0 e GNU GPL v3.0.',
     details:
       'O uso do Firebase como camada de persistência não gera aprisionamento proprietário (vendor lock-in): o sistema dispõe de exportação estruturada em JSON e Wikitexto, garantindo soberania comunitária sobre todo o acervo.',
+  },
+  {
+    code: 'TF-01',
+    section: 'firebase_terms',
+    title: 'Objeto e Finalidade dos Serviços Google Firebase na Plataforma',
+    classification: 'obrigatorio',
+    summary:
+      'Os serviços Firebase (Cloud Firestore, Authentication e recursos auxiliares) operam exclusivamente para o funcionamento enciclopédico, controle de sessão e cumprimento da LGPD.',
+    details:
+      'É vedado utilizar a infraestrutura Firebase vinculada à WikiWorldWeb para fins comerciais alheios ao projeto, hospedagem de malware, mineração, envio de spam ou armazenamento de arquivos ilícitos.',
+  },
+  {
+    code: 'TF-02',
+    section: 'firebase_terms',
+    title: 'Uso Aceitável, Proteção de Cotas e Proibição de Bypass de Regras',
+    classification: 'proibido',
+    summary:
+      'É proibido sobrecarregar cotas de leitura/gravação, realizar varreduras automatizadas ou tentar burlar as regras do firestore.rules.',
+    details:
+      'Qualquer tentativa de engenharia reversa abusiva, enumeração de UIDs, injeção de payload ou automação não autorizada sobre os endpoints do Cloud Firestore resulta em bloqueio imediato e revogação de credenciais.',
+  },
+  {
+    code: 'TF-03',
+    section: 'firebase_terms',
+    title: 'Proibição de Gravar Nomes Civis Reais e Dados Privados nas Coleções',
+    classification: 'proibido',
+    summary:
+      'O usuário compromete-se a não gravar nomes civis de pessoas reais privadas, documentos pessoais ou dados de menores em artigos ou registros do Firebase.',
+    details:
+      'Violações às normas de proteção de dados e vedação a nomes reais (Special:NoRealNamesLGPD) submetem-se ao expurgo definitivo (Oversight) no Firestore e às sanções disciplinares previstas nos Termos de Uso (Special:Terms).',
+  },
+  {
+    code: 'TF-04',
+    section: 'firebase_terms',
+    title: 'Suspensão, Revogação de Acesso e Direito ao Contraditório',
+    classification: 'obrigatorio',
+    summary:
+      'Contas que violem os Termos de Uso do Firebase têm acesso suspenso mediante justificativa registrada em trilha auditável.',
+    details:
+      'Diferentemente de bloqueios arbitrários sem defesa, toda restrição técnica aplicada por violação de uso conta com via formal de revisão e contestação em Special:UnblockRequests e Special:Arbitration.',
+  },
+  {
+    code: 'TF-05',
+    section: 'firebase_terms',
+    title: 'Disponibilidade, Manutenção do Provedor e Backups Comunitários',
+    classification: 'obrigatorio',
+    summary:
+      'A continuidade do serviço segue a disponibilidade técnica do provedor Google Cloud / Firebase, complementada por exportações JSON auditáveis.',
+    details:
+      'Não há garantia de operação ininterrupta em casos de força maior ou janelas de manutenção de nuvem; contudo, os artigos sob CC BY-SA 4.0 permanecem livres e exportáveis para preservar a continuidade do conhecimento.',
+  },
+  {
+    code: 'TF-06',
+    section: 'firebase_terms',
+    title: 'Independência Contratual e Operacional frente à Wikimedia Foundation',
+    classification: 'obrigatorio',
+    summary:
+      'Os Termos de Uso dos serviços Firebase da WikiWorldWeb não possuem vínculo nem subordinam dados à Wikimedia Foundation Inc.',
+    details:
+      'Fica vedada qualquer importação de bancos de usuários, listas globais de bloqueio ou registros de CheckUser oriundos da Wikimedia Foundation para o banco de dados do projeto.',
   },
   {
     code: 'WMF-01',
@@ -272,6 +333,7 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
     ['admin', 'bureaucrat', 'arbcom', 'council'].includes((user.role || '').toLowerCase());
 
   const firebaseRules = GOVERNANCE_RULES.filter((r) => r.section === 'firebase');
+  const firebaseTermsRules = GOVERNANCE_RULES.filter((r) => r.section === 'firebase_terms');
   const wmfRules = GOVERNANCE_RULES.filter((r) => r.section === 'wikimedia');
   const chronusRules = GOVERNANCE_RULES.filter((r) => r.section === 'chronus');
 
@@ -436,6 +498,19 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
 
         <button
           type="button"
+          onClick={() => setActiveTab('firebase_terms')}
+          className={`px-3.5 py-2 min-h-[40px] rounded-lg transition flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer ${
+            activeTab === 'firebase_terms'
+              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <FileText size={14} />
+          <span>02. Termos de Uso do Firebase</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('no_wikimedia')}
           className={`px-3.5 py-2 min-h-[40px] rounded-lg transition flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer ${
             activeTab === 'no_wikimedia'
@@ -444,7 +519,7 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
           }`}
         >
           <ServerOff size={14} />
-          <span>02. Por que Não Usamos Dados da WMF</span>
+          <span>03. Não Uso de Dados da WMF</span>
         </button>
 
         <button
@@ -457,7 +532,7 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
           }`}
         >
           <ShieldAlert size={14} />
-          <span>03. Abusos do Administrador Chronus</span>
+          <span>04. Abusos de Chronus</span>
         </button>
 
         <button
@@ -470,7 +545,7 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
           }`}
         >
           <FileCheck2 size={14} />
-          <span>04. Autoverificação Firebase</span>
+          <span>05. Autoverificação Firebase</span>
         </button>
       </nav>
 
@@ -555,6 +630,65 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
                 </button>
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {/* ABA 2: TERMOS DE USO DOS SERVIÇOS DO FIREBASE */}
+      {activeTab === 'firebase_terms' && (
+        <section className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-6 sm:p-8 space-y-6">
+          <div className="space-y-2 pb-4 border-b border-slate-200 dark:border-slate-800">
+            <h2 className="text-xl font-bold font-serif-heading text-slate-900 dark:text-white">
+              Termos de Uso dos Serviços do Firebase na WikiWorldWeb
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+              Condições contratuais, operacionais e legais aplicáveis a todos os usuários, editores e administradores que interagem com os serviços do Google Firebase (Cloud Firestore, Authentication e camada de dados em nuvem) vinculados a este Wiki-site.
+            </p>
+          </div>
+
+          <div className="divide-y divide-slate-200 dark:divide-slate-800">
+            {firebaseTermsRules.map((rule) => (
+              <article key={rule.code} className="py-4 first:pt-0 last:pb-0 space-y-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-mono font-bold tabular-nums text-amber-700 dark:text-amber-400">
+                      {rule.code}
+                    </span>
+                    <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">{rule.title}</h3>
+                  </div>
+                  <span
+                    className={`text-xs font-semibold whitespace-nowrap ${
+                      rule.classification === 'proibido'
+                        ? 'text-rose-700 dark:text-rose-400'
+                        : 'text-emerald-700 dark:text-emerald-400'
+                    }`}
+                  >
+                    {rule.classification === 'proibido' ? 'Conduta proibida' : 'Cláusula vinculante'}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium">
+                  {rule.summary}
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {rule.details}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <span className="text-xs text-slate-600 dark:text-slate-400">
+              Estes termos integram os Termos de Uso Gerais da plataforma (<span className="font-mono">Special:Terms</span>).
+            </span>
+            <button
+              type="button"
+              onClick={() => onNavigate('terms')}
+              className="px-4 py-2 min-h-[40px] rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            >
+              <FileText size={14} />
+              <span>Abrir Termos de Uso Completos</span>
+            </button>
           </div>
         </section>
       )}
@@ -920,6 +1054,13 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             type="button"
+            onClick={() => onNavigate('terms')}
+            className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer whitespace-nowrap"
+          >
+            Termos de Uso (Special:Terms)
+          </button>
+          <button
+            type="button"
             onClick={() => onNavigate('editing-ethics')}
             className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer whitespace-nowrap"
           >
@@ -931,6 +1072,13 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
             className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer whitespace-nowrap"
           >
             Ética de IA
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('real-names-lgpd')}
+            className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer whitespace-nowrap"
+          >
+            Sem Nomes Reais &amp; LGPD
           </button>
           <button
             type="button"

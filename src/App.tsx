@@ -59,6 +59,7 @@ const OfflineModeView = React.lazy(() => import('./components/InformativeViews')
 const EditingEthicsView = React.lazy(() => import('./components/EditingEthicsView').then((m) => ({ default: m.EditingEthicsView })));
 const AIEthicsView = React.lazy(() => import('./components/AIEthicsView').then((m) => ({ default: m.AIEthicsView })));
 const FirebaseGovernanceEthicsView = React.lazy(() => import('./components/FirebaseGovernanceEthicsView').then((m) => ({ default: m.FirebaseGovernanceEthicsView })));
+const RealNamesLgpdEthicsView = React.lazy(() => import('./components/RealNamesLgpdEthicsView').then((m) => ({ default: m.RealNamesLgpdEthicsView })));
 const SiteUpdatesView = React.lazy(() => import('./components/SiteUpdatesView').then((m) => ({ default: m.SiteUpdatesView })));
 const FileUploadView = React.lazy(() => import('./components/FileUploadView').then((m) => ({ default: m.FileUploadView })));
 const FilePageView = React.lazy(() => import('./components/FilePageView').then((m) => ({ default: m.FilePageView })));
@@ -355,7 +356,8 @@ export default function App() {
   const [ucocInitialProtocol, setUcocInitialProtocol] = useState<string>('');
   const [toolsInitialTab, setToolsInitialTab] = useState<'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app'>('weather');
   const [editingEthicsInitialTab, setEditingEthicsInitialTab] = useState<'principles' | 'lgpd' | 'gdpr' | 'free_expression' | 'bpv' | 'enforcement' | 'checklist'>('principles');
-  const [firebaseEthicsInitialTab, setFirebaseEthicsInitialTab] = useState<'firebase_ethics' | 'no_wikimedia' | 'chronus_abuses' | 'checklist'>('firebase_ethics');
+  const [firebaseEthicsInitialTab, setFirebaseEthicsInitialTab] = useState<'firebase_ethics' | 'firebase_terms' | 'no_wikimedia' | 'chronus_abuses' | 'checklist'>('firebase_ethics');
+  const [realNamesLgpdInitialTab, setRealNamesLgpdInitialTab] = useState<'prohibition' | 'lgpd_alignment' | 'anonymization' | 'checklist'>('prohibition');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [notFoundQuery, setNotFoundQuery] = useState<string>('');
@@ -706,6 +708,9 @@ export default function App() {
         }
         if (target.view === 'firebase-ethics' && target.initialTab) {
           setFirebaseEthicsInitialTab(target.initialTab as any);
+        }
+        if (target.view === 'real-names-lgpd' && target.initialTab) {
+          setRealNamesLgpdInitialTab(target.initialTab as any);
         }
         handleNavigate(target.view);
         break;
@@ -2075,6 +2080,10 @@ export default function App() {
                 if (tab) setFirebaseEthicsInitialTab(tab);
                 handleNavigate('firebase-ethics');
               }}
+              onNavigateToRealNamesLgpd={(tab) => {
+                if (tab) setRealNamesLgpdInitialTab(tab);
+                handleNavigate('real-names-lgpd');
+              }}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToDataRemovalRequests={() => handleNavigate('admin-data-removal')}
@@ -2117,6 +2126,10 @@ export default function App() {
               onNavigateToFirebaseEthics={(tab) => {
                 if (tab) setFirebaseEthicsInitialTab(tab);
                 handleNavigate('firebase-ethics');
+              }}
+              onNavigateToRealNamesLgpd={(tab) => {
+                if (tab) setRealNamesLgpdInitialTab(tab);
+                handleNavigate('real-names-lgpd');
               }}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
@@ -2366,6 +2379,7 @@ export default function App() {
               articles={articles}
               onNavigateToArticle={handleSelectArticle}
               onOpenEditor={() => handleOpenNewEditor()}
+              onNavigate={handleNavigate}
             />
           )}
 
@@ -2391,6 +2405,14 @@ export default function App() {
               user={user}
               onNavigate={handleNavigate}
               initialTab={firebaseEthicsInitialTab}
+            />
+          )}
+
+          {currentView === 'real-names-lgpd' && (
+            <RealNamesLgpdEthicsView
+              user={user}
+              onNavigate={handleNavigate}
+              initialTab={realNamesLgpdInitialTab}
             />
           )}
 

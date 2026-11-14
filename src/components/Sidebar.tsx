@@ -1102,7 +1102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               id="btn-sidebar-firebase-ethics"
               onClick={() => onNavigate('firebase-ethics')}
-              title="Ética do Firebase, Independência da WMF e Abusos de Chronus"
+              title="Ética e Termos de Uso do Firebase, Independência da WMF e Abusos de Chronus"
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition cursor-pointer ${
                 currentView === 'firebase-ethics'
                   ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shadow-xs'
@@ -1110,7 +1110,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <Flame size={15} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Ética Firebase &amp; Chronus</span>}
+              {!isCollapsed && <span className="truncate">Ética &amp; Termos Firebase</span>}
+            </button>
+
+            <button
+              id="btn-sidebar-real-names-lgpd"
+              onClick={() => onNavigate('real-names-lgpd')}
+              title="Ética de Não Uso de Nomes de Pessoas Reais e Alinhamento Absoluto com a LGPD"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition cursor-pointer ${
+                currentView === 'real-names-lgpd'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-800 dark:hover:text-emerald-300'
+              }`}
+            >
+              <UserX size={15} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Sem Nomes Reais &amp; LGPD</span>}
             </button>
 
             <a

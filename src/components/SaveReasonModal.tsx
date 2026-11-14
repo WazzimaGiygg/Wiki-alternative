@@ -214,9 +214,18 @@ export const SaveReasonModal: React.FC<SaveReasonModalProps> = ({
                 rel="noopener noreferrer"
                 className="text-emerald-700 dark:text-emerald-300 font-semibold underline hover:text-emerald-800"
               >
-                Regras de Ética de Edição (LGPD & GDPR)
+                Regras de Ética de Edição
+              </a>{' '}
+              e a política de{' '}
+              <a
+                href="/?uid=Special:NoRealNamesLGPD"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-700 dark:text-emerald-300 font-semibold underline hover:text-emerald-800"
+              >
+                Não Uso de Nomes de Pessoas Reais &amp; Alinhamento Absoluto à LGPD
               </a>
-              , sem dados pessoais privados (doxxing) ou violações de direitos autorais.
+              , sem exposição de nomes civis privados (doxxing) ou violações de direitos autorais.
             </span>
           </div>
 

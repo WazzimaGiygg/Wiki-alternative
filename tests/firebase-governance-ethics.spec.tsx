@@ -2,14 +2,30 @@ import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { FirebaseGovernanceEthicsView } from '../src/components/FirebaseGovernanceEthicsView';
+import { TermsOfUseView } from '../src/components/InformativeViews';
 import { getCanonicalUid, resolveNavigationUid } from '../src/utils/urlRouter';
 
-describe('Ética Firebase, Não Uso da Wikimedia Foundation e Caso Chronus (Special:FirebaseEthics)', () => {
-  it('resolve corretamente os atalhos de URL e abas iniciais para firebase-ethics', () => {
+describe('Ética Firebase, Termos de Uso do Firebase, Não Uso da Wikimedia Foundation e Caso Chronus (Special:FirebaseEthics)', () => {
+  it('resolve corretamente os atalhos de URL e abas iniciais para firebase-ethics e termos-firebase', () => {
     expect(getCanonicalUid('firebase-ethics', {})).toBe('Special:FirebaseEthics');
     expect(resolveNavigationUid('Special:FirebaseEthics', [], [])).toEqual({
       type: 'view',
       view: 'firebase-ethics',
+    });
+    expect(resolveNavigationUid('Special:FirebaseTerms', [], [])).toEqual({
+      type: 'view',
+      view: 'firebase-ethics',
+      initialTab: 'firebase_terms',
+    });
+    expect(resolveNavigationUid('termos-firebase', [], [])).toEqual({
+      type: 'view',
+      view: 'firebase-ethics',
+      initialTab: 'firebase_terms',
+    });
+    expect(resolveNavigationUid('termos-de-uso-firebase', [], [])).toEqual({
+      type: 'view',
+      view: 'firebase-ethics',
+      initialTab: 'firebase_terms',
     });
     expect(resolveNavigationUid('etica-firebase', [], [])).toEqual({
       type: 'view',
@@ -50,6 +66,40 @@ describe('Ética Firebase, Não Uso da Wikimedia Foundation e Caso Chronus (Spec
     expect(html).toContain('FB-05');
     expect(html).toContain('FB-06');
     expect(html).toContain('Menor Privilégio, RBAC e Regras Estritas do Firestore');
+  });
+
+  it('renderiza os Termos de Uso dos Serviços do Firebase (TF-01 a TF-06) na aba dedicada e em TermsOfUseView', () => {
+    const tabHtml = renderToStaticMarkup(
+      <FirebaseGovernanceEthicsView
+        user={null}
+        onNavigate={() => {}}
+        initialTab="firebase_terms"
+      />
+    );
+
+    expect(tabHtml).toContain('Termos de Uso dos Serviços do Firebase na WikiWorldWeb');
+    expect(tabHtml).toContain('TF-01');
+    expect(tabHtml).toContain('TF-02');
+    expect(tabHtml).toContain('TF-03');
+    expect(tabHtml).toContain('TF-04');
+    expect(tabHtml).toContain('TF-05');
+    expect(tabHtml).toContain('TF-06');
+
+    const termsHtml = renderToStaticMarkup(
+      <TermsOfUseView
+        user={null}
+        pages={[]}
+        articles={[]}
+        onNavigateToArticle={() => {}}
+        onOpenEditor={() => {}}
+        onNavigate={() => {}}
+      />
+    );
+
+    expect(termsHtml).toContain('Termos de Uso, Licenciamento e Serviços do Firebase');
+    expect(termsHtml).toContain('4. Termos de Uso dos Serviços do Firebase (Cloud Firestore &amp; Auth)');
+    expect(termsHtml).toContain('TF-01');
+    expect(termsHtml).toContain('TF-06');
   });
 
   it('renderiza os fundamentos do porquê o Wiki-site não utiliza dados da Wikimedia Foundation', () => {

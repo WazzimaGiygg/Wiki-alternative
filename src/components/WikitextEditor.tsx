@@ -2559,18 +2559,29 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           <div className="flex items-center gap-1.5">
             <ShieldCheck size={12} className="text-emerald-500 shrink-0" />
             <span>
-              Todas as edições devem respeitar a <strong>LGPD (Lei 13.709/2018)</strong>, <strong>GDPR</strong> e os <strong>direitos autorais</strong>.
+              É proibido expor <strong>nomes civis de pessoas reais</strong> sem base legal; alinhamento absoluto à <strong>LGPD (Lei 13.709/2018)</strong>, <strong>GDPR</strong> e direitos autorais.
             </span>
           </div>
-          <a
-            href="/?uid=Special:EditingEthics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
-          >
-            <span>Ver Regras de Ética de Edição</span>
-            <ExternalLink size={10} />
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href="/?uid=Special:NoRealNamesLGPD"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
+            >
+              <span>Ética: Sem Nomes Reais &amp; LGPD</span>
+              <ExternalLink size={10} />
+            </a>
+            <a
+              href="/?uid=Special:EditingEthics"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
+            >
+              <span>Ver Regras de Ética de Edição</span>
+              <ExternalLink size={10} />
+            </a>
+          </div>
         </div>
       </div>
 

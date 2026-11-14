@@ -337,11 +337,12 @@ export function updateSEO(config: SEOConfig) {
         'EU AI Act wiki'
       );
     } else if (config.view === 'firebase-ethics') {
-      finalTitle = 'Ética do Firebase, Independência da Wikimedia Foundation e Caso Chronus - WikiWorldWeb';
+      finalTitle = 'Ética e Termos de Uso do Firebase, Independência da Wikimedia Foundation e Caso Chronus - WikiWorldWeb';
       finalDesc =
-        'Diretrizes de ética e segurança no uso do Firebase, fundamentos para a não utilização de dados da Wikimedia Foundation e documentação dos abusos do administrador Chronus.';
+        'Termos de uso, diretrizes de ética e segurança no uso do Google Firebase, fundamentos para a não utilização de dados da Wikimedia Foundation e documentação dos abusos do administrador Chronus.';
       canonicalUrl = `${BASE_URL}/?uid=Special:FirebaseEthics`;
       keywords.push(
+        'termos de uso firebase',
         'ética firebase',
         'governança cloud firestore',
         'não uso dados wikimedia foundation',
@@ -349,6 +350,32 @@ export function updateSEO(config: SEOConfig) {
         'abusos administrador chronus',
         'caso chronus ucoC',
         'calúnia chronus'
+      );
+    } else if (config.view === 'terms') {
+      finalTitle = 'Termos de Uso, Licenciamento e Serviços do Firebase - WikiWorldWeb';
+      finalDesc =
+        'Termos de Uso oficiais da WikiWorldWeb, licenças GNU GPL v3.0 e CC BY-SA 4.0, vedação ao uso de nomes de pessoas reais (LGPD) e Termos de Uso dos serviços Google Firebase.';
+      canonicalUrl = `${BASE_URL}/?uid=Special:Terms`;
+      keywords.push(
+        'termos de uso firebase',
+        'termos de uso wikiworldweb',
+        'cloud firestore termos',
+        'GPL v3.0',
+        'LGPD'
+      );
+    } else if (config.view === 'real-names-lgpd') {
+      finalTitle = 'Ética de Não Uso de Nomes de Pessoas Reais e Alinhamento Absoluto com a LGPD - WikiWorldWeb';
+      finalDesc =
+        'Política oficial de vedação ao uso e exposição de nomes civis de pessoas reais sem base legal e alinhamento absoluto com todos os princípios e direitos da LGPD (Lei nº 13.709/2018).';
+      canonicalUrl = `${BASE_URL}/?uid=Special:NoRealNamesLGPD`;
+      keywords.push(
+        'não uso nomes de pessoas reais',
+        'proibição nomes civis',
+        'alinhamento absoluto LGPD',
+        'Lei 13.709/2018',
+        'anti-doxxing wiki',
+        'pseudonímia wiki',
+        'anonimização LGPD'
       );
     } else if (config.view === 'not-found') {
       finalTitle = 'Página não encontrada (Erro 404) - WikiWorldWeb';

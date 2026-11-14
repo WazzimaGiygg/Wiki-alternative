@@ -814,38 +814,159 @@ export const PrivacyPolicyView: React.FC<InformativeViewsProps> = ({ onNavigate 
 };
 
 // === 4. TERMS OF USE VIEW ===
-export const TermsOfUseView: React.FC<InformativeViewsProps> = () => {
+export const TermsOfUseView: React.FC<InformativeViewsProps> = ({ onNavigate }) => {
+  const firebaseTerms = [
+    {
+      code: 'TF-01',
+      title: 'Objeto e Finalidade dos Serviços Firebase',
+      body: 'Os serviços do Google Firebase integrados à WikiWorldWeb (Cloud Firestore, Firebase Authentication e camada de hospedagem/funções auxiliares) destinam-se exclusivamente à persistência do acervo enciclopédico, autenticação segura de contas, registro técnico de revisões e atendimento às solicitações de proteção de dados (LGPD).',
+    },
+    {
+      code: 'TF-02',
+      title: 'Uso Aceitável, Limites de Cota e Segurança de Acesso',
+      body: 'É estritamente proibido realizar raspagem massiva automatizada, ataques de negação de serviço, loops deliberados de leitura/gravação, enumeração de identificadores (UIDs) ou qualquer tentativa de contorno às regras declaradas em firestore.rules e ao gatekeeper de segurança da plataforma.',
+    },
+    {
+      code: 'TF-03',
+      title: 'Vedação a Nomes Civis Reais e Alinhamento Absoluto à LGPD',
+      body: 'É terminantemente proibido armazenar, indexar ou propagar nas coleções do Firebase nomes civis completos de pessoas naturais privadas sem base legal, dados pessoais sensíveis (Art. 11 LGPD), dados de menores (Art. 14 LGPD) ou conteúdo de doxxing. Infrações resultam em expurgo imediato (Oversight) e bloqueio definitivo.',
+    },
+    {
+      code: 'TF-04',
+      title: 'Auditabilidade, Moderação e Revogação de Sessão',
+      body: 'Operações privilegiadas sobre coleções administrativas e de moderação exigem justificativa formal e vínculo de autoria auditável. O descumprimento destes termos ou o abuso de permissões administrativas autoriza a revogação imediata de sessão e suspensão da conta, assegurado o direito de recurso em Special:UnblockRequests.',
+    },
+    {
+      code: 'TF-05',
+      title: 'Disponibilidade, Exportação e Ausência de Lock-in',
+      body: 'Embora o projeto adote boas práticas de continuidade e backups JSON auditáveis, o serviço é fornecido no estado em que se encontra, sujeito a janelas técnicas do provedor. O acervo público permanece portável sob licença aberta CC BY-SA 4.0 e GNU GPL v3.0.',
+    },
+    {
+      code: 'TF-06',
+      title: 'Independência Estrutural da Wikimedia Foundation',
+      body: 'Nenhuma disposição destes termos autoriza a integração, espelhamento de dumps ou importação de históricos punitivos ou dados de CheckUser da Wikimedia Foundation Inc. para os serviços do Firebase da WikiWorldWeb.',
+    },
+  ];
+
   return (
-    <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in select-none">
-      <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 sm:p-6 shadow-xs">
-        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
-          <div className="w-9 h-9 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-200 dark:border-indigo-800">
-            <FileText size={18} />
+    <div className="max-w-4xl mx-auto space-y-5 animate-in fade-in select-none pb-8">
+      <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-xl p-6 sm:p-8 space-y-6">
+        <div className="flex items-start gap-3.5 pb-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="w-10 h-10 rounded-lg bg-slate-900 dark:bg-indigo-600 text-white flex items-center justify-center shrink-0">
+            <FileText size={20} />
           </div>
-          <div>
-            <h2 className="text-xl font-bold font-serif-heading text-slate-900 dark:text-white">
-              Termos de Uso e Licenciamento
-            </h2>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Diretrizes editoriais e licença GNU General Public License v3.0.
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span className="font-mono font-semibold text-indigo-700 dark:text-indigo-400">
+                Special:Terms
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>Licenciamento Livre &amp; Serviços Firebase</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold font-serif-heading text-slate-900 dark:text-white [text-wrap:balance]">
+              Termos de Uso, Licenciamento e Serviços do Firebase
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+              Diretrizes editoriais, licenças GNU GPL v3.0 / CC BY-SA 4.0 e condições normativas de utilização dos serviços Google Firebase na WikiWorldWeb.
             </p>
           </div>
         </div>
 
-        <div className="space-y-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-wiki-body">
+        <div className="space-y-5 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
           <p>
-            Ao utilizar, publicar ou editar artigos na <strong>WikiWorldWeb</strong>, você concorda em cumprir com as diretrizes de convivência e licenciamento livre.
+            Ao acessar, consultar, editar ou utilizar recursos autenticados e de persistência em nuvem na{' '}
+            <strong>WikiWorldWeb</strong>, você declara ciência e concordância integral com estes Termos de Uso.
           </p>
 
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">1. Princípio da Verificabilidade</h3>
-          <p>
-            Todo o conteúdo publicado deve ser redigido de forma neutra, factual e, sempre que possível, acompanhado de referências e fontes fidedignas.
-          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-1.5">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">
+                1. Princípio da Verificabilidade e Neutralidade
+              </h2>
+              <p className="text-xs leading-relaxed">
+                Todo conteúdo enciclopédico deve ser redigido de forma neutra, factual e acompanhado de referências fidedignas, vedada a inserção de calúnias, propaganda ou pesquisa inédita.
+              </p>
+            </div>
 
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">2. Licença GNU GPL v3.0</h3>
-          <p>
-            O código-fonte e os módulos do software são distribuídos sob a <strong>GNU General Public License v3.0</strong>. Você é livre para estudar, modificar e redistribuir cópias do software, desde que as modificações permaneçam sob os mesmos termos de liberdade.
-          </p>
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-1.5">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">
+                2. Licenças GNU GPL v3.0 &amp; CC BY-SA 4.0
+              </h2>
+              <p className="text-xs leading-relaxed">
+                O código-fonte da plataforma é distribuído sob a <strong>GNU General Public License v3.0</strong> e o acervo textual sob{' '}
+                <strong>Creative Commons Atribuição-CompartilhaIgual 4.0 Internacional</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-1.5">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white font-serif-heading">
+              3. Proibição de Exposição de Nomes Reais e Conformidade Absoluta à LGPD
+            </h2>
+            <p className="text-xs leading-relaxed">
+              É proibido publicar nomes civis completos de pessoas reais sem base legal ou notoriedade pública estrita, em alinhamento absoluto com a Lei nº 13.709/2018 (LGPD), garantindo-se pseudonímia e remoção sigilosa de dados mediante solicitação ao DPO (<span className="font-mono">pedrohenriquecardonaperes@gmail.com</span>).
+            </p>
+          </div>
+
+          {/* 4. TERMOS DE USO DOS SERVIÇOS DO FIREBASE */}
+          <section className="pt-2 space-y-3">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+              <Database size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-serif-heading">
+                4. Termos de Uso dos Serviços do Firebase (Cloud Firestore &amp; Auth)
+              </h2>
+            </div>
+
+            <div className="divide-y divide-slate-200 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl px-4 sm:px-5">
+              {firebaseTerms.map((clause) => (
+                <article key={clause.code} className="py-3.5 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                    <span className="font-mono font-bold tabular-nums text-amber-700 dark:text-amber-400">
+                      {clause.code}
+                    </span>
+                    <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">{clause.title}</h3>
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {clause.body}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          {onNavigate && (
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => onNavigate('firebase-ethics')}
+                className="px-3.5 py-2 min-h-[40px] rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer whitespace-nowrap"
+              >
+                Ética Firebase &amp; Caso Chronus
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('real-names-lgpd')}
+                className="px-3.5 py-2 min-h-[40px] rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer whitespace-nowrap"
+              >
+                Sem Nomes Reais &amp; LGPD
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('privacy')}
+                className="px-3.5 py-2 min-h-[40px] rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer whitespace-nowrap"
+              >
+                Política de Privacidade (LGPD)
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('mydata')}
+                className="px-3.5 py-2 min-h-[40px] rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold transition cursor-pointer whitespace-nowrap"
+              >
+                Painel Meus Dados (Art. 18)
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

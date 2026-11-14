@@ -635,6 +635,7 @@ export type ViewMode =
   | 'editing-ethics'
   | 'ai-ethics'
   | 'firebase-ethics'
+  | 'real-names-lgpd'
   | 'mydata'
   | 'site-updates'
   | 'beta'
