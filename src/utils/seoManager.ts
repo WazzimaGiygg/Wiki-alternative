@@ -323,6 +323,33 @@ export function updateSEO(config: SEOConfig) {
         'biografias de pessoas vivas',
         'diretrizes editoriais wiki'
       );
+    } else if (config.view === 'ai-ethics') {
+      finalTitle = 'Ética de Uso da Inteligência Artificial - WikiWorldWeb';
+      finalDesc =
+        'Diretrizes oficiais de ética, transparência, supervisão humana e proteção de dados (LGPD, GDPR e EU AI Act) para o uso de Inteligência Artificial na WikiWorldWeb.';
+      canonicalUrl = `${BASE_URL}/?uid=Special:AIEthics`;
+      keywords.push(
+        'ética de uso da IA',
+        'inteligência artificial enciclopédia',
+        'transparência IA wiki',
+        'supervisão humana IA',
+        'LGPD inteligência artificial',
+        'EU AI Act wiki'
+      );
+    } else if (config.view === 'firebase-ethics') {
+      finalTitle = 'Ética do Firebase, Independência da Wikimedia Foundation e Caso Chronus - WikiWorldWeb';
+      finalDesc =
+        'Diretrizes de ética e segurança no uso do Firebase, fundamentos para a não utilização de dados da Wikimedia Foundation e documentação dos abusos do administrador Chronus.';
+      canonicalUrl = `${BASE_URL}/?uid=Special:FirebaseEthics`;
+      keywords.push(
+        'ética firebase',
+        'governança cloud firestore',
+        'não uso dados wikimedia foundation',
+        'independência wikipedia',
+        'abusos administrador chronus',
+        'caso chronus ucoC',
+        'calúnia chronus'
+      );
     } else if (config.view === 'not-found') {
       finalTitle = 'Página não encontrada (Erro 404) - WikiWorldWeb';
       finalDesc =

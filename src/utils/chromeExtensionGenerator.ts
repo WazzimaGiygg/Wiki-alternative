@@ -1,5 +1,3 @@
-import JSZip from 'jszip';
-
 /**
  * Utility to generate and download a complete Google Chrome Extension / Web Store Package (Manifest V3)
  * allowing users to install WikiWorldWeb into Google Chrome on Windows, macOS, Linux, or ChromeOS,
@@ -75,6 +73,7 @@ async function generatePngBlob(size: number): Promise<Blob> {
 }
 
 export async function downloadChromeWebStorePackage(): Promise<void> {
+  const JSZip = (await import('jszip')).default;
   const zip = new JSZip();
 
   const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app';

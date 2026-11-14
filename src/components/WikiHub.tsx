@@ -24,7 +24,9 @@ import { ALL_LANGUAGES, getLanguageByCode } from '../utils/languages';
 import { getCleanExcerpt } from '../utils/wikitextParser';
 import { ModerationLockModal } from './ModerationLockModal';
 import { StorageService } from '../services/storageService';
-import { WikiStatisticsPanel } from './WikiStatisticsPanel';
+const WikiStatisticsPanel = React.lazy(() =>
+  import('./WikiStatisticsPanel').then((m) => ({ default: m.WikiStatisticsPanel }))
+);
 import { GoogleReaderRevenueDonation } from './GoogleReaderRevenueDonation';
 import { WikiFeaturedArticle } from './WikiFeaturedArticle';
 import { ExtensionManager } from '../core/ExtensionManager';
@@ -286,14 +288,16 @@ export const WikiHub: React.FC<WikiHubProps> = ({
 
       {/* Painel Interativo de Estatísticas com Gráfico Recharts */}
       {showStatisticsPanel && (
-        <WikiStatisticsPanel
-          pages={pages}
-          articles={articles}
-          currentUser={user}
-          onNavigate={onNavigate}
-          onCreateArticleClick={() => onCreateArticleClick()}
-          onSelectArticle={onSelectArticle}
-        />
+        <React.Suspense fallback={<div className="p-8 text-center text-slate-500 font-mono text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded">Carregando métricas e gráficos interativos...</div>}>
+          <WikiStatisticsPanel
+            pages={pages}
+            articles={articles}
+            currentUser={user}
+            onNavigate={onNavigate}
+            onCreateArticleClick={() => onCreateArticleClick()}
+            onSelectArticle={onSelectArticle}
+          />
+        </React.Suspense>
       )}
 
       {/* Matching Search Articles results (if searching) */}

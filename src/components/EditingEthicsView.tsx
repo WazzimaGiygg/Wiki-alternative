@@ -150,6 +150,24 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
             </button>
 
             <button
+              onClick={() => onNavigate('ai-ethics')}
+              className="px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-xs font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition flex items-center gap-1.5 cursor-pointer"
+              title="Abrir diretrizes de Ética de Uso da Inteligência Artificial"
+            >
+              <Cpu size={14} />
+              <span>Ética de IA</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('firebase-ethics')}
+              className="px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 text-xs font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/60 transition flex items-center gap-1.5 cursor-pointer"
+              title="Ética de Uso do Firebase, Independência da WMF e Caso Chronus"
+            >
+              <Flame size={14} />
+              <span>Firebase &amp; Chronus</span>
+            </button>
+
+            <button
               onClick={onOpenEditor}
               className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
@@ -263,6 +281,15 @@ export const EditingEthicsView: React.FC<EditingEthicsViewProps> = ({
         >
           <Award size={14} />
           <span>7. Checklist do Editor</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onNavigate('ai-ethics')}
+          className="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-semibold"
+        >
+          <Cpu size={14} />
+          <span>8. Ética de Uso da IA</span>
         </button>
       </div>
 

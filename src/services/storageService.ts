@@ -14,8 +14,11 @@ import {
   query,
   where,
   limit,
+  orderBy,
+  startAfter,
   serverTimestamp,
   writeBatch,
+  runTransaction,
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -24,6 +27,31 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
+
+export class EditConflictError extends Error {
+  currentServerArticle: WikiArticle;
+  baseVersion: number;
+  yourContent: string;
+  serverContent: string;
+  baseContent: string;
+
+  constructor(
+    currentServerArticle: WikiArticle,
+    baseVersion: number,
+    yourContent: string,
+    baseContent: string
+  ) {
+    super(
+      `Conflito de edição detectado no verbete "${currentServerArticle.titulo}": a revisão #${currentServerArticle.versao || 1} foi salva concorrentemente por ${currentServerArticle.autor || 'outro colaborador'}.`
+    );
+    this.name = 'EditConflictError';
+    this.currentServerArticle = currentServerArticle;
+    this.baseVersion = baseVersion;
+    this.yourContent = yourContent;
+    this.serverContent = currentServerArticle.descricao || '';
+    this.baseContent = baseContent || '';
+  }
+}
 import {
   WikiArticle,
   WikiPage,
@@ -555,6 +583,40 @@ export const StorageService = {
     return fallbackList;
   },
 
+  /**
+   * Consulta paginada de artigos para otimizar desempenho e custo de leitura no Firestore
+   */
+  async getArticlesPaged(
+    page: number = 1,
+    pageSize: number = 20,
+    options?: { pageUid?: string; categoria?: string }
+  ): Promise<{ items: WikiArticle[]; totalCount: number; hasMore: boolean; page: number; totalPages: number }> {
+    const allArticles = await this.getArticles();
+    let filtered = allArticles;
+
+    if (options?.pageUid) {
+      filtered = filtered.filter((a) => a.pageUid.toLowerCase() === options.pageUid!.toLowerCase());
+    }
+    if (options?.categoria) {
+      filtered = filtered.filter((a) => a.categoria.toLowerCase() === options.categoria!.toLowerCase());
+    }
+
+    const totalCount = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const safePage = Math.max(1, Math.min(page, totalPages));
+    const startIndex = (safePage - 1) * pageSize;
+    const items = filtered.slice(startIndex, startIndex + pageSize);
+    const hasMore = safePage < totalPages;
+
+    return {
+      items,
+      totalCount,
+      hasMore,
+      page: safePage,
+      totalPages,
+    };
+  },
+
   // Inscrições em tempo real para sincronização instantânea com o Firestore
   subscribeToArticles(callback: (articles: WikiArticle[]) => void): () => void {
     if (!firebaseActive || !db) return () => {};
@@ -845,7 +907,12 @@ export const StorageService = {
     articleData: Partial<WikiArticle> & { titulo: string; pageUid: string; descricao: string },
     user?: UserProfile | null,
     editSummary?: string,
-    isMinor?: boolean
+    isMinor?: boolean,
+    conflictOptions?: {
+      baseVersion?: number;
+      baseContent?: string;
+      forceOverwrite?: boolean;
+    }
   ): Promise<WikiArticle> {
     const effectiveUser = user || this.getCurrentUser();
     if (!effectiveUser || effectiveUser.isGuest) {
@@ -878,6 +945,20 @@ export const StorageService = {
     if (existingIndex >= 0) {
       // Update existing
       const existing = articles[existingIndex];
+
+      // Verificação de conflito de edição local (Edit Conflict)
+      if (
+        !conflictOptions?.forceOverwrite &&
+        conflictOptions?.baseVersion !== undefined &&
+        (existing.versao || 1) > conflictOptions.baseVersion
+      ) {
+        throw new EditConflictError(
+          existing,
+          conflictOptions.baseVersion,
+          articleData.descricao,
+          conflictOptions.baseContent || ''
+        );
+      }
 
       // Verificação de artigo bloqueado/protegido pela moderação
       if (existing.isLocked && !isModOrAdmin) {
@@ -921,12 +1002,13 @@ export const StorageService = {
         versao: newVersion,
         historico: [historyItem, ...(existing.historico || [])],
         // Preserva metadados de bloqueio
-        isLocked: existing.isLocked,
-        lockedBy: existing.lockedBy,
-        lockedByUid: existing.lockedByUid,
-        lockedAt: existing.lockedAt,
-        lockReason: existing.lockReason,
-        protectionLevel: existing.protectionLevel,
+        // Preserva metadados de bloqueio contra adulteração de usuários comuns
+        isLocked: isModOrAdmin && articleData.isLocked !== undefined ? articleData.isLocked : existing.isLocked,
+        lockedBy: isModOrAdmin && articleData.lockedBy !== undefined ? articleData.lockedBy : existing.lockedBy,
+        lockedByUid: isModOrAdmin && articleData.lockedByUid !== undefined ? articleData.lockedByUid : existing.lockedByUid,
+        lockedAt: isModOrAdmin && articleData.lockedAt !== undefined ? articleData.lockedAt : existing.lockedAt,
+        lockReason: isModOrAdmin && articleData.lockReason !== undefined ? articleData.lockReason : existing.lockReason,
+        protectionLevel: isModOrAdmin && articleData.protectionLevel !== undefined ? articleData.protectionLevel : existing.protectionLevel,
       };
       articles[existingIndex] = article;
     } else {
@@ -1012,11 +1094,28 @@ export const StorageService = {
           atualizadoEm: serverTimestamp(),
         };
 
-        // 1. Coleção principal /articles/{id} para leitura rápida global
-        await setDoc(doc(db, 'articles', article.id), firestorePayload);
+        // 1. Coleção principal /articles/{id} salva atomicamente com runTransaction para garantir controle de concorrência estrito
+        const articleRef = doc(db, 'articles', article.id);
+        await runTransaction(db, async (transaction) => {
+          const remoteDoc = await transaction.get(articleRef);
+          if (remoteDoc.exists()) {
+            const remoteData = remoteDoc.data() as WikiArticle;
+            const remoteVersion = remoteData.versao || 1;
+            const baseVer = conflictOptions?.baseVersion;
+            if (!conflictOptions?.forceOverwrite && baseVer !== undefined && remoteVersion > baseVer) {
+              throw new EditConflictError(
+                remoteData,
+                baseVer,
+                articleData.descricao,
+                conflictOptions?.baseContent || ''
+              );
+            }
+          }
+          transaction.set(articleRef, firestorePayload);
+        });
 
         // Registrar gravação na telemetria em tempo real
-        FirebaseUsageMetricsService.recordWrite('articles', 1, `Gravação do artigo "${article.titulo}" no Firestore`);
+        FirebaseUsageMetricsService.recordWrite('articles', 1, `Gravação transacional do artigo "${article.titulo}" no Firestore`);
 
         // 2. Coleção estruturada por tópico /documentos/{pageUid}/inevitavel/{id}
         await setDoc(doc(db, 'documentos', article.pageUid, 'inevitavel', article.id), {
@@ -1343,9 +1442,10 @@ export const StorageService = {
 
   // === USER AUTH & BAN CHECK ===
   getCurrentUser(): UserProfile | null {
-    const raw = localStorage.getItem(STORAGE_KEYS.USER);
-    if (!raw) return null;
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return null;
     try {
+      const raw = localStorage.getItem(STORAGE_KEYS.USER);
+      if (!raw) return null;
       const parsed = JSON.parse(raw);
       // Política restritiva: Bloqueio permanente de sessão de usuários convidados ou não registrados
       if (parsed?.isGuest || parsed?.role === 'convidado') {
@@ -1359,15 +1459,23 @@ export const StorageService = {
   },
 
   saveUser(user: UserProfile) {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
     if (user?.isGuest || user?.role === 'convidado') {
-      localStorage.removeItem(STORAGE_KEYS.USER);
+      try {
+        localStorage.removeItem(STORAGE_KEYS.USER);
+      } catch {}
       return;
     }
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    try {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    } catch {}
   },
 
   clearUser() {
-    localStorage.removeItem(STORAGE_KEYS.USER);
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+    try {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+    } catch {}
   },
 
   async createGuestUser(): Promise<UserProfile> {
@@ -2035,17 +2143,26 @@ export const StorageService = {
       notif.title.toLowerCase().includes('privacidade') ||
       notif.title.toLowerCase().includes('consentimento');
 
-    // Restrito a notas de versão, atualizações do sistema e notificações oficiais de privacidade LGPD
-    const isSystemUpdate =
+    const isRecentChangeNotif =
+      notif.link === 'recentchanges' ||
+      notif.link === '#recentchanges' ||
+      notif.link?.startsWith('recent') ||
+      notif.title.toLowerCase().includes('modifica') ||
+      notif.title.toLowerCase().includes('edição') ||
+      notif.title.toLowerCase().includes('mudança');
+
+    // Restrito a notas de versão, atualizações do sistema, notificações oficiais de privacidade LGPD e últimas modificações
+    const isAllowedNotification =
       isLgpdNotif ||
+      isRecentChangeNotif ||
       notif.link === 'site-updates' ||
       notif.title.toLowerCase().includes('v3.') ||
       notif.title.toLowerCase().includes('atualização') ||
       notif.title.toLowerCase().includes('versão') ||
       notif.title.toLowerCase().includes('release');
 
-    if (!isSystemUpdate) {
-      // Ignorar notificações de eventos pontuais no sininho (mantendo o sininho 100% focado em notas e LGPD)
+    if (!isAllowedNotification) {
+      // Ignorar notificações não permitidas no sininho
       return this.getNotifications();
     }
 
@@ -2059,10 +2176,14 @@ export const StorageService = {
     const randomSalt = Math.random().toString(36).substring(2, 8);
     const item: NotificationItem = {
       ...notif,
-      id: isLgpdNotif ? `lgpd-notif-${Date.now()}-${randomSalt}` : `upd-notif-${Date.now()}-${randomSalt}`,
+      id: isLgpdNotif
+        ? `lgpd-notif-${Date.now()}-${randomSalt}`
+        : isRecentChangeNotif
+        ? `rc-notif-${Date.now()}-${randomSalt}`
+        : `upd-notif-${Date.now()}-${randomSalt}`,
       date: 'Agora',
       read: false,
-      link: notif.link || (isLgpdNotif ? '#mydata' : 'site-updates'),
+      link: notif.link || (isLgpdNotif ? '#mydata' : isRecentChangeNotif ? 'recentchanges' : 'site-updates'),
     };
     const updated = [item, ...list];
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(updated));
@@ -2377,6 +2498,30 @@ export const StorageService = {
     );
   },
 
+  /**
+   * Consulta paginada de mudanças recentes com limite para economizar quota
+   */
+  async getRecentChangesPaged(
+    page: number = 1,
+    pageSize: number = 25
+  ): Promise<{ items: RecentChangeEntry[]; totalCount: number; hasMore: boolean; page: number; totalPages: number }> {
+    const all = await this.getRecentChanges();
+    const totalCount = all.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const safePage = Math.max(1, Math.min(page, totalPages));
+    const startIndex = (safePage - 1) * pageSize;
+    const items = all.slice(startIndex, startIndex + pageSize);
+    const hasMore = safePage < totalPages;
+
+    return {
+      items,
+      totalCount,
+      hasMore,
+      page: safePage,
+      totalPages,
+    };
+  },
+
   subscribeToRecentChanges(callback: (changes: RecentChangeEntry[]) => void): () => void {
     if (!firebaseActive || !db) {
       return () => {};
@@ -2403,8 +2548,10 @@ export const StorageService = {
   },
 
   async recordRecentChange(entry: Omit<RecentChangeEntry, 'id' | 'data'>): Promise<RecentChangeEntry> {
+    const currentUid = auth?.currentUser?.uid || null;
     const fullEntry: RecentChangeEntry = {
       ...entry,
+      autorUid: entry.autorUid || currentUid || undefined,
       id: `rc-live-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       data: new Date().toISOString(),
     };
@@ -2417,6 +2564,18 @@ export const StorageService = {
       localStorage.setItem(STORAGE_KEYS.RECENT_CHANGES, JSON.stringify(list.slice(0, 200)));
     } catch (e) {
       console.warn('Error recording recent change:', e);
+    }
+
+    // Adiciona as últimas modificações no sistema de notificações (Requisito: Adicionar as ultimas modificações nas notificações)
+    try {
+      const actionText = fullEntry.type === 'new_article' || fullEntry.type === 'new_collection' ? 'criou' : 'editou';
+      this.addNotification({
+        title: `Modificação: ${fullEntry.articleTitle}`,
+        message: `${fullEntry.autor} ${actionText} "${fullEntry.articleTitle}"${fullEntry.resumo ? ': ' + fullEntry.resumo : '.'}`,
+        link: 'recentchanges',
+      });
+    } catch (notifErr) {
+      console.warn('Erro ao disparar notificação de modificação recente:', notifErr);
     }
 
     if (firebaseActive && db) {
@@ -2514,6 +2673,8 @@ export const StorageService = {
     const raw = localStorage.getItem(STORAGE_KEYS.TALK_THREADS);
     const list: TalkThread[] = raw ? JSON.parse(raw) : [];
 
+    const currentUid = auth?.currentUser?.uid || effectiveUser.id || effectiveUser.uid || null;
+
     const newThread: TalkThread = {
       id: `talk-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       articleId,
@@ -2522,6 +2683,8 @@ export const StorageService = {
       autor: effectiveUser.displayName || effectiveUser.username || effectiveUser.email.split('@')[0],
       autorEmail: effectiveUser.email,
       autorRole: effectiveUser.role || 'editor',
+      autorUid: currentUid || undefined,
+      userId: currentUid || undefined,
       data: new Date().toISOString(),
       status: 'aberto',
       respostas: [],
@@ -2578,11 +2741,15 @@ export const StorageService = {
     const thread = list.find((t) => t.id === threadId);
     if (!thread) return null;
 
+    const currentReplyUid = auth?.currentUser?.uid || effectiveUser.id || effectiveUser.uid || null;
+
     const newReply: TalkReply = {
       id: `reply-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       autor: effectiveUser.displayName || effectiveUser.username || effectiveUser.email.split('@')[0],
       autorEmail: effectiveUser.email,
       autorRole: effectiveUser.role || 'editor',
+      autorUid: currentReplyUid || undefined,
+      userId: currentReplyUid || undefined,
       conteudo,
       data: new Date().toISOString(),
       upvotes: 0,

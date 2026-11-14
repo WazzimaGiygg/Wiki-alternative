@@ -1,5 +1,4 @@
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import type { jsPDF } from 'jspdf';
 import { WikiArticle } from '../types';
 import { parseWikitext } from './wikitextParser';
 import {
@@ -177,6 +176,7 @@ export async function exportArticleToStructuredPdf(
     customWatermark = '',
   } = options;
 
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation,
     unit: 'mm',
@@ -630,6 +630,12 @@ export async function exportArticleSnapshotToPdf(
   options: PdfExportOptions = {}
 ): Promise<void> {
   const { pageSize = 'a4', orientation = 'portrait' } = options;
+
+  const [{ jsPDF }, html2canvasModule] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ]);
+  const html2canvas = html2canvasModule.default;
 
   const canvas = await html2canvas(element, {
     scale: 2,

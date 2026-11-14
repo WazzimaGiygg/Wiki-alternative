@@ -3,86 +3,104 @@ import { Sparkles, X } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { WikiHub } from './components/WikiHub';
-import { RecentChanges } from './components/RecentChanges';
-import { ArticleViewer } from './components/ArticleViewer';
-import { WikitextEditor } from './components/WikitextEditor';
-import { SpecialPagesView } from './components/SpecialPagesView';
-import { UserPageView } from './components/UserPageView';
-import { UnifiedAdminDashboard } from './components/UnifiedAdminDashboard';
-import { AdminUsersManagementView } from './components/AdminUsersManagementView';
-import { AdminCouncilView } from './components/AdminCouncilView';
-import { AdminDataRemovalRequestsView } from './components/AdminDataRemovalRequestsView';
-import { CheckUserView } from './components/CheckUserView';
-import { UnblockRequestsView } from './components/UnblockRequestsView';
-import { PromotionRequestsView } from './components/PromotionRequestsView';
-import { ContactAdminView } from './components/ContactAdminView';
-import { EmergencyContactView } from './components/EmergencyContactView';
-import { FirebaseAdminDashboard } from './components/FirebaseAdminDashboard';
-import { VpnSecurityChecker } from './components/VpnSecurityChecker';
-import { CreatePageModal } from './components/CreatePageModal';
-import { GeminiChatbotDrawer } from './components/GeminiChatbotDrawer';
-import { GeminiPremiumModal } from './components/GeminiPremiumModal';
-import { GeminiNotebook } from './components/GeminiNotebook';
+import { PermissionService } from './services/PermissionService';
 import { CookieBanner } from './components/CookieBanner';
 import { BannedOverlay } from './components/BannedOverlay';
-import { LgpdConsentModal } from './components/LgpdConsentModal';
-import { MyDataModal } from './components/MyDataModal';
-import { LanguageModal } from './components/LanguageModal';
 import { useLanguage } from './context/LanguageContext';
-import {
-  SecurityView,
-  DonationView,
-  PrivacyPolicyView,
-  TermsOfUseView,
-  BetaModeView,
-  OfflineModeView,
-} from './components/InformativeViews';
-import { EditingEthicsView } from './components/EditingEthicsView';
-import { SiteUpdatesView } from './components/SiteUpdatesView';
-import { FileUploadView } from './components/FileUploadView';
-import { FilePageView } from './components/FilePageView';
-import { FilesGalleryView } from './components/FilesGalleryView';
-import { ArbitrationCommitteeView } from './components/ArbitrationCommitteeView';
-import { UcocView } from './components/UcocView';
-import { LoginModal } from './components/LoginModal';
-import { UnsavedChangesModal } from './components/UnsavedChangesModal';
-import { ChromeRecommendationModal } from './components/ChromeRecommendationModal';
 import { Footer } from './components/Footer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileSearchModal } from './components/MobileSearchModal';
 import { MobileDrawerMenu } from './components/MobileDrawerMenu';
 import { OfflineIndicator } from './components/OfflineIndicator';
-import { SmartTVView } from './components/SmartTVView';
-import { SmartTVInstallModal } from './components/SmartTVInstallModal';
-import { AppearanceSettingsView } from './components/AppearanceSettingsView';
-import { OtherRulesView } from './components/OtherRulesView';
-import { WindowsXPBootScreen } from './components/WindowsXPBootScreen';
-import { Windows7BootScreen } from './components/Windows7BootScreen';
-import { Windows10BootScreen } from './components/Windows10BootScreen';
-import { Windows95BootScreen } from './components/Windows95BootScreen';
-import { Windows31BootScreen } from './components/Windows31BootScreen';
-import { Windows95Bot } from './components/Windows95Bot';
-import { AdvancedSearchView } from './components/AdvancedSearchView';
-import { WikiCompetitorComparisonView } from './components/WikiCompetitorComparisonView';
-import { WazzimaGiyggProfileView } from './components/WazzimaGiyggProfileView';
-import { NotFoundView } from './components/NotFoundView';
-import { ToolsView } from './components/ToolsView';
-import { LibraryCatalogView } from './components/LibraryCatalogView';
-import { AcademicCatalogView } from './components/AcademicCatalogView';
-import { JornalNewsView } from './components/JornalNewsView';
+import { CustomContextMenu } from './components/CustomContextMenu';
+import { UserChatFloatingButton } from './components/UserChatFloatingButton';
+import { FullTextSearchService } from './services/fullTextSearchService';
 
-// 4.1.1.222.6: Otimização de Pacotes (Code-Splitting sob demanda para AntiplagiarismTccView)
+// Lazy-loaded routes, modals and heavy views to keep initial bundle < 1 MB
+const LazyFallbackSpinner = () => (
+  <div className="flex flex-col items-center justify-center p-12 min-h-[300px] text-slate-500 dark:text-slate-400 font-sans">
+    <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
+    <span className="text-xs font-medium">Carregando módulo...</span>
+  </div>
+);
+
+const RecentChanges = React.lazy(() => import('./components/RecentChanges').then((m) => ({ default: m.RecentChanges })));
+const ArticleViewer = React.lazy(() => import('./components/ArticleViewer').then((m) => ({ default: m.ArticleViewer })));
+const WikitextEditor = React.lazy(() => import('./components/WikitextEditor').then((m) => ({ default: m.WikitextEditor })));
+const SpecialPagesView = React.lazy(() => import('./components/SpecialPagesView').then((m) => ({ default: m.SpecialPagesView })));
+const UserPageView = React.lazy(() => import('./components/UserPageView').then((m) => ({ default: m.UserPageView })));
+const UnifiedAdminDashboard = React.lazy(() => import('./components/UnifiedAdminDashboard').then((m) => ({ default: m.UnifiedAdminDashboard })));
+const AdminUsersManagementView = React.lazy(() => import('./components/AdminUsersManagementView').then((m) => ({ default: m.AdminUsersManagementView })));
+const AdminCouncilView = React.lazy(() => import('./components/AdminCouncilView').then((m) => ({ default: m.AdminCouncilView })));
+const AdminDataRemovalRequestsView = React.lazy(() => import('./components/AdminDataRemovalRequestsView').then((m) => ({ default: m.AdminDataRemovalRequestsView })));
+const CheckUserView = React.lazy(() => import('./components/CheckUserView').then((m) => ({ default: m.CheckUserView })));
+const UnblockRequestsView = React.lazy(() => import('./components/UnblockRequestsView').then((m) => ({ default: m.UnblockRequestsView })));
+const PromotionRequestsView = React.lazy(() => import('./components/PromotionRequestsView').then((m) => ({ default: m.PromotionRequestsView })));
+const ContactAdminView = React.lazy(() => import('./components/ContactAdminView').then((m) => ({ default: m.ContactAdminView })));
+const EmergencyContactView = React.lazy(() => import('./components/EmergencyContactView').then((m) => ({ default: m.EmergencyContactView })));
+const FirebaseAdminDashboard = React.lazy(() => import('./components/FirebaseAdminDashboard').then((m) => ({ default: m.FirebaseAdminDashboard })));
+const VpnSecurityChecker = React.lazy(() => import('./components/VpnSecurityChecker').then((m) => ({ default: m.VpnSecurityChecker })));
+const CreatePageModal = React.lazy(() => import('./components/CreatePageModal').then((m) => ({ default: m.CreatePageModal })));
+const GeminiChatbotDrawer = React.lazy(() => import('./components/GeminiChatbotDrawer').then((m) => ({ default: m.GeminiChatbotDrawer })));
+const GeminiPremiumModal = React.lazy(() => import('./components/GeminiPremiumModal').then((m) => ({ default: m.GeminiPremiumModal })));
+const GeminiNotebook = React.lazy(() => import('./components/GeminiNotebook').then((m) => ({ default: m.GeminiNotebook })));
+
+const LgpdConsentModal = React.lazy(() => import('./components/LgpdConsentModal').then((m) => ({ default: m.LgpdConsentModal })));
+const MyDataModal = React.lazy(() => import('./components/MyDataModal').then((m) => ({ default: m.MyDataModal })));
+const LanguageModal = React.lazy(() => import('./components/LanguageModal').then((m) => ({ default: m.LanguageModal })));
+
+const SecurityView = React.lazy(() => import('./components/InformativeViews').then((m) => ({ default: m.SecurityView })));
+const DonationView = React.lazy(() => import('./components/InformativeViews').then((m) => ({ default: m.DonationView })));
+const PrivacyPolicyView = React.lazy(() => import('./components/InformativeViews').then((m) => ({ default: m.PrivacyPolicyView })));
+const TermsOfUseView = React.lazy(() => import('./components/InformativeViews').then((m) => ({ default: m.TermsOfUseView })));
+const BetaModeView = React.lazy(() => import('./components/InformativeViews').then((m) => ({ default: m.BetaModeView })));
+const OfflineModeView = React.lazy(() => import('./components/InformativeViews').then((m) => ({ default: m.OfflineModeView })));
+
+const EditingEthicsView = React.lazy(() => import('./components/EditingEthicsView').then((m) => ({ default: m.EditingEthicsView })));
+const AIEthicsView = React.lazy(() => import('./components/AIEthicsView').then((m) => ({ default: m.AIEthicsView })));
+const FirebaseGovernanceEthicsView = React.lazy(() => import('./components/FirebaseGovernanceEthicsView').then((m) => ({ default: m.FirebaseGovernanceEthicsView })));
+const SiteUpdatesView = React.lazy(() => import('./components/SiteUpdatesView').then((m) => ({ default: m.SiteUpdatesView })));
+const FileUploadView = React.lazy(() => import('./components/FileUploadView').then((m) => ({ default: m.FileUploadView })));
+const FilePageView = React.lazy(() => import('./components/FilePageView').then((m) => ({ default: m.FilePageView })));
+const FilesGalleryView = React.lazy(() => import('./components/FilesGalleryView').then((m) => ({ default: m.FilesGalleryView })));
+const ArbitrationCommitteeView = React.lazy(() => import('./components/ArbitrationCommitteeView').then((m) => ({ default: m.ArbitrationCommitteeView })));
+const UcocView = React.lazy(() => import('./components/UcocView').then((m) => ({ default: m.UcocView })));
+const LoginModal = React.lazy(() => import('./components/LoginModal').then((m) => ({ default: m.LoginModal })));
+const UnsavedChangesModal = React.lazy(() => import('./components/UnsavedChangesModal').then((m) => ({ default: m.UnsavedChangesModal })));
+const ChromeRecommendationModal = React.lazy(() => import('./components/ChromeRecommendationModal').then((m) => ({ default: m.ChromeRecommendationModal })));
+
+const SmartTVView = React.lazy(() => import('./components/SmartTVView').then((m) => ({ default: m.SmartTVView })));
+const SmartTVInstallModal = React.lazy(() => import('./components/SmartTVInstallModal').then((m) => ({ default: m.SmartTVInstallModal })));
+const AppearanceSettingsView = React.lazy(() => import('./components/AppearanceSettingsView').then((m) => ({ default: m.AppearanceSettingsView })));
+const OtherRulesView = React.lazy(() => import('./components/OtherRulesView').then((m) => ({ default: m.OtherRulesView })));
+
+const WindowsXPBootScreen = React.lazy(() => import('./components/WindowsXPBootScreen').then((m) => ({ default: m.WindowsXPBootScreen })));
+const Windows7BootScreen = React.lazy(() => import('./components/Windows7BootScreen').then((m) => ({ default: m.Windows7BootScreen })));
+const Windows10BootScreen = React.lazy(() => import('./components/Windows10BootScreen').then((m) => ({ default: m.Windows10BootScreen })));
+const Windows95BootScreen = React.lazy(() => import('./components/Windows95BootScreen').then((m) => ({ default: m.Windows95BootScreen })));
+const Windows31BootScreen = React.lazy(() => import('./components/Windows31BootScreen').then((m) => ({ default: m.Windows31BootScreen })));
+const Windows95Bot = React.lazy(() => import('./components/Windows95Bot').then((m) => ({ default: m.Windows95Bot })));
+
+const AdvancedSearchView = React.lazy(() => import('./components/AdvancedSearchView').then((m) => ({ default: m.AdvancedSearchView })));
+const WikiCompetitorComparisonView = React.lazy(() => import('./components/WikiCompetitorComparisonView').then((m) => ({ default: m.WikiCompetitorComparisonView })));
+const WazzimaGiyggProfileView = React.lazy(() => import('./components/WazzimaGiyggProfileView').then((m) => ({ default: m.WazzimaGiyggProfileView })));
+const NotFoundView = React.lazy(() => import('./components/NotFoundView').then((m) => ({ default: m.NotFoundView })));
+const ToolsView = React.lazy(() => import('./components/ToolsView').then((m) => ({ default: m.ToolsView })));
+const LibraryCatalogView = React.lazy(() => import('./components/LibraryCatalogView').then((m) => ({ default: m.LibraryCatalogView })));
+const AcademicCatalogView = React.lazy(() => import('./components/AcademicCatalogView').then((m) => ({ default: m.AcademicCatalogView })));
+const JornalNewsView = React.lazy(() => import('./components/JornalNewsView').then((m) => ({ default: m.JornalNewsView })));
+
 const AntiplagiarismTccView = React.lazy(() =>
   import('./components/AntiplagiarismTccView').then((m) => ({
     default: m.AntiplagiarismTccView,
   }))
 );
-import { FirstVisitNewsPopupModal } from './components/FirstVisitNewsPopupModal';
-import { CustomContextMenu } from './components/CustomContextMenu';
-import { UserChatModal } from './components/UserChatModal';
-import { UserChatFloatingButton } from './components/UserChatFloatingButton';
-import { WikiGeneralHelpModal } from './components/WikiGeneralHelpModal';
-import { DailyChecklistModal } from './components/DailyChecklistModal';
+const FirstVisitNewsPopupModal = React.lazy(() => import('./components/FirstVisitNewsPopupModal').then((m) => ({ default: m.FirstVisitNewsPopupModal })));
+const UserChatModal = React.lazy(() => import('./components/UserChatModal').then((m) => ({ default: m.UserChatModal })));
+const WikiGeneralHelpModal = React.lazy(() => import('./components/WikiGeneralHelpModal').then((m) => ({ default: m.WikiGeneralHelpModal })));
+const DailyChecklistModal = React.lazy(() => import('./components/DailyChecklistModal').then((m) => ({ default: m.DailyChecklistModal })));
+const BrowserCompatibilityChecker = React.lazy(() => import('./components/BrowserCompatibilityChecker').then((m) => ({ default: m.BrowserCompatibilityChecker })));
+
 import { dailyChecklistService } from './services/dailyChecklistService';
 import { fullscreenManager } from './utils/fullscreenManager';
 import { CURATED_FEATURED_ARTICLES } from './components/WikiFeaturedArticle';
@@ -337,6 +355,7 @@ export default function App() {
   const [ucocInitialProtocol, setUcocInitialProtocol] = useState<string>('');
   const [toolsInitialTab, setToolsInitialTab] = useState<'weather' | 'scholar' | 'calculator' | 'world-clock' | 'keyboard-checker' | 'chrome-app'>('weather');
   const [editingEthicsInitialTab, setEditingEthicsInitialTab] = useState<'principles' | 'lgpd' | 'gdpr' | 'free_expression' | 'bpv' | 'enforcement' | 'checklist'>('principles');
+  const [firebaseEthicsInitialTab, setFirebaseEthicsInitialTab] = useState<'firebase_ethics' | 'no_wikimedia' | 'chronus_abuses' | 'checklist'>('firebase_ethics');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [notFoundQuery, setNotFoundQuery] = useState<string>('');
@@ -685,6 +704,9 @@ export default function App() {
         if (target.view === 'editing-ethics' && target.initialTab) {
           setEditingEthicsInitialTab(target.initialTab as any);
         }
+        if (target.view === 'firebase-ethics' && target.initialTab) {
+          setFirebaseEthicsInitialTab(target.initialTab as any);
+        }
         handleNavigate(target.view);
         break;
 
@@ -882,6 +904,13 @@ export default function App() {
       unsubPages();
     };
   }, []);
+
+  // Sincroniza índice de busca em texto completo com MiniSearch
+  useEffect(() => {
+    if (Array.isArray(articles) && articles.length > 0) {
+      FullTextSearchService.getInstance().indexArticles(articles);
+    }
+  }, [articles]);
 
   // Sincronização em tempo real de avatar removido sob LGPD
   useEffect(() => {
@@ -1452,6 +1481,14 @@ export default function App() {
         setCurrentView('privacy');
         return;
       }
+      if (notif.link === 'recentchanges' || notif.link === '#recentchanges' || notif.link === 'recent-changes') {
+        setCurrentView('recent-changes');
+        return;
+      }
+      if (notif.link === 'site-updates' || notif.link === '#site-updates') {
+        setCurrentView('site-updates');
+        return;
+      }
       handleNavigateToArticleByTitle(notif.link);
     }
   };
@@ -1529,9 +1566,14 @@ export default function App() {
   const handleSaveArticle = async (
     articleData: Partial<WikiArticle> & { titulo: string; pageUid: string; descricao: string },
     editSummary: string,
-    isMinor?: boolean
+    isMinor?: boolean,
+    conflictOptions?: {
+      baseVersion?: number;
+      baseContent?: string;
+      forceOverwrite?: boolean;
+    }
   ) => {
-    const saved = await StorageService.saveArticle(articleData, user, editSummary, isMinor);
+    const saved = await StorageService.saveArticle(articleData, user, editSummary, isMinor, conflictOptions);
     const updatedArticles = await StorageService.getArticles();
     const updatedPages = await StorageService.getPages();
 
@@ -1590,12 +1632,14 @@ export default function App() {
 
   const handleOpenEditorForEdit = (article: WikiArticle) => {
     confirmNavigationIfDirty(() => {
-      const isModOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
-      if (article.isLocked && !isModOrAdmin) {
-        handleNotify(
-          `O artigo "${article.titulo}" está protegido pela moderação (${article.lockReason || 'bloqueio administrativo'}). Apenas moderadores e administradores podem editar.`,
-          'warning'
-        );
+      const editPerm = PermissionService.getEditPermissionStatus(user, article);
+      if (!editPerm.allowed) {
+        if (editPerm.requiresLogin) {
+          handleNotify(editPerm.message, 'warning');
+          setShowLoginModal(true);
+          return;
+        }
+        handleNotify(editPerm.message, 'warning');
         return;
       }
       setEditingArticle(article);
@@ -1607,16 +1651,16 @@ export default function App() {
 
   const handleOpenNewEditor = (defaultUid?: string) => {
     confirmNavigationIfDirty(() => {
-      const isModOrAdmin = !!(user && (user.role === 'admin' || user.role === 'moderador'));
-      if (defaultUid && !isModOrAdmin) {
-        const targetPage = pages.find((p) => p.uid.toLowerCase() === defaultUid.toLowerCase());
-        if (targetPage && targetPage.isLocked) {
-          handleNotify(
-            `A coleção "${targetPage.titulo}" está protegida pela moderação. Não é permitido criar novos artigos nela.`,
-            'warning'
-          );
+      const targetPage = defaultUid ? pages.find((p) => p.uid.toLowerCase() === defaultUid.toLowerCase()) : null;
+      const editPerm = PermissionService.getEditPermissionStatus(user, targetPage ? { ...targetPage, namespace: 'main' } : null);
+      if (!editPerm.allowed) {
+        if (editPerm.requiresLogin) {
+          handleNotify(editPerm.message, 'warning');
+          setShowLoginModal(true);
           return;
         }
+        handleNotify(editPerm.message, 'warning');
+        return;
       }
       setEditingArticle(null);
       setEditorHasUnsavedChanges(false);
@@ -1777,6 +1821,7 @@ export default function App() {
         onGoBack={handleGoBack}
         onGoForward={handleGoForward}
         onNotify={handleNotify}
+        onSelectArticle={handleSelectArticle}
       />
 
       {/* 2. Main Workspace Layout */}
@@ -1914,6 +1959,7 @@ export default function App() {
             </div>
           )}
 
+          <React.Suspense fallback={<LazyFallbackSpinner />}>
           {currentView === 'hub' && (
             <WikiHub
               pages={pages}
@@ -1963,6 +2009,7 @@ export default function App() {
                   setArticles((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
                 }
                 onOpenLanguagesModal={() => setShowLanguageModal(true)}
+                onOpenLoginModal={handleLoginClick}
               />
             ) : (
               <NotFoundView
@@ -2023,6 +2070,11 @@ export default function App() {
                 if (tab) setEditingEthicsInitialTab(tab);
                 handleNavigate('editing-ethics');
               }}
+              onNavigateToAIEthics={() => handleNavigate('ai-ethics')}
+              onNavigateToFirebaseEthics={(tab) => {
+                if (tab) setFirebaseEthicsInitialTab(tab);
+                handleNavigate('firebase-ethics');
+              }}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
               onNavigateToDataRemovalRequests={() => handleNavigate('admin-data-removal')}
@@ -2060,6 +2112,11 @@ export default function App() {
               onNavigateToEditingEthics={(tab) => {
                 if (tab) setEditingEthicsInitialTab(tab);
                 handleNavigate('editing-ethics');
+              }}
+              onNavigateToAIEthics={() => handleNavigate('ai-ethics')}
+              onNavigateToFirebaseEthics={(tab) => {
+                if (tab) setFirebaseEthicsInitialTab(tab);
+                handleNavigate('firebase-ethics');
               }}
               onNavigateToPromotionRequests={() => handleNavigate('promotion-requests')}
               onNavigateToUnblockRequests={() => handleNavigate('unblock-requests')}
@@ -2318,6 +2375,22 @@ export default function App() {
               onNavigate={handleNavigate}
               onOpenEditor={() => handleOpenNewEditor()}
               initialTab={editingEthicsInitialTab}
+            />
+          )}
+
+          {currentView === 'ai-ethics' && (
+            <AIEthicsView
+              user={user}
+              onNavigate={handleNavigate}
+              onOpenEditor={() => handleOpenNewEditor()}
+            />
+          )}
+
+          {currentView === 'firebase-ethics' && (
+            <FirebaseGovernanceEthicsView
+              user={user}
+              onNavigate={handleNavigate}
+              initialTab={firebaseEthicsInitialTab}
             />
           )}
 
@@ -2595,6 +2668,7 @@ export default function App() {
               </button>
             </div>
           )}
+          </React.Suspense>
         </main>
       </div>
 
@@ -2694,6 +2768,9 @@ export default function App() {
         />
       )}
 
+      {/* Lazy Modals and Boot Screens */}
+      <React.Suspense fallback={null}>
+      <BrowserCompatibilityChecker />
       {/* First-visit LGPD Term Modal & Age Verification Gate */}
       <LgpdConsentModal
         isOpen={showLgpdModal}
@@ -2847,6 +2924,10 @@ export default function App() {
         onOpenLoginModal={handleLoginClick}
         onOpenPremiumModal={handleOpenPremiumModal}
         onOpenNotebook={handleOpenNotebookModal}
+        onOpenAIEthics={() => {
+          setShowGeminiChatbot(false);
+          handleNavigate('ai-ethics');
+        }}
         onApplyToCollection={(col) => {
           setShowGeminiChatbot(false);
           setShowCreatePageModal(true);
@@ -2888,6 +2969,10 @@ export default function App() {
               onOpenArticle={handleSelectArticle}
               onInsertArticle={handleInsertFromNotebook}
               onOpenPremiumModal={handleOpenPremiumModal}
+              onOpenAIEthics={() => {
+                setShowNotebookModal(false);
+                handleNavigate('ai-ethics');
+              }}
               onClose={() => setShowNotebookModal(false)}
             />
           </div>
@@ -3013,6 +3098,7 @@ export default function App() {
           onComplete={() => setShowWin10Boot(false)}
         />
       )}
+      </React.Suspense>
     </div>
     </WikiSecurityGatekeeper>
   );

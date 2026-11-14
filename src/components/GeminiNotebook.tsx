@@ -49,6 +49,7 @@ interface GeminiNotebookProps {
   }) => void;
   onOpenLoginModal?: () => void;
   onOpenPremiumModal?: (quotaType?: 'chats' | 'images' | 'notebook') => void;
+  onOpenAIEthics?: () => void;
   onClose?: () => void;
 }
 
@@ -442,6 +443,22 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
                 <span>Sínteses Ilimitadas</span>
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                if (props.onOpenAIEthics) {
+                  props.onOpenAIEthics();
+                } else {
+                  window.history.pushState({}, '', '/?uid=Special:AIEthics');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                  if (onClose) onClose();
+                }
+              }}
+              className="px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-semibold text-white transition-colors cursor-pointer"
+              title="Consultar diretrizes de Ética de Uso da Inteligência Artificial"
+            >
+              Ética de Uso da IA
+            </button>
           </div>
         </div>
       </div>

@@ -47,6 +47,8 @@ import {
   Puzzle,
   Trophy,
   FileCheck,
+  Cpu,
+  Flame,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -1012,6 +1014,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Crown size={15} className="text-amber-500 flex-shrink-0" />
               {!isCollapsed && <span className="truncate">Gemini Premium</span>}
             </button>
+
+            <button
+              id="btn-sidebar-ai-ethics"
+              onClick={() => onNavigate('ai-ethics')}
+              title="Diretrizes de Ética de Uso da Inteligência Artificial na Wiki"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition cursor-pointer ${
+                currentView === 'ai-ethics'
+                  ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-700 dark:hover:text-indigo-300'
+              }`}
+            >
+              <Cpu size={15} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Ética de Uso da IA</span>}
+            </button>
           </nav>
         </div>
 
@@ -1081,6 +1097,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </span>
                 </div>
               )}
+            </button>
+
+            <button
+              id="btn-sidebar-firebase-ethics"
+              onClick={() => onNavigate('firebase-ethics')}
+              title="Ética do Firebase, Independência da WMF e Abusos de Chronus"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition cursor-pointer ${
+                currentView === 'firebase-ethics'
+                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-800 dark:hover:text-amber-300'
+              }`}
+            >
+              <Flame size={15} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Ética Firebase &amp; Chronus</span>}
             </button>
 
             <a

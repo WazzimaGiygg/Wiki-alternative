@@ -28,6 +28,7 @@ import {
   SyncStateStatus,
 } from '../services/firebaseExtensionSyncService';
 import { extensionSyncSecurityDevice } from '../services/extensionSyncSecurityDevice';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 import { extensionMalwareScannerDevice } from '../services/extensionMalwareScannerDevice';
 
 // Extensões nativas instaladas no núcleo
@@ -760,14 +761,14 @@ ${tc.customCss || ''}
             const icon =
               bc.type === 'alert' ? '⛔' : bc.type === 'warning' ? '⚠️' : bc.type === 'success' ? '✅' : '📢';
 
-            const bannerHtml = `
+            const bannerHtml = sanitizeHtml(`
 <div class="wiki-custom-banner my-3 p-3.5 rounded-2xl border ${bannerClasses} flex items-center gap-3 text-xs shadow-xs font-sans">
   <span class="text-base select-none">${icon}</span>
   <div class="min-w-0">
     <div class="font-bold">${bc.title}</div>
     <div class="opacity-90">${bc.message}</div>
   </div>
-</div>`;
+</div>`);
 
             hooks.addFilter<string>(
               'render:html',
@@ -872,7 +873,7 @@ ${tc.customCss || ''}
                   hooks.addFilter<string>(
                     'render:html',
                     (html: string) => {
-                      const bannerHtml = `<div class="wiki-custom-banner my-3 p-3.5 rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/60 text-xs flex items-center gap-2"><span>📢</span><div><strong>${banner.title}:</strong> ${banner.message}</div></div>`;
+                      const bannerHtml = sanitizeHtml(`<div class="wiki-custom-banner my-3 p-3.5 rounded-2xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/60 text-xs flex items-center gap-2"><span>📢</span><div><strong>${banner.title}:</strong> ${banner.message}</div></div>`);
                       return banner.position === 'bottom' ? html + bannerHtml : bannerHtml + html;
                     },
                     8,

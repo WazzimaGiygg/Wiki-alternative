@@ -364,5 +364,42 @@
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
+    <script nomodule>
+      (function () {
+        var root = document.getElementById('root');
+        if (!root) return;
+        var isForcedAttempt = window.location.search.indexOf('forceBrowser=1') !== -1;
+        root.innerHTML =
+          '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#FBF9F5;color:#1C1917;font-family:system-ui,-apple-system,sans-serif;">' +
+          '  <div style="max-width:600px;width:100%;background:#ffffff;border:1px solid #e7e5e4;border-radius:12px;padding:28px;">' +
+          '    <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#b91c1c;font-weight:700;margin:0 0 8px 0;">Navegador não compatível</p>' +
+          '    <h1 style="font-size:24px;line-height:1.25;margin:0 0 12px 0;color:#1c1917;">Este navegador não é compatível com o Wiki-site</h1>' +
+          '    <p style="font-size:14px;line-height:1.6;color:#44403c;margin:0 0 16px 0;">' +
+          '      O seu navegador atual não oferece suporte a Módulos JavaScript modernos (ES Modules), necessários para abrir o WikiWorldWeb.' +
+          (isForcedAttempt
+            ? ' A tentativa de entrada forçada foi executada, porém o motor deste navegador bloqueou ou não suporta o carregamento dos scripts principais.'
+            : '') +
+          '    </p>' +
+          '    <div style="border-top:1px solid #e7e5e4;padding-top:16px;margin-top:16px;">' +
+          '      <p style="font-size:13px;font-weight:600;color:#1c1917;margin:0 0 6px 0;">Acredita que isso é um erro positivo?</p>' +
+          '      <p style="font-size:13px;line-height:1.5;color:#57534e;margin:0 0 14px 0;">Você pode tentar forçar a entrada mesmo assim ou atualizar para um navegador compatível (Google Chrome, Mozilla Firefox, Microsoft Edge ou Apple Safari).</p>' +
+          '      <button id="wikizero-nomodule-force" type="button" style="background:#1d4ed8;color:#ffffff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;margin-right:8px;">Forçar entrada mesmo assim</button>' +
+          '      <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:10px 16px;border:1px solid #d6d3d1;border-radius:8px;color:#1c1917;text-decoration:none;font-size:14px;font-weight:500;">Baixar navegador compatível</a>' +
+          '    </div>' +
+          '  </div>' +
+          '</div>';
+        var btn = document.getElementById('wikizero-nomodule-force');
+        if (btn) {
+          btn.onclick = function () {
+            try {
+              window.sessionStorage && window.sessionStorage.setItem('wikizero_force_browser_entry_v1', '1');
+              window.localStorage && window.localStorage.setItem('wikizero_force_browser_entry_v1', '1');
+            } catch (e) {}
+            var sep = window.location.search ? '&' : '?';
+            window.location.href = window.location.pathname + window.location.search + (window.location.search.indexOf('forceBrowser=1') === -1 ? sep + 'forceBrowser=1' : '');
+          };
+        }
+      })();
+    </script>
   </body>
 </html>

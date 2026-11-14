@@ -72,6 +72,7 @@ interface GeminiChatbotDrawerProps {
   onOpenLoginModal?: () => void;
   onOpenPremiumModal?: (quotaType?: 'chats' | 'images' | 'notebook') => void;
   onOpenNotebook?: () => void;
+  onOpenAIEthics?: () => void;
 }
 
 interface FormattedMessageProps {
@@ -263,6 +264,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
   onOpenLoginModal,
   onOpenPremiumModal,
   onOpenNotebook,
+  onOpenAIEthics,
 }) => {
   const [messages, setMessages] = useState<GeminiChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -827,15 +829,35 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
               )}
             </div>
 
-            {isAdmin && (
+            <div className="flex items-center gap-2 shrink-0 ml-2">
               <button
-                onClick={() => setShowConfigModal(true)}
-                className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-mono ml-2 shrink-0 flex items-center gap-1"
+                type="button"
+                onClick={() => {
+                  if (onOpenAIEthics) {
+                    onOpenAIEthics();
+                  } else {
+                    window.history.pushState({}, '', '/?uid=Special:AIEthics');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                    onClose();
+                  }
+                }}
+                className="text-[11px] text-indigo-700 dark:text-indigo-300 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                title="Consultar diretrizes de Ética de Uso da IA da WikiWorldWeb"
               >
                 <Shield size={11} />
-                Editar ID
+                <span>Ética de IA</span>
               </button>
-            )}
+
+              {isAdmin && (
+                <button
+                  onClick={() => setShowConfigModal(true)}
+                  className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-mono flex items-center gap-1 cursor-pointer"
+                >
+                  <Shield size={11} />
+                  Editar ID
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Faixa de Identidade do Usuário & Cotas Gemini */}

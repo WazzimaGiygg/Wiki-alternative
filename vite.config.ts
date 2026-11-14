@@ -84,10 +84,35 @@ export default defineConfig(() => {
         },
         workbox: {
           importScripts: ['/sw-push.js'],
-          maximumFileSizeToCacheInBytes: 25 * 1024 * 1024,
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          globPatterns: [
+            'index.html',
+            'favicon.svg',
+            'icon.svg',
+            'apple-touch-icon.png',
+            'pwa-192x192.png',
+            'pwa-512x512.png',
+            'assets/index-*.css',
+            'assets/index-*.js',
+            'assets/vendor-react-*.js',
+          ],
+          navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api/],
           runtimeCaching: [
+            {
+              urlPattern: /\/assets\/.*(?:\.js|\.css)$/i,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'wikizero-chunks-cache',
+                expiration: {
+                  maxEntries: 100,
+                  maxAgeSeconds: 60 * 60 * 24 * 30,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
               handler: 'CacheFirst',
@@ -123,6 +148,49 @@ export default defineConfig(() => {
         },
       }),
     ],
+    build: {
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            const normalized = id.replace(/\\/g, '/');
+            if (normalized.includes('/node_modules/')) {
+              if (
+                normalized.includes('/node_modules/react/') ||
+                normalized.includes('/node_modules/react-dom/') ||
+                normalized.includes('/node_modules/scheduler/')
+              ) {
+                return 'vendor-react';
+              }
+              if (normalized.includes('/node_modules/firebase/') || normalized.includes('/node_modules/@firebase/')) {
+                return 'vendor-firebase';
+              }
+              if (normalized.includes('/node_modules/katex/')) {
+                return 'vendor-katex';
+              }
+              if (normalized.includes('/node_modules/minisearch/')) {
+                return 'vendor-minisearch';
+              }
+              if (normalized.includes('/node_modules/lucide-react/')) {
+                return 'vendor-icons';
+              }
+              if (normalized.includes('/node_modules/@google/genai/')) {
+                return 'vendor-genai';
+              }
+              if (
+                normalized.includes('/node_modules/framer-motion/') ||
+                normalized.includes('/node_modules/motion/') ||
+                normalized.includes('/node_modules/canvas-confetti/') ||
+                normalized.includes('/node_modules/dompurify/') ||
+                normalized.includes('/node_modules/diff/')
+              ) {
+                return 'vendor-ui-utils';
+              }
+            }
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(process.cwd(), '.'),

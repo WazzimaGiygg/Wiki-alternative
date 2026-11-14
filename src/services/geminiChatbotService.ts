@@ -1,5 +1,5 @@
 import { GeminiChatbotConfig, GeminiChatMessage, UserProfile } from '../types';
-import { getDbSafe } from './firebase';
+import { getDbSafe, getFirebaseIdTokenSafe } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { GeminiQuotaService } from './geminiQuotaService';
 
@@ -194,9 +194,15 @@ export class GeminiChatbotService {
       isPremium: !!(params.user?.isGeminiPremium || params.user?.geminiPlan === 'premium'),
     };
 
+    const idToken = await getFirebaseIdTokenSafe();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (idToken) {
+      headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
     const res = await fetch('/api/gemini/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(payload),
       signal: params.signal,
     });
@@ -243,9 +249,15 @@ export class GeminiChatbotService {
       chatbotId: config.chatbotId,
     };
 
+    const idToken = await getFirebaseIdTokenSafe();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (idToken) {
+      headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
     const res = await fetch('/api/gemini/generate-article', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(payload),
     });
 
@@ -282,9 +294,15 @@ export class GeminiChatbotService {
       chatbotId: config.chatbotId,
     };
 
+    const idToken = await getFirebaseIdTokenSafe();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (idToken) {
+      headers['Authorization'] = `Bearer ${idToken}`;
+    }
+
     const res = await fetch('/api/gemini/generate-collection', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(payload),
     });
 

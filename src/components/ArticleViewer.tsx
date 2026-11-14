@@ -44,6 +44,7 @@ import {
   Plus,
   AlignLeft,
   Globe2,
+  LogIn,
 } from 'lucide-react';
 import {
   WikiArticle,
@@ -71,6 +72,8 @@ import { ArticleTopTableOfContents } from './ArticleTopTableOfContents';
 import { TableOfContents } from './TableOfContents';
 import { ResearchEthicsBadge } from './ResearchEthicsBadge';
 import { StorageService } from '../services/storageService';
+import { PermissionService, EditPermissionStatus } from '../services/PermissionService';
+import { sanitizeHtml } from '../utils/sanitizeHtml';
 
 interface ArticleViewerProps {
   article: WikiArticle;
@@ -88,6 +91,7 @@ interface ArticleViewerProps {
   onRestoreRevision?: (historyItem: ArticleHistoryItem) => void;
   onArticleUpdated?: (article: WikiArticle) => void;
   onOpenLanguagesModal?: () => void;
+  onOpenLoginModal?: () => void;
 }
 
 export const ArticleViewer: React.FC<ArticleViewerProps> = ({
@@ -106,6 +110,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   onRestoreRevision,
   onArticleUpdated,
   onOpenLanguagesModal,
+  onOpenLoginModal,
 }) => {
   const [fontSize, setFontSize] = useState<number>(15);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -131,6 +136,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
   const [showLockModal, setShowLockModal] = useState(false);
   const [showDossierModal, setShowDossierModal] = useState(false);
   const [dossierInitialDoc, setDossierInitialDoc] = useState<DossierDocType>('chronus');
+  const [securityNotice, setSecurityNotice] = useState<EditPermissionStatus | null>(null);
   const [dossierInitialTab, setDossierInitialTab] = useState<'text' | 'pdf' | 'table'>('text');
   const [localArticle, setLocalArticle] = useState<WikiArticle>(article);
 
@@ -467,10 +473,10 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     }
   };
 
-  // Parse wikitext (with callouts, refs, categories, infoboxes)
-  const { html, toc, references, categories } = useMemo(
-    () => parseWikitext(currentContent),
-    [currentContent]
+  // Parse wikitext (with callouts, refs, categories, infoboxes, math, parser functions, redirects, toc controls)
+  const { html, toc, references, categories, redirectTarget, hasNotoc, hasExplicitToc } = useMemo(
+    () => parseWikitext(currentContent, undefined, currentTitle),
+    [currentContent, currentTitle]
   );
 
   // Calculate reading time estimate based on article text length
@@ -1196,36 +1202,38 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             </div>
           </header>
 
-          {/* Gerador de Índice Automático no Topo do Modo de Leitura */}
-          <ArticleTopTableOfContents
-            toc={toc}
-            wordCount={wordCount}
-            onNavigateToSection={(id) => {
-              const target = document.getElementById(id);
-              if (target && readerScrollRef.current) {
-                const headerOffset = 70;
-                const containerTop = readerScrollRef.current.getBoundingClientRect().top;
-                const targetTop = target.getBoundingClientRect().top;
-                const scrollPos = readerScrollRef.current.scrollTop + (targetTop - containerTop) - headerOffset;
-                readerScrollRef.current.scrollTo({
-                  top: Math.max(0, scrollPos),
-                  behavior: 'smooth',
-                });
-                setActiveSectionId(id);
-                target.classList.remove('heading-target-highlight');
-                void target.offsetWidth;
-                target.classList.add('heading-target-highlight');
-                setTimeout(() => {
+          {/* Gerador de Índice Automático no Topo do Modo de Leitura (suprimido se __NOTOC__ ou __TOC__ explícito) */}
+          {!hasNotoc && !hasExplicitToc && (
+            <ArticleTopTableOfContents
+              toc={toc}
+              wordCount={wordCount}
+              onNavigateToSection={(id) => {
+                const target = document.getElementById(id);
+                if (target && readerScrollRef.current) {
+                  const headerOffset = 70;
+                  const containerTop = readerScrollRef.current.getBoundingClientRect().top;
+                  const targetTop = target.getBoundingClientRect().top;
+                  const scrollPos = readerScrollRef.current.scrollTop + (targetTop - containerTop) - headerOffset;
+                  readerScrollRef.current.scrollTo({
+                    top: Math.max(0, scrollPos),
+                    behavior: 'smooth',
+                  });
+                  setActiveSectionId(id);
                   target.classList.remove('heading-target-highlight');
-                }, 2500);
-              } else {
-                scrollToSection(id);
-              }
-            }}
-            activeSectionId={activeSectionId}
-            themeMode="reader"
-            readerTheme={readerTheme}
-          />
+                  void target.offsetWidth;
+                  target.classList.add('heading-target-highlight');
+                  setTimeout(() => {
+                    target.classList.remove('heading-target-highlight');
+                  }, 2500);
+                } else {
+                  scrollToSection(id);
+                }
+              }}
+              activeSectionId={activeSectionId}
+              themeMode="reader"
+              readerTheme={readerTheme}
+            />
+          )}
 
           {/* Cleaned Immersive Wikitext Rendered Content */}
           <div
@@ -1241,7 +1249,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 ? 'font-mono font-reader-mono'
                 : 'font-sans font-reader-sans'
             }`}
-            dangerouslySetInnerHTML={{ __html: html }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
           />
 
           {/* End-of-article Navigation & Licensing Footer */}
@@ -1398,31 +1406,78 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             <span className="hidden sm:inline">{isBookmarked ? 'Salvo no Perfil' : 'Ler mais tarde'}</span>
           </button>
 
-          {/* Edit or Lock Indicator Button */}
-          {isArticleLocked && !isModeratorOrAdmin ? (
-            <button
-              onClick={() =>
-                alert(
-                  `🔒 Artigo Protegido pela Moderação.\n\nMotivo: ${
-                    localArticle.lockReason || 'Proteção contra edições de usuários comuns'
-                  }\nProtegido por: ${localArticle.lockedBy || 'Moderação'}\n\nApenas moderadores e administradores têm permissão para editar este verbete.`
-                )
-              }
-              title={`Artigo Bloqueado pela Moderação: ${localArticle.lockReason || 'Edição restrita'}`}
-              className="px-2.5 py-1 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-semibold text-xs transition flex items-center gap-1 shadow-xs cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-900"
-            >
-              <Lock size={12} className="text-amber-600 dark:text-amber-400" />
-              <span>Bloqueado</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onEdit(localArticle)}
-              className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition flex items-center gap-1 shadow-xs"
-            >
-              <Edit3 size={12} />
-              Editar
-            </button>
-          )}
+          {/* Edit or Lock Indicator Button with Security Verification */}
+          {(() => {
+            const editStatus = PermissionService.getEditPermissionStatus(user, localArticle);
+
+            if (editStatus.reasonCode === 'LOCKED_ARTICLE') {
+              return (
+                <button
+                  onClick={() => setSecurityNotice(editStatus)}
+                  title={`Artigo Bloqueado pela Moderação: ${localArticle.lockReason || 'Edição restrita'}`}
+                  className="px-2.5 py-1 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-semibold text-xs transition flex items-center gap-1 shadow-xs cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-900"
+                >
+                  <Lock size={12} className="text-amber-600 dark:text-amber-400" />
+                  <span>Bloqueado</span>
+                </button>
+              );
+            }
+
+            if (editStatus.reasonCode === 'ANONYMOUS') {
+              return (
+                <button
+                  onClick={() => {
+                    if (onOpenLoginModal) {
+                      onOpenLoginModal();
+                    } else {
+                      setSecurityNotice(editStatus);
+                    }
+                  }}
+                  title="Faça login com sua conta para editar artigos"
+                  className="px-2.5 py-1 rounded bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-semibold text-xs transition flex items-center gap-1 shadow-xs cursor-pointer"
+                >
+                  <LogIn size={12} />
+                  <span>Entrar p/ Editar</span>
+                </button>
+              );
+            }
+
+            if (editStatus.reasonCode === 'BANNED') {
+              return (
+                <button
+                  onClick={() => setSecurityNotice(editStatus)}
+                  title="Sua conta está suspensa"
+                  className="px-2.5 py-1 rounded bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 font-semibold text-xs transition flex items-center gap-1 shadow-xs cursor-pointer"
+                >
+                  <ShieldAlert size={12} className="text-red-600" />
+                  <span>Conta Suspensa</span>
+                </button>
+              );
+            }
+
+            if (editStatus.reasonCode === 'REVOKED') {
+              return (
+                <button
+                  onClick={() => setSecurityNotice(editStatus)}
+                  title="Permissão de edição revogada"
+                  className="px-2.5 py-1 rounded bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-semibold text-xs transition flex items-center gap-1 shadow-xs cursor-pointer"
+                >
+                  <ShieldAlert size={12} className="text-amber-600" />
+                  <span>Edição Revogada</span>
+                </button>
+              );
+            }
+
+            return (
+              <button
+                onClick={() => onEdit(localArticle)}
+                className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition flex items-center gap-1 shadow-xs cursor-pointer"
+              >
+                <Edit3 size={12} />
+                Editar
+              </button>
+            );
+          })()}
 
           {/* Botão de Moderação: Proteger / Desproteger Artigo */}
           {isModeratorOrAdmin && (
@@ -2086,26 +2141,28 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </div>
             )}
 
-            {/* Gerador de Índice Automático (Table of Contents) no Topo do Artigo */}
-            <TableOfContents
-              containerRef={contentRef}
-              containerSelector=".wiki-rendered-content"
-              articleId={localArticle.id}
-              articleTitle={currentTitle}
-              htmlContent={html}
-              initialToc={toc}
-              onNavigateToSection={scrollToSection}
-              activeSectionId={activeSectionId}
-              variant="top"
-              wordCount={wordCount}
-            />
+            {/* Gerador de Índice Automático (Table of Contents) no Topo do Artigo (suprimido se __NOTOC__ ou __TOC__ explícito) */}
+            {!hasNotoc && !hasExplicitToc && (
+              <TableOfContents
+                containerRef={contentRef}
+                containerSelector=".wiki-rendered-content"
+                articleId={localArticle.id}
+                articleTitle={currentTitle}
+                htmlContent={html}
+                initialToc={toc}
+                onNavigateToSection={scrollToSection}
+                activeSectionId={activeSectionId}
+                variant="top"
+                wordCount={wordCount}
+              />
+            )}
 
             {/* Rendered HTML Content */}
             <div
               ref={contentRef}
               style={{ fontSize: `${fontSize}px` }}
               className="wiki-rendered-content font-wiki-body"
-              dangerouslySetInnerHTML={{ __html: html }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
             />
 
             {/* Embedded Visual Timeline inside Article */}
@@ -2244,8 +2301,15 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => onEdit(article)}
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                  onClick={() => {
+                    const status = PermissionService.getEditPermissionStatus(user, localArticle);
+                    if (!status.allowed) {
+                      setSecurityNotice(status);
+                    } else {
+                      onEdit(localArticle);
+                    }
+                  }}
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-semibold cursor-pointer"
                 >
                   Editar este artigo
                 </button>
@@ -2420,6 +2484,99 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           initialDocument={dossierInitialDoc}
           initialTab={dossierInitialTab}
         />
+      )}
+
+      {/* Security & Authorization Notice Modal */}
+      {securityNotice && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setSecurityNotice(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    securityNotice.reasonCode === 'ANONYMOUS'
+                      ? 'bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400'
+                      : securityNotice.reasonCode === 'BANNED'
+                      ? 'bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400'
+                      : securityNotice.reasonCode === 'LOCKED_ARTICLE'
+                      ? 'bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  {securityNotice.reasonCode === 'ANONYMOUS' && <LogIn size={20} />}
+                  {securityNotice.reasonCode === 'BANNED' && <ShieldAlert size={20} />}
+                  {securityNotice.reasonCode === 'LOCKED_ARTICLE' && <Lock size={20} />}
+                  {(securityNotice.reasonCode === 'REVOKED' || securityNotice.reasonCode === 'RESTRICTED_NAMESPACE') && (
+                    <ShieldAlert size={20} />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                    {securityNotice.reasonCode === 'ANONYMOUS' && 'Autenticação Necessária'}
+                    {securityNotice.reasonCode === 'BANNED' && 'Conta Suspensa'}
+                    {securityNotice.reasonCode === 'REVOKED' && 'Permissão de Edição Revogada'}
+                    {securityNotice.reasonCode === 'LOCKED_ARTICLE' && 'Artigo Protegido pela Moderação'}
+                    {securityNotice.reasonCode === 'RESTRICTED_NAMESPACE' && 'Namespace Restrito'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-mono">Segurança WikiZero &middot; RBAC</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSecurityNotice(null)}
+                aria-label="Fechar"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              {securityNotice.message}
+            </div>
+
+            {securityNotice.reasonCode === 'LOCKED_ARTICLE' && (
+              <div className="text-[11px] text-slate-500 space-y-1 font-mono bg-slate-50/50 dark:bg-slate-800/30 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                <div>
+                  Responsável: <span className="font-semibold text-slate-700 dark:text-slate-300">{localArticle.lockedBy || 'Moderação Geral'}</span>
+                </div>
+                {localArticle.lockReason && (
+                  <div>
+                    Justificativa: <span className="italic text-slate-600 dark:text-slate-400">{localArticle.lockReason}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {securityNotice.requiresLogin && onOpenLoginModal && (
+                <button
+                  onClick={() => {
+                    setSecurityNotice(null);
+                    onOpenLoginModal();
+                  }}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-98"
+                >
+                  <LogIn size={13} />
+                  <span>Fazer Login com Google</span>
+                </button>
+              )}
+              <button
+                onClick={() => setSecurityNotice(null)}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium transition cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

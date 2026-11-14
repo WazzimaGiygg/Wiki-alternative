@@ -309,6 +309,12 @@ export function getCanonicalUid(
     case 'editing-ethics':
       return 'Special:EditingEthics';
 
+    case 'ai-ethics':
+      return 'Special:AIEthics';
+
+    case 'firebase-ethics':
+      return 'Special:FirebaseEthics';
+
     case 'other-rules':
       return 'Special:OtherRules';
 
@@ -622,6 +628,35 @@ export function resolveNavigationUid(
     'free-expression': { view: 'editing-ethics', initialTab: 'free_expression' },
     'liberdade-de-expressao': { view: 'editing-ethics', initialTab: 'free_expression' },
     'artigo-19': { view: 'editing-ethics', initialTab: 'free_expression' },
+
+    'special:aiethics': { view: 'ai-ethics' },
+    'special:ai-ethics': { view: 'ai-ethics' },
+    'special:eticaia': { view: 'ai-ethics' },
+    'special:etica-ia': { view: 'ai-ethics' },
+    'special:eticadeia': { view: 'ai-ethics' },
+    'special:eticadeusodeia': { view: 'ai-ethics' },
+    'ai-ethics': { view: 'ai-ethics' },
+    'etica-ia': { view: 'ai-ethics' },
+    'etica-de-ia': { view: 'ai-ethics' },
+    'etica-uso-ia': { view: 'ai-ethics' },
+    'etica-de-uso-da-ia': { view: 'ai-ethics' },
+    'ia-etica': { view: 'ai-ethics' },
+
+    'special:firebaseethics': { view: 'firebase-ethics' },
+    'special:firebase-ethics': { view: 'firebase-ethics' },
+    'special:eticafirebase': { view: 'firebase-ethics' },
+    'special:etica-firebase': { view: 'firebase-ethics' },
+    'special:governancafirebase': { view: 'firebase-ethics' },
+    'firebase-ethics': { view: 'firebase-ethics' },
+    'etica-firebase': { view: 'firebase-ethics' },
+    'etica-uso-firebase': { view: 'firebase-ethics' },
+    'special:semwikimedia': { view: 'firebase-ethics', initialTab: 'no_wikimedia' },
+    'sem-wikimedia': { view: 'firebase-ethics', initialTab: 'no_wikimedia' },
+    'nao-uso-wikimedia': { view: 'firebase-ethics', initialTab: 'no_wikimedia' },
+    'special:casochronus': { view: 'firebase-ethics', initialTab: 'chronus_abuses' },
+    'special:abusoschronus': { view: 'firebase-ethics', initialTab: 'chronus_abuses' },
+    'caso-chronus': { view: 'firebase-ethics', initialTab: 'chronus_abuses' },
+    'abusos-chronus': { view: 'firebase-ethics', initialTab: 'chronus_abuses' },
 
     'special:otherrules': { view: 'other-rules' },
     'special:other-rules': { view: 'other-rules' },

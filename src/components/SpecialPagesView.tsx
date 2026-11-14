@@ -45,13 +45,17 @@ import {
   Globe,
   Puzzle,
   Bot,
+  Cpu,
+  Flame,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
 import { buildUidPermalink } from '../utils/urlRouter';
 import { PdfExportModal } from './PdfExportModal';
 import { StandardUidDictionaryModal } from './StandardUidDictionaryModal';
-import { WikiStatisticsPanel } from './WikiStatisticsPanel';
+const WikiStatisticsPanel = React.lazy(() =>
+  import('./WikiStatisticsPanel').then((m) => ({ default: m.WikiStatisticsPanel }))
+);
 
 interface SpecialPagesViewProps {
   articles: WikiArticle[];
@@ -75,6 +79,8 @@ interface SpecialPagesViewProps {
   onNavigateToArbitration?: () => void;
   onNavigateToUcoc?: () => void;
   onNavigateToEditingEthics?: (tab?: any) => void;
+  onNavigateToAIEthics?: () => void;
+  onNavigateToFirebaseEthics?: (tab?: any) => void;
   onNavigateToAppearance?: () => void;
   onNavigateToAdminFirebase?: () => void;
   onNavigateToNotFound?: () => void;
@@ -97,6 +103,8 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToEmergencyContact,
   onNavigateToUcoc,
   onNavigateToEditingEthics,
+  onNavigateToAIEthics,
+  onNavigateToFirebaseEthics,
   onNavigateToPromotionRequests,
   onNavigateToUnblockRequests,
   onNavigateToDataRemovalRequests,
@@ -482,6 +490,56 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Regras de Ética de Edição, Adição e Privacidade
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToAIEthics && (
+          <button
+            id="btn-specialpages-ai-ethics"
+            onClick={onNavigateToAIEthics}
+            className="p-3 rounded-lg border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-indigo-600 text-white shrink-0">
+              <Cpu size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 truncate group-hover:underline">
+                  Special:AIEthics
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-600 text-white">
+                  IA / ÉTICA
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Ética de Uso da Inteligência Artificial e Supervisão Humana
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToFirebaseEthics && (
+          <button
+            id="btn-specialpages-firebase-ethics"
+            onClick={() => onNavigateToFirebaseEthics?.('firebase_ethics')}
+            className="p-3 rounded-lg border border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/70 dark:hover:bg-amber-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-amber-600 text-white shrink-0">
+              <Flame size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-amber-900 dark:text-amber-200 truncate group-hover:underline">
+                  Special:FirebaseEthics
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-amber-700 text-white">
+                  FIREBASE/WMF
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Ética Firebase, Não Uso de Dados WMF e Abusos de Chronus
               </div>
             </div>
           </button>
@@ -1328,12 +1386,21 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
       {/* Tab 6: Statistics */}
       {activeTab === 'stats' && (
         <div className="space-y-6">
-          <WikiStatisticsPanel
-            pages={pages}
-            articles={articles}
-            currentUser={user}
-            onSelectArticle={onNavigateToArticle}
-          />
+          <React.Suspense
+            fallback={
+              <div className="p-8 text-center text-slate-500 font-sans flex items-center justify-center gap-2">
+                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span>Carregando estatísticas e gráficos da enciclopédia...</span>
+              </div>
+            }
+          >
+            <WikiStatisticsPanel
+              pages={pages}
+              articles={articles}
+              currentUser={user}
+              onSelectArticle={onNavigateToArticle}
+            />
+          </React.Suspense>
 
           <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 font-sans">
             <h4 className="font-bold text-xs text-slate-900 dark:text-white uppercase font-mono tracking-wider flex items-center gap-1.5">

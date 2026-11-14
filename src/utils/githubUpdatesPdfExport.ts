@@ -1,4 +1,4 @@
-import { jsPDF } from 'jspdf';
+import type { jsPDF } from 'jspdf';
 import {
   GitHubCommitSummary,
   GITHUB_REPO_CONFIG,
@@ -255,6 +255,7 @@ export async function exportGitHubUpdatesToPdf(
   // Ordenação de acordo com a classificação solicitada
   const sortedCommits = sortCommitsByClassification(processedCommits, classification);
 
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation,
     unit: 'mm',
