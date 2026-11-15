@@ -1,6 +1,6 @@
 /**
  * @file Watchlist.ts
- * @description Tipos para a funcionalidade de Lista de Vigilância (Watchlist) do WikiZero.
+ * @description Tipos para a funcionalidade de Lista de Vigilância (Watchlist) do WikiWorldWeb.
  */
 
 import type { Page, PageVersion } from '../types';

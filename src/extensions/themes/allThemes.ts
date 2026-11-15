@@ -16,7 +16,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'Win95ThemeExtension',
     name: 'Tema Clássico Windows 95',
     description: 'Interface retrô inspirada no Windows 95 com barra cinza biselada, botão Iniciar, janelas clássicas e inicialização com som nostálgico.',
-    author: 'Microsoft / WikiZero Retro Labs',
+    author: 'Microsoft / WikiWorldWeb Retro Labs',
     version: '1.95.0',
   },
   {
@@ -24,7 +24,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'Win31ThemeExtension',
     name: 'Tema Retrô Windows 3.1 (1992)',
     description: 'Interface histórica baseada no Program Manager do Windows 3.1 com barras azuis marinho, botões e paleta clássica de 16 cores.',
-    author: 'Microsoft / WikiZero Retro Labs',
+    author: 'Microsoft / WikiWorldWeb Retro Labs',
     version: '1.31.0',
   },
   {
@@ -32,7 +32,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'WinXpThemeExtension',
     name: 'Tema Windows XP (Luna Blue)',
     description: 'Interface icônica do Windows XP com barra de tarefas azul Luna, botão verde Iniciar, relevos arredondados e inicialização clássica.',
-    author: 'Microsoft / WikiZero Retro Labs',
+    author: 'Microsoft / WikiWorldWeb Retro Labs',
     version: '2.0.1',
   },
   {
@@ -40,7 +40,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'Win7ThemeExtension',
     name: 'Tema Windows 7 (Aero Glass)',
     description: 'Interface translúcida estilo Aero Glass com reflexos de luz, cantos arredondados e animação de inicialização das quatro esferas convergentes.',
-    author: 'Microsoft / WikiZero Retro Labs',
+    author: 'Microsoft / WikiWorldWeb Retro Labs',
     version: '2.7.0',
   },
   {
@@ -48,7 +48,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'Win10ThemeExtension',
     name: 'Tema Windows 10 (Fluent Dark)',
     description: 'Interface moderna minimalista do Windows 10 em modo escuro com tipografia Segoe UI, logo angular e spinner circular.',
-    author: 'Microsoft / WikiZero Retro Labs',
+    author: 'Microsoft / WikiWorldWeb Retro Labs',
     version: '3.10.0',
   },
   {
@@ -56,7 +56,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'Win1ThemeExtension',
     name: 'Tema Histórico Windows 1.0 (1985)',
     description: 'Visual pioneiro preto e branco de 1985 com janelas lado a lado (tiling), barra superior MS-DOS Executive e paleta pura.',
-    author: 'Microsoft / WikiZero Retro Labs',
+    author: 'Microsoft / WikiWorldWeb Retro Labs',
     version: '1.0.1',
   },
   {
@@ -64,7 +64,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'GoogleThemeExtension',
     name: 'Tema Google Material Design',
     description: 'Visual moderno limpo inspirado no Google Workspace e Material You com as 4 cores características (Azul, Vermelho, Amarelo, Verde).',
-    author: 'Google Material / WikiZero',
+    author: 'Google Material / WikiWorldWeb',
     version: '3.0.5',
   },
   {
@@ -88,7 +88,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'Android15ThemeExtension',
     name: 'Tema Android 1.5 Cupcake',
     description: 'Visual retrô do primeiro Android comercial com verde robótico (#A4C639), widgets arredondados e menus chanfrados.',
-    author: 'Google OHA / WikiZero',
+    author: 'Google OHA / WikiWorldWeb',
     version: '1.5.0',
   },
   {
@@ -96,7 +96,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'StardewValleyThemeExtension',
     name: 'Tema Stardew Valley (Pelican Town)',
     description: 'Interface rústica e acolhedora em madeira de carvalho, ouro velho e pergaminho inspirada na vila Pelican Town de Stardew Valley.',
-    author: 'ConcernedApe / WikiZero',
+    author: 'ConcernedApe / WikiWorldWeb',
     version: '1.6.0',
   },
   {
@@ -112,7 +112,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'MinecraftThemeExtension',
     name: 'Tema Minecraft Mojang',
     description: 'Interface pixelada com pedra musgosa, barras de experiência verde-esmeralda (#55ff55), terra batida e estilo blocky.',
-    author: 'Mojang Studios / WikiZero',
+    author: 'Mojang Studios / WikiWorldWeb',
     version: '1.21.0',
   },
   {
@@ -120,7 +120,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'RobloxThemeExtension',
     name: 'Tema Roblox Blox Studio',
     description: 'Interface lúdica moderna com o verde característico (#00b06f), tipografia Roblox Sans e cartões cinza-escuro com badges poligonais.',
-    author: 'Roblox Corporation / WikiZero',
+    author: 'Roblox Corporation / WikiWorldWeb',
     version: '2.0.0',
   },
   {
@@ -128,7 +128,7 @@ export const THEMES_METADATA: ThemeExtensionDef[] = [
     className: 'Nokia3310ThemeExtension',
     name: 'Tema Nokia 3310 (Monocromático)',
     description: 'Visual nostálgico da tela verde monocromática de cristal líquido do indestrutível Nokia 3310 com pixel-art de Snake II.',
-    author: 'Nokia Networks / WikiZero',
+    author: 'Nokia Networks / WikiWorldWeb',
     version: '3.3.10',
   },
   {

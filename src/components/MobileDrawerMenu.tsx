@@ -139,11 +139,11 @@ export const MobileDrawerMenu: React.FC<MobileDrawerMenuProps> = ({
             <div className="flex items-center gap-2.5">
               <img
                 src="/logo.png"
-                alt="Logotipo WikiZero"
+                alt="Logotipo WikiWorldWeb"
                 className="w-7 h-7 rounded object-contain drop-shadow-xs bg-white/10"
               />
               <div>
-                <span className="font-serif-heading font-bold text-base tracking-tight block leading-tight">WikiZero</span>
+                <span className="font-serif-heading font-bold text-base tracking-tight block leading-tight">WikiWorldWeb</span>
                 <span className="text-[10px] text-blue-100 font-serif italic block leading-tight" title="Frase Principal da Wiki">
                   «Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»
                 </span>

@@ -63,7 +63,7 @@
     },
     "Page": {
       "title": "Page",
-      "description": "Páginas do WikiZero organizadas por Namespaces (main, talk, user, template, etc.) e Categorias",
+      "description": "Páginas da WikiWorldWeb organizadas por Namespaces (main, talk, user, template, etc.) e Categorias",
       "type": "object",
       "properties": {
         "id": { "type": "string" },

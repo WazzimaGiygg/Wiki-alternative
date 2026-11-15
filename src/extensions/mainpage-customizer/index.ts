@@ -27,7 +27,7 @@ export default class MainPageCustomizerExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Bureaucrat Operations & UI Architecture';
+    return 'WikiWorldWeb Bureaucrat Operations & UI Architecture';
   }
 
   getCategory(): ExtensionCategory {

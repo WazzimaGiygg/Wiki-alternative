@@ -291,7 +291,7 @@ describe('Auditoria e Validação de Segurança das Regras do Firestore (firesto
   const regularUserCtx: SecurityContext = {
     auth: {
       uid: 'user_123',
-      token: { email: 'comum@wikizero.org' },
+      token: { email: 'comum@wikiworldweb.org' },
     },
     database: {
       users: {
@@ -306,7 +306,7 @@ describe('Auditoria e Validação de Segurança das Regras do Firestore (firesto
   const bannedUserCtx: SecurityContext = {
     auth: {
       uid: 'banned_999',
-      token: { email: 'infrator@wikizero.org' },
+      token: { email: 'infrator@wikiworldweb.org' },
     },
     database: {
       banned_users: {
@@ -321,7 +321,7 @@ describe('Auditoria e Validação de Segurança das Regras do Firestore (firesto
   const editorUserCtx: SecurityContext = {
     auth: {
       uid: 'editor_456',
-      token: { email: 'editor@wikizero.org', role: 'editor' },
+      token: { email: 'editor@wikiworldweb.org', role: 'editor' },
     },
     database: {
       userpage: {
@@ -333,7 +333,7 @@ describe('Auditoria e Validação de Segurança das Regras do Firestore (firesto
   const checkUserCtx: SecurityContext = {
     auth: {
       uid: 'cu_789',
-      token: { email: 'checkuser@wikizero.org', checkuser: true },
+      token: { email: 'checkuser@wikiworldweb.org', checkuser: true },
     },
     database: {},
   };
@@ -341,7 +341,7 @@ describe('Auditoria e Validação de Segurança das Regras do Firestore (firesto
   const adminUserCtx: SecurityContext = {
     auth: {
       uid: 'admin_001',
-      token: { email: 'admin@wikizero.org', admin: true },
+      token: { email: 'admin@wikiworldweb.org', admin: true },
     },
     database: {},
   };
@@ -361,7 +361,7 @@ describe('Auditoria e Validação de Segurança das Regras do Firestore (firesto
     auth: {
       uid: 'super_claim',
       token: {
-        email: 'super@wikizero.org',
+        email: 'super@wikiworldweb.org',
         superadmin: true,
       },
     },

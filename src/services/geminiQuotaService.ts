@@ -192,7 +192,7 @@ export class GeminiQuotaService {
   static async activatePremium(user: UserProfile | null): Promise<UserProfile> {
     const targetUser: UserProfile = user || {
       uid: 'user_' + Math.random().toString(36).substring(2, 9),
-      email: 'usuario@wikizero.com',
+      email: 'usuario@wikiworldweb.com',
       displayName: 'Assinante Gemini Premium',
       isGuest: false,
       isBanned: false,

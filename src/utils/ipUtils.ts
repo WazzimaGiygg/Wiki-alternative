@@ -1,7 +1,7 @@
 /**
  * Utilitário para detecção e gerenciamento de endereço IP do cliente.
  * Utilizado para aplicação de rate-limiting e prevenção de múltiplos chamados
- * de emergência por usuários não autenticados na WikiZero.
+ * de emergência por usuários não autenticados na WikiWorldWeb.
  */
 
 let cachedClientIp: string | null = null;

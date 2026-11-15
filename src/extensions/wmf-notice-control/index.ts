@@ -21,7 +21,7 @@ export default class WmfNoticeControlExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Identity Governance Guild';
+    return 'WikiWorldWeb Identity Governance Guild';
   }
 
   getCategory(): ExtensionCategory {

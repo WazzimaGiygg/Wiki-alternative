@@ -10,8 +10,8 @@ import {
 const STORAGE_KEY_FILES = 'wikizero_files_v3';
 const STORAGE_KEY_FIREBASE_PLAN = 'wikizero_firebase_storage_plan_v3';
 
-// Regras oficiais e mandatórias de carregamento de ficheiros da WikiZero
-export const WIKIZERO_UPLOAD_RULES = {
+// Regras oficiais e mandatórias de carregamento de ficheiros da WikiWorldWeb
+export const WIKIWORLDWEB_UPLOAD_RULES = {
   title: 'Regras de Carregamento e Política de Independência de Mídias',
   bannedSources: [
     'Wikimedia Commons (commons.wikimedia.org)',
@@ -26,7 +26,7 @@ export const WIKIZERO_UPLOAD_RULES = {
     'Uso Justo (Fair Use) com Justificativa Rigorosa para Fins Educacionais',
   ],
   legalDisclaimer:
-    'A WikiZero é uma enciclopédia autônoma e independente. É estritamente proibido importar, clonar ou transpor imagens, textos e metadados de projetos da Wikimedia Foundation. O colaborador assume responsabilidade legal e editorial pela veracidade das fontes declaradas.',
+    'A WikiWorldWeb é uma enciclopédia autônoma e independente. É estritamente proibido importar, clonar ou transpor imagens, textos e metadados de projetos da Wikimedia Foundation. O colaborador assume responsabilidade legal e editorial pela veracidade das fontes declaradas.',
 };
 
 // Informações detalhadas e padronizadas das licenças
@@ -90,7 +90,7 @@ export const LICENSE_DEFINITIONS: Record<
     isFree: false,
     requiresJustification: true,
     description: 'Material protegido por direitos autorais utilizado sob o princípio do uso justo estritamente para fins educacionais, ilustrativos ou de crítica.',
-    legalText: 'Este ficheiro é protegido por direitos autorais e seu uso na WikiZero qualifica-se como Uso Justo (Fair Use) nos termos da legislação aplicável.',
+    legalText: 'Este ficheiro é protegido por direitos autorais e seu uso na WikiWorldWeb qualifica-se como Uso Justo (Fair Use) nos termos da legislação aplicável.',
   },
   'own-work': {
     code: 'own-work',
@@ -167,7 +167,7 @@ const SEED_FILES: WikiFile[] = [
     description: 'Esquema operacional da rede de transporte metropolitano sobre trilhos de São Paulo (Metrô e CPTM), ilustrando as linhas 1-Azul, 2-Verde, 3-Vermelha, 4-Amarela, 5-Lilás e 15-Prata com integração tarifária.',
     license: 'cc-by-sa-4.0',
     licenseDetails: 'Trabalho derivado de dados públicos da Companhia do Metropolitano de São Paulo.',
-    author: 'Metrofilo_SP & Equipe WikiZero',
+    author: 'Metrofilo_SP & Equipe WikiWorldWeb',
     source: 'Dados abertos da Secretaria dos Transportes Metropolitanos de SP',
     mimeType: 'image/png',
     sizeBytes: 258000,
@@ -252,14 +252,14 @@ const SEED_FILES: WikiFile[] = [
     ],
   },
   {
-    id: 'file-wikizero-emblema',
-    name: 'Logo_WikiZero.svg',
-    title: 'Arquivo:Logo_WikiZero.svg',
-    description: 'Logotipo e emblema oficial da enciclopédia WikiZero em forma de cubo isométrico com relevo e padrões de labirinto geométrico.',
+    id: 'file-wikiworldweb-emblema',
+    name: 'Logo_WikiWorldWeb.svg',
+    title: 'Arquivo:Logo_WikiWorldWeb.svg',
+    description: 'Logotipo e emblema oficial da enciclopédia WikiWorldWeb em forma de cubo isométrico com relevo e padrões de labirinto geométrico.',
     license: 'own-work',
-    licenseDetails: 'Logotipo oficial da WikiZero disponibilizado sob a licença Creative Commons Atribuição-CompartilhaIgual 4.0.',
-    author: 'WikiZero',
-    source: 'Logotipo Oficial da WikiZero',
+    licenseDetails: 'Logotipo oficial da WikiWorldWeb disponibilizado sob a licença Creative Commons Atribuição-CompartilhaIgual 4.0.',
+    author: 'WikiWorldWeb',
+    source: 'Logotipo Oficial da WikiWorldWeb',
     mimeType: 'image/png',
     sizeBytes: 264192,
     width: 512,
@@ -270,12 +270,12 @@ const SEED_FILES: WikiFile[] = [
       md: '/logo.png',
       lg: '/logo.png',
     },
-    uploadedBy: 'WikiZero',
-    uploadedByUid: 'wikizero_official',
+    uploadedBy: 'WikiWorldWeb',
+    uploadedByUid: 'wikiworldweb_official',
     uploadedAt: '2026-10-02T16:00:00Z',
     storageProvider: 'local_fallback',
     firebasePlan: 'blaze',
-    categories: ['Identidade Visual da WikiZero', 'Logotipos', 'Trabalho Próprio'],
+    categories: ['Identidade Visual da WikiWorldWeb', 'Logotipos', 'Trabalho Próprio'],
     history: [
       {
         id: 'ver-logo-1',
@@ -289,22 +289,22 @@ const SEED_FILES: WikiFile[] = [
         sizeBytes: 264192,
         width: 512,
         height: 512,
-        uploadedBy: 'WikiZero',
-        uploadedByUid: 'wikizero_official',
+        uploadedBy: 'WikiWorldWeb',
+        uploadedByUid: 'wikiworldweb_official',
         uploadedAt: '2026-10-02T16:00:00Z',
-        comment: 'Logotipo oficial do cubo WikiZero adicionado.',
+        comment: 'Logotipo oficial do cubo WikiWorldWeb adicionado.',
       },
     ],
   },
   {
-    id: 'file-wikizero-emblema-alt',
-    name: 'WikiZero_Emblema.svg',
-    title: 'Arquivo:WikiZero_Emblema.svg',
-    description: 'Logotipo e emblema oficial da enciclopédia aberta WikiZero, simbolizando a preservação do conhecimento livre, soberania informacional e transparência editorial.',
+    id: 'file-wikiworldweb-emblema-alt',
+    name: 'WikiWorldWeb_Emblema.svg',
+    title: 'Arquivo:WikiWorldWeb_Emblema.svg',
+    description: 'Logotipo e emblema oficial da enciclopédia aberta WikiWorldWeb, simbolizando a preservação do conhecimento livre, soberania informacional e transparência editorial.',
     license: 'own-work',
-    licenseDetails: 'Logotipo oficial da WikiZero disponibilizado sob a licença Creative Commons Atribuição-CompartilhaIgual 4.0.',
-    author: 'Equipe de Design WazzimaGiygg / WikiZero',
-    source: 'Repositório Oficial do Projeto WikiZero',
+    licenseDetails: 'Logotipo oficial da WikiWorldWeb disponibilizado sob a licença Creative Commons Atribuição-CompartilhaIgual 4.0.',
+    author: 'Equipe de Design WazzimaGiygg / WikiWorldWeb',
+    source: 'Repositório Oficial do Projeto WikiWorldWeb',
     mimeType: 'image/png',
     sizeBytes: 264192,
     width: 512,
@@ -315,12 +315,12 @@ const SEED_FILES: WikiFile[] = [
       md: '/logo.png',
       lg: '/logo.png',
     },
-    uploadedBy: 'WikiZero',
-    uploadedByUid: 'wikizero_official',
+    uploadedBy: 'WikiWorldWeb',
+    uploadedByUid: 'wikiworldweb_official',
     uploadedAt: '2026-10-02T16:00:00Z',
     storageProvider: 'local_fallback',
     firebasePlan: 'blaze',
-    categories: ['Identidade Visual da WikiZero', 'Logotipos', 'Trabalho Próprio'],
+    categories: ['Identidade Visual da WikiWorldWeb', 'Logotipos', 'Trabalho Próprio'],
     history: [
       {
         id: 'ver-logo-2',
@@ -334,8 +334,8 @@ const SEED_FILES: WikiFile[] = [
         sizeBytes: 264192,
         width: 512,
         height: 512,
-        uploadedBy: 'WikiZero',
-        uploadedByUid: 'wikizero_official',
+        uploadedBy: 'WikiWorldWeb',
+        uploadedByUid: 'wikiworldweb_official',
         uploadedAt: '2026-10-02T16:00:00Z',
         comment: 'Vetor de identidade visual oficial atualizado para o logotipo do cubo.',
       },
@@ -353,7 +353,7 @@ function initializeFilesStorage() {
       try {
         const files: WikiFile[] = JSON.parse(raw);
         let changed = false;
-        const logo1 = files.find(f => f.name === 'Logo_WikiZero.svg');
+        const logo1 = files.find(f => f.name === 'Logo_WikiWorldWeb.svg');
         if (!logo1) {
           files.unshift(SEED_FILES[0]);
           changed = true;
@@ -362,7 +362,7 @@ function initializeFilesStorage() {
           logo1.thumbnails = { sm: '/logo.png', md: '/logo.png', lg: '/logo.png' };
           changed = true;
         }
-        const logo2 = files.find(f => f.name === 'WikiZero_Emblema.svg');
+        const logo2 = files.find(f => f.name === 'WikiWorldWeb_Emblema.svg');
         if (logo2 && logo2.url !== '/logo.png') {
           logo2.url = '/logo.png';
           logo2.thumbnails = { sm: '/logo.png', md: '/logo.png', lg: '/logo.png' };
@@ -413,7 +413,7 @@ export const FileStorageService = {
   // === CONSULTAS E CRUD DE ARQUIVOS ===
 
   /**
-   * Retorna todos os ficheiros cadastrados na WikiZero
+   * Retorna todos os ficheiros cadastrados na WikiWorldWeb
    */
   async getFiles(): Promise<WikiFile[]> {
     initializeFilesStorage();
@@ -500,7 +500,7 @@ export const FileStorageService = {
     if (!input.license) {
       return {
         success: false,
-        error: 'O campo de licença e direitos autorais é obrigatório conforme a política de conteúdo da WikiZero.',
+        error: 'O campo de licença e direitos autorais é obrigatório conforme a política de conteúdo da WikiWorldWeb.',
       };
     }
 
@@ -528,7 +528,7 @@ export const FileStorageService = {
       };
     }
 
-    // 3. Verificação Estrita das Regras de Independência da WikiZero (Vetado Wikimedia Commons / Wikipédia)
+    // 3. Verificação Estrita das Regras de Independência da WikiWorldWeb (Vetado Wikimedia Commons / Wikipédia)
     const combinedContent = `${input.source} ${input.author} ${input.description || ''} ${input.licenseDetails || ''} ${input.comment || ''} ${input.targetName || ''}`.toLowerCase();
     const bannedPatterns = [
       /wikimedia/i,
@@ -553,7 +553,7 @@ export const FileStorageService = {
       return {
         success: false,
         error:
-          'Violação da Política de Carregamento da WikiZero: É expressamente proibido carregar ficheiros importados do Wikimedia Commons, ou copiar textos e metadados da Wikipédia ou de qualquer projeto da Wikimedia Foundation. A WikiZero exige fontes independentes, fotos autorais, acervos governamentais ou domínio público primário.',
+          'Violação da Política de Carregamento da WikiWorldWeb: É expressamente proibido carregar ficheiros importados do Wikimedia Commons, ou copiar textos e metadados da Wikipédia ou de qualquer projeto da Wikimedia Foundation. A WikiWorldWeb exige fontes independentes, fotos autorais, acervos governamentais ou domínio público primário.',
       };
     }
 
@@ -658,7 +658,7 @@ export const FileStorageService = {
           id: fileId,
           name: targetName,
           title: `Arquivo:${targetName}`,
-          description: input.description || `Ficheiro ${targetName} carregado na WikiZero.`,
+          description: input.description || `Ficheiro ${targetName} carregado na WikiWorldWeb.`,
           license: input.license,
           licenseDetails: input.licenseDetails,
           fairUseJustification: input.fairUseJustification,
@@ -676,7 +676,7 @@ export const FileStorageService = {
           updatedAt: now,
           storageProvider: currentPlan === 'blaze' ? 'firebase_storage' : 'local_fallback',
           firebasePlan: currentPlan,
-          categories: input.categories || ['Ficheiros da WikiZero'],
+          categories: input.categories || ['Ficheiros da WikiWorldWeb'],
           history: [historyItem],
         };
 
@@ -739,7 +739,7 @@ export const FileStorageService = {
   // === RASTREAMENTO DE USO GLOBAL (PÁGINAS QUE USAM ESTE FICHEIRO) ===
 
   /**
-   * Varre todos os artigos da WikiZero e localiza ocorrências de sintaxe wikitexto
+   * Varre todos os artigos da WikiWorldWeb e localiza ocorrências de sintaxe wikitexto
    * como [[Arquivo:nome.png]], [[Ficheiro:nome.png]], [[File:nome.png]] ou [[Imagem:nome.png]]
    */
   getFileUsage(fileName: string, articles: WikiArticle[]): { article: WikiArticle; snippet: string; count: number }[] {

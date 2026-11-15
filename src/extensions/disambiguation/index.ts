@@ -18,7 +18,7 @@ export default class DisambiguationNotice implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Conselho Editorial WikiZero';
+    return 'Conselho Editorial WikiWorldWeb';
   }
 
   getCategory(): 'content' {

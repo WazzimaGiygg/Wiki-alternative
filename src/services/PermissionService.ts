@@ -1,6 +1,6 @@
 /**
  * @file PermissionService.ts
- * @description Serviço centralizado de controle de acesso baseado em grupos/funções (RBAC) para o WikiZero.
+ * @description Serviço centralizado de controle de acesso baseado em grupos/funções (RBAC) para o WikiWorldWeb.
  * Define permissões estáticas por grupo e avalia dinamicamente ações sobre recursos do sistema.
  */
 
@@ -75,7 +75,7 @@ export class PermissionService {
    * Obtém o grupo de acesso (UserGroup) associado ao usuário.
    * Se for nulo, anônimo ou convidado não autenticado, retorna UserGroup.ANONYMOUS.
    *
-   * @param user Usuário autenticado ou perfil do WikiZero
+   * @param user Usuário autenticado ou perfil do WikiWorldWeb
    * @returns UserGroup
    */
   public static getUserGroup(user: (UserProfile | BaseUserObject | null | undefined)): UserGroup {

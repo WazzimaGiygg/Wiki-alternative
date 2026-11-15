@@ -427,7 +427,7 @@ export const Header: React.FC<HeaderProps> = ({
                 -
               </button>
               <span className="font-bold tracking-wider text-xs">
-                MS-DOS Executive - WikiZero [Versão 1.01 (1985)]
+                MS-DOS Executive - WikiWorldWeb [Versão 1.01 (1985)]
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -460,7 +460,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="bg-[#0000aa] text-white px-1.5 py-0.2">A:</span>
               <span className="bg-[#0000aa] text-white px-1.5 py-0.2">B:</span>
               <span className="bg-black text-white px-1.5 py-0.2 font-black">C:</span>
-              <span className="font-bold">C:\WIKIZERO\*.*</span>
+              <span className="font-bold">C:\WIKIWORLDWEB\*.*</span>
             </div>
           </div>
         </div>
@@ -479,7 +479,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Menu de Controle do Sistema (Clique para sair do Windows 3.1)"
               />
               <span className="truncate tracking-wide">
-                Gerenciador de Programas - [WikiZero Enciclopédia Multimídia 3.1]
+                Gerenciador de Programas - [WikiWorldWeb Enciclopédia Multimídia 3.1]
               </span>
             </div>
 
@@ -868,7 +868,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="font-bold tracking-wider text-[11px]">NOKIA 3310</span>
             <span className="text-[#1f281b]/60 hidden xs:inline">|</span>
             <span className="text-[9px] uppercase px-1.5 py-0.2 bg-[#1f281b] text-[#c2d6a4] font-bold hidden xs:inline">
-              WIKIZERO GSM
+              WIKIWORLDWEB GSM
             </span>
             <span className="text-[#1f281b]/80 text-[9px] hidden sm:inline font-bold">84×48 MONO LCD</span>
           </div>
@@ -926,7 +926,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="flex items-center gap-1.5 font-bold text-[#ffffff]">
               <Gamepad2 size={13} className="text-[#00b06f]" />
-              <span>ROBLOX // EXPERIÊNCIA WIKIZERO</span>
+              <span>ROBLOX // EXPERIÊNCIA WIKIWORLDWEB</span>
             </span>
             <span className="text-[#363940] hidden xs:inline">|</span>
             <span className="text-[#00a2ff] text-[10px] hidden sm:inline">
@@ -1500,7 +1500,7 @@ export const Header: React.FC<HeaderProps> = ({
                   onFocus={handleSearchInputClick}
                   onChange={(e) => onSearchChange(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="EXECUTE WIKIZERO.EXE..."
+                  placeholder="EXECUTE WIKIWORLDWEB.EXE..."
                   className="w-full text-xs bg-transparent border-none outline-none text-black font-mono font-bold placeholder:text-slate-600 cursor-text uppercase"
                 />
               </div>
@@ -1536,7 +1536,7 @@ export const Header: React.FC<HeaderProps> = ({
                   onFocus={handleSearchInputClick}
                   onChange={(e) => onSearchChange(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="C:\WIKIZERO\BUSCA_AVANCADA.EXE..."
+                  placeholder="C:\WIKIWORLDWEB\BUSCA_AVANCADA.EXE..."
                   className="w-full text-xs bg-transparent border-none outline-none text-black font-mono placeholder:text-slate-500 cursor-text"
                 />
               </div>

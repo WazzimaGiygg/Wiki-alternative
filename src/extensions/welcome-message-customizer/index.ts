@@ -21,7 +21,7 @@ export default class WelcomeMessageCustomizerExtension implements WikiExtension 
   }
 
   getAuthor(): string {
-    return 'WikiZero Editorial Board & Community Outreach';
+    return 'WikiWorldWeb Editorial Board & Community Outreach';
   }
 
   getCategory(): ExtensionCategory {
@@ -50,7 +50,7 @@ export default class WelcomeMessageCustomizerExtension implements WikiExtension 
         label: 'Título de Boas-Vindas Customizado',
         type: 'string',
         defaultValue: '',
-        description: 'Exemplo: "Boas-vindas à WikiZero, a enciclopédia aberta e livre." Deixe vazio para manter o padrão.',
+        description: 'Exemplo: "Boas-vindas à WikiWorldWeb, a enciclopédia aberta e livre." Deixe vazio para manter o padrão.',
       },
       {
         key: 'customBadge',

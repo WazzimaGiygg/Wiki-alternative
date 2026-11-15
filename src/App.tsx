@@ -263,7 +263,7 @@ export default function App() {
         e.preventDefault();
         e.stopPropagation();
         setKeyNotice({
-          message: '🔒 Tecla F7 (Navegação por Cursor) bloqueada pelo WikiZero para evitar desconfigurações visuais de leitura.',
+          message: '🔒 Tecla F7 (Navegação por Cursor) bloqueada pelo WikiWorldWeb para evitar desconfigurações visuais de leitura.',
           type: 'warning',
           id: Date.now(),
         });
@@ -350,7 +350,7 @@ export default function App() {
   const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
   const [targetUserIdentifier, setTargetUserIdentifier] = useState<string>('WazzimaGiygg');
   const [userPageInitialTab, setUserPageInitialTab] = useState<'profile' | 'talk' | 'contributions' | 'admin'>('profile');
-  const [selectedFileName, setSelectedFileName] = useState<string>('Logo_WikiZero.svg');
+  const [selectedFileName, setSelectedFileName] = useState<string>('Logo_WikiWorldWeb.svg');
   const [uploadInitialTargetName, setUploadInitialTargetName] = useState<string>('');
   const [ucocInitialTab, setUcocInitialTab] = useState<'principles' | 'new-report' | 'track' | 'cases'>('principles');
   const [ucocInitialProtocol, setUcocInitialProtocol] = useState<string>('');
@@ -1454,7 +1454,7 @@ export default function App() {
       await StorageService.logout();
       setUser(null);
       alert(
-        `Acesso Recusado: Usuários bloqueados não podem realizar login na WikiZero.\n\nMotivo: ${
+        `Acesso Recusado: Usuários bloqueados não podem realizar login na WikiWorldWeb.\n\nMotivo: ${
           banCheck.reason || loggedUser.banReason || 'Decisão administrativa.'
         }`
       );
@@ -2041,7 +2041,7 @@ export default function App() {
                 onOpenEditor={(title) => {
                   setEditingArticle({
                     id: '',
-                    pageUid: pages[0]?.uid || 'wikizero_info',
+                    pageUid: pages[0]?.uid || 'wikiworldweb_info',
                     titulo: title || 'Novo Artigo',
                     descricao: `= ${title || 'Novo Artigo'} =\nEste artigo ainda não foi escrito na enciclopédia livre WikiWorldWeb. Seja o primeiro a contribuir com seu conhecimento!`,
                     categoria: 'Geral',
@@ -2166,7 +2166,7 @@ export default function App() {
 
           {currentView === 'file-page' && (
             <FilePageView
-              fileName={selectedFileName || 'Logo_WikiZero.svg'}
+              fileName={selectedFileName || 'Logo_WikiWorldWeb.svg'}
               articles={articles}
               user={user}
               onNavigateToArticle={handleSelectArticle}
@@ -2508,7 +2508,7 @@ export default function App() {
               onOpenEditor={(title) => {
                 setEditingArticle({
                   id: '',
-                  pageUid: pages[0]?.uid || 'wikizero_info',
+                  pageUid: pages[0]?.uid || 'wikiworldweb_info',
                   titulo: title || 'Novo Artigo',
                   descricao: `= ${title || 'Novo Artigo'} =\nEste artigo ainda não foi escrito na enciclopédia livre WikiWorldWeb. Seja o primeiro a contribuir com seu conhecimento!`,
                   categoria: 'Geral',
@@ -2565,7 +2565,7 @@ export default function App() {
 
                   setEditingArticle({
                     id: '',
-                    pageUid: pages[0]?.uid || 'wikizero_info',
+                    pageUid: pages[0]?.uid || 'wikiworldweb_info',
                     titulo: title,
                     descricao: content,
                     categoria: 'Geral',
@@ -2592,7 +2592,7 @@ export default function App() {
                 } else {
                   setEditingArticle({
                     id: '',
-                    pageUid: pages[0]?.uid || 'wikizero_info',
+                    pageUid: pages[0]?.uid || 'wikiworldweb_info',
                     titulo: title,
                     descricao: `= ${title} =\nArtigo associado ao acervo bibliográfico da WikiWorldWeb.`,
                     categoria: 'Livros e Periódicos',
@@ -2618,7 +2618,7 @@ export default function App() {
                 } else {
                   setEditingArticle({
                     id: '',
-                    pageUid: pages[0]?.uid || 'wikizero_info',
+                    pageUid: pages[0]?.uid || 'wikiworldweb_info',
                     titulo: title,
                     descricao: `= ${title} =\nArtigo associado à produção científica do Wiki Universitário.`,
                     categoria: 'Wiki Universitário',
@@ -2645,7 +2645,7 @@ export default function App() {
                 } else {
                   setEditingArticle({
                     id: '',
-                    pageUid: pages[0]?.uid || 'wikizero_info',
+                    pageUid: pages[0]?.uid || 'wikiworldweb_info',
                     titulo: title,
                     descricao: `= ${title} =\nArtigo relacionado à cobertura noticiosa do Jornal WazzimaGiygg.\n\n== Referências ==\n* [https://jornal.wazzimagiygg.com/ Jornal WazzimaGiygg - Portal Oficial]`,
                     categoria: 'Notícias & Jornalismo',
@@ -2925,7 +2925,7 @@ export default function App() {
           />
         ) : (
           <button
-            id="wikizero-gemini-floating-trigger"
+            id="wikiworldweb-gemini-floating-trigger"
             type="button"
             onClick={() => setShowGeminiChatbot(true)}
             className="fixed bottom-16 sm:bottom-6 right-4 sm:right-6 z-40 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-900 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 text-xs font-bold border border-white/20 select-none cursor-pointer"

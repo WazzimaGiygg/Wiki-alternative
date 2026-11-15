@@ -315,7 +315,7 @@ export const EmergencyContactView: React.FC<EmergencyContactViewProps> = ({
     const clean = adminKeyInput.trim();
     if (
       clean === 'pedrohenriquecardonaperes@gmail.com' ||
-      clean.toUpperCase() === 'WIKIZERO-ADMIN-EMERGENCY-2026' ||
+      clean.toUpperCase() === 'WIKIWORLDWEB-ADMIN-EMERGENCY-2026' ||
       clean.toLowerCase() === 'admin'
     ) {
       setIsAdminUnlocked(true);
@@ -506,7 +506,7 @@ export const EmergencyContactView: React.FC<EmergencyContactViewProps> = ({
   // Copiar dossiê formal para encaminhamento policial
   const handleCopyFormalDossier = (r: EmergencyReport) => {
     const text = `=====================================================
-DOSSIÊ DE INCIDENTE DE EMERGÊNCIA - WIKIZERO
+DOSSIÊ DE INCIDENTE DE EMERGÊNCIA - WIKIWORLDWEB
 PROTOCOLO: ${r.protocolNumber}
 DATA/HORA DO REGISTRO: ${new Date(r.createdAt).toLocaleString('pt-BR')}
 GRAVIDADE: ${r.urgencyLevel.toUpperCase()}
@@ -606,7 +606,7 @@ Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
 
           <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full md:w-auto">
             <a
-              href="mailto:pedrohenriquecardonaperes@gmail.com?subject=%5BEMERG%C3%8ANCIA%20WIKIZERO%5D%20Acionamento%20Imediato"
+              href="mailto:pedrohenriquecardonaperes@gmail.com?subject=%5BEMERG%C3%8ANCIA%20WIKIWORLDWEB%5D%20Acionamento%20Imediato"
               className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition"
             >
               <Mail size={14} />
@@ -1888,7 +1888,7 @@ Encarregado DPO / Admin: pedrohenriquecardonaperes@gmail.com
 
                           {selectedReport.reporterEmail && (
                             <a
-                              href={`mailto:${selectedReport.reporterEmail}?subject=%5BRESPOSTA%20EMERG%C3%8ANCIA%20WIKIZERO%5D%20Protocolo%20${selectedReport.protocolNumber}`}
+                              href={`mailto:${selectedReport.reporterEmail}?subject=%5BRESPOSTA%20EMERG%C3%8ANCIA%20WIKIWORLDWEB%5D%20Protocolo%20${selectedReport.protocolNumber}`}
                               className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition"
                             >
                               <Mail size={13} />

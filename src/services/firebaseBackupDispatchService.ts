@@ -28,7 +28,7 @@ export interface SystemFullBackupPayload {
   _metadata: {
     app: string;
     version: string;
-    type: 'WIKIZERO_FULL_SYSTEM_BACKUP';
+    type: 'WIKIWORLDWEB_FULL_SYSTEM_BACKUP';
     exportedAt: string;
     exportedBy?: {
       uid: string;
@@ -138,7 +138,7 @@ export class FirebaseBackupDispatchService {
     };
   }> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `wikizero-despacho-completo-sistema-${timestamp}.json`;
+    const filename = `wikiworldweb-despacho-completo-sistema-${timestamp}.json`;
 
     // 1. Dados enciclopédicos locais
     const pages = await StorageService.getPages();
@@ -182,7 +182,7 @@ export class FirebaseBackupDispatchService {
       _metadata: {
         app: 'WikiWorldWeb - Enciclopédia Livre',
         version: '3.05.9',
-        type: 'WIKIZERO_FULL_SYSTEM_BACKUP',
+        type: 'WIKIWORLDWEB_FULL_SYSTEM_BACKUP',
         exportedAt: new Date().toISOString(),
         exportedBy: currentUser
           ? {

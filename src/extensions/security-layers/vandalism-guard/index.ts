@@ -21,7 +21,7 @@ export default class WikiVandalismGuardSecurityLayer implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Conselho de Segurança WikiZero / Sysop Pedro Henrique';
+    return 'Conselho de Segurança WikiWorldWeb / Sysop Pedro Henrique';
   }
 
   getCategory(): 'security' {

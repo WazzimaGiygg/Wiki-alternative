@@ -29,7 +29,7 @@ export default class DailyChecklistExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Community & Engagement Guild';
+    return 'WikiWorldWeb Community & Engagement Guild';
   }
 
   getCategory(): ExtensionCategory {

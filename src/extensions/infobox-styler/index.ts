@@ -18,7 +18,7 @@ export default class InfoboxResponsiveStyler implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Design Core WikiZero';
+    return 'Design Core WikiWorldWeb';
   }
 
   getCategory(): 'formatting' {

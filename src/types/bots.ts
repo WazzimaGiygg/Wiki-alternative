@@ -1,7 +1,7 @@
 /**
  * @file src/types/bots.ts
  * @description Definições de tipos para o Agente de Bots, Usuários Bots,
- * Varreduras Automatizadas e Verificadores Especializados da WikiZero.
+ * Varreduras Automatizadas e Verificadores Especializados da WikiWorldWeb.
  */
 
 export type WikiBotId =

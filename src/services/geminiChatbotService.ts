@@ -9,11 +9,11 @@ export const DEFAULT_GEMINI_CHATBOT_CONFIG: GeminiChatbotConfig = {
   displayName: 'Gemini Wiki Assistant (AI Studio)',
   model: 'gemini-2.5-flash',
   systemInstruction:
-    'Você é o assistente oficial do Google AI Studio integrado à WikiZero. Auxilie os usuários na estruturação e redação de coleções temáticas e artigos enciclopédicos completos com neutralidade, verificabilidade, sintaxe Wikitext e clareza informativa.',
+    'Você é o assistente oficial do Google AI Studio integrado à WikiWorldWeb. Auxilie os usuários na estruturação e redação de coleções temáticas e artigos enciclopédicos completos com neutralidade, verificabilidade, sintaxe Wikitext e clareza informativa.',
   allowArticleGeneration: true,
   allowCollectionGeneration: true,
   updatedAt: new Date().toISOString(),
-  updatedBy: 'Sistema WikiZero',
+  updatedBy: 'Sistema WikiWorldWeb',
 };
 
 const LOCAL_STORAGE_KEY = 'wikizero_gemini_chatbot_config';
@@ -169,7 +169,7 @@ export class GeminiChatbotService {
 
     if (!quotaCheck.allowed) {
       const quotaName = isImageRequest ? 'envio e análise de imagens' : 'chats e consultas enciclopédicas';
-      const offerReply = `🌟 **Limite gratuito atingido!**\n\nVocê atingiu o limite gratuito diário de **${quotaName}** da WikiZero.\n\nComo assistente oficial do Google AI Studio na WikiZero, estou autorizado a lhe oferecer o **Plano Gemini Premium**!\n\n💎 **Benefícios do Gemini Premium:**\n• Chats e consultas ilimitadas em tempo real\n• Envio e análise visual ilimitada de imagens e infográficos\n• Gemini Notebook completo com síntese e inserção direta em artigos\n• Modelos Gemini mais rápidos e potentes de última geração\n\nDeseja ativar seu acesso premium agora?`;
+      const offerReply = `🌟 **Limite gratuito atingido!**\n\nVocê atingiu o limite gratuito diário de **${quotaName}** da WikiWorldWeb.\n\nComo assistente oficial do Google AI Studio na WikiWorldWeb, estou autorizado a lhe oferecer o **Plano Gemini Premium**!\n\n💎 **Benefícios do Gemini Premium:**\n• Chats e consultas ilimitadas em tempo real\n• Envio e análise visual ilimitada de imagens e infográficos\n• Gemini Notebook completo com síntese e inserção direta em artigos\n• Modelos Gemini mais rápidos e potentes de última geração\n\nDeseja ativar seu acesso premium agora?`;
       return {
         reply: offerReply,
         offerPremium: true,

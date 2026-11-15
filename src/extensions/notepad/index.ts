@@ -20,7 +20,7 @@ export default class NotepadToolExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Notepad';
+    return 'WikiWorldWeb Notepad';
   }
 
   getCategory(): 'tool' {

@@ -1,6 +1,6 @@
 /**
  * @file src/services/botAgentService.ts
- * @description Serviço Front-End central de gerenciamento de Bots da WikiZero.
+ * @description Serviço Front-End central de gerenciamento de Bots da WikiWorldWeb.
  * Implementa os 7 robôs especializados, motor de varredura com condições de busca,
  * registro de bots users, auditoria e mitigação de vandalismo/LGPD.
  */
@@ -26,7 +26,7 @@ const BOT_FINDINGS_KEY = 'wikizero_bot_findings';
 const BOT_USER_ABUSE_KEY = 'wikizero_bot_user_abuse_records';
 
 /**
- * Contas oficiais de Bot Users pré-configuradas no sistema WikiZero
+ * Contas oficiais de Bot Users pré-configuradas no sistema WikiWorldWeb
  */
 export const DEFAULT_BOT_USERS: WikiBotUser[] = [
   {
@@ -237,7 +237,7 @@ export const DEFAULT_BOT_CONFIG: BotAgentConfig = {
     revertOnCriticalLgpd: true,
   },
   updatedAt: new Date().toISOString(),
-  updatedBy: 'Sistema WikiZero',
+  updatedBy: 'Sistema WikiWorldWeb',
 };
 
 // Expressões Regulares de Detecção LGPD (Art. 5º e 18 da Lei 13.709/2018)

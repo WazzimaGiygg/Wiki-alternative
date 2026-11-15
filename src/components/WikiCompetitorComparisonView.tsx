@@ -43,7 +43,7 @@ interface WikiCompetitorComparisonViewProps {
 interface FeatureComparison {
   name: string;
   category: string;
-  wikizero: boolean | string;
+  wikiworldweb: boolean | string;
   wikipedia: boolean | string;
   fandom: boolean | string;
   mediawiki: boolean | string;
@@ -55,7 +55,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Gemini Notebook: Síntese Multifontes para Criação de Artigos',
     category: 'Inteligência Artificial & Pesquisa',
-    wikizero: 'Nativo (Multifontes & Síntese)',
+    wikiworldweb: 'Nativo (Multifontes & Síntese)',
     wikipedia: 'Não (Processo Manual Rígido)',
     fandom: false,
     mediawiki: 'Não (Inexistente)',
@@ -65,7 +65,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Assistente Gemini IA (Google AI Studio) Integrado',
     category: 'Inteligência Artificial & Redação',
-    wikizero: 'Nativo (Chat, Wikitexto & Fatos)',
+    wikiworldweb: 'Nativo (Chat, Wikitexto & Fatos)',
     wikipedia: 'Bloqueado por Burocracia',
     fandom: false,
     mediawiki: 'Inexistente',
@@ -75,7 +75,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Direito LGPD: Solicitação & Controle de Nome Civil e Foto de Perfil',
     category: 'Privacidade & Proteção de Dados (LGPD)',
-    wikizero: 'Nativo (Conforme LGPD)',
+    wikiworldweb: 'Nativo (Conforme LGPD)',
     wikipedia: 'Burocrático / Rígido',
     fandom: 'Sem Controle LGPD',
     mediawiki: 'Inexistente',
@@ -85,7 +85,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Portal Unificado de Artigos Universitários (Estilo SciELO & Google Acadêmico)',
     category: 'Pesquisa Acadêmica & Universitária',
-    wikizero: 'Nativo e Centralizado',
+    wikiworldweb: 'Nativo e Centralizado',
     wikipedia: 'Deletado por Notoriedade',
     fandom: false,
     mediawiki: 'Requer Servidor Próprio',
@@ -95,7 +95,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Wiki de Livros Integrada (Fichas Catalográficas, ISBN e Resenhas)',
     category: 'Literatura & Biblioteca de Obras',
-    wikizero: 'Integrada na Mesma Wiki',
+    wikiworldweb: 'Integrada na Mesma Wiki',
     wikipedia: 'Exige Outro Site (Wikibooks)',
     fandom: 'Não',
     mediawiki: 'Não',
@@ -105,7 +105,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'App Universal Multiplataforma (Computador, Celular e Smart TV 10-Foot)',
     category: 'Multiplataforma & Acessibilidade',
-    wikizero: 'PC, Celular e Smart TV',
+    wikiworldweb: 'PC, Celular e Smart TV',
     wikipedia: 'Apenas Mobile Limitado',
     fandom: 'Apenas Web Poluída',
     mediawiki: 'Apenas Web Legada',
@@ -115,7 +115,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Ecossistema Centralizado em Uma Só Plataforma (Sem Dispersão em Sites Separados)',
     category: 'Arquitetura de Conhecimento',
-    wikizero: 'Tudo no Mesmo Site',
+    wikiworldweb: 'Tudo no Mesmo Site',
     wikipedia: 'Fragmentado em 12+ Projetos',
     fandom: 'Ilhas Isoladas',
     mediawiki: 'Silos Independentes',
@@ -125,7 +125,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Zero Anúncios Invasivos e Sem Vídeos Autoplay',
     category: 'Experiência de Leitura',
-    wikizero: true,
+    wikiworldweb: true,
     wikipedia: true,
     fandom: false,
     mediawiki: true,
@@ -135,7 +135,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Carregamento Ultrarrápido (SPA Moderna & PWA)',
     category: 'Performance',
-    wikizero: true,
+    wikiworldweb: true,
     wikipedia: false,
     fandom: false,
     mediawiki: false,
@@ -145,7 +145,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Temas Visuais Customizados (Minecraft, Roblox, REPO, Win95, etc.)',
     category: 'Personalização & Acessibilidade',
-    wikizero: '11 Temas Nativos',
+    wikiworldweb: '11 Temas Nativos',
     wikipedia: 'Apenas Claro/Escuro',
     fandom: 'Tema Fixo Fandom',
     mediawiki: 'Skins Complexas PHP',
@@ -155,7 +155,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Editor Wikitexto com Pré-visualização Instantânea',
     category: 'Edição & Colaboração',
-    wikizero: true,
+    wikiworldweb: true,
     wikipedia: 'Lento / Recarrega',
     fandom: 'Cheio de Banners',
     mediawiki: 'Requer Servidor LAMP',
@@ -164,7 +164,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Transparência Editorial e ArbCom Público Imparcial',
     category: 'Governança & Liberdade',
-    wikizero: true,
+    wikiworldweb: true,
     wikipedia: 'Panelas Históricas',
     fandom: 'Corporativo Centralizado',
     mediawiki: 'Depende do Admin Local',
@@ -174,7 +174,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Modo Offline Nativo com Leitura Sem Conexão',
     category: 'Acessibilidade & Mobilidade',
-    wikizero: true,
+    wikiworldweb: true,
     wikipedia: 'Apenas App Dedicado',
     fandom: false,
     mediawiki: false,
@@ -183,7 +183,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Suporte Nativo a Smart TVs (Interface 10-Foot)',
     category: 'Compatibilidade de Dispositivos',
-    wikizero: true,
+    wikiworldweb: true,
     wikipedia: false,
     fandom: false,
     mediawiki: false,
@@ -193,7 +193,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Conformidade Rigorosa com LGPD e Privacidade',
     category: 'Segurança & Dados',
-    wikizero: true,
+    wikiworldweb: true,
     wikipedia: 'Parcial',
     fandom: 'Rastreamento Pesado',
     mediawiki: 'Variável',
@@ -202,7 +202,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Busca Sem Rastreamento de Perfil Comercial',
     category: 'Privacidade',
-    wikizero: true,
+    wikiworldweb: true,
     wikipedia: true,
     fandom: false,
     mediawiki: true,
@@ -211,7 +211,7 @@ const COMPARISON_FEATURES: FeatureComparison[] = [
   {
     name: 'Sincronização em Nuvem em Tempo Real (Firestore)',
     category: 'Infraestrutura Tecnológica',
-    wikizero: true,
+    wikiworldweb: true,
     wikipedia: false,
     fandom: false,
     mediawiki: false,
@@ -484,7 +484,7 @@ export const WikiCompetitorComparisonView: React.FC<WikiCompetitorComparisonView
                     <div className="text-[10px] text-slate-400">{item.category}</div>
                   </td>
                   <td className="py-3 px-3 text-center bg-blue-50/40 dark:bg-blue-950/20 border-x border-blue-100 dark:border-blue-900/40">
-                    {renderBadge(item.wikizero)}
+                    {renderBadge(item.wikiworldweb)}
                   </td>
                   <td className="py-3 px-3 text-center">{renderBadge(item.wikipedia)}</td>
                   <td className="py-3 px-3 text-center">{renderBadge(item.fandom)}</td>

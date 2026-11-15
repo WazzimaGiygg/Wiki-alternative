@@ -259,7 +259,7 @@ export const AdminDataRemovalRequestsView: React.FC<AdminDataRemovalRequestsView
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(requests, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `wikizero_pedidos_remocao_dados_lgpd_${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchor.setAttribute('download', `wikiworldweb_pedidos_remocao_dados_lgpd_${new Date().toISOString().split('T')[0]}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -284,7 +284,7 @@ export const AdminDataRemovalRequestsView: React.FC<AdminDataRemovalRequestsView
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', encodeURI(csvContent));
-    downloadAnchor.setAttribute('download', `wikizero_pedidos_remocao_dados_lgpd_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadAnchor.setAttribute('download', `wikiworldweb_pedidos_remocao_dados_lgpd_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

@@ -24,7 +24,7 @@ export default class GeneralHelpExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Bureaucrat Operations & Documentation Guild';
+    return 'WikiWorldWeb Bureaucrat Operations & Documentation Guild';
   }
 
   getCategory(): ExtensionCategory {

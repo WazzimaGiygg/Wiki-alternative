@@ -25,7 +25,7 @@ export default class FirstVisitNewsPopupExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Conselho de Burocratas & Comunicação da WikiZero';
+    return 'Conselho de Burocratas & Comunicação da WikiWorldWeb';
   }
 
   getCategory(): ExtensionCategory {
@@ -53,7 +53,7 @@ export default class FirstVisitNewsPopupExtension implements WikiExtension {
         key: 'popupTitle',
         label: 'Título do Popup de Notícia',
         type: 'string',
-        defaultValue: 'Comunicado Oficial & Atualizações da WikiZero',
+        defaultValue: 'Comunicado Oficial & Atualizações da WikiWorldWeb',
         description: 'Título principal exibido no cabeçalho do popup modal.',
       },
       {
@@ -130,7 +130,7 @@ export default class FirstVisitNewsPopupExtension implements WikiExtension {
         if (settings.popupTitle && typeof settings.popupTitle === 'string' && settings.popupTitle.trim()) {
           return settings.popupTitle;
         }
-        return defaultTitle || 'Comunicado Oficial & Atualizações da WikiZero';
+        return defaultTitle || 'Comunicado Oficial & Atualizações da WikiWorldWeb';
       },
       10,
       this.getName()

@@ -926,7 +926,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         setIsSaving(false);
         setSecurityWarningModal({
           title: 'Bloqueio de Integridade',
-          message: botCheck.rejectionReason || 'Edição bloqueada pelo sistema de robôs e integridade da WikiZero.',
+          message: botCheck.rejectionReason || 'Edição bloqueada pelo sistema de robôs e integridade da WikiWorldWeb.',
         });
         return;
       }
@@ -1323,7 +1323,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                   <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                     {securityWarningModal.title}
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-mono">Segurança &middot; RBAC WikiZero</p>
+                  <p className="text-[11px] text-slate-500 font-mono">Segurança &middot; RBAC WikiWorldWeb</p>
                 </div>
               </div>
               <button
@@ -2655,7 +2655,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 type="button"
                 onClick={() => {
                   setCustomWikitextCode(
-                    '{{Citação\n| Texto = O conhecimento é livre e compartilhado por todos os colaboradores.\n| Autor = Comunidade Wikizero\n}}'
+                    '{{Citação\n| Texto = O conhecimento é livre e compartilhado por todos os colaboradores.\n| Autor = Comunidade WikiWorldWeb\n}}'
                   );
                 }}
                 className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition"
@@ -2786,12 +2786,12 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             categoria: categoria || 'Geral',
             pageUid: pageUid || 'geral',
             idioma: idioma || 'Português',
-            autor: user?.displayName || user?.username || 'Editor WikiZero',
+            autor: user?.displayName || user?.username || 'Editor WikiWorldWeb',
             dataCriacao: initialArticle?.dataCriacao || new Date().toISOString(),
             dataEdicao: new Date().toISOString(),
             versao: initialArticle?.versao || 1,
           }}
-          pageName={pages.find((p) => p.uid === pageUid)?.titulo || 'WikiZero Enciclopédia'}
+          pageName={pages.find((p) => p.uid === pageUid)?.titulo || 'WikiWorldWeb Enciclopédia'}
           isOpen={showPdfPreviewModal}
           onClose={() => setShowPdfPreviewModal(false)}
         />

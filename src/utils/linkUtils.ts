@@ -1,6 +1,6 @@
 /**
  * @file linkUtils.ts
- * @description Sistema de manipulação e redirecionamento de links externos do WikiZero (Update 3.05).
+ * @description Sistema de manipulação e redirecionamento de links externos do WikiWorldWeb (Update 3.05).
  */
 
 import { ExtensionManager } from '../core/ExtensionManager';

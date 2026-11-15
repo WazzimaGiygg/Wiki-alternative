@@ -22,7 +22,7 @@ export default class MobileVersionControlExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Responsive Framework Team';
+    return 'WikiWorldWeb Responsive Framework Team';
   }
 
   getCategory(): ExtensionCategory {

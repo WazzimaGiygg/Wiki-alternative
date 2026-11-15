@@ -19,7 +19,7 @@ export default class CalculatorToolExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Tools / Equipe WikiWorldWeb';
+    return 'WikiWorldWeb Tools';
   }
 
   getCategory(): 'tool' {

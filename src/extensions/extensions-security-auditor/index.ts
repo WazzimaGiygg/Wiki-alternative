@@ -106,7 +106,7 @@ export default class ExtensionsSecurityAuditorExtension implements WikiExtension
   }
 
   getAuthor(): string {
-    return 'WikiZero Security & Memory Operations Team';
+    return 'WikiWorldWeb Security & Memory Operations Team';
   }
 
   getCategory(): ExtensionCategory {

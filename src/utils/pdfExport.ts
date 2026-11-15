@@ -160,7 +160,7 @@ function parseArticleIntoStructuredSections(rawDescription: string, articleTitle
  */
 export async function exportArticleToStructuredPdf(
   article: WikiArticle,
-  pageName: string = 'WikiZero Enciclopédia',
+  pageName: string = 'WikiWorldWeb Enciclopédia',
   options: PdfExportOptions = {}
 ): Promise<void> {
   const {
@@ -200,7 +200,7 @@ export async function exportArticleToStructuredPdf(
     if (!includeHeader) return;
     drawPdfStandardMiniHeader(
       doc,
-      'WIKIZERO • RELATÓRIO DO ARTIGO ENCICLOPÉDICO',
+      'WIKIWORLDWEB • RELATÓRIO DO ARTIGO ENCICLOPÉDICO',
       `${article.titulo} (?uid=${article.id})`,
       margin,
       pageWidth
@@ -239,7 +239,7 @@ export async function exportArticleToStructuredPdf(
         categoryTag: 'DOCUMENTO ENCICLOPÉDICO & ARTIGO PADRONIZADO',
         title: `RELATÓRIO DO ARTIGO: ${article.titulo.toUpperCase()}`,
         subtitle: `Classificado por Estrutura Editorial: Verbete Enciclopédico, Fontes & Histórico`,
-        metadataLine: `Gerado em: ${nowFormatted} • Emissor: WikiZero • UID: ?uid=${article.id} • Coleção: ${pageName}`,
+        metadataLine: `Gerado em: ${nowFormatted} • Emissor: WikiWorldWeb • UID: ?uid=${article.id} • Coleção: ${pageName}`,
         height: heroHeight,
       },
       margin,
@@ -617,7 +617,7 @@ export async function exportArticleToStructuredPdf(
 
   // Download do arquivo gerado
   const cleanTitleSlug = article.titulo.replace(/[/\\?%*:|"<>]/g, '').replace(/\s+/g, '_');
-  const filename = `wikizero-artigo-${cleanTitleSlug}.pdf`;
+  const filename = `wikiworldweb-artigo-${cleanTitleSlug}.pdf`;
   doc.save(filename);
 }
 
@@ -676,5 +676,5 @@ export async function exportArticleSnapshotToPdf(
   }
 
   const cleanTitleSlug = article.titulo.replace(/[/\\?%*:|"<>]/g, '').replace(/\s+/g, '_');
-  pdf.save(`wikizero-snapshot-${cleanTitleSlug}.pdf`);
+  pdf.save(`wikiworldweb-snapshot-${cleanTitleSlug}.pdf`);
 }

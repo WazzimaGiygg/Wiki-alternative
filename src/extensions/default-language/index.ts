@@ -21,7 +21,7 @@ export default class DefaultLanguageExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Multilingual Localization Guild';
+    return 'WikiWorldWeb Multilingual Localization Guild';
   }
 
   getCategory(): ExtensionCategory {

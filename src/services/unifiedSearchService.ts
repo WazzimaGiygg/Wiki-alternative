@@ -577,7 +577,7 @@ export class UnifiedSearchService {
           title: `${u.version}: ${u.title}`,
           summary: u.summary,
           version: u.version,
-          author: u.author || 'Administração WikiZero',
+          author: u.author || 'Administração WikiWorldWeb',
           date: u.date,
           highlights: u.highlights,
           category: u.category,

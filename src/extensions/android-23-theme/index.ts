@@ -24,7 +24,7 @@ export default class Android23GingerbreadTheme implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Google Open Handset Alliance / WikiZero';
+    return 'Google Open Handset Alliance / WikiWorldWeb';
   }
 
   getCategory(): 'interface' {

@@ -1,6 +1,6 @@
 /**
  * @file EditConflictModal.tsx
- * @description Modal interativo de Resolução de Conflito de Edição (Edit Conflict) do WikiZero.
+ * @description Modal interativo de Resolução de Conflito de Edição (Edit Conflict) do WikiWorldWeb.
  * Detecta quando um artigo foi salvo por outro usuário durante a edição, exibe o diff visual
  * comparativo (servidor vs. local), e permite mesclagem automática (3-way merge), sobrescrita
  * intencional ou descarte das alterações locais.

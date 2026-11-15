@@ -28,13 +28,13 @@ interface Windows95BotProps {
 }
 
 const NOSTALGIC_TIPS = [
-  'Parece que você está navegando na WikiZero no Windows 95! Sabia que este sistema operacional foi lançado em 24 de agosto de 1995?',
+  'Parece que você está navegando na WikiWorldWeb no Windows 95! Sabia que este sistema operacional foi lançado em 24 de agosto de 1995?',
   'Dica do Clippy: Você pode salvar qualquer artigo para leitura offline usando o botão de cache da enciclopédia!',
   'Sabia que em 1995 um computador comum tinha apenas 8MB de memória RAM e rodava direto de um disco rígido de 540MB?',
   'Curiosidade: O famoso som de abertura do Windows 95 foi composto pelo músico britânico Brian Eno em um sintetizador!',
   'Dica de Wikitext: Para criar títulos de seções, use == Título ==. Para negrito, use \'\'\'texto\'\'\'!',
   'Em 1995, conectar-se à internet exigia um modem discado de 14.4kbps ou 28.8kbps. Hoje você acessa toda a enciclopédia instantaneamente!',
-  'Dica de Navegação: Clique no botão Iniciar no canto inferior esquerdo para acessar todos os recursos da WikiZero Retrô.',
+  'Dica de Navegação: Clique no botão Iniciar no canto inferior esquerdo para acessar todos os recursos da WikiWorldWeb Retrô.',
   'Dica do Clippy: Use o botão "Artigo Aleatório" para descobrir novos verbetes que você talvez nunca encontrasse!',
 ];
 
@@ -96,7 +96,7 @@ export const Windows95Bot: React.FC<Windows95BotProps> = ({
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'clippy'; text: string; time: string }>>([
     {
       sender: 'clippy',
-      text: 'Olá! Eu sou o Clippy, seu assistente do Windows 95 na WikiZero. Em que posso te ajudar hoje?',
+      text: 'Olá! Eu sou o Clippy, seu assistente do Windows 95 na WikiWorldWeb. Em que posso te ajudar hoje?',
       time: '12:00',
     },
   ]);
@@ -164,7 +164,7 @@ export const Windows95Bot: React.FC<Windows95BotProps> = ({
     if (soundEnabled) playClippyPop(0.25);
 
     try {
-      const systemInstruction = `Você é o Clippy (Clippit), o simpático e clássico assistente do Windows 95 e Office 97, agora prestando suporte na enciclopédia digital WikiZero.
+      const systemInstruction = `Você é o Clippy (Clippit), o simpático e clássico assistente do Windows 95 e Office 97, agora prestando suporte na enciclopédia digital WikiWorldWeb.
 Seja carismático, prestativo e com um toque nostálgico bem-humorado dos anos 90 (mencione termos como disquetes, janelas cinzas, atalhos do Windows 95 se couber naturalmente).
 Responda sempre em Português com precisão factual enciclopédica! Mantenha a resposta concisa (2 a 4 parágrafos curtos) para caber bem no balão de diálogo.
 ${currentArticleTitle ? `O usuário está atualmente lendo o artigo: "${currentArticleTitle}".` : ''}`;

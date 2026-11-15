@@ -894,7 +894,7 @@ function renderMediaWikiImage(content: string, inlineMap?: Map<string, string>):
     }
   }
 
-  // Tenta resolver o ficheiro no catálogo local da WikiZero
+  // Tenta resolver o ficheiro no catálogo local da WikiWorldWeb
   const cleanFileName = rawTarget
     .replace(/^(?:Arquivo|Ficheiro|File|Imagem|Image):/i, '')
     .trim();
@@ -1578,7 +1578,7 @@ export function processParserFunctionsAndVariables(wikitext: string, articleTitl
       .replace(/\{\{CURRENTMONTHNAME\}\}/gi, monthNames[now.getMonth()])
       .replace(/\{\{CURRENTDAY\}\}/gi, String(now.getDate()))
       .replace(/\{\{CURRENTTIME\}\}/gi, `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`)
-      .replace(/\{\{SITENAME\}\}/gi, 'WikiZero');
+      .replace(/\{\{SITENAME\}\}/gi, 'WikiWorldWeb');
   };
 
   let current = replaceVariables(wikitext);

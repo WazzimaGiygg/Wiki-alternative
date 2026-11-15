@@ -1,5 +1,5 @@
 import type { jsPDF } from 'jspdf';
-import { WIKIZERO_STANDARD_LOGO_DATA_URL } from './pdfStandardLogoAsset';
+import { WIKIWORLDWEB_STANDARD_LOGO_DATA_URL } from './pdfStandardLogoAsset';
 
 export interface PdfKpiCard {
   title: string;
@@ -19,7 +19,7 @@ export interface StandardPdfHeroOptions {
 }
 
 /**
- * Desenha o logotipo oficial padronizado da WikiZero / WazzimaGiygg
+ * Desenha o logotipo oficial padronizado da WikiWorldWeb / WazzimaGiygg
  * (portal infinito em perspectiva 3D geométrica / Mondrian moderno).
  */
 export function drawPdfStandardLogo(
@@ -31,9 +31,9 @@ export function drawPdfStandardLogo(
   doc.saveGraphicsState();
 
   try {
-    if (WIKIZERO_STANDARD_LOGO_DATA_URL) {
+    if (WIKIWORLDWEB_STANDARD_LOGO_DATA_URL) {
       doc.addImage(
-        WIKIZERO_STANDARD_LOGO_DATA_URL,
+        WIKIWORLDWEB_STANDARD_LOGO_DATA_URL,
         'PNG',
         x,
         y,
@@ -282,9 +282,9 @@ export function drawPdfStandardMiniHeader(
 
   let textX = margin;
   try {
-    if (WIKIZERO_STANDARD_LOGO_DATA_URL) {
+    if (WIKIWORLDWEB_STANDARD_LOGO_DATA_URL) {
       doc.addImage(
-        WIKIZERO_STANDARD_LOGO_DATA_URL,
+        WIKIWORLDWEB_STANDARD_LOGO_DATA_URL,
         'PNG',
         margin,
         6.8,
@@ -344,7 +344,7 @@ export function drawPdfStandardFooters(
     doc.setFontSize(7);
     doc.setTextColor(225, 29, 72); // rose-600
     doc.text(
-      `WikiZero • ${documentTypeLabel} • Relatório Gerado Automaticamente`,
+      `WikiWorldWeb • ${documentTypeLabel} • Relatório Gerado Automaticamente`,
       margin,
       footerY
     );

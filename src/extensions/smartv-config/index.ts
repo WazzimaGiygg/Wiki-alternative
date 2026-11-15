@@ -36,7 +36,7 @@ export default class SmartTvConfigExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Bureaucrat Operations & Smart TV Team';
+    return 'WikiWorldWeb Bureaucrat Operations & Smart TV Team';
   }
 
   getCategory(): ExtensionCategory {

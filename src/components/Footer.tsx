@@ -108,7 +108,7 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="p-3 bg-[#14151a] border border-[#00b06f]/50 rounded-lg text-xs font-sans text-slate-300 flex flex-wrap items-center justify-between gap-3 shadow-[0_0_12px_rgba(0,176,111,0.15)]">
             <div className="flex items-center gap-2 text-[#00b06f]">
               <Gamepad2 size={15} className="text-[#00b06f]" />
-              <span className="font-bold">ROBLOX CORPORATION // EXPERIÊNCIA WIKIZERO PLACE</span>
+              <span className="font-bold">ROBLOX CORPORATION // EXPERIÊNCIA WIKIWORLDWEB PLACE</span>
             </div>
             <div className="flex items-center gap-4 text-[11px] text-slate-400 font-sans">
               <span className="text-[#00a2ff]">STATUS: JOGANDO COM 14.8K AMIGOS</span>
@@ -397,7 +397,7 @@ export const Footer: React.FC<FooterProps> = ({
                 </div>
                 <div className="border-2 border-black bg-[#0000aa] text-white px-2 py-0.5 text-[11px] font-bold flex items-center gap-1">
                   <span>📖</span>
-                  <span>WIKIZERO.EXE [ATIVO]</span>
+                  <span>WIKIWORLDWEB.EXE [ATIVO]</span>
                 </div>
               </div>
             </div>
@@ -434,7 +434,7 @@ export const Footer: React.FC<FooterProps> = ({
 
               <div className="win95-sunken px-3 py-1 text-black font-bold text-[11px] flex items-center gap-1.5">
                 <span className="text-[#000080]">📖</span>
-                <span>WikiZero 95</span>
+                <span>WikiWorldWeb 95</span>
               </div>
 
               <div className="win95-sunken px-2.5 py-1 text-black text-[11px] flex items-center gap-1.5 bg-[#ffffcc]">

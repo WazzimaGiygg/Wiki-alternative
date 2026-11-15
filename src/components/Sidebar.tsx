@@ -222,10 +222,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
         {!isCollapsed && (
           <div className="flex items-center gap-1.5 min-w-0">
-            <img src="/logo.png" alt="WikiZero Logo" className="w-4 h-4 object-contain rounded-xs shrink-0" />
+            <img src="/logo.png" alt="WikiWorldWeb Logo" className="w-4 h-4 object-contain rounded-xs shrink-0" />
             <span className={`text-[10px] font-bold uppercase tracking-wider font-mono truncate ${isHalfLife ? 'text-[#ff9900] flex items-center gap-1' : 'text-slate-500 dark:text-slate-400'}`}>
               {isHalfLife && <span className="text-[11px]">λ</span>}
-              {isHalfLife ? 'BLACK MESA NET' : 'WikiZero'}
+              {isHalfLife ? 'BLACK MESA NET' : 'WikiWorldWeb'}
             </span>
           </div>
         )}

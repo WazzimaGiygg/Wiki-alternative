@@ -1049,7 +1049,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wikizero-extensions-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `wikiworldweb-extensions-backup-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1172,7 +1172,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.2.0',
       description: 'Calculadora interativa multiúso com modo padrão, científico (trigonometria, logaritmos, potências, raízes), constantes matemáticas e histórico persistente.',
       category: 'tool' as ExtensionCategory,
-      author: 'WikiZero Tools / Equipe WikiWorldWeb',
+      author: 'WikiWorldWeb Tools',
       hooks: ['tool:calculator_available', 'tools:registered_tools'],
       script: `// Registro de ferramenta da calculadora\nhooks.addFilter('tool:calculator_available', () => true, 10, extensionName);\nhooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'calculator'], 10, extensionName);`,
     },
@@ -1181,7 +1181,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.3.0',
       description: 'Painel de Horário Certo Mundial com catalogação de fusos horários do Brasil (Brasília, Noronha, Manaus, Acre), capitais globais, UTC e conversor temporal.',
       category: 'tool' as ExtensionCategory,
-      author: 'WikiZero Tools / Equipe WikiWorldWeb',
+      author: 'WikiWorldWeb Tools',
       hooks: ['tool:world_clock_available', 'tools:registered_tools'],
       script: `// Registro de ferramenta de horário mundial\nhooks.addFilter('tool:world_clock_available', () => true, 10, extensionName);\nhooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'world-clock'], 10, extensionName);`,
     },
@@ -1190,7 +1190,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.4.0',
       description: 'Estação meteorológica e previsão do tempo em tempo real com busca global de cidades, geolocalização, radar de chuva, índice UV, vento e previsão de 7 dias.',
       category: 'tool' as ExtensionCategory,
-      author: 'WikiZero Meteorologia / Open-Meteo',
+      author: 'WikiWorldWeb Meteorologia / Open-Meteo',
       hooks: ['tool:weather_available', 'tools:registered_tools'],
       script: `// Registro de ferramenta meteorológica\nhooks.addFilter('tool:weather_available', () => true, 10, extensionName);\nhooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'weather'], 10, extensionName);`,
     },
@@ -1199,7 +1199,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.5.0',
       description: 'Assistente inteligente oficial integrado do Google AI Studio para auxílio em pesquisa enciclopédica, geração e revisão de artigos em Wikitext, síntese de conhecimento e verificação factual.',
       category: 'tool' as ExtensionCategory,
-      author: 'Google AI Studio / Equipe WikiZero',
+      author: 'Google AI Studio / Equipe WikiWorldWeb',
       hooks: ['tool:gemini-assistant_available', 'tools:registered_tools'],
       script: `// Registro do assistente Gemini Studio na aba de ferramentas\nhooks.addFilter('tool:gemini-assistant_available', () => true, 10, extensionName);\nhooks.addFilter('tools:registered_tools', (tools) => [...(tools || []), 'gemini-assistant'], 10, extensionName);`,
     },
@@ -1208,7 +1208,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.1.0',
       description: 'Adiciona a tag <spoiler>...</spoiler> para ocultar trechos com desfoque tátil que revelam o conteúdo mediante clique ou toque do leitor.',
       category: 'formatting' as ExtensionCategory,
-      author: 'Equipe de Leitura WikiZero',
+      author: 'Equipe de Leitura WikiWorldWeb',
       hooks: ['render:wikitext'],
       customTags: [
         {
@@ -1252,7 +1252,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.0.4',
       description: 'Adiciona caixas de busca e ordenação instantânea por coluna em tabelas Wikitext ({| class="wikitable").',
       category: 'interface' as ExtensionCategory,
-      author: 'Equipe de Dados WikiZero',
+      author: 'Equipe de Dados WikiWorldWeb',
       hooks: ['render:wikitext', 'render:html'],
       script: `// Hook de aprimoramento de tabelas\nhooks.addFilter('render:wikitext', function(text) {\n  if (!text) return text;\n  return text.replace(/class=\"wikitable\"/g, 'class=\"wikitable sortable-table shadow-xs\"');\n}, 11, extensionName);`,
     },
@@ -1302,7 +1302,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.2.0',
       description: 'Conversor universal interativo para distâncias, massas, temperaturas, volumes e dados digitais com execução instantânea de fórmulas.',
       category: 'tool' as ExtensionCategory,
-      author: 'WikiZero Tools / Ciências Exatas',
+      author: 'WikiWorldWeb Tools / Ciências Exatas',
       hooks: ['tools:registered_tools', 'tool:unit-converter_available'],
       toolConfig: {
         toolId: 'unit-converter',
@@ -1334,7 +1334,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.1.0',
       description: 'Sorteador aleatório e rolador de dados poliédricos para jogos, probabilidades, estatísticas e deliberações editoriais.',
       category: 'tool' as ExtensionCategory,
-      author: 'WikiZero Tools / Ludologia',
+      author: 'WikiWorldWeb Tools / Ludologia',
       hooks: ['tools:registered_tools', 'tool:dice-roller_available'],
       toolConfig: {
         toolId: 'dice-roller',
@@ -1366,7 +1366,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.0.1',
       description: 'Calculador de delta métrico entre texto original e texto revisado com contagem de bytes e auditoria de edições.',
       category: 'tool' as ExtensionCategory,
-      author: 'WikiZero Tools / Auditoria',
+      author: 'WikiWorldWeb Tools / Auditoria',
       hooks: ['tools:registered_tools', 'tool:text-diff_available'],
       toolConfig: {
         toolId: 'text-diff',
@@ -1387,7 +1387,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.0.0',
       description: 'Tema visual de alta tecnologia com fundo ultra-escuro, contrastes néon em ciano elétrico (#00ffff), magenta e tipografia mono.',
       category: 'theme' as ExtensionCategory,
-      author: 'Estúdio de Interface WikiZero',
+      author: 'Estúdio de Interface WikiWorldWeb',
       hooks: ['theme:registered_themes', 'theme:cyberpunk_available'],
       themeConfig: {
         themeId: 'cyberpunk',
@@ -1437,7 +1437,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.1.0',
       description: 'Adiciona a tag <alert>...</alert> para criar caixas de destaque enciclopédico de avisos editoriais e advertências históricas.',
       category: 'formatting' as ExtensionCategory,
-      author: 'Equipe Editorial WikiZero',
+      author: 'Equipe Editorial WikiWorldWeb',
       hooks: ['render:wikitext'],
       customTags: [
         {
@@ -1469,7 +1469,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.0.0',
       description: 'Plugin para a barra do editor wikitext: adiciona botão para inserção em 1 clique de citação bibliográfica acadêmica completa.',
       category: 'editor' as ExtensionCategory,
-      author: 'Pesquisa Acadêmica WikiZero',
+      author: 'Pesquisa Acadêmica WikiWorldWeb',
       hooks: ['editor:toolbar_buttons'],
       editorPluginConfig: {
         buttonId: 'btn-citation-book',
@@ -1483,7 +1483,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.0.0',
       description: 'Plugin para a barra do editor wikitext: insere estrutura padrão de infocaixa biográfica pronta para preenchimento.',
       category: 'editor' as ExtensionCategory,
-      author: 'Biografias WikiZero',
+      author: 'Biografias WikiWorldWeb',
       hooks: ['editor:toolbar_buttons'],
       editorPluginConfig: {
         buttonId: 'btn-infobox-bio',
@@ -1497,7 +1497,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
       version: '1.0.0',
       description: 'Adiciona banner visual formal notificando que o artigo enciclopédico está sob processo de revisão por pares.',
       category: 'content' as ExtensionCategory,
-      author: 'Conselho Editorial WikiZero',
+      author: 'Conselho Editorial WikiWorldWeb',
       hooks: ['render:html'],
       bannerConfig: {
         bannerId: 'banner-revisao-pares',
@@ -2527,7 +2527,7 @@ export const AdminExtensionsManagementView: React.FC<AdminExtensionsManagementVi
               {addMode === 'catalog' && (
                 <div className="space-y-4">
                   <div className="p-3.5 bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/80 rounded-2xl text-xs text-purple-900 dark:text-purple-300 leading-relaxed">
-                    Extensões validadas e otimizadas pelo ecossistema WikiZero. Instale com 1 clique para habilitar novas ferramentas, formatações e recursos de interface.
+                    Extensões validadas e otimizadas pelo ecossistema WikiWorldWeb. Instale com 1 clique para habilitar novas ferramentas, formatações e recursos de interface.
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">

@@ -544,7 +544,7 @@ export interface PromotionRequest {
   nominatedByUid?: string;
   isSelfNomination: boolean;
   statement: string; // Motivação e justificativa do candidato
-  contributionsSummary: string; // Resumo de contribuições e atividades na WikiZero
+  contributionsSummary: string; // Resumo de contribuições e atividades na WikiWorldWeb
   requestedAt: string;
   closedAt?: string;
   closedBy?: string;

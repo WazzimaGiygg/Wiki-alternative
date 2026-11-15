@@ -113,7 +113,7 @@ export const BrowserCompatibilityChecker: React.FC = () => {
                 Navegador não totalmente compatível
               </h2>
               <p className="text-xs text-slate-600 dark:text-slate-300">
-                Alguns recursos do WikiZero podem não funcionar corretamente.
+                Alguns recursos do WikiWorldWeb podem não funcionar corretamente.
               </p>
             </div>
           </div>

@@ -1077,15 +1077,15 @@ app.post('/api/gemini/chat', async (req: Request, res: Response) => {
 
     const ai = getGemini();
 
-    // Monta a instrução de sistema adaptada para a WikiZero, AI Studio e identidade do usuário
-    let systemInstruction = `Você é o Chatbot Assistente Oficial da WikiZero, alimentado pelo Google AI Studio (Chatbot ID: "${chatbotId}").
-Sua principal função é auxiliar leitores, redatores e administradores na enciclopédia WikiZero em:
+    // Monta a instrução de sistema adaptada para a WikiWorldWeb, AI Studio e identidade do usuário
+    let systemInstruction = `Você é o Chatbot Assistente Oficial da WikiWorldWeb, alimentado pelo Google AI Studio (Chatbot ID: "${chatbotId}").
+Sua principal função é auxiliar leitores, redatores e administradores na enciclopédia WikiWorldWeb em:
 1. Criação e estruturação de coleções de artigos (páginas WikiPage com título, UID slug, descrição, categoria, emoji de ícone e tags).
 2. Criação, expansão, revisão e redação de artigos enciclopédicos completos usando formatação sintática MediaWiki / Wikitext.
 3. Fornecer explicações neutras, verificáveis, com tom enciclopédico de alta qualidade, sem alucinações.
 4. Análise visual de documentos, mapas, manuscritos, infográficos e imagens enviadas pelo usuário para redação de verbetes.
 
-Diretrizes de Formatação de Wikitext para WikiZero:
+Diretrizes de Formatação de Wikitext para WikiWorldWeb:
 - Títulos de seções: "= Título Principal =", "== Seção Principal ==", "=== Subseção ===", "==== Tópico ====".
 - Negrito: '''texto''', Itálico: ''texto''.
 - Links internos da wiki: [[Nome do Artigo]] ou [[Nome do Artigo|Texto Visível]].
@@ -1098,37 +1098,37 @@ Diretrizes de Formatação de Wikitext para WikiZero:
     if (userId && !isGuest) {
       systemInstruction += `\n\n[SESSÃO AUTENTICADA - USUÁRIO LOGADO]:
 - Identificador do Usuário (ID): "${userId}"
-- Nome / Exibição: "${userDisplayName || 'Usuário WikiZero'}"
+- Nome / Exibição: "${userDisplayName || 'Usuário WikiWorldWeb'}"
 - E-mail: "${userEmail || 'não especificado'}"
-- Papel / Função na WikiZero: "${userRole}"
+- Papel / Função na WikiWorldWeb: "${userRole}"
 - Status da Assinatura: ${isPremium ? '💎 GEMINI PREMIUM (Acesso Ilimitado a Chats, Visão Computacional e Gemini Notebook)' : 'PLANO GRATUITO (Sujeito a limites diários de uso)'}
 
 INSTRUÇÃO DE CONDUTA PARA USUÁRIO LOGADO:
-Ao fazer qualquer consulta ou resposta, reconheça o usuário pelo seu ID ("${userId}") e nome quando contextualizar suas contribuições. Mantenha continuidade com o trabalho enciclopédico dele, vincule seus rascunhos à sua autoria e responda como seu copiloto pessoal de pesquisa na WikiZero.`;
+Ao fazer qualquer consulta ou resposta, reconheça o usuário pelo seu ID ("${userId}") e nome quando contextualizar suas contribuições. Mantenha continuidade com o trabalho enciclopédico dele, vincule seus rascunhos à sua autoria e responda como seu copiloto pessoal de pesquisa na WikiWorldWeb.`;
     } else {
       systemInstruction += `\n\n[SESSÃO NÃO AUTENTICADA - MODO CONVIDADO / DESLOGADO]:
-O usuário NÃO está conectado na WikiZero (opera em modo visitante/anônimo sem ID de usuário permanente).
+O usuário NÃO está conectado na WikiWorldWeb (opera em modo visitante/anônimo sem ID de usuário permanente).
 
 INSTRUÇÃO DE CONDUTA PARA MODO NÃO LOGADO:
 Aja exatamente como o Gemini opera quando um usuário não está logado na sua conta:
 1. Responda às consultas e perguntas enciclopédicas com presteza e neutralidade.
 2. Esteja ciente de que, por não estar logado, ele opera com cotas reduzidas de mensagens e rascunhos locais transitórios.
-3. Lembre-o amigavelmente de que ele pode fazer login ou criar sua conta na WikiZero para obter seu ID permanente, ter maior cota de chats, salvar artigos na nuvem e desbloquear o Gemini Notebook.`;
+3. Lembre-o amigavelmente de que ele pode fazer login ou criar sua conta na WikiWorldWeb para obter seu ID permanente, ter maior cota de chats, salvar artigos na nuvem e desbloquear o Gemini Notebook.`;
     }
 
     // AUTORIZAÇÃO EXPLÍCITA PARA OFERECER O PLANO PAGO (GEMINI PREMIUM)
     systemInstruction += `\n\n[AUTORIZAÇÃO DE OFERTA DE PLANO PAGO]:
-Você está EXPRESSAMENTE AUTORIZADO a oferecer o **Plano Gemini Premium** da WikiZero nas seguintes situações:
+Você está EXPRESSAMENTE AUTORIZADO a oferecer o **Plano Gemini Premium** da WikiWorldWeb nas seguintes situações:
 1. Caso o usuário pergunte sobre planos, limites ou como ter acesso ilimitado.
 2. Caso o usuário mencione limite de mensagens, restrição de envio de imagens ou uso do Gemini Notebook.
 3. Caso queira transcrever múltiplos documentos visuais ou gerar artigos enciclopédicos complexos em lote.
 Ao oferecer o plano, apresente seus diferenciais de forma clara e amigável:
 • Chats enciclopédicos ilimitados 24/7 sem restrições diárias
 • Envio ilimitado de imagens com análise visual profunda
-• Gemini Notebook completo integrado para compilar fontes e inserir artigos no WikiZero com 1 clique
+• Gemini Notebook completo integrado para compilar fontes e inserir artigos na WikiWorldWeb com 1 clique
 • Prioridade nos modelos Gemini de última geração
 • Selo de destaque 'Gemini Pro' no perfil
-Convide o usuário a assinar ou ativar o Gemini Premium diretamente pelo botão de Upgrade da WikiZero.`;
+Convide o usuário a assinar ou ativar o Gemini Premium diretamente pelo botão de Upgrade da WikiWorldWeb.`;
 
     if (customSystemInstruction) {
       systemInstruction += `\n\nInstruções personalizadas adicionais do Administrador:\n${customSystemInstruction}`;
@@ -1142,7 +1142,7 @@ Convide o usuário a assinar ou ativar o Gemini Premium diretamente pelo botão 
         dynamicContext += `\nDados já preenchidos: ${JSON.stringify(context.currentCollection)}`;
       }
     } else if (context.mode === 'article') {
-      dynamicContext = `\n[CONTEXTO ATUAL]: O usuário está no EDITOR WIKITEXTO da WikiZero redigindo um artigo.
+      dynamicContext = `\n[CONTEXTO ATUAL]: O usuário está no EDITOR WIKITEXTO da WikiWorldWeb redigindo um artigo.
 Título atual: "${context.currentArticle?.titulo || 'Novo Artigo'}"
 Categoria: "${context.currentArticle?.categoria || 'Geral'}"
 Coleção pertencente: "${context.currentArticle?.pageUid || 'Geral'}"
@@ -1282,7 +1282,7 @@ app.post('/api/gemini/notebook-synthesize', async (req: Request, res: Response) 
 
     let actionInstruction = '';
     if (action === 'full_article') {
-      actionInstruction = `Gere um ARTIGO ENCICLOPÉDICO COMPLETO em Wikitext formatado para a WikiZero, com Introdução rica, Seções enciclopédicas (= Título =, == Seção ==, === Subseção ===), Infobox se couber, e referências com <ref>...</ref>.`;
+      actionInstruction = `Gere um ARTIGO ENCICLOPÉDICO COMPLETO em Wikitext formatado para a WikiWorldWeb, com Introdução rica, Seções enciclopédicas (= Título =, == Seção ==, === Subseção ===), Infobox se couber, e referências com <ref>...</ref>.`;
     } else if (action === 'section') {
       actionInstruction = `Gere uma SEÇÃO APROFUNDADA em sintaxe Wikitext, pronta para ser inserida como nova seção no artigo "${targetArticleTitle || 'do artigo'}".`;
     } else if (action === 'infobox') {
@@ -1290,14 +1290,14 @@ app.post('/api/gemini/notebook-synthesize', async (req: Request, res: Response) 
     } else if (action === 'timeline') {
       actionInstruction = `Construa uma LINHA DO TEMPO / CRONOLOGIA histórica detalhada e verificável baseada nas fontes fornecidas, formatada com listas e datas precisas em Wikitext.`;
     } else if (action === 'fact_check') {
-      actionInstruction = `Faça uma AUDITORIA FACTUAL E VERIFICAÇÃO DE FONTES, destacando dados confirmados, incongruências e grau de confiabilidade para a enciclopédia WikiZero.`;
+      actionInstruction = `Faça uma AUDITORIA FACTUAL E VERIFICAÇÃO DE FONTES, destacando dados confirmados, incongruências e grau de confiabilidade para a enciclopédia WikiWorldWeb.`;
     } else {
-      actionInstruction = customPrompt || `Sintetize as informações das fontes em sintaxe Wikitext limpa e verificável para a enciclopédia WikiZero.`;
+      actionInstruction = customPrompt || `Sintetize as informações das fontes em sintaxe Wikitext limpa e verificável para a enciclopédia WikiWorldWeb.`;
     }
 
-    const systemInstruction = `Você é o motor de IA do GEMINI NOTEBOOK integrado à WikiZero (Google AI Studio).
+    const systemInstruction = `Você é o motor de IA do GEMINI NOTEBOOK integrado à WikiWorldWeb (Google AI Studio).
 Sua missão é atuar como pesquisador enciclopédico e assistente editorial sênior.
-Você analisa múltiplas fontes de pesquisa (artigos WikiZero, transcrições, textos externos, dados de imagens), cruza as informações com rigor factual e gera conteúdo enciclopédico impecável em WIKITEXT.
+Você analisa múltiplas fontes de pesquisa (artigos WikiWorldWeb, transcrições, textos externos, dados de imagens), cruza as informações com rigor factual e gera conteúdo enciclopédico impecável em WIKITEXT.
 ${userId ? `[USUÁRIO REGISTRADO]: ${userDisplayName || 'Usuário'} (ID: ${userId})` : `[MODO VISITANTE / NÃO AUTENTICADO]`}
 ${isPremium ? `[PLANO GEMINI PREMIUM: SÍNTESE PROFUNDA SEM RESTRIÇÕES]` : `[PLANO GRATUITO]`}
 
@@ -1319,7 +1319,7 @@ ${sourcesText}
 INSTRUÇÃO EDITORIAL:
 ${actionInstruction}
 ${customPrompt ? `\nInstruções extras do usuário: "${customPrompt}"` : ''}
-${targetArticleTitle ? `\nArtigo de destino na WikiZero: "${targetArticleTitle}"` : ''}`;
+${targetArticleTitle ? `\nArtigo de destino na WikiWorldWeb: "${targetArticleTitle}"` : ''}`;
 
     const { response, usedModel } = await generateWithFallback(
       ai,
@@ -1382,7 +1382,7 @@ app.post('/api/gemini/generate-article', async (req: Request, res: Response) => 
 
     const ai = getGemini();
 
-    const prompt = `Você é o redator enciclopédico sênior da WikiZero e assistente de IA do Google AI Studio (Chatbot ID: "${chatbotId}").
+    const prompt = `Você é o redator enciclopédico sênior da WikiWorldWeb e assistente de IA do Google AI Studio (Chatbot ID: "${chatbotId}").
 Por favor, redija um artigo enciclopédico COMPLETO, neutro, detalhado e estruturado sobre o tema: "${topic}".
 
 Parâmetros adicionais:
@@ -1450,8 +1450,8 @@ app.post('/api/gemini/generate-collection', async (req: Request, res: Response) 
 
     const ai = getGemini();
 
-    const prompt = `Você é o arquiteto de conhecimento da WikiZero configurado pelo Google AI Studio (Chatbot ID: "${chatbotId}").
-O usuário quer criar uma nova COLEÇÃO TEMÁTICA (WikiPage) na WikiZero com base no tema: "${theme}".
+    const prompt = `Você é o arquiteto de conhecimento da WikiWorldWeb configurado pelo Google AI Studio (Chatbot ID: "${chatbotId}").
+O usuário quer criar uma nova COLEÇÃO TEMÁTICA (WikiPage) na WikiWorldWeb com base no tema: "${theme}".
 ${userInstructions ? `Instruções adicionais: ${userInstructions}` : ''}
 
 Retorne um JSON válido e estrito com a seguinte estrutura:
@@ -2165,7 +2165,7 @@ if (typeof customElements !== 'undefined' && !customElements.get('vite-error-ove
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[WikiZero] Servidor rodando em http://0.0.0.0:${PORT} com suporte a Gemini API e AI Studio`);
+    console.log(`[WikiWorldWeb] Servidor rodando em http://0.0.0.0:${PORT} com suporte a Gemini API e AI Studio`);
   });
 }
 

@@ -346,7 +346,7 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
       uid: `guest-reply-${Date.now().toString(36)}`,
       username: 'Visitante',
       displayName: 'Visitante da WikiWorldWeb',
-      email: 'visitante@wikizero.org',
+      email: 'visitante@wikiworldweb.org',
       role: 'convidado',
       isGuest: true,
       isBanned: false,
@@ -497,7 +497,7 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
           </button>
         ) : (
           <a
-            href="mailto:pedrohenriquecardonaperes@gmail.com?subject=%5BEMERG%C3%8ANCIA%20EXTREMA%20WIKIZERO%5D"
+            href="mailto:pedrohenriquecardonaperes@gmail.com?subject=%5BEMERG%C3%8ANCIA%20EXTREMA%20WIKIWORLDWEB%5D"
             className="flex-shrink-0 px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition"
           >
             <AlertOctagon size={13} />
@@ -756,7 +756,7 @@ export const ContactAdminView: React.FC<ContactAdminViewProps> = ({
                 rows={2}
                 value={formEvidence}
                 onChange={(e) => setFormEvidence(e.target.value)}
-                placeholder="https://wikizero.org/wiki/Artigo?diff=123&#10;https://creativecommons.org/licenses/by-sa/4.0/"
+                placeholder="https://wikiworldweb.org/wiki/Artigo?diff=123&#10;https://creativecommons.org/licenses/by-sa/4.0/"
                 className="w-full px-3.5 py-2 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
               />
             </div>

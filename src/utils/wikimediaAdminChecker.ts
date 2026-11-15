@@ -177,7 +177,7 @@ export function checkIfWikimediaAdmin(rawIdentifier: string): BlockedWikimediaAd
         matchedAdmin: prio.name,
         isPriority: true,
         project: prio.project,
-        reason: `O nickname '${prio.name}' possui bloqueio prioritário por corresponder a um administrador da Wikimedia Foundation (${prio.project} - ${prio.role}). O acesso e login com esta identidade estão permanentemente vedados na WikiZero.`,
+        reason: `O nickname '${prio.name}' possui bloqueio prioritário por corresponder a um administrador da Wikimedia Foundation (${prio.project} - ${prio.role}). O acesso e login com esta identidade estão permanentemente vedados na WikiWorldWeb.`,
       };
     }
   }

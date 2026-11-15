@@ -128,7 +128,7 @@ export class OnlineStatusExtension implements WikiExtension {
   }
 
   public getAuthor(): string {
-    return 'WikiZero Core Team & Infraestrutura';
+    return 'WikiWorldWeb Core Team & Infraestrutura';
   }
 
   public getCategory(): ExtensionCategory {

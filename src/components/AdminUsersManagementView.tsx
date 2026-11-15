@@ -685,7 +685,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(filteredUsers, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `censo-usuarios-wikizero-${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute('download', `censo-usuarios-wikiworldweb-${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -710,7 +710,7 @@ export const AdminUsersManagementView: React.FC<AdminUsersManagementViewProps> =
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', encodeURI(csvContent));
-    downloadAnchor.setAttribute('download', `censo-usuarios-wikizero-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadAnchor.setAttribute('download', `censo-usuarios-wikiworldweb-${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

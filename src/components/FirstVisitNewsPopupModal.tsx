@@ -50,7 +50,7 @@ export const FirstVisitNewsPopupModal: React.FC<FirstVisitNewsPopupModalProps> =
   const isExtensionEnabled = extensionManager.isFirstVisitPopupEnabled();
 
   const isEnabled = extSettings.popupEnabled !== false && isExtensionEnabled;
-  const title = extSettings.popupTitle || 'Comunicado Oficial & Atualizações da WikiZero';
+  const title = extSettings.popupTitle || 'Comunicado Oficial & Atualizações da WikiWorldWeb';
   const badgeLabel = extSettings.badgeLabel || 'INFORMATIVO OFICIAL';
   const htmlContent = extSettings.customHtmlCode || DEFAULT_FIRST_VISIT_HTML;
   const showOnlyOnFirstVisit = extSettings.showOnlyOnFirstVisit !== false;

@@ -96,7 +96,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           document.documentElement.dir = newLang.dir || 'ltr';
         }
       } catch (e) {
-        console.warn('[WikiZero i18n] Erro ao sincronizar idioma com ExtensionManager:', e);
+        console.warn('[WikiWorldWeb i18n] Erro ao sincronizar idioma com ExtensionManager:', e);
       }
     };
 
@@ -113,7 +113,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const targetLang = typeof lang === 'string' ? getLanguageByCode(lang) : lang;
 
       if (!allowOverride && targetLang.code !== defaultCode) {
-        console.warn('[WikiZero i18n] Alteração de idioma bloqueada pelo Burocrata.');
+        console.warn('[WikiWorldWeb i18n] Alteração de idioma bloqueada pelo Burocrata.');
         return;
       }
 

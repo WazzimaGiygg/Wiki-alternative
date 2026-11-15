@@ -1,6 +1,6 @@
 /**
  * @file VersionService.ts
- * @description Serviço de histórico e versionamento de páginas para o WikiZero no Firestore.
+ * @description Serviço de histórico e versionamento de páginas para o WikiWorldWeb no Firestore.
  * Armazena cada revisão como um documento imutável na subcoleção `/pages/{pageId}/versions/`.
  * Oferece suporte a consultas de histórico, visualização de revisões pontuais e reversão atômica.
  */
@@ -23,7 +23,7 @@ import { Version, Page } from '../types';
 
 const PAGES_COLLECTION = 'pages';
 const VERSIONS_SUBCOLLECTION = 'versions';
-const LOCAL_STORAGE_VERSIONS_KEY = 'wikizero_page_versions_v1';
+const LOCAL_STORAGE_VERSIONS_KEY = 'wikiworldweb_page_versions_v1';
 
 export class VersionService {
   /**
@@ -101,7 +101,7 @@ export class VersionService {
       pageId: cleanPageId,
       versionNumber: newVersionNumber,
       content,
-      userName: userName || 'Editor WikiZero',
+      userName: userName || 'Editor WikiWorldWeb',
       userId: userId || 'anonymous',
       timestamp,
       comment: cleanComment,

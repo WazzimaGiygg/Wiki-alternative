@@ -1,6 +1,6 @@
 /**
  * @file src/extensions/bot-agent/index.ts
- * @description Extensão oficial de Agente de Bots & Gerenciamento de Bots Users da WikiZero.
+ * @description Extensão oficial de Agente de Bots & Gerenciamento de Bots Users da WikiWorldWeb.
  * Atende aos requisitos:
  * - 4.1.1.8T.1: Agente de BOTS dentro do Wiki-Site
  * - 4.1.1.PN.1: Ativação/desativação de bots e gerenciamento de bots users
@@ -21,11 +21,11 @@ export default class BotAgentExtension implements WikiExtension {
   }
 
   getDescription(): string {
-    return 'Agente de Bots e Gerenciador de Robôs da WikiZero: verificação automática de citações (Gemini), proteção anti-vandalismo, auditoria de qualidade, auto-categorização, detecção de links quebrados e conformidade estrita com a LGPD.';
+    return 'Agente de Bots e Gerenciador de Robôs da WikiWorldWeb: verificação automática de citações (Gemini), proteção anti-vandalismo, auditoria de qualidade, auto-categorização, detecção de links quebrados e conformidade estrita com a LGPD.';
   }
 
   getAuthor(): string {
-    return 'Equipe de Engenharia & Governança WikiZero';
+    return 'Equipe de Engenharia & Governança WikiWorldWeb';
   }
 
   getCategory(): 'security' {
@@ -37,7 +37,7 @@ export default class BotAgentExtension implements WikiExtension {
   }
 
   getWebsite(): string {
-    return 'https://wikizero.wazzimagiygg.com';
+    return 'https://wikiworldweb.wazzimagiygg.com';
   }
 
   onRegister(hooks: HookRegistry): void {

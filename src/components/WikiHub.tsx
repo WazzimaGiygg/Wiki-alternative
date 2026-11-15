@@ -170,7 +170,7 @@ export const WikiHub: React.FC<WikiHubProps> = ({
           <div className="flex items-start gap-4 max-w-3xl">
             <img
               src="/logo.png"
-              alt="Logotipo WikiZero"
+              alt="Logotipo WikiWorldWeb"
               className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md shrink-0 hidden sm:block p-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60"
             />
             <div className="space-y-2 flex-1 min-w-0">

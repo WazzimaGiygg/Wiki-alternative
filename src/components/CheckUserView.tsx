@@ -140,7 +140,7 @@ export const CheckUserView: React.FC<CheckUserViewProps> = ({
         uid: 'user-admin-default',
         username: 'Administrador',
         displayName: 'Administrador',
-        email: 'admin@wikizero.org',
+        email: 'admin@wikiworldweb.org',
         role: 'admin',
         isGuest: false,
         isBanned: false,

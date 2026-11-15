@@ -351,7 +351,7 @@ import {
 export interface WikiExtension {
   /**
    * Retorna o identificador ou nome único da extensão.
-   * Exemplo: "HelloWorldExtension" ou "wikizero-math-katex"
+   * Exemplo: "HelloWorldExtension" ou "wikiworldweb-math-katex"
    */
   getName(): string;
 

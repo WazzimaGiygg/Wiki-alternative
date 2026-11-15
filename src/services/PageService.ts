@@ -1,7 +1,7 @@
 /**
  * @file PageService.ts
  * @description Serviço principal de gerenciamento de Páginas, Namespaces e Categorias
- * no Firestore para o WikiZero, inspirado no modelo de dados do MediaWiki.
+ * no Firestore para o WikiWorldWeb, inspirado no modelo de dados do MediaWiki.
  */
 
 import {
@@ -25,7 +25,7 @@ import { PermissionService } from './PermissionService';
 const COLLECTION_NAME = 'pages';
 const LOCAL_STORAGE_KEY = 'wikizero_pages_v3_namespaces';
 
-// Lista de namespaces canônicos suportados pelo WikiZero
+// Lista de namespaces canônicos suportados pelo WikiWorldWeb
 export const VALID_NAMESPACES: PageNamespace[] = [
   'main',
   'talk',
@@ -60,7 +60,7 @@ export const NAMESPACE_PREFIX_MAP: Record<string, PageNamespace> = {
   'user': 'user',
   'usuário_discussão': 'user_talk',
   'user_talk': 'user_talk',
-  'wikizero': 'project',
+  'wikiworldweb': 'project',
   'projeto': 'project',
   'project': 'project',
   'ficheiro': 'file',
@@ -87,18 +87,18 @@ const SEED_PAGES: Page[] = [
     id: 'main:pagina_principal',
     namespace: 'main',
     title: 'Página Principal',
-    content: `== Bem-vindo ao WikiZero ==\n''«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»''\n\nA enciclopédia livre, comunitária e multilíngue com suporte a Namespaces, Categorias e Predefinições.\n\n[[Categoria:Enciclopédia]] [[Categoria:Wiki]]`,
+    content: `== Bem-vindo ao WikiWorldWeb ==\n''«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»''\n\nA enciclopédia livre, comunitária e multilíngue com suporte a Namespaces, Categorias e Predefinições.\n\n[[Categoria:Enciclopédia]] [[Categoria:Wiki]]`,
     categories: ['Enciclopédia', 'Wiki', 'Destaque'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     version: 1,
-    authorName: 'Comunidade WikiZero',
+    authorName: 'Comunidade WikiWorldWeb',
   },
   {
     id: 'help:como_editar',
     namespace: 'help',
     title: 'Como Editar',
-    content: `== Guia Básico de Edição ==\nPara formatar textos no WikiZero utilize marcação Wikitext ou selecione uma Predefinição (Template).\n\n* '''Negrito''': <code>\'\'\'texto\'\'\'</code>\n* ''Itálico'': <code>\'\'texto\'\'</code>\n* Links: <code>[[Nome do Artigo]]</code>\n\n[[Categoria:Ajuda]]`,
+    content: `== Guia Básico de Edição ==\nPara formatar textos no WikiWorldWeb utilize marcação Wikitext ou selecione uma Predefinição (Template).\n\n* '''Negrito''': <code>\'\'\'texto\'\'\'</code>\n* ''Itálico'': <code>\'\'texto\'\'</code>\n* Links: <code>[[Nome do Artigo]]</code>\n\n[[Categoria:Ajuda]]`,
     categories: ['Ajuda', 'Tutoriais'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -114,7 +114,7 @@ const SEED_PAGES: Page[] = [
     templateName: 'Aviso',
     templateParams: {
       titulo: 'Diretriz Oficial',
-      texto: 'Esta página documenta as normas comunitárias em vigor no WikiZero.',
+      texto: 'Esta página documenta as normas comunitárias em vigor no WikiWorldWeb.',
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -250,7 +250,7 @@ export class PageService {
       templateName: data.templateName || undefined,
       templateParams: data.templateParams || undefined,
       authorUid: data.authorUid || currentUser?.uid || effectiveUser?.uid || 'user',
-      authorName: data.authorName || currentUser?.displayName || effectiveUser?.displayName || 'Editor WikiZero',
+      authorName: data.authorName || currentUser?.displayName || effectiveUser?.displayName || 'Editor WikiWorldWeb',
       createdAt: now,
       updatedAt: now,
       version: 1,
@@ -315,7 +315,7 @@ export class PageService {
       content: initialTalkContent,
       categories: ['Páginas de discussão'],
       authorUid: authorUid || 'system',
-      authorName: authorName || 'Sistema WikiZero',
+      authorName: authorName || 'Sistema WikiWorldWeb',
       createdAt: now,
       updatedAt: now,
       version: 1,

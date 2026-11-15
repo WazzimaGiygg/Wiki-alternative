@@ -2,7 +2,7 @@ export const DEFAULT_FIRST_VISIT_HTML = `<div class="space-y-4 text-slate-700 da
   <div class="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-500/20">
     <h3 class="text-base font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
       <span>🚀</span>
-      <span>Novidades da Versão 4.1.1 da WikiZero</span>
+      <span>Novidades da Versão 4.1.1 da WikiWorldWeb</span>
     </h3>
     <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
       Seja muito bem-vindo à enciclopédia livre, acadêmica e moderna com inteligência artificial, conformidade estrita com a LGPD e sistema de bots autônomos.

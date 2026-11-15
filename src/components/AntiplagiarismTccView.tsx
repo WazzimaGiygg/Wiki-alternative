@@ -2117,7 +2117,7 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                 {/* Cabeçalho do Parecer */}
                 <div className="border-b-2 border-slate-800 pb-4 text-center space-y-1">
                   <div className="text-[10px] uppercase font-bold tracking-widest text-slate-500">
-                    WikiZero Repositório Acadêmico & Governança de TCC
+                    WikiWorldWeb Repositório Acadêmico & Governança de TCC
                   </div>
                   <h3 className="text-lg md:text-xl font-bold font-serif-heading">
                     PARECER DE AUDITORIA DE INTEGRIDADE & CONFORMIDADE ABNT
@@ -2197,7 +2197,7 @@ export const AntiplagiarismTccView: React.FC<AntiplagiarismTccViewProps> = ({
                   </div>
                   <div>
                     <div className="border-b border-slate-300 dark:border-slate-700 w-48 mx-auto mb-1" />
-                    <span>Comitê de Integridade WikiZero</span>
+                    <span>Comitê de Integridade WikiWorldWeb</span>
                     <span className="block text-[10px]">Validador ABNT</span>
                   </div>
                 </div>

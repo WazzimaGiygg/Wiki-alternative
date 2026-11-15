@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * WIKIZERO - ARQUIVO DE CONFIGURAÇÃO DO DESENVOLVEDOR / PROGRAMADOR
+ * WIKIWORLDWEB - ARQUIVO DE CONFIGURAÇÃO DO DESENVOLVEDOR / PROGRAMADOR
  * ============================================================================
  * 
  * Este arquivo permite que o desenvolvedor da Wiki altere e personalize facilmente:

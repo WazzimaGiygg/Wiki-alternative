@@ -36,7 +36,7 @@
     <priority>0.95</priority>
   </url>
 
-  <!-- Comparativo Competitivo: WikiZero vs Wikipédia, MediaWiki, Fandom e Wikidot -->
+  <!-- Comparativo Competitivo: WikiWorldWeb vs Wikipédia, MediaWiki, Fandom e Wikidot -->
   <url>
     <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=comparison</loc>
     <lastmod>2026-09-09T06:00:00+00:00</lastmod>
@@ -44,7 +44,7 @@
     <priority>0.95</priority>
   </url>
 
-  <!-- Motor de Busca WikiZero (Alternativa Rápida e Sem Rastreamento) -->
+  <!-- Motor de Busca WikiWorldWeb (Alternativa Rápida e Sem Rastreamento) -->
   <url>
     <loc>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=search</loc>
     <lastmod>2026-09-09T06:00:00+00:00</lastmod>

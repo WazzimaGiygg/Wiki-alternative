@@ -190,7 +190,7 @@ export const Windows95BootScreen: React.FC<Windows95BootScreenProps> = ({
 
           <div className="mt-2 flex items-center gap-2">
             <span className="text-xs font-mono font-bold px-2 py-0.5 bg-[#c0c0c0] text-black border border-black shadow-[2px_2px_0px_#000]">
-              WikiZero 32-Bit Edition
+              WikiWorldWeb 32-Bit Edition
             </span>
           </div>
         </div>

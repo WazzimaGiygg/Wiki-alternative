@@ -355,7 +355,7 @@ export async function generateFirebaseUsagePdf(
   const drawMiniHeader = () => {
     drawPdfStandardMiniHeader(
       doc,
-      'WIKIZERO • TELEMETRIA DO CLOUD FIRESTORE',
+      'WIKIWORLDWEB • TELEMETRIA DO CLOUD FIRESTORE',
       computed.periodLabel,
       margin,
       pageWidth

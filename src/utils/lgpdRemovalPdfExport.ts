@@ -20,13 +20,13 @@ export interface LgpdRemovalPdfExportOptions {
 
 /**
  * Exporta o Relatório Oficial de Auditoria LGPD (Pedidos de Remoção / Anonimização de Dados)
- * seguindo rigorosamente o padrão executivo dos relatórios da WikiZero.
+ * seguindo rigorosamente o padrão executivo dos relatórios da WikiWorldWeb.
  */
 export async function generateLgpdRemovalPdf(
   requests: LgpdAccountDeletionRequest[],
   options: LgpdRemovalPdfExportOptions = {}
 ): Promise<void> {
-  const { generatedBy = 'WikiZero Compliance / DPO', statusFilter = 'all' } = options;
+  const { generatedBy = 'WikiWorldWeb Compliance / DPO', statusFilter = 'all' } = options;
 
   let filteredRequests = [...requests];
   if (statusFilter !== 'all') {
@@ -50,7 +50,7 @@ export async function generateLgpdRemovalPdf(
   const drawMiniHeader = () => {
     drawPdfStandardMiniHeader(
       doc,
-      'WIKIZERO • RELATÓRIO DE AUDITORIA LGPD',
+      'WIKIWORLDWEB • RELATÓRIO DE AUDITORIA LGPD',
       'Governança & Privacidade (Lei nº 13.709/2018)',
       margin,
       pageWidth
@@ -293,6 +293,6 @@ export async function generateLgpdRemovalPdf(
 
   // Nome do arquivo gerado para download
   const dateSlug = new Date().toISOString().slice(0, 10);
-  const filename = `wikizero-auditoria-lgpd-remocao-dados-${dateSlug}.pdf`;
+  const filename = `wikiworldweb-auditoria-lgpd-remocao-dados-${dateSlug}.pdf`;
   doc.save(filename);
 }

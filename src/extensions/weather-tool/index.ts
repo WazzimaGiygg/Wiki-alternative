@@ -19,7 +19,7 @@ export default class WeatherForecastToolExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Meteorologia / Open-Meteo';
+    return 'WikiWorldWeb Meteorologia / Open-Meteo';
   }
 
   getCategory(): 'tool' {

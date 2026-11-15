@@ -1,7 +1,7 @@
 /**
  * @file ExtensionManager.ts
  * @description Gerenciador central (Singleton) responsável por carregar, inicializar e 
- * manter o ciclo de vida de todas as extensões do WikiWorldWeb / WikiZero.
+ * manter o ciclo de vida de todas as extensões da WikiWorldWeb.
  * 
  * Regra de Segurança do Sistema:
  * Apenas usuários com prerrogativas de Burocrata (Bureaucrat) podem ativar,
@@ -160,7 +160,7 @@ export class ExtensionManager {
   }
 
   /**
-   * Registra síncronamente as extensões nativas do WikiZero.
+   * Registra síncronamente as extensões nativas do WikiWorldWeb.
    */
   private registerBuiltinExtensions(): void {
     const builtins: (new () => WikiExtension)[] = [
@@ -944,7 +944,7 @@ ${tc.customCss || ''}
         typeof ext.getDescription === 'function'
           ? ext.getDescription()!
           : 'Extensão integrada ao ecossistema da enciclopédia.';
-      const author = typeof ext.getAuthor === 'function' ? ext.getAuthor()! : 'WikiZero Core Team';
+      const author = typeof ext.getAuthor === 'function' ? ext.getAuthor()! : 'WikiWorldWeb Core Team';
       const version = typeof ext.getVersion === 'function' ? ext.getVersion() : '1.0.0';
 
       const hooksInfo = this.hookRegistry.getHooksForExtension(name);
@@ -1463,9 +1463,9 @@ ${tc.customCss || ''}
   public exportAllExtensionsPackage(): string {
     const installed = this.getAllInstalledExtensions();
     const packagePayload = {
-      wikiZeroPackageVersion: '2.0.0',
+      wikiWorldWebPackageVersion: '2.0.0',
       exportedAt: new Date().toISOString(),
-      system: 'WikiWorldWeb / WikiZero Ecosystem',
+      system: 'WikiWorldWeb Ecosystem',
       extensionsCount: installed.length,
       extensions: installed,
       states: this.extensionStates,
@@ -2112,7 +2112,7 @@ ${tc.customCss || ''}
     customFaviconUrl: string;
   } {
     const wikiName = this.hookRegistry.applyFilters<string>('branding:wiki_name', 'WikiWorldWeb');
-    const systemName = this.hookRegistry.applyFilters<string>('branding:system_name', 'WikiZero');
+    const systemName = this.hookRegistry.applyFilters<string>('branding:system_name', 'WikiWorldWeb');
     const tagline = this.hookRegistry.applyFilters<string>('branding:tagline', 'A Enciclopédia Livre e Aberta');
     const customLogoUrl = this.hookRegistry.applyFilters<string>('branding:custom_logo_url', '');
     const customFaviconUrl = this.hookRegistry.applyFilters<string>('branding:custom_favicon_url', '');

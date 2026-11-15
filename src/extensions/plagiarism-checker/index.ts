@@ -21,7 +21,7 @@ export default class PlagiarismCheckerExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Comitê Acadêmico & Governança de Integridade da WikiZero';
+    return 'Comitê Acadêmico & Governança de Integridade da WikiWorldWeb';
   }
 
   getCategory(): ExtensionCategory {

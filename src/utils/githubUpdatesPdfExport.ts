@@ -233,7 +233,7 @@ export async function exportGitHubUpdatesToPdf(
     includeStats = true,
     includeReleases = true,
     orientation = 'portrait',
-    generatedBy = 'WikiZero / WikiWorldWeb',
+    generatedBy = 'WikiWorldWeb',
     customTitle,
     filterQuery,
   } = options;
@@ -287,7 +287,7 @@ export async function exportGitHubUpdatesToPdf(
   const drawMiniHeader = () => {
     drawPdfStandardMiniHeader(
       doc,
-      'WIKIZERO • CHANGELOG & DIFFS DO GITHUB',
+      'WIKIWORLDWEB • CHANGELOG & DIFFS DO GITHUB',
       `${GITHUB_REPO_CONFIG.owner}/${GITHUB_REPO_CONFIG.repo} (${GITHUB_REPO_CONFIG.branch})`,
       margin,
       pageWidth
@@ -645,7 +645,7 @@ export async function exportGitHubUpdatesToPdf(
   // Nome do arquivo gerado para download
   const dateSlug = new Date().toISOString().slice(0, 10);
   const modeSlug = classification.replace('-', '_');
-  const filename = `wikizero-github-mudancas-${modeSlug}-${dateSlug}.pdf`;
+  const filename = `wikiworldweb-github-mudancas-${modeSlug}-${dateSlug}.pdf`;
 
   doc.save(filename);
 }

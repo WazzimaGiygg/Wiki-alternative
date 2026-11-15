@@ -22,7 +22,7 @@ import {
   FileWarning,
 } from 'lucide-react';
 import { UserProfile, WikiFileLicense, UploadFileInput, WikiFile } from '../types';
-import { FileStorageService, LICENSE_DEFINITIONS, WIKIZERO_UPLOAD_RULES } from '../services/fileStorageService';
+import { FileStorageService, LICENSE_DEFINITIONS, WIKIWORLDWEB_UPLOAD_RULES } from '../services/fileStorageService';
 
 interface FileUploadViewProps {
   user: UserProfile | null;

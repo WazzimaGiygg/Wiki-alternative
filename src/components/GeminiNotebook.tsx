@@ -760,7 +760,7 @@ export const GeminiNotebook: React.FC<GeminiNotebookProps> = (props) => {
                 </div>
               )}
 
-              {/* AÇÕES DE INSERÇÃO DIRETA NO WIKIZERO */}
+              {/* AÇÕES DE INSERÇÃO DIRETA NO WIKIWORLDWEB */}
               <div className="p-4 bg-gradient-to-r from-slate-100 to-indigo-50/50 dark:from-slate-800/70 dark:to-indigo-950/30 rounded-xl border border-indigo-200/50 dark:border-indigo-800/40 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center gap-1.5">

@@ -844,7 +844,7 @@ export const WikiGeneralHelpModal: React.FC<WikiGeneralHelpModalProps> = ({
         {/* Rodapé Informativo */}
         <footer className="px-4 py-2 bg-slate-100 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <span>WikiZero Documentação Técnica</span>
+            <span>WikiWorldWeb Documentação Técnica</span>
             <span className="hidden sm:inline">•</span>
             <span className="hidden sm:inline font-mono">
               Última atualização: {new Date(helpData.lastUpdated).toLocaleDateString()}

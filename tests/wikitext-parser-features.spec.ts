@@ -128,7 +128,7 @@ describe('Wikitext Parser Upgrades (Pillar 2)', () => {
 
       expect(res).toContain('Artigo: Albert Einstein');
       expect(res).toContain(`criado em ${currentYear}`);
-      expect(res).toContain('WikiZero');
+      expect(res).toContain('WikiWorldWeb');
     });
   });
 

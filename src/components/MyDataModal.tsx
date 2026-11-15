@@ -168,7 +168,7 @@ export const MyDataModal: React.FC<MyDataModalProps> = ({
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportData, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `wikizero-dados-${user?.uid || 'titular'}.json`);
+    downloadAnchor.setAttribute('download', `wikiworldweb-dados-${user?.uid || 'titular'}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

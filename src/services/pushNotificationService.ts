@@ -341,7 +341,7 @@ export class PushNotificationService {
       : 'Complete suas metas de login, edição e avaliação para acumular pontos no ranking mensal!';
 
     return this.sendNotification({
-      title: '🎯 Checklist Diário Disponível - WikiZero',
+      title: '🎯 Checklist Diário Disponível - WikiWorldWeb',
       body: `Você possui metas de pontos disponíveis hoje! ${taskText}`,
       type: 'checklist',
       tag: 'daily-checklist-reminder',

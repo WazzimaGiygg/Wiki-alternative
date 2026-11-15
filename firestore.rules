@@ -162,7 +162,7 @@ service cloud.firestore {
       }
     }
 
-    // ✅ Coleção principal de artigos WikiZero
+    // ✅ Coleção principal de artigos WikiWorldWeb
     match /articles/{articleId} {
       allow read: if true;
       allow create: if canUserEdit() && (

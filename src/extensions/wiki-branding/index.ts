@@ -5,7 +5,7 @@ import { ExtensionCategory, ExtensionSettingField } from '../../types';
  * Extension: WikiBrandingExtension (Update 3.05 - Requisito 3.05.3.o)
  * Categoria: feature
  * Funcionalidade: Permite alterar o nome do Wiki (Padrão é WikiWorldWeb) para o nome
- * que o burocrata quiser, e o nome do motor (Padrão é WikiZero) para o nome que o
+ * que o burocrata quiser, e o nome do motor (Padrão é WikiWorldWeb) para o nome que o
  * burocrata desejar.
  */
 export default class WikiBrandingExtension implements WikiExtension {
@@ -18,7 +18,7 @@ export default class WikiBrandingExtension implements WikiExtension {
   }
 
   getDescription(): string {
-    return 'Permite a personalização da marca e nomes do sistema. O burocrata pode alterar o nome da Wiki (padrão: WikiWorldWeb) e o nome do motor de software (padrão: WikiZero) para os nomes que desejar.';
+    return 'Permite a personalização da marca e nomes do sistema. O burocrata pode alterar o nome da Wiki (padrão: WikiWorldWeb) e o nome do motor de software (padrão: WikiWorldWeb) para os nomes que desejar.';
   }
 
   getAuthor(): string {
@@ -48,10 +48,10 @@ export default class WikiBrandingExtension implements WikiExtension {
       },
       {
         key: 'systemName',
-        label: 'Nome do Motor/Software (WikiZero)',
+        label: 'Nome do Motor/Software (WikiWorldWeb)',
         type: 'string',
-        defaultValue: 'WikiZero',
-        description: 'Nome da plataforma e motor técnico exibido nas badges e versões (Padrão: WikiZero).',
+        defaultValue: 'WikiWorldWeb',
+        description: 'Nome da plataforma e motor técnico exibido nas badges e versões (Padrão: WikiWorldWeb).',
       },
       {
         key: 'tagline',
@@ -66,7 +66,7 @@ export default class WikiBrandingExtension implements WikiExtension {
   onRegister(hooks: HookRegistry, context?: { settings?: Record<string, any> }): void {
     const settings = context?.settings || {};
     const wikiName = (settings.wikiName || '').trim() || 'WikiWorldWeb';
-    const systemName = (settings.systemName || '').trim() || 'WikiZero';
+    const systemName = (settings.systemName || '').trim() || 'WikiWorldWeb';
     const tagline = (settings.tagline || '').trim() || 'A Enciclopédia Livre e Aberta';
 
     hooks.addFilter<string>(
@@ -113,7 +113,7 @@ export default class WikiBrandingExtension implements WikiExtension {
     );
     hooks.addFilter<string>(
       'branding:system_name',
-      () => 'WikiZero',
+      () => 'WikiWorldWeb',
       10,
       this.getName()
     );

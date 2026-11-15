@@ -1,6 +1,6 @@
 /**
  * @file Permissions.ts
- * @description Definições de tipos e enums para o sistema de controle de acesso baseado em funções (RBAC) do WikiZero.
+ * @description Definições de tipos e enums para o sistema de controle de acesso baseado em funções (RBAC) do WikiWorldWeb.
  */
 
 export enum UserGroup {

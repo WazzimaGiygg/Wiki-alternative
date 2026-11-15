@@ -32,7 +32,7 @@ export default class SqlDatabaseBackupExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Governance / Conselho de Burocratas';
+    return 'WikiWorldWeb Governance / Conselho de Burocratas';
   }
 
   getCategory(): ExtensionCategory {

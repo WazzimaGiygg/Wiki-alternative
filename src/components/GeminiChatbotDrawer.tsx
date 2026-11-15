@@ -470,7 +470,7 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `chat-wikizero-gemini-${contextMode}-${new Date().toISOString().slice(0, 10)}.md`;
+    link.download = `chat-wikiworldweb-gemini-${contextMode}-${new Date().toISOString().slice(0, 10)}.md`;
     link.click();
     URL.revokeObjectURL(url);
   };

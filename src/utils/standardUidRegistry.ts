@@ -127,9 +127,9 @@ export const STANDARD_UID_LIST: StandardUidEntry[] = [
   { uid: '1.0.0-C11.076', name: 'Commit 01/11/2026', category: 'commit', targetView: 'site-updates', targetTab: 'github-diffs', description: 'Módulo antiplágio determinístico e suíte de testes unitários.' },
 
   // 77-84: Identidade & Metadados da Enciclopédia
-  { uid: '1.0.0-WZ.077', name: 'WikiWorldWeb / WikiZero', category: 'feature', targetView: 'hub', description: 'Enciclopédia digital livre, aberta e sem anúncios corporativos.' },
-  { uid: '1.0.0-WZ.078', name: 'WIKIZERO v3.05', category: 'feature', targetView: 'site-updates', description: 'Versão estável legada com sistema de extensões em nuvem.' },
-  { uid: '1.0.0-WZ.079', name: 'WikiZero V4.1', category: 'feature', targetView: 'site-updates', description: 'Versão principal com módulo antiplágio e telemetria de conectividade.' },
+  { uid: '1.0.0-WZ.077', name: 'WikiWorldWeb', category: 'feature', targetView: 'hub', description: 'Enciclopédia digital livre, aberta e sem anúncios corporativos.' },
+  { uid: '1.0.0-WZ.078', name: 'WikiWorldWeb v3.05', category: 'feature', targetView: 'site-updates', description: 'Versão estável legada com sistema de extensões em nuvem.' },
+  { uid: '1.0.0-WZ.079', name: 'WikiWorldWeb V4.1', category: 'feature', targetView: 'site-updates', description: 'Versão principal com módulo antiplágio e telemetria de conectividade.' },
   { uid: '1.0.0-WZ.080', name: 'GNU GPL v3.0', category: 'legal', targetView: 'terms', description: 'Licença pública de software livre que assegura liberdade de uso e modificação.' },
   { uid: '1.0.0-WZ.081', name: '🇧🇷 Português (Brasil)', category: 'feature', description: 'Idioma primário oficial da redação e comunidade da Wiki.' },
   { uid: '1.0.0-WZ.082', name: '«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»', category: 'quote', targetView: 'hub', description: 'Lema filosófico fundador gravado em grego clássico.' },

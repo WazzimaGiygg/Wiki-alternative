@@ -48,7 +48,7 @@ interface SmartTVViewProps {
 
 const SCREENSAVER_QUOTES = [
   { quote: '«Όχι, ο Χρόνος δεν είναι ο άρχοντας της γνώσης!»', author: 'Lema Oficial WikiWorldWeb' },
-  { quote: 'O conhecimento humano livre pertence à humanidade inteira.', author: 'Filosofia WikiZero' },
+  { quote: 'O conhecimento humano livre pertence à humanidade inteira.', author: 'Filosofia WikiWorldWeb' },
   { quote: 'A verdade documental e a integridade de dados superam o arbítrio burocrático.', author: 'Dossiê WazzimaGiygg' },
   { quote: 'Mais de 400.000 rolos de papiro catalogados pelo pioneiro Calímaco nos Pinakes de Alexandria.', author: 'História do Saber' },
   { quote: 'Uma enciclopédia rápida, livre de anúncios invasivos e sem monopólio de panelas burocráticas.', author: 'Manifesto Aberto' },
@@ -430,7 +430,7 @@ export const SmartTVView: React.FC<SmartTVViewProps> = ({
     return clean.length > maxChars ? clean.slice(0, maxChars) + '...' : clean;
   };
 
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : 'https://wikizero.app';
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : 'https://wikiworldweb.app';
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data=${encodeURIComponent(
     selectedArticle ? `${currentUrl}#article-${selectedArticle.id}` : currentUrl
   )}`;

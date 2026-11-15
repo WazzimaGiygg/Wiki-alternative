@@ -19,7 +19,7 @@ export default class WikiIntegritySentinelSecurityLayer implements WikiExtension
   }
 
   getAuthor(): string {
-    return 'Conselho de Segurança WikiZero / Sysop Pedro Henrique';
+    return 'Conselho de Segurança WikiWorldWeb / Sysop Pedro Henrique';
   }
 
   getCategory(): 'security' {

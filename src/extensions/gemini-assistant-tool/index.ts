@@ -19,7 +19,7 @@ export default class GeminiAssistantToolExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Google AI Studio / Equipe WikiZero';
+    return 'Google AI Studio / Equipe WikiWorldWeb';
   }
 
   getCategory(): 'tool' {

@@ -1,8 +1,8 @@
-# WikiWorldWeb / WikiZero
+# WikiWorldWeb
 
 **A Enciclopédia Livre, Rápida e Sem Anúncios**
 
-[![Live Demo](https://img.shields.io/badge/Live-wikizero.wazzimagiygg.com-blue?style=for-the-badge)](https://wikizero.wazzimagiygg.com/)
+[![Live Demo](https://img.shields.io/badge/Live-wikiworldweb.wazzimagiygg.com-blue?style=for-the-badge)](https://wikiworldweb.wazzimagiygg.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite)](https://vitejs.dev/)
@@ -16,7 +16,7 @@
 
 ## ✨ Visão Geral
 
-O **WikiWorldWeb** (também conhecido como **WikiZero**) é uma plataforma de enciclopédia colaborativa de nova geração. Diferente dos sistemas tradicionais baseados em PHP + MySQL, ele adota uma arquitetura **serverless** moderna com:
+O **WikiWorldWeb** é uma plataforma de enciclopédia colaborativa de nova geração. Diferente dos sistemas tradicionais baseados em PHP + MySQL, ele adota uma arquitetura **serverless** moderna com:
 
 - **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS
 - **Backend**: Firebase (Authentication + Cloud Firestore)
@@ -30,7 +30,7 @@ O resultado é uma wiki que carrega rápido, escala automaticamente, custa quase
 
 ## 🚀 Principais Diferenciais
 
-| Recurso                        | WikiWorldWeb / WikiZero          | MediaWiki / Wikipédia          |
+| Recurso                        | WikiWorldWeb                     | MediaWiki / Wikipédia          |
 |--------------------------------|----------------------------------|--------------------------------|
 | Custo de entrada               | Próximo de zero                  | Servidor + manutenção constante|
 | Configuração inicial           | Minutos                          | Horas / dias                   |

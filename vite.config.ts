@@ -103,7 +103,7 @@ export default defineConfig(() => {
               urlPattern: /\/assets\/.*(?:\.js|\.css)$/i,
               handler: 'StaleWhileRevalidate',
               options: {
-                cacheName: 'wikizero-chunks-cache',
+                cacheName: 'wikiworldweb-chunks-cache',
                 expiration: {
                   maxEntries: 100,
                   maxAgeSeconds: 60 * 60 * 24 * 30,

@@ -26,7 +26,7 @@ export const SmartTVInstallModal: React.FC<SmartTVInstallModalProps> = ({
   onLaunchTVMode,
 }) => {
   const [activeTab, setActiveTab] = useState<'geral' | 'samsung' | 'lg' | 'androidtv' | 'firetv'>('geral');
-  const currentUrl = typeof window !== 'undefined' ? window.location.href.split('?')[0] : 'https://wikizero.app';
+  const currentUrl = typeof window !== 'undefined' ? window.location.href.split('?')[0] : 'https://wikiworldweb.app';
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(currentUrl)}`;
 
   if (!isOpen) return null;

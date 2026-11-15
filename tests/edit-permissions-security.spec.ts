@@ -16,7 +16,7 @@ describe('Segurança de Edição de Usuários Logados e Não Logados (Anti-Ediç
 
   const bannedUser: Partial<UserProfile> = {
     uid: 'banned_456',
-    email: 'banned@wikizero.org',
+    email: 'banned@wikiworldweb.org',
     displayName: 'Usuário Infrator',
     isGuest: false,
     isBanned: true,
@@ -26,7 +26,7 @@ describe('Segurança de Edição de Usuários Logados e Não Logados (Anti-Ediç
 
   const revokedEditUser: Partial<UserProfile> = {
     uid: 'revoked_789',
-    email: 'revoked@wikizero.org',
+    email: 'revoked@wikiworldweb.org',
     displayName: 'Editor com Permissão Revogada',
     isGuest: false,
     isBanned: false,
@@ -42,7 +42,7 @@ describe('Segurança de Edição de Usuários Logados e Não Logados (Anti-Ediç
 
   const regularUser: Partial<UserProfile> = {
     uid: 'reg_111',
-    email: 'colaborador@wikizero.org',
+    email: 'colaborador@wikiworldweb.org',
     displayName: 'Colaborador Ativo',
     isGuest: false,
     isBanned: false,
@@ -58,7 +58,7 @@ describe('Segurança de Edição de Usuários Logados e Não Logados (Anti-Ediç
 
   const moderatorUser: Partial<UserProfile> = {
     uid: 'mod_222',
-    email: 'moderador@wikizero.org',
+    email: 'moderador@wikiworldweb.org',
     displayName: 'Moderador Comunitário',
     isGuest: false,
     isBanned: false,
@@ -74,7 +74,7 @@ describe('Segurança de Edição de Usuários Logados e Não Logados (Anti-Ediç
 
   const adminUser: Partial<UserProfile> = {
     uid: 'adm_333',
-    email: 'admin@wikizero.org',
+    email: 'admin@wikiworldweb.org',
     displayName: 'Administrador do Sistema',
     isGuest: false,
     isBanned: false,

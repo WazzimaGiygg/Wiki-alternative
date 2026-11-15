@@ -19,7 +19,7 @@ export default class WorldClockToolExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Tools / Equipe WikiWorldWeb';
+    return 'WikiWorldWeb Tools';
   }
 
   getCategory(): 'tool' {

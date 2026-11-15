@@ -372,7 +372,7 @@ export const AdminCouncilView: React.FC<AdminCouncilViewProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Diferente de enciclopédias centralizadas tradicionais onde burocratas efêmeros exercem poder monocrático sem supervisão externa (vide o caso documental do usuário Chronus e seus aliados), o <strong>WikiZero</strong> subordina qualquer ato de moderação ou burocracia ao registro público permanente, com possibilidade de recurso transparente ao Conselho Comunitário. Nenhum burocrata é dono do saber.
+                Diferente de enciclopédias centralizadas tradicionais onde burocratas efêmeros exercem poder monocrático sem supervisão externa (vide o caso documental do usuário Chronus e seus aliados), o <strong>WikiWorldWeb</strong> subordina qualquer ato de moderação ou burocracia ao registro público permanente, com possibilidade de recurso transparente ao Conselho Comunitário. Nenhum burocrata é dono do saber.
               </p>
             </div>
           </div>
@@ -622,7 +622,7 @@ export const AdminCouncilView: React.FC<AdminCouncilViewProps> = ({
                   Hierarquia de Privilégios & Matriz de Atribuições Técnicas
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Estrutura deliberativa descentralizada do WikiZero para impedir concentração despótica de poder:
+                  Estrutura deliberativa descentralizada do WikiWorldWeb para impedir concentração despótica de poder:
                 </p>
 
                 <div className="space-y-3 pt-2">
@@ -969,7 +969,7 @@ export const AdminCouncilView: React.FC<AdminCouncilViewProps> = ({
                   Painel de Sanções, Advertências & Bloqueios
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Registro de penalidades disciplinares ativas. No WikiZero, qualquer bloqueio indevido pode ser revogado por burocratas ou pelo Tribunal de Arbitragem.
+                  Registro de penalidades disciplinares ativas. No WikiWorldWeb, qualquer bloqueio indevido pode ser revogado por burocratas ou pelo Tribunal de Arbitragem.
                 </p>
               </div>
 
@@ -989,7 +989,7 @@ export const AdminCouncilView: React.FC<AdminCouncilViewProps> = ({
                 <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
                 <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">Nenhum usuário bloqueado no momento</h4>
                 <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  A comunidade do WikiZero opera em plena conformidade ética e sem sanções ativas.
+                  A comunidade do WikiWorldWeb opera em plena conformidade ética e sem sanções ativas.
                 </p>
               </div>
             ) : (
@@ -1314,7 +1314,7 @@ export const AdminCouncilView: React.FC<AdminCouncilViewProps> = ({
                   rows={3}
                   value={banReason}
                   onChange={(e) => setBanReason(e.target.value)}
-                  placeholder="Descreva a conduta em desacordo com as diretrizes do WikiZero..."
+                  placeholder="Descreva a conduta em desacordo com as diretrizes do WikiWorldWeb..."
                   className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100"
                 />
               </div>

@@ -18,7 +18,7 @@ export default class CiteAcademicFootnotes implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Comitê Científico WikiZero';
+    return 'Comitê Científico WikiWorldWeb';
   }
 
   getCategory(): 'content' {

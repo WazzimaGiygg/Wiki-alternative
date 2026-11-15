@@ -1686,7 +1686,7 @@ export const AcademicCatalogView: React.FC<AcademicCatalogViewProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                  Vincular a Verbete da Enciclopédia WikiZero
+                  Vincular a Verbete da Enciclopédia WikiWorldWeb
                 </label>
                 <input
                   type="text"

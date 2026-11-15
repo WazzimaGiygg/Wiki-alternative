@@ -18,7 +18,7 @@ import {
 
 /**
  * ============================================================================
- * WIKIZERO - DADOS BASE LIMPOS (SEM DADOS MOCK / APENAS BANCO DE DADOS FIREBASE)
+ * WIKIWORLDWEB - DADOS BASE LIMPOS (SEM DADOS MOCK / APENAS BANCO DE DADOS FIREBASE)
  * ============================================================================
  * Todas as informações pré-definidas de exemplo criadas pelo AI Studio foram
  * removidas para garantir que 100% dos dados exibidos e consultados venham

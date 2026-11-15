@@ -274,7 +274,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       const msg = err?.message || '';
       console.error('Falha no login Google:', err);
       if (err?.code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
-        const domain = err?.domain || (typeof window !== 'undefined' ? window.location.hostname : 'wikizero.wazzimagiygg.com');
+        const domain = err?.domain || (typeof window !== 'undefined' ? window.location.hostname : 'wikiworldweb.wazzimagiygg.com');
         const projId = err?.activeProjectId || getActiveFirebaseConfig().projectId;
         setUnauthorizedDomain(domain);
         setActiveProjectId(projId);
@@ -316,13 +316,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3 mb-3 flex-shrink-0">
           <img
             src="/logo.png"
-            alt="Logotipo WikiZero"
+            alt="Logotipo WikiWorldWeb"
             className="w-10 h-10 rounded-xl object-contain shadow-md flex-shrink-0 p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base font-serif-heading font-bold text-slate-900 dark:text-white leading-tight">
-                Login • WikiZero
+                Login • WikiWorldWeb
               </h3>
               {isBlockedByWikimedia ? (
                 <span className="bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-300 dark:border-rose-800 flex items-center gap-1">

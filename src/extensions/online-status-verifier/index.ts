@@ -26,7 +26,7 @@ export default class OnlineStatusVerifierExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Infraestrutura & Redes da WikiZero';
+    return 'Infraestrutura & Redes da WikiWorldWeb';
   }
 
   getCategory(): ExtensionCategory {

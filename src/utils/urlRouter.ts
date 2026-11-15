@@ -730,7 +730,7 @@ export function resolveNavigationUid(
     'fandom': { view: 'comparison' },
     'mediawiki': { view: 'comparison' },
     'wikidot': { view: 'comparison' },
-    'wikizero-vs-wikipedia': { view: 'comparison' },
+    'wikiworldweb-vs-wikipedia': { view: 'comparison' },
 
     'special:wazzimagiygg': { view: 'wazzimagiygg' },
     'wazzimagiygg': { view: 'wazzimagiygg' },

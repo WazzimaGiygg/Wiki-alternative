@@ -23,7 +23,7 @@ export default class HideOnlineUsersExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Privacy & Interface Guild';
+    return 'WikiWorldWeb Privacy & Interface Guild';
   }
 
   getCategory(): ExtensionCategory {

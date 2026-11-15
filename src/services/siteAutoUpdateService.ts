@@ -10,7 +10,7 @@
  *   - 'immediate': Recarrega imediatamente ao detectar nova versão disponível.
  * - Gatilhos inteligentes baseados no uso da enciclopédia:
  *   - Checagem ao navegar entre páginas/artigos (checkOnNavigation).
- *   - Checagem ao alternar/retornar foco à aba da WikiZero (checkOnTabFocus).
+ *   - Checagem ao alternar/retornar foco à aba da WikiWorldWeb (checkOnTabFocus).
  *   - Checagem ao reconectar à internet (checkOnOnline).
  *   - Intervalo configurável durante uso ativo contínuo (5, 10, 15, 30, 60 minutos).
  *   - Limiar configurável de ociosidade (30s, 60s, 120s, 300s).
@@ -460,8 +460,8 @@ export class SiteAutoUpdateService {
         status: this.checkStatus,
         message:
           this.checkStatus === 'update_available'
-            ? 'Nova versão do WikiZero encontrada!'
-            : 'WikiZero está na versão mais recente.',
+            ? 'Nova versão do WikiWorldWeb encontrada!'
+            : 'WikiWorldWeb está na versão mais recente.',
       };
     } catch (err: any) {
       console.warn('[SiteAutoUpdateService] Erro ao checar atualização do site:', err);
@@ -508,5 +508,5 @@ export const siteAutoUpdateService = SiteAutoUpdateService.getInstance();
 
 // Expõe globalmente para diagnósticos e integração simplificada
 if (typeof window !== 'undefined') {
-  (window as any).wikizeroAutoUpdateService = siteAutoUpdateService;
+  (window as any).wikiWorldWebAutoUpdateService = siteAutoUpdateService;
 }

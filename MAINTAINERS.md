@@ -2,7 +2,7 @@
 
 ## Sobre este arquivo
 
-Este documento existe para facilitar a continuidade do projeto **Wiki-alternative** (também conhecido como WikiWorldWeb / WikiZero) caso o mantenedor original não possa mais continuar o desenvolvimento.
+Este documento existe para facilitar a continuidade do projeto **Wiki-alternative** (também conhecido como WikiWorldWeb) caso o mantenedor original não possa mais continuar o desenvolvimento.
 
 O objetivo é deixar registrado:
 - A intenção do projeto

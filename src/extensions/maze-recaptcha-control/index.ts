@@ -22,7 +22,7 @@ export default class MazeRecaptchaControlExtension implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'WikiZero Security & Anti-Abuse Sentinel';
+    return 'WikiWorldWeb Security & Anti-Abuse Sentinel';
   }
 
   getCategory(): ExtensionCategory {

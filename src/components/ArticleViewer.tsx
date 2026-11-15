@@ -2526,7 +2526,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                     {securityNotice.reasonCode === 'LOCKED_ARTICLE' && 'Artigo Protegido pela Moderação'}
                     {securityNotice.reasonCode === 'RESTRICTED_NAMESPACE' && 'Namespace Restrito'}
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-mono">Segurança WikiZero &middot; RBAC</p>
+                  <p className="text-[11px] text-slate-500 font-mono">Segurança WikiWorldWeb &middot; RBAC</p>
                 </div>
               </div>
               <button

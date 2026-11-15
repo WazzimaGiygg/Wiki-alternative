@@ -38,7 +38,7 @@ export default class FirebaseAppletConfigImporterExtension implements WikiExtens
   }
 
   getAuthor(): string {
-    return 'WikiZero Cloud Registry & Dev Core';
+    return 'WikiWorldWeb Cloud Registry & Dev Core';
   }
 
   getCategory(): ExtensionCategory {

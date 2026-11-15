@@ -43,7 +43,7 @@ export const WikiSecurityGatekeeper: React.FC<WikiSecurityGatekeeperProps> = ({
     try {
       return extensionManager.getSecurityGateStatus();
     } catch (e) {
-      console.warn('[WikiZero Security] Falha ao obter status inicial do Gatekeeper:', e);
+      console.warn('[WikiWorldWeb Security] Falha ao obter status inicial do Gatekeeper:', e);
       return {
         isUnlocked: true,
         syncStatus: 'connected' as const,

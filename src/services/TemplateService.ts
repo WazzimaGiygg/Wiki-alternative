@@ -1,6 +1,6 @@
 /**
  * @file TemplateService.ts
- * @description Serviço para gerenciamento de Templates (predefinições) do WikiZero no Firestore.
+ * @description Serviço para gerenciamento de Templates (predefinições) do WikiWorldWeb no Firestore.
  * Suporta substituição dinâmica de parâmetros estilizados no padrão MediaWiki ({{{param}}} e {{{param|padrão}}}).
  */
 
@@ -172,7 +172,7 @@ export class TemplateService {
       parameters,
       category: input.category || 'Geral',
       authorUid: input.authorUid || currentUser?.uid || 'anonymous',
-      authorName: input.authorName || currentUser?.displayName || 'Editor WikiZero',
+      authorName: input.authorName || currentUser?.displayName || 'Editor WikiWorldWeb',
       createdAt: now,
       updatedAt: now,
     };

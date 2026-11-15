@@ -154,7 +154,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
   describe('Papel: Usuário Comum Autenticado', () => {
     it('deve permitir que o usuário atualize sua própria bio sem alterar cargos', async () => {
       const userDb = testEnv
-        .authenticatedContext('usr_normal', { email: 'normal@wikizero.org' })
+        .authenticatedContext('usr_normal', { email: 'normal@wikiworldweb.org' })
         .firestore();
 
       await assertSucceeds(
@@ -166,7 +166,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
 
     it('deve BLOQUEAR tentativa de alterar perfil de terceiros (users & userpage)', async () => {
       const userDb = testEnv
-        .authenticatedContext('usr_normal', { email: 'normal@wikizero.org' })
+        .authenticatedContext('usr_normal', { email: 'normal@wikiworldweb.org' })
         .firestore();
 
       // Tentativa de vandalizar a página de outro usuário
@@ -186,7 +186,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
 
     it('deve BLOQUEAR auto-promoção de cargo (role: admin, group: administrador)', async () => {
       const userDb = testEnv
-        .authenticatedContext('usr_normal', { email: 'normal@wikizero.org' })
+        .authenticatedContext('usr_normal', { email: 'normal@wikiworldweb.org' })
         .firestore();
 
       // Tentativa de elevar seu próprio role para admin no update
@@ -206,7 +206,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
 
     it('deve BLOQUEAR criação de perfil com cargos administrativos ou UID adulterado', async () => {
       const newUserDb = testEnv
-        .authenticatedContext('usr_novo', { email: 'novo@wikizero.org' })
+        .authenticatedContext('usr_novo', { email: 'novo@wikiworldweb.org' })
         .firestore();
 
       // Tentativa de criar conta já com cargo de admin
@@ -239,7 +239,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
 
     it('deve BLOQUEAR leitura e escrita em coleções privadas (checkuser, emergency, notificações de terceiros)', async () => {
       const userDb = testEnv
-        .authenticatedContext('usr_normal', { email: 'normal@wikizero.org' })
+        .authenticatedContext('usr_normal', { email: 'normal@wikiworldweb.org' })
         .firestore();
 
       // CheckUser logs privados
@@ -277,7 +277,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
     it('deve permitir criação e edição de templates da enciclopédia', async () => {
       const editorDb = testEnv
         .authenticatedContext('usr_editor', {
-          email: 'editor@wikizero.org',
+          email: 'editor@wikiworldweb.org',
           role: 'editor',
           editor: true,
         })
@@ -294,7 +294,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
     it('deve BLOQUEAR editor de modificar extensões ou coleções de investigação', async () => {
       const editorDb = testEnv
         .authenticatedContext('usr_editor', {
-          email: 'editor@wikizero.org',
+          email: 'editor@wikiworldweb.org',
           role: 'editor',
           editor: true,
         })
@@ -319,7 +319,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
     it('deve permitir que Administrador gerencie extensões do sistema', async () => {
       const adminDb = testEnv
         .authenticatedContext('usr_admin', {
-          email: 'admin@wikizero.org',
+          email: 'admin@wikiworldweb.org',
           admin: true,
           role: 'admin',
         })
@@ -345,7 +345,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
     it('deve permitir que Administrador consulte coleções privadas e investigações', async () => {
       const adminDb = testEnv
         .authenticatedContext('usr_admin', {
-          email: 'admin@wikizero.org',
+          email: 'admin@wikiworldweb.org',
           admin: true,
           role: 'admin',
         })
@@ -363,7 +363,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
     it('deve permitir que Administrador atualize cargos e permissões de qualquer usuário', async () => {
       const adminDb = testEnv
         .authenticatedContext('usr_admin', {
-          email: 'admin@wikizero.org',
+          email: 'admin@wikiworldweb.org',
           admin: true,
           role: 'admin',
         })
@@ -405,11 +405,11 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
   describe('Proteção de Propriedade de Documentos Comunitários', () => {
     it('deve impedir que usuário comum delete ou adultere discussão de terceiros em talk_threads', async () => {
       const autorDb = testEnv
-        .authenticatedContext('usr_normal', { email: 'autor@wikizero.org' })
+        .authenticatedContext('usr_normal', { email: 'autor@wikiworldweb.org' })
         .firestore();
 
       const impostorDb = testEnv
-        .authenticatedContext('usr_impostor', { email: 'impostor@wikizero.org' })
+        .authenticatedContext('usr_impostor', { email: 'impostor@wikiworldweb.org' })
         .firestore();
 
       // Autor cria tópico de discussão
@@ -455,7 +455,7 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
 
     it('deve impedir que usuário comum altere ou delete registros em recent_changes', async () => {
       const userDb = testEnv
-        .authenticatedContext('usr_normal', { email: 'user@wikizero.org' })
+        .authenticatedContext('usr_normal', { email: 'user@wikiworldweb.org' })
         .firestore();
 
       // Usuário cria registro de auditoria transparente
@@ -483,11 +483,11 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
 
     it('deve restringir alteração e exclusão de library_items ao catalogador ou administrador', async () => {
       const catalogadorDb = testEnv
-        .authenticatedContext('usr_normal', { email: 'catalog@wikizero.org' })
+        .authenticatedContext('usr_normal', { email: 'catalog@wikiworldweb.org' })
         .firestore();
 
       const terceiroDb = testEnv
-        .authenticatedContext('usr_terceiro', { email: 'terceiro@wikizero.org' })
+        .authenticatedContext('usr_terceiro', { email: 'terceiro@wikiworldweb.org' })
         .firestore();
 
       // Cria item do acervo
@@ -521,11 +521,11 @@ describe('Firebase Emulator Suite: Testes de Autorização e Escrita Não Autori
 
     it('deve isolar gemini_notebooks estritamente ao proprietário', async () => {
       const donoDb = testEnv
-        .authenticatedContext('usr_normal', { email: 'dono@wikizero.org' })
+        .authenticatedContext('usr_normal', { email: 'dono@wikiworldweb.org' })
         .firestore();
 
       const invasorDb = testEnv
-        .authenticatedContext('usr_invasor', { email: 'invasor@wikizero.org' })
+        .authenticatedContext('usr_invasor', { email: 'invasor@wikiworldweb.org' })
         .firestore();
 
       // Dono cria caderno pessoal

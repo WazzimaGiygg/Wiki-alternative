@@ -45,7 +45,7 @@ export interface WikiHelpStructure {
 
 export const DEFAULT_HELP_STRUCTURE: WikiHelpStructure = {
   version: '3.05.8',
-  title: 'Central de Ajuda Geral & Manual do Usuário WikiZero',
+  title: 'Central de Ajuda Geral & Manual do Usuário WikiWorldWeb',
   subtitle: 'Guia completo de navegação, atalhos de teclado, edição de artigos e diretrizes da enciclopédia livre',
   lastUpdated: '2026-10-15T00:00:00Z',
   lastEditedBy: 'Conselho de Burocratas (Arquivos Locais da Extensão)',
@@ -68,7 +68,7 @@ export const DEFAULT_HELP_STRUCTURE: WikiHelpStructure = {
       key: 'F7',
       action: 'Navegação por Cursor (Caret Browsing)',
       status: 'blocked',
-      description: 'Bloqueado por padrão no WikiZero para evitar desconfiguração visual de texto e garantir experiência imersiva de leitura.',
+      description: 'Bloqueado por padrão no WikiWorldWeb para evitar desconfiguração visual de texto e garantir experiência imersiva de leitura.',
       category: 'seguranca',
     },
     {
@@ -118,7 +118,7 @@ export const DEFAULT_HELP_STRUCTURE: WikiHelpStructure = {
           id: 'como-pesquisar',
           title: 'Como Pesquisar Artigos e Conteúdos',
           summary: 'Técnicas de busca rápida e busca avançada por operadores booleanos e categorias.',
-          content: `### Pesquisa Inteligente na WikiZero
+          content: `### Pesquisa Inteligente na WikiWorldWeb
 
 Você pode pesquisar conteúdos de três maneiras:
 1. **Barra Superior**: Pressione **Ctrl + K** ou digite qualquer termo na barra de busca do cabeçalho.
@@ -153,14 +153,14 @@ No final de cada artigo e na barra lateral, você encontra as **Categorias** ass
           summary: 'Entenda os motivos de segurança e usabilidade para a interceptação de comandos de teclas.',
           content: `### Segurança & Controle de Comandos de Teclas (Requisito 3.05.7.a)
 
-Para oferecer uma experiência de quiosque confiável e livre de interferências, a WikiZero implementa a interceptação e bloqueio de teclas funcionais do navegador:
+Para oferecer uma experiência de quiosque confiável e livre de interferências, a WikiWorldWeb implementa a interceptação e bloqueio de teclas funcionais do navegador:
 
 * **Tecla F7 (Caret Browsing / Navegação por Cursor)**:
   * **Status**: Bloqueada preventivamente.
   * **Motivo**: A navegação por cursor insere um cursor piscante no texto comum que pode quebrar a seleção de blocos, o leitor de artigos e formulários interativos.
 * **Tecla F11 (Tela Cheia Nativa do Navegador)**:
   * **Status**: Interceptada e convertida para a **Tela Cheia Integrada do Wiki-Site**.
-  * **Motivo**: Em vez de depender das barras desajustadas do navegador hospedeiro, a WikiZero aciona sua própria API de tela cheia imersiva, com controles e menus acessíveis.
+  * **Motivo**: Em vez de depender das barras desajustadas do navegador hospedeiro, a WikiWorldWeb aciona sua própria API de tela cheia imersiva, com controles e menus acessíveis.
 * **Tecla F12 (DevTools / Inspecionar Elemento)**:
   * **Status**: Bloqueada.
   * **Motivo**: Protege o estado da sessão local, evita injeções de scripts acidentais e mantém o cumprimento das políticas de integridade do conselho de burocratas.`,
@@ -177,7 +177,7 @@ Para oferecer uma experiência de quiosque confiável e livre de interferências
           content: `### Atalho F1 & Extensão Sincronizada no Firebase (Requisito 3.05.3.ad)
 
 Ao pressionar **F1**:
-1. O navegador não abre o suporte genérico do sistema operacional; em vez disso, ele abre diretamente este **Manual de Ajuda Geral da WikiZero**.
+1. O navegador não abre o suporte genérico do sistema operacional; em vez disso, ele abre diretamente este **Manual de Ajuda Geral da WikiWorldWeb**.
 2. Esta função é gerenciada pela extensão **GeneralHelpExtension**.
 3. O **Conselho de Burocratas** tem a prerrogativa de habilitar ou desabilitar o atalho F1 e o manual de ajuda geral através do painel de extensões com sincronização imediata no **Firebase Firestore**.
 4. Quando desativada pelo Burocrata, uma notificação informativa orienta os usuários sobre a suspensão temporária do recurso.`,
@@ -197,7 +197,7 @@ Ao pressionar **F1**:
           summary: 'Instruções para navegação imersiva em desktops, notebooks, Smart TVs e tablets.',
           content: `### Modo Tela Cheia Integrado (Requisito 3.05.8.b)
 
-A WikiZero conta com um recurso nativo de tela cheia que expande a área útil de leitura e edição:
+A WikiWorldWeb conta com um recurso nativo de tela cheia que expande a área útil de leitura e edição:
 
 1. **Pelo Teclado**: Pressione a tecla **F11** a qualquer momento.
 2. **Pelo Cabeçalho**: Clique no botão **Tela Cheia** (ícone de expansão) localizado na barra de navegação superior, ao lado do seletor de tema claro/escuro.
@@ -269,7 +269,7 @@ Essas caixas são adaptadas automaticamente para todos os temas, incluindo alto 
           summary: 'Privilégios e responsabilidades dos membros do Conselho de Burocratas.',
           content: `### O Conselho de Burocratas (Bureaucrats)
 
-Na WikiZero, o **Burocrata** é o nível máximo de confiança da comunidade técnica e editorial:
+Na WikiWorldWeb, o **Burocrata** é o nível máximo de confiança da comunidade técnica e editorial:
 * **Controle de Extensões**: Habilitar e desabilitar módulos como Chat em Tempo Real, Ajuda Geral (F1), Temas Especiais e Backup com sincronização na nuvem Firebase.
 * **Edição dos Arquivos de Ajuda (3.05.8.a)**: O Burocrata pode editar diretamente o conteúdo e a estrutura deste manual de ajuda através dos arquivos locais da extensão e do editor administrativo integrado.
 * **Mediação & Segurança**: Avaliação de pedidos de promoção de usuários, desbloqueios e coordenação do Comitê de Arbitragem (ArbCom).`,

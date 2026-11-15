@@ -18,7 +18,7 @@ export default class EditorialMetricsCollector implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Laboratório de Métricas WikiZero';
+    return 'Laboratório de Métricas WikiWorldWeb';
   }
 
   getCategory(): 'utility' {

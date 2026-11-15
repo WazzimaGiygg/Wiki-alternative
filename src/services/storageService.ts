@@ -1541,7 +1541,7 @@ export const StorageService = {
         popupErr?.code === 'auth/unauthorized-domain' ||
         popupErr?.message?.includes('unauthorized-domain')
       ) {
-        const domain = typeof window !== 'undefined' ? window.location.hostname : 'wikizero.wazzimagiygg.com';
+        const domain = typeof window !== 'undefined' ? window.location.hostname : 'wikiworldweb.wazzimagiygg.com';
         const activeCfg = getActiveFirebaseConfig();
         const activeProjectId = activeCfg.projectId;
         const customErr: any = new Error(
@@ -1878,7 +1878,7 @@ export const StorageService = {
     const adminCheck = validateUserIdentifiersAgainstWikimediaAdmins({
       username: cleanUsername,
       displayName: displayName || cleanUsername,
-      email: `${cleanUsername.toLowerCase()}@wikizero.org`,
+      email: `${cleanUsername.toLowerCase()}@wikiworldweb.org`,
     });
     if (adminCheck.isBlocked) {
       throw new Error(
@@ -1887,7 +1887,7 @@ export const StorageService = {
     }
 
     // Checar bloqueio
-    const banStatus = await this.getUserBanStatus(uid, `${cleanUsername.toLowerCase()}@wikizero.org`, cleanUsername);
+    const banStatus = await this.getUserBanStatus(uid, `${cleanUsername.toLowerCase()}@wikiworldweb.org`, cleanUsername);
     let existing = await this.getUserProfile(uid);
     const isBanned = banStatus.isBanned || !!existing?.isBanned;
 
@@ -3540,7 +3540,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         uid: generatedUid,
         displayName: properName,
         username: properName.replace(/\s+/g, '_'),
-        email: `${cleanNormalized.replace(/[^a-z0-9]/g, '')}@comunidade.wikizero.org`,
+        email: `${cleanNormalized.replace(/[^a-z0-9]/g, '')}@comunidade.wikiworldweb.org`,
         role: 'editor',
         isGuest: false,
         isBanned: false,
@@ -3913,7 +3913,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
       userName,
       {
         titulo: `🛡️ Proteção de Imagem e Dados Pessoais (LGPD Art. 18)`,
-        conteudo: `Sua foto de perfil foi removida pela Administração em conformidade com as diretrizes da Lei Geral de Proteção de Dados Pessoais (LGPD) para salvaguarda e privacidade de dados pessoais.\n\nSeu avatar agora exibe a primeira letra do seu nome ('''${initialLetter}''').\n\n'''Fundamento / Justificativa:''' ${justificationText}\n\n'''Executado por:''' ${adminUser?.displayName || 'Administração WikiZero'}.`,
+        conteudo: `Sua foto de perfil foi removida pela Administração em conformidade com as diretrizes da Lei Geral de Proteção de Dados Pessoais (LGPD) para salvaguarda e privacidade de dados pessoais.\n\nSeu avatar agora exibe a primeira letra do seu nome ('''${initialLetter}''').\n\n'''Fundamento / Justificativa:''' ${justificationText}\n\n'''Executado por:''' ${adminUser?.displayName || 'Administração WikiWorldWeb'}.`,
         tipo: 'aviso_admin',
       },
       adminUser
@@ -6727,7 +6727,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
    */
   getSystemUpdateJsonTemplate(): string {
     const template = {
-      $schema: "https://wikizero.org/schemas/release-notes-v1.json",
+      $schema: "https://wikiworldweb.org/schemas/release-notes-v1.json",
       _comment: "Modelo oficial de notas de atualização da WikiWorldWeb / WazzimaGiygg. Este arquivo pode conter uma única nota ou um array sob 'updates'.",
       updates: [
         {

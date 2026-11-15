@@ -86,7 +86,7 @@ export interface SqlDatabaseBackupConfig {
  */
 export const SQL_DATABASE_BACKUP_FILE_CONFIG: SqlDatabaseBackupConfig = {
   id: 'native-sql-backup-config-v1',
-  profileName: 'Backup Geral WikiZero -> Banco de Dados Relacional SQL',
+  profileName: 'Backup Geral WikiWorldWeb -> Banco de Dados Relacional SQL',
   // Burocrata habilita ou desabilita esta flag:
   isGeneralBackupEnabled: false,
   sqlDialect: 'PostgreSQL',
@@ -94,7 +94,7 @@ export const SQL_DATABASE_BACKUP_FILE_CONFIG: SqlDatabaseBackupConfig = {
     engine: 'PostgreSQL 16 / Cloud SQL Developer Edition',
     host: 'postgresql-primary.wikiworldweb.internal',
     port: 5432,
-    databaseName: 'wikizero_db',
+    databaseName: 'wikiworldweb_db',
     schema: 'public',
     ssl: true,
     poolSize: 10,
@@ -272,7 +272,7 @@ export async function generateSqlDumpScript(
     artigosCount: articles.filter((a) => (a.categoria || 'Geral') === cat).length,
   }));
   const siteConfig = {
-    appName: 'WikiZero',
+    appName: 'WikiWorldWeb',
     version: '3.05.3',
     sqlDialect: dialect,
     databaseTarget: config.databaseTarget,
@@ -287,7 +287,7 @@ export async function generateSqlDumpScript(
 
   // Cabeçalho institucional do arquivo SQL
   lines.push(`-- =========================================================================`);
-  lines.push(`-- WIKIZERO ENCYCLOPEDIA - BACKUP GERAL DE BANCO DE DADOS SQL`);
+  lines.push(`-- WIKIWORLDWEB ENCYCLOPEDIA - BACKUP GERAL DE BANCO DE DADOS SQL`);
   lines.push(`-- Extensão Nativa Local: SqlDatabaseBackupExtension (Requisito 3.05.3.aa)`);
   lines.push(`-- Dialeto Alvo: ${dialect}`);
   lines.push(`-- Gerado em: ${timestamp}`);
@@ -516,7 +516,7 @@ export async function generateSqlDumpScript(
 export async function downloadSqlBackupFile(): Promise<{ success: boolean; filename: string; sizeKb: number }> {
   const result = await generateSqlDumpScript();
   const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const filename = `wikizero_sql_backup_general_${dateStr}.sql`;
+  const filename = `wikiworldweb_sql_backup_general_${dateStr}.sql`;
 
   if (typeof window !== 'undefined') {
     const blob = new Blob([result.sqlScript], { type: 'text/sql;charset=utf-8;' });

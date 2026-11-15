@@ -252,7 +252,7 @@ export const Windows31BootScreen: React.FC<Windows31BootScreenProps> = ({
             {/* Mode Tag */}
             <div className="mt-4 px-3 py-1 bg-[#ffffff] border border-black text-black font-mono text-xs font-bold shadow-[2px_2px_0px_#808080] flex items-center gap-2">
               <span className="w-2.5 h-2.5 bg-[#000080]" />
-              <span>Modo Protegido 386 Avançado • WikiZero Edition</span>
+              <span>Modo Protegido 386 Avançado • WikiWorldWeb Edition</span>
             </div>
 
             {/* 3D Sunken Progress Track with Segmented Blocks */}

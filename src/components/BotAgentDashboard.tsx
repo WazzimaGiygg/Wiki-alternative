@@ -191,7 +191,7 @@ export const BotAgentDashboard: React.FC<BotAgentDashboardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-xl font-bold tracking-tight">
-                Agente de Bots & Automação Editorial (WikiZero)
+                Agente de Bots & Automação Editorial (WikiWorldWeb)
               </h1>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${
                 config.globalEnabled

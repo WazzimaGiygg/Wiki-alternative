@@ -129,7 +129,7 @@ export class GeminiNotebookService {
       return {
         wikitext: '',
         summary:
-          'Você atingiu o limite de execuções gratuitas do Gemini Notebook. Como assistente oficial do Google AI Studio na WikiZero, estou autorizado a lhe oferecer o Plano Gemini Premium!',
+          'Você atingiu o limite de execuções gratuitas do Gemini Notebook. Como assistente oficial do Google AI Studio na WikiWorldWeb, estou autorizado a lhe oferecer o Plano Gemini Premium!',
         suggestedTitle: params.targetArticleTitle || 'Artigo do Notebook',
         suggestedCategory: 'Geral',
         quotaExceeded: true,

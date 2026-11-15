@@ -1,5 +1,5 @@
 /**
- * Fullscreen Manager Utility for WikiZero (Requisito 3.05.8.b & 3.05.7.a)
+ * Fullscreen Manager Utility for WikiWorldWeb (Requisito 3.05.8.b & 3.05.7.a)
  * 
  * Gerencia o modo de tela cheia para todo o Wiki-Site com suporte cross-browser
  * e sincronização de eventos com a UI e atalhos de teclado (F11).

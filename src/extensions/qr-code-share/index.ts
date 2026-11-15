@@ -18,7 +18,7 @@ export default class QrCodeQuickShare implements WikiExtension {
   }
 
   getAuthor(): string {
-    return 'Mobile Lab WikiZero';
+    return 'Mobile Lab WikiWorldWeb';
   }
 
   getCategory(): 'interface' {

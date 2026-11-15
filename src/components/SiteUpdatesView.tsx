@@ -155,7 +155,7 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
         includeStats: pdfIncludeStats,
         includeReleases: pdfIncludeReleases,
         orientation: pdfOrientation,
-        generatedBy: currentUser?.displayName || currentUser?.username || 'WikiZero Usuário',
+        generatedBy: currentUser?.displayName || currentUser?.username || 'WikiWorldWeb Usuário',
         filterQuery: gitSearchQuery,
       });
       showToast('✅ Relatório em PDF gerado e baixado com sucesso!');
@@ -495,7 +495,7 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(updates, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `wikizero_atualizacoes_${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchor.setAttribute('download', `wikiworldweb_atualizacoes_${new Date().toISOString().split('T')[0]}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -545,7 +545,7 @@ export const SiteUpdatesView: React.FC<SiteUpdatesViewProps> = ({
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(templateStr);
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', 'template_notas_atualizacao_wikizero.json');
+    downloadAnchor.setAttribute('download', 'template_notas_atualizacao_wikiworldweb.json');
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

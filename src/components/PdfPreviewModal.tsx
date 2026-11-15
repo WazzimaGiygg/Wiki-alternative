@@ -18,7 +18,7 @@ import {
 import { WikiArticle } from '../types';
 import { exportArticleToStructuredPdf, cleanWikitextForPdf, PdfExportOptions } from '../utils/pdfExport';
 import { parseWikitext } from '../utils/wikitextParser';
-import { WIKIZERO_STANDARD_LOGO_DATA_URL } from '../utils/pdfStandardLogoAsset';
+import { WIKIWORLDWEB_STANDARD_LOGO_DATA_URL } from '../utils/pdfStandardLogoAsset';
 
 interface PdfPreviewModalProps {
   article: WikiArticle;
@@ -29,7 +29,7 @@ interface PdfPreviewModalProps {
 
 export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
   article,
-  pageName = 'WikiZero Enciclopédia',
+  pageName = 'WikiWorldWeb Enciclopédia',
   isOpen,
   onClose,
 }) => {
@@ -293,11 +293,11 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
           >
             {/* 1. HERO BANNER PADRONIZADO (COM O LOGO OFICIAL 3D) */}
             <div className="border border-slate-800 rounded-xl p-4 bg-white shadow-xs flex items-center gap-4">
-              {/* Logotipo Oficial 3D da WikiZero */}
+              {/* Logotipo Oficial 3D da WikiWorldWeb */}
               <div className="shrink-0 w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center p-0.5 bg-slate-900">
                 <img
-                  src={WIKIZERO_STANDARD_LOGO_DATA_URL}
-                  alt="Logotipo Oficial WikiZero"
+                  src={WIKIWORLDWEB_STANDARD_LOGO_DATA_URL}
+                  alt="Logotipo Oficial WikiWorldWeb"
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -314,7 +314,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                   Classificado por Estrutura Editorial: Verbete Enciclopédico, Fontes & Histórico
                 </p>
                 <p className="text-[10px] text-slate-500 font-mono mt-1">
-                  Gerado em: {nowFormatted} • Emissor: WikiZero • UID: ?uid={article.id} • Coleção: {pageName}
+                  Gerado em: {nowFormatted} • Emissor: WikiWorldWeb • UID: ?uid={article.id} • Coleção: {pageName}
                 </p>
               </div>
             </div>
@@ -461,7 +461,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
             {/* 7. RODAPÉ DE PÁGINA (PADRÃO ROSE-600) */}
             <div className="border-t border-slate-200 pt-3 flex items-center justify-between text-[10px]">
               <span className="text-rose-600 font-medium">
-                WikiZero • Documento Enciclopédico Oficial • Relatório Gerado Automaticamente
+                WikiWorldWeb • Documento Enciclopédico Oficial • Relatório Gerado Automaticamente
               </span>
               <span className="font-mono font-bold text-slate-600">
                 Página 1 de 1 (Pré-visualização)

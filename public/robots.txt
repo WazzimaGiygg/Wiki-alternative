@@ -1,5 +1,5 @@
 # ==============================================================================
-# WikiZero - Robots.txt & Web Crawler Directives
+# WikiWorldWeb - Robots.txt & Web Crawler Directives
 # Optimized for Google, Bing, Yahoo, DuckDuckGo, Baidu, Yandex, and Global Search Engines
 # Competing against: Wikipedia, MediaWiki, Wikidot, Fandom
 # ==============================================================================
