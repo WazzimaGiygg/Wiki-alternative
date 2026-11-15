@@ -47,6 +47,7 @@ import {
   Bot,
   Cpu,
   Flame,
+  Megaphone,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -90,6 +91,7 @@ interface SpecialPagesViewProps {
   onNavigateToAcademic?: () => void;
   onNavigateToNews?: () => void;
   onNavigateToAntiplagio?: () => void;
+  onNavigateToAboutWikiWorldWeb?: (tab?: any) => void;
   initialTab?: 'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories';
 }
 
@@ -126,6 +128,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToAcademic,
   onNavigateToNews,
   onNavigateToAntiplagio,
+  onNavigateToAboutWikiWorldWeb,
   initialTab = 'all',
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'orphans' | 'watchlist' | 'stats' | 'stubs' | 'categories'>(
@@ -517,6 +520,31 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Ética de Uso da Inteligência Artificial e Supervisão Humana
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToAboutWikiWorldWeb && (
+          <button
+            id="btn-specialpages-about-wikiworldweb"
+            onClick={() => onNavigateToAboutWikiWorldWeb?.('commercial')}
+            className="p-3 rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-900/40 text-left transition flex items-center gap-2.5 group cursor-pointer"
+          >
+            <div className="p-2 rounded-md bg-blue-600 text-white shrink-0">
+              <Megaphone size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-blue-900 dark:text-blue-200 truncate group-hover:underline">
+                  Special:AboutWikiWorldWeb
+                </span>
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-bold bg-blue-600 text-white">
+                  PUBLICIDADE
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Conheça a WikiWorldWeb: Comercial Interativo, Roteiro & Kit de Publicidade
               </div>
             </div>
           </button>

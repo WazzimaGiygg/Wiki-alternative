@@ -573,6 +573,34 @@ export const WikiHub: React.FC<WikiHubProps> = ({
         </div>
       )}
 
+      {/* Conheça a WikiWorldWeb: Comercial Interativo & Publicidade */}
+      {onNavigate && (
+        <div className="bg-slate-900 dark:bg-[#0d1424] text-white rounded-xl p-4 sm:p-5 border border-slate-700/80 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="text-[11px] font-mono uppercase tracking-wider text-blue-300">
+              Special:AboutWikiWorldWeb · Apresentação Oficial e Publicidade
+            </div>
+            <h3 className="font-bold text-sm sm:text-base text-white">
+              Conheça a WikiWorldWeb: Comercial Interativo, Estúdio de Roteiro e Kit de Publicidade
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Assista ao vídeo comercial interativo de 6 cenas (01:12), edite ou exporte o roteiro institucional em
+              português e copie peças oficiais de publicidade focadas em conhecimento descentralizado, zero nomes reais,
+              LGPD absoluta e infraestrutura transparente.
+            </p>
+          </div>
+
+          <button
+            id="btn-hub-open-about-wikiworldweb"
+            onClick={() => onNavigate('about-wikiworldweb')}
+            className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 transition shadow-xs flex-shrink-0 cursor-pointer active:scale-95"
+          >
+            <span>Conheça a WikiWorldWeb</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Direct Competitor Comparison Section (SEO & Value proposition) */}
       {showCompetitorComparison && onNavigate && (
         <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 text-white rounded-xl p-4 sm:p-5 border border-blue-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

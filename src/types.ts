@@ -646,6 +646,7 @@ export type ViewMode =
   | 'smart-tv'
   | 'appearance'
   | 'comparison'
+  | 'about-wikiworldweb'
   | 'wazzimagiygg'
   | 'gemini-notebook'
   | 'ucoc'

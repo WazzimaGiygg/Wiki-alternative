@@ -49,6 +49,7 @@ import {
   FileCheck,
   Cpu,
   Flame,
+  Megaphone,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -478,6 +479,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 )}
               </button>
             )}
+
+            <button
+              id="btn-sidebar-about-wikiworldweb"
+              onClick={() => onNavigate('about-wikiworldweb')}
+              title="Conheça a WikiWorldWeb: Comercial Interativo, Estúdio de Roteiro e Kit de Publicidade"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition cursor-pointer ${
+                currentView === 'about-wikiworldweb'
+                  ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 font-bold border border-slate-200 dark:border-slate-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Megaphone size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              {!isCollapsed && <span className="truncate">Conheça a WikiWorldWeb</span>}
+            </button>
 
             <button
               id="btn-sidebar-comparison"

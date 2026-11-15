@@ -377,6 +377,19 @@ export function updateSEO(config: SEOConfig) {
         'pseudonímia wiki',
         'anonimização LGPD'
       );
+    } else if (config.view === 'about-wikiworldweb') {
+      finalTitle = 'Conheça a WikiWorldWeb — Conhecimento Descentralizado, LGPD e Colaboração';
+      finalDesc =
+        'Apresentação oficial e comercial interativo da WikiWorldWeb: conhecimento descentralizado, privacidade com LGPD, colaboração em tempo real, governança transparente e materiais de divulgação.';
+      canonicalUrl = `${BASE_URL}/?uid=Special:AboutWikiWorldWeb`;
+      keywords.push(
+        'conheça a wikiworldweb',
+        'publicidade wikiworldweb',
+        'comercial wikiworldweb',
+        'conhecimento descentralizado',
+        'enciclopédia livre sem anúncios',
+        'LGPD wiki'
+      );
     } else if (config.view === 'not-found') {
       finalTitle = 'Página não encontrada (Erro 404) - WikiWorldWeb';
       finalDesc =

@@ -158,6 +158,7 @@ export function getFriendlyUidLabel(uid: string | null | undefined): string {
       Beta: 'Modo Beta',
       Offline: 'Modo Offline',
       Comparison: 'Comparativo',
+      AboutWikiWorldWeb: 'Conheça a WikiWorldWeb',
       WazzimaGiygg: 'WazzimaGiygg',
       CreatePage: 'Criar Coleção',
       Editor: 'Editor Wikitext',
@@ -317,6 +318,9 @@ export function getCanonicalUid(
 
     case 'real-names-lgpd':
       return 'Special:NoRealNamesLGPD';
+
+    case 'about-wikiworldweb':
+      return 'Special:AboutWikiWorldWeb';
 
     case 'other-rules':
       return 'Special:OtherRules';
@@ -731,6 +735,21 @@ export function resolveNavigationUid(
     'mediawiki': { view: 'comparison' },
     'wikidot': { view: 'comparison' },
     'wikiworldweb-vs-wikipedia': { view: 'comparison' },
+
+    'special:aboutwikiworldweb': { view: 'about-wikiworldweb' },
+    'special:about': { view: 'about-wikiworldweb' },
+    'special:conheca': { view: 'about-wikiworldweb' },
+    'special:conhecawikiworldweb': { view: 'about-wikiworldweb' },
+    'special:publicidade': { view: 'about-wikiworldweb', initialTab: 'kit' },
+    'special:comercial': { view: 'about-wikiworldweb', initialTab: 'commercial' },
+    'conheca-wikiworldweb': { view: 'about-wikiworldweb' },
+    'conheca-a-wikiworldweb': { view: 'about-wikiworldweb' },
+    'conheca': { view: 'about-wikiworldweb' },
+    'sobre': { view: 'about-wikiworldweb' },
+    'sobre-wikiworldweb': { view: 'about-wikiworldweb' },
+    'publicidade': { view: 'about-wikiworldweb', initialTab: 'kit' },
+    'comercial': { view: 'about-wikiworldweb', initialTab: 'commercial' },
+    'roteiro': { view: 'about-wikiworldweb', initialTab: 'script' },
 
     'special:wazzimagiygg': { view: 'wazzimagiygg' },
     'wazzimagiygg': { view: 'wazzimagiygg' },

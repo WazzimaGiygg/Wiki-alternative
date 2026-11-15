@@ -84,6 +84,7 @@ const Windows95Bot = React.lazy(() => import('./components/Windows95Bot').then((
 
 const AdvancedSearchView = React.lazy(() => import('./components/AdvancedSearchView').then((m) => ({ default: m.AdvancedSearchView })));
 const WikiCompetitorComparisonView = React.lazy(() => import('./components/WikiCompetitorComparisonView').then((m) => ({ default: m.WikiCompetitorComparisonView })));
+const AboutWikiWorldWebView = React.lazy(() => import('./components/AboutWikiWorldWebView').then((m) => ({ default: m.AboutWikiWorldWebView })));
 const WazzimaGiyggProfileView = React.lazy(() => import('./components/WazzimaGiyggProfileView').then((m) => ({ default: m.WazzimaGiyggProfileView })));
 const NotFoundView = React.lazy(() => import('./components/NotFoundView').then((m) => ({ default: m.NotFoundView })));
 const ToolsView = React.lazy(() => import('./components/ToolsView').then((m) => ({ default: m.ToolsView })));
@@ -358,6 +359,7 @@ export default function App() {
   const [editingEthicsInitialTab, setEditingEthicsInitialTab] = useState<'principles' | 'lgpd' | 'gdpr' | 'free_expression' | 'bpv' | 'enforcement' | 'checklist'>('principles');
   const [firebaseEthicsInitialTab, setFirebaseEthicsInitialTab] = useState<'firebase_ethics' | 'firebase_terms' | 'no_wikimedia' | 'chronus_abuses' | 'checklist'>('firebase_ethics');
   const [realNamesLgpdInitialTab, setRealNamesLgpdInitialTab] = useState<'prohibition' | 'lgpd_alignment' | 'anonymization' | 'checklist'>('prohibition');
+  const [aboutWikiWorldWebInitialTab, setAboutWikiWorldWebInitialTab] = useState<'commercial' | 'script' | 'kit'>('commercial');
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [notFoundQuery, setNotFoundQuery] = useState<string>('');
@@ -712,6 +714,9 @@ export default function App() {
         if (target.view === 'real-names-lgpd' && target.initialTab) {
           setRealNamesLgpdInitialTab(target.initialTab as any);
         }
+        if (target.view === 'about-wikiworldweb' && target.initialTab) {
+          setAboutWikiWorldWebInitialTab(target.initialTab as any);
+        }
         handleNavigate(target.view);
         break;
 
@@ -856,6 +861,15 @@ export default function App() {
             }
             if (target.view === 'editing-ethics' && target.initialTab) {
               setEditingEthicsInitialTab(target.initialTab as any);
+            }
+            if (target.view === 'firebase-ethics' && target.initialTab) {
+              setFirebaseEthicsInitialTab(target.initialTab as any);
+            }
+            if (target.view === 'real-names-lgpd' && target.initialTab) {
+              setRealNamesLgpdInitialTab(target.initialTab as any);
+            }
+            if (target.view === 'about-wikiworldweb' && target.initialTab) {
+              setAboutWikiWorldWebInitialTab(target.initialTab as any);
             }
             setCurrentView(target.view);
             break;
@@ -2103,6 +2117,10 @@ export default function App() {
               onNavigateToAcademic={() => handleNavigate('academic')}
               onNavigateToNews={() => handleNavigate('news')}
               onNavigateToAntiplagio={() => handleNavigate('antiplagio')}
+              onNavigateToAboutWikiWorldWeb={(tab) => {
+                if (tab) setAboutWikiWorldWebInitialTab(tab);
+                handleNavigate('about-wikiworldweb');
+              }}
               initialTab="all"
             />
           )}
@@ -2150,6 +2168,10 @@ export default function App() {
               onNavigateToAcademic={() => handleNavigate('academic')}
               onNavigateToNews={() => handleNavigate('news')}
               onNavigateToAntiplagio={() => handleNavigate('antiplagio')}
+              onNavigateToAboutWikiWorldWeb={(tab) => {
+                if (tab) setAboutWikiWorldWebInitialTab(tab);
+                handleNavigate('about-wikiworldweb');
+              }}
               initialTab="watchlist"
             />
           )}
@@ -2532,6 +2554,25 @@ export default function App() {
               onOpenEditor={() => handleOpenNewEditor()}
               onOpenGeminiChatbot={() => setShowGeminiChatbot(true)}
               onOpenGeminiNotebook={handleOpenNotebookModal}
+            />
+          )}
+
+          {currentView === 'about-wikiworldweb' && (
+            <AboutWikiWorldWebView
+              onNavigate={(view, initialTab) => {
+                if (view === 'firebase-ethics' && initialTab) {
+                  setFirebaseEthicsInitialTab(initialTab as any);
+                } else if (view === 'real-names-lgpd' && initialTab) {
+                  setRealNamesLgpdInitialTab(initialTab as any);
+                } else if (view === 'editing-ethics' && initialTab) {
+                  setEditingEthicsInitialTab(initialTab as any);
+                } else if (view === 'about-wikiworldweb' && initialTab) {
+                  setAboutWikiWorldWebInitialTab(initialTab as any);
+                }
+                handleNavigate(view);
+              }}
+              onOpenEditor={() => handleOpenNewEditor()}
+              initialTab={aboutWikiWorldWebInitialTab}
             />
           )}
 
