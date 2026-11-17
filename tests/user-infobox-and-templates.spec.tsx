@@ -41,7 +41,10 @@ describe('Infobox de Usuário, Tutorial e Catálogo de Infoboxes', () => {
     const wikitext = `{{Info/Software
 | Nome = WikiWorldWeb Engine
 | Subtítulo = Plataforma Aberta
+| Selo = Destaque Editorial
 | Cor = esmeralda
+| Estilo = destaque
+| Compacto = sim
 | Ícone = 💻
 | Alinhamento = esquerda
 | Largura = largo
@@ -52,8 +55,10 @@ describe('Infobox de Usuário, Tutorial e Catálogo de Infoboxes', () => {
 | Seção1 = Métricas
 | Status = Ativo
 | Progresso = 85%
+| Avaliação = 4.8/5
 | Coordenadas = 23°33′S 46°38′W
 | Tags = TypeScript, React, Open Source
+| Fonte = Documentação Oficial 2026
 | Rodapé = Licença GNU GPL v3.0
 }}`;
 
@@ -63,17 +68,22 @@ describe('Infobox de Usuário, Tutorial e Catálogo de Infoboxes', () => {
     expect(html).toContain('sm:float-left');
     expect(html).toContain('sm:w-96');
     expect(html).toContain('rounded-full');
+    expect(html).toContain('Destaque Editorial');
+    expect(html).toContain('shadow-md');
     expect(html).toContain('85%');
+    expect(html).toContain('4.8/5');
     expect(html).toContain('bg-emerald-600');
     expect(html).toContain('23°33′S 46°38′W');
     expect(html).toContain('TypeScript');
     expect(html).toContain('Open Source');
+    expect(html).toContain('Documentação Oficial 2026');
     expect(html).toContain('Licença GNU GPL v3.0');
+    expect(html).not.toContain('style="');
   });
 
-  it('oferece 14 tipos de infobox e documentação completa de variáveis no catálogo', () => {
-    expect(INFOBOX_TEMPLATES.length).toBeGreaterThanOrEqual(14);
-    expect(INFOBOX_VARIABLES_REFERENCE.length).toBeGreaterThanOrEqual(15);
+  it('oferece 22 tipos de infobox e documentação completa de variáveis no catálogo', () => {
+    expect(INFOBOX_TEMPLATES.length).toBeGreaterThanOrEqual(22);
+    expect(INFOBOX_VARIABLES_REFERENCE.length).toBeGreaterThanOrEqual(20);
 
     const templateNames = INFOBOX_TEMPLATES.map((t) => t.templateName);
     expect(templateNames).toContain('Info/Usuário');
@@ -82,13 +92,22 @@ describe('Infobox de Usuário, Tutorial e Catálogo de Infoboxes', () => {
     expect(templateNames).toContain('Info/Livro');
     expect(templateNames).toContain('Info/Jogo');
     expect(templateNames).toContain('Info/Ciência');
+    expect(templateNames).toContain('Info/Animal');
+    expect(templateNames).toContain('Info/Planeta');
+    expect(templateNames).toContain('Info/Hardware');
+    expect(templateNames).toContain('Info/Personagem');
+    expect(templateNames).toContain('Info/Esporte');
+    expect(templateNames).toContain('Info/Universidade');
+    expect(templateNames).toContain('Info/Idioma');
+    expect(templateNames).toContain('Info/Alimento');
 
-    // Todos os modelos devem produzir HTML válido com classe wiki-infobox
+    // Todos os modelos devem produzir HTML válido com classe wiki-infobox e sem style inline
     for (const tpl of INFOBOX_TEMPLATES) {
       const snippet = tpl.buildSnippet('Teste');
       expect(hasInfoboxInWikitext(snippet)).toBe(true);
       const { html } = parseWikitext(snippet);
       expect(html).toContain('wiki-infobox');
+      expect(html).not.toContain('style="');
     }
   });
 

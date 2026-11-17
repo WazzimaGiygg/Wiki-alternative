@@ -30,6 +30,7 @@ import {
 import {
   buildDefaultUserBioWikitext,
   buildDefaultUserInfoboxWikitext,
+  hasInfoboxInWikitext,
 } from '../utils/infoboxCatalog';
 
 export class EditConflictError extends Error {
@@ -1752,6 +1753,16 @@ export const StorageService = {
         editsCount: 0,
         warningCount: 0,
         location: 'Brasil',
+        bio: buildDefaultUserBioWikitext({
+          uid: u.uid,
+          displayName: rawName,
+          username: cleanUsername,
+          role: determinedRole,
+          photoURL: u.photoURL || undefined,
+          location: 'Brasil',
+          createdAt: new Date().toISOString(),
+          isBanned,
+        }),
         lastActive: new Date().toISOString(),
         isOnline: true,
         createdAt: new Date().toISOString(),
@@ -3327,7 +3338,14 @@ export const StorageService = {
         avatarRemovedAt: user.avatarRemovedAt || existing.avatarRemovedAt,
         avatarRemovedReason: user.avatarRemovedReason || existing.avatarRemovedReason,
         avatarRemovedBy: user.avatarRemovedBy || existing.avatarRemovedBy,
-        bio: existing.bio || user.bio,
+        bio:
+          existing.accountDeletedLGPD && user.bio
+            ? user.bio
+            : existing.bio
+            ? hasInfoboxInWikitext(existing.bio)
+              ? existing.bio
+              : `${buildDefaultUserInfoboxWikitext({ ...existing, ...user })}\n\n${existing.bio}`
+            : user.bio || buildDefaultUserBioWikitext({ ...existing, ...user }),
         lastActive: now,
         recentActivity: existing.recentActivity || [],
       };

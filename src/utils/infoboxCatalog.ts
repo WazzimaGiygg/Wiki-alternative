@@ -175,6 +175,36 @@ export const INFOBOX_VARIABLES_REFERENCE: InfoboxVariableDoc[] = [
     description: 'Separa automaticamente itens separados por vírgula com divisores tipográficos limpos (·).',
   },
   {
+    name: 'Avaliação',
+    aliases: 'Nota, Rating, Pontuacao',
+    example: '| Avaliação = 4.8/5  (ou 9/10)',
+    description: 'Exibe a nota em dígitos tabulares acompanhada de uma barra de pontuação proporcional.',
+  },
+  {
+    name: 'Selo',
+    aliases: 'Destaque_Topo, Etiqueta',
+    example: '| Selo = Verificado · Revisão Comunitária',
+    description: 'Exibe uma faixa discreta de identificação logo abaixo do cabeçalho principal.',
+  },
+  {
+    name: 'Estilo',
+    aliases: 'Borda, Variante',
+    example: '| Estilo = destaque  (padrao | minimalista | destaque)',
+    description: 'Alterna o acabamento visual da moldura do infobox (padrão, borda destacada ou minimalista).',
+  },
+  {
+    name: 'Compacto',
+    aliases: 'Densidade',
+    example: '| Compacto = sim',
+    description: 'Reduz o espaçamento vertical das linhas para fichas extensas com muitas variáveis.',
+  },
+  {
+    name: 'Fonte',
+    aliases: 'Citar, Referencia_Ficha',
+    example: '| Fonte = IBGE (2025)',
+    description: 'Adiciona uma linha dedicada de atribuição de fonte verificável acima do rodapé.',
+  },
+  {
     name: 'Rodapé',
     aliases: 'Rodape, Footer, Notas',
     example: '| Rodapé = Perfil protegido conforme a LGPD',
@@ -485,6 +515,177 @@ export const INFOBOX_TEMPLATES: InfoboxTemplatePreset[] = [
 | Extensão = 20,2 km
 | Status = Ativo
 | Progresso = 100%
+}}`,
+  },
+  {
+    id: 'animal',
+    templateName: 'Info/Animal',
+    label: 'Animal / Taxonomia',
+    category: 'Ciência & Academia',
+    description: 'Ficha taxonômica completa com classificação biológica, habitat e estado de conservação.',
+    defaultColor: 'verde',
+    buildSnippet: (title) => `{{Info/Animal
+| Nome = ${title || 'Onça-pintada'}
+| Subtítulo = Panthera onca · Taxonomia
+| Cor = verde
+| Selo = Classificação Biológica
+| Seção1 = Taxonomia
+| Reino = Animalia
+| Filo = Chordata
+| Classe = Mammalia
+| Ordem = Carnivora
+| Família = Felidae
+| Gênero = Panthera
+| Seção2 = Ecologia
+| Habitat = Florestas tropicais e Pantanal
+| Conservação = Quase ameaçada (IUCN)
+| Fonte = IUCN Red List
+}}`,
+  },
+  {
+    id: 'planeta',
+    templateName: 'Info/Planeta',
+    label: 'Planeta / Astro',
+    category: 'Ciência & Academia',
+    description: 'Ficha astronômica para planetas, estrelas, luas e exoplanetas com dados orbitais.',
+    defaultColor: 'indigo',
+    buildSnippet: (title) => `{{Info/Planeta
+| Nome = ${title || 'Marte'}
+| Subtítulo = Planeta Rochoso · Sistema Solar
+| Cor = indigo
+| Ícone = 🪐
+| Seção1 = Características Orbitais
+| Sistema = Sistema Solar
+| Período orbital = 687 dias terrestres
+| Satélites naturais = 2 (Fobos e Deimos)
+| Seção2 = Características Físicas
+| Diâmetro equatorial = 6.792 km
+| Gravidade superficial = 3,72 m/s²
+| Atmosfera = CO₂ (95%), N₂, Ar
+| Fonte = NASA Planetary Fact Sheet
+}}`,
+  },
+  {
+    id: 'hardware',
+    templateName: 'Info/Hardware',
+    label: 'Hardware / Dispositivo',
+    category: 'Tecnologia & Software',
+    description: 'Ficha técnica de computadores, consoles, processadores e dispositivos eletrônicos.',
+    defaultColor: 'ardosia',
+    buildSnippet: (title) => `{{Info/Hardware
+| Nome = ${title || 'Nome do Dispositivo'}
+| Subtítulo = Hardware / Eletrônica
+| Cor = ardosia
+| Seção1 = Especificações Técnicas
+| Fabricante = Fabricante Oficial
+| Lançamento = 2025
+| Processador = Arquitetura 64-bit
+| Memória = 16 GB RAM
+| Sistema operacional = Linux / Multiplataforma
+| Conectividade = USB-C, Wi-Fi 6E, Bluetooth 5.3
+| Avaliação = 4.6/5
+}}`,
+  },
+  {
+    id: 'personagem',
+    templateName: 'Info/Personagem',
+    label: 'Personagem Ficcional',
+    category: 'Cultura & Mídia',
+    description: 'Ficha para personagens de literatura, jogos, cinema, quadrinhos e animações.',
+    defaultColor: 'roxo',
+    buildSnippet: (title) => `{{Info/Personagem
+| Nome = ${title || 'Nome do Personagem'}
+| Subtítulo = Personagem Ficcional
+| Cor = roxo
+| Seção1 = Origem
+| Obra = Título da Obra
+| Criador = Nome do Criador
+| Primeira aparição = Capítulo 1 (2024)
+| Seção2 = Perfil
+| Afiliação = Grupo ou Facção
+| Ocupação = Papel na narrativa
+| Habilidades = Estratégia, Investigação
+| Status = Ativo
+}}`,
+  },
+  {
+    id: 'esporte',
+    templateName: 'Info/Esporte',
+    label: 'Clube / Esporte',
+    category: 'Organizações & Eventos',
+    description: 'Ficha esportiva para clubes, seleções, campeonatos ou modalidades olímpicas.',
+    defaultColor: 'esmeralda',
+    buildSnippet: (title) => `{{Info/Esporte
+| Nome = ${title || 'Clube Esportivo'}
+| Subtítulo = Modalidade Esportiva
+| Cor = esmeralda
+| Seção1 = Dados do Clube
+| Modalidade = Futebol
+| Fundação = 1930
+| Sede = São Paulo, Brasil
+| Estádio = Arena Principal
+| Seção2 = Conquistas
+| Principais títulos = Campeonatos Nacionais e Continentais
+| Status = Ativo
+}}`,
+  },
+  {
+    id: 'universidade',
+    templateName: 'Info/Universidade',
+    label: 'Universidade / Instituição',
+    category: 'Ciência & Academia',
+    description: 'Ficha institucional para universidades, faculdades, institutos de pesquisa e escolas.',
+    defaultColor: 'azul',
+    buildSnippet: (title) => `{{Info/Universidade
+| Nome = ${title || 'Universidade Pública'}
+| Subtítulo = Instituição de Ensino Superior
+| Cor = azul
+| Seção1 = Dados Acadêmicos
+| Tipo = Pública · Pesquisa e Ensino
+| Fundação = 1934
+| Localização = Brasil
+| Estudantes = ~90.000
+| Campi = Campus Central e Unidades Regionais
+| Site = https://wikiworldweb.org
+| Fonte = Dados Institucionais Públicos
+}}`,
+  },
+  {
+    id: 'idioma',
+    templateName: 'Info/Idioma',
+    label: 'Idioma / Língua',
+    category: 'Enciclopédia & Geografia',
+    description: 'Ficha linguística com família, número de falantes, sistema de escrita e código ISO.',
+    defaultColor: 'teal',
+    buildSnippet: (title) => `{{Info/Idioma
+| Nome = ${title || 'Língua Portuguesa'}
+| Subtítulo = Idioma · Linguística
+| Cor = teal
+| Seção1 = Classificação
+| Família = Indo-europeia (Românica)
+| Falantes = ~260 milhões
+| Regiões = Brasil, Portugal, PALOP, Timor-Leste
+| Sistema de escrita = Alfabeto latino
+| Código ISO 639-1 = pt
+}}`,
+  },
+  {
+    id: 'alimento',
+    templateName: 'Info/Alimento',
+    label: 'Alimento / Culinária',
+    category: 'Cultura & Mídia',
+    description: 'Ficha gastronômica com origem cultural, ingredientes principais, tipo e características.',
+    defaultColor: 'ambar',
+    buildSnippet: (title) => `{{Info/Alimento
+| Nome = ${title || 'Pão de Queijo'}
+| Subtítulo = Culinária Tradicional
+| Cor = ambar
+| Seção1 = Características
+| Origem = Minas Gerais, Brasil
+| Tipo = Assado / Lanche
+| Ingredientes = Polvilho, queijo curado, ovos, leite
+| Temperatura = Quente
+| Avaliação = 4.9/5
 }}`,
   },
 ];

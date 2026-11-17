@@ -1942,7 +1942,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
               setInfoboxModalTab('catalog');
               setShowInfoboxModal(true);
             }}
-            title="Inserir Infobox: escolha entre 14 tipos (Usuário, Biografia, País, Software, Jogo, Livro e mais)"
+            title="Inserir Infobox: escolha entre 22 tipos (Usuário, Biografia, País, Software, Hardware, Animal, Planeta, Personagem e mais)"
             className="px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
           >
             <LayoutTemplate size={12} /> Infoboxes

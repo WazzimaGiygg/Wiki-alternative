@@ -215,7 +215,14 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
     const profile = await StorageService.getUserProfile(targetUserIdentifier);
     if (profile) {
       setUserProfile(profile);
-      setBioText(profile.bio || buildDefaultUserBioWikitext(profile));
+      const rawProfileBio = profile.bio || '';
+      setBioText(
+        rawProfileBio
+          ? hasInfoboxInWikitext(rawProfileBio)
+            ? rawProfileBio
+            : `${buildDefaultUserInfoboxWikitext(profile)}\n\n${rawProfileBio}`
+          : buildDefaultUserBioWikitext(profile)
+      );
       setSelectedRole(profile.role);
       if (profile.permissions) {
         setPerms(profile.permissions);

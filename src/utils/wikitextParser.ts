@@ -814,6 +814,30 @@ function getInfoboxDefaultTheme(templateName: string): { colorKey: string; defau
   if (lower.includes('transporte') || lower.includes('metro') || lower.includes('estacao')) {
     return { colorKey: 'indigo', defaultSubtitle: 'Transporte & Mobilidade' };
   }
+  if (lower.includes('animal') || lower.includes('especie') || lower.includes('planta')) {
+    return { colorKey: 'verde', defaultSubtitle: 'Taxonomia & Biologia' };
+  }
+  if (lower.includes('planeta') || lower.includes('astro') || lower.includes('estrela')) {
+    return { colorKey: 'indigo', defaultSubtitle: 'Astronomia' };
+  }
+  if (lower.includes('hardware') || lower.includes('dispositivo')) {
+    return { colorKey: 'ardosia', defaultSubtitle: 'Hardware & Eletrônica' };
+  }
+  if (lower.includes('personagem')) {
+    return { colorKey: 'roxo', defaultSubtitle: 'Personagem Ficcional' };
+  }
+  if (lower.includes('esporte') || lower.includes('clube')) {
+    return { colorKey: 'esmeralda', defaultSubtitle: 'Esporte' };
+  }
+  if (lower.includes('universidade') || lower.includes('escola')) {
+    return { colorKey: 'azul', defaultSubtitle: 'Instituição de Ensino' };
+  }
+  if (lower.includes('idioma') || lower.includes('lingua')) {
+    return { colorKey: 'teal', defaultSubtitle: 'Linguística' };
+  }
+  if (lower.includes('alimento') || lower.includes('culinaria') || lower.includes('prato')) {
+    return { colorKey: 'ambar', defaultSubtitle: 'Culinária & Gastronomia' };
+  }
   if (lower.includes('empresa') || lower.includes('organizacao') || lower.includes('instituicao')) {
     return { colorKey: 'azul', defaultSubtitle: 'Organização' };
   }
@@ -845,13 +869,17 @@ function renderInfobox(content: string, inlineMap?: Map<string, string>, templat
   let infoboxAlign: 'right' | 'left' | 'center' = 'right';
   let infoboxWidthClass = 'sm:w-80';
   let infoboxCustomWidthPx: number | null = null;
+  let infoboxBadge = '';
+  let infoboxStyleVariant: 'default' | 'highlight' | 'minimal' = 'default';
+  let infoboxCompact = false;
+  let infoboxSource = '';
   let infoboxFooter = '';
 
   const rows: {
     label: string;
     value: string;
     isHeader?: boolean;
-    kind?: 'default' | 'status' | 'progress' | 'coords' | 'tags';
+    kind?: 'default' | 'status' | 'progress' | 'rating' | 'coords' | 'tags';
     progressPct?: number;
   }[] = [];
 
@@ -928,12 +956,34 @@ function renderInfobox(content: string, inlineMap?: Map<string, string>, templat
           infoboxCustomWidthPx = Math.max(220, Math.min(440, parseInt(pxMatch[1], 10)));
         }
       }
+    } else if (key === 'selo' || key === 'destaque_topo' || key === 'etiqueta') {
+      infoboxBadge = rawVal;
+    } else if (key === 'estilo' || key === 'borda' || key === 'variante') {
+      const styleNorm = normalizeInfoboxKey(rawVal);
+      if (styleNorm === 'destaque' || styleNorm === 'highlight') infoboxStyleVariant = 'highlight';
+      else if (styleNorm === 'minimalista' || styleNorm === 'minimal') infoboxStyleVariant = 'minimal';
+      else infoboxStyleVariant = 'default';
+    } else if (key === 'compacto' || key === 'densidade') {
+      const compactNorm = normalizeInfoboxKey(rawVal);
+      infoboxCompact = compactNorm === 'sim' || compactNorm === 'true' || compactNorm === 'compacto' || compactNorm === '1';
+    } else if (key === 'fonte' || key === 'citar' || key === 'referencia_ficha') {
+      infoboxSource = formattedVal;
     } else if (key === 'rodape' || key === 'footer' || key === 'notas' || key === 'observacoes') {
       infoboxFooter = formattedVal;
     } else if (key.startsWith('secao') || key.startsWith('header') || key.startsWith('subsecao') || key.startsWith('titulo_secao')) {
       rows.push({ label: rawVal, value: '', isHeader: true });
     } else if (key === 'status' || key === 'estado' || key === 'estado_conta') {
       rows.push({ label: rawKey.replace(/_/g, ' '), value: rawVal, kind: 'status' });
+    } else if (key === 'avaliacao' || key === 'nota' || key === 'rating' || key === 'pontuacao') {
+      const ratioMatch = rawVal.match(/(\d+(?:[.,]\d+)?)\s*\/\s*(\d+(?:[.,]\d+)?)/);
+      if (ratioMatch) {
+        const num = parseFloat(ratioMatch[1].replace(',', '.'));
+        const den = parseFloat(ratioMatch[2].replace(',', '.'));
+        const pct = den > 0 ? Math.max(0, Math.min(100, (num / den) * 100)) : 0;
+        rows.push({ label: rawKey.replace(/_/g, ' '), value: rawVal, kind: 'rating', progressPct: pct });
+      } else {
+        rows.push({ label: rawKey.replace(/_/g, ' '), value: formattedVal });
+      }
     } else if (key === 'progresso' || key === 'porcentagem' || key === 'completude') {
       const pctMatch = rawVal.match(/(\d+(?:[.,]\d+)?)/);
       const pct = pctMatch ? Math.max(0, Math.min(100, parseFloat(pctMatch[1].replace(',', '.')))) : null;
@@ -1051,11 +1101,11 @@ function renderInfobox(content: string, inlineMap?: Map<string, string>, templat
             ? 'text-amber-700 dark:text-amber-300'
             : 'text-emerald-700 dark:text-emerald-300';
         cellContent = `<span class="font-semibold ${statusColor}">${escapeHtml(r.value)}</span>`;
-      } else if (r.kind === 'progress' && typeof r.progressPct === 'number') {
+      } else if ((r.kind === 'progress' || r.kind === 'rating') && typeof r.progressPct === 'number') {
         const barWidthClass = resolveProgressWidthClass(r.progressPct);
         cellContent = `
           <div class="space-y-1">
-            <div class="flex items-center justify-between text-[11px] font-mono tabular-nums text-slate-700 dark:text-slate-200">
+            <div class="flex items-center justify-between text-[11px] font-mono tabular-nums font-semibold text-slate-700 dark:text-slate-200">
               <span>${escapeHtml(r.value)}</span>
             </div>
             <div class="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
@@ -1067,18 +1117,36 @@ function renderInfobox(content: string, inlineMap?: Map<string, string>, templat
         cellContent = `<span class="font-mono tabular-nums text-[11px] text-slate-700 dark:text-slate-200">${r.value}</span>`;
       }
 
+      const cellPad = infoboxCompact ? 'py-1 px-2' : 'py-1.5 px-2.5';
+
       return `
         <tr class="border-b border-slate-200/80 dark:border-slate-700/60 text-xs">
-          <th class="text-left font-semibold text-slate-700 dark:text-slate-300 py-1.5 px-2.5 bg-slate-50/80 dark:bg-slate-800/60 w-2/5 align-top">
+          <th class="text-left font-semibold text-slate-700 dark:text-slate-300 ${cellPad} bg-slate-50/80 dark:bg-slate-800/60 w-2/5 align-top">
             ${escapeHtml(r.label)}
           </th>
-          <td class="text-slate-800 dark:text-slate-200 py-1.5 px-2.5 align-top leading-snug break-words">
+          <td class="text-slate-800 dark:text-slate-200 ${cellPad} align-top leading-snug break-words">
             ${cellContent}
           </td>
         </tr>
       `;
     })
     .join('');
+
+  const badgeHtml = infoboxBadge
+    ? `
+      <div class="px-3 py-1 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-[11px] font-medium text-slate-600 dark:text-slate-300 text-center">
+        ${escapeHtml(infoboxBadge)}
+      </div>
+    `
+    : '';
+
+  const sourceHtml = infoboxSource
+    ? `
+      <div class="px-3 py-1.5 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-200 dark:border-slate-700/80 text-[11px] text-slate-600 dark:text-slate-300">
+        <span class="font-semibold">Fonte:</span> ${infoboxSource}
+      </div>
+    `
+    : '';
 
   const footerHtml = infoboxFooter
     ? `
@@ -1088,16 +1156,25 @@ function renderInfobox(content: string, inlineMap?: Map<string, string>, templat
     `
     : '';
 
+  const containerStyleClass =
+    infoboxStyleVariant === 'highlight'
+      ? 'border-2 border-blue-500 dark:border-blue-500 shadow-md'
+      : infoboxStyleVariant === 'minimal'
+      ? 'border border-slate-200 dark:border-slate-800 shadow-none'
+      : 'border border-slate-300 dark:border-slate-700 shadow-xs';
+
   return `
-    <div class="wiki-infobox not-prose mb-4 ${alignClasses} ${resolvedWidthClass} bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xs overflow-hidden" data-wikitext="{{${escapeHtml(templateName)}\n${escapeHtml(normalizedContent.trim())}\n}}">
+    <div class="wiki-infobox not-prose mb-4 ${alignClasses} ${resolvedWidthClass} bg-white dark:bg-slate-900 ${containerStyleClass} rounded-lg overflow-hidden" data-wikitext="{{${escapeHtml(templateName)}\n${escapeHtml(normalizedContent.trim())}\n}}">
       <div class="font-bold text-center py-2.5 px-3 text-xs sm:text-sm tracking-wide ${headerClass}">
         <span class="block font-serif-heading">${infoboxIcon ? `<span class="mr-1.5">${escapeHtml(infoboxIcon)}</span>` : ''}${escapeHtml(infoboxTitle)}</span>
         ${infoboxSubtitle ? `<span class="block text-[11px] opacity-85 font-normal mt-0.5">${escapeHtml(infoboxSubtitle)}</span>` : ''}
       </div>
+      ${badgeHtml}
       ${imageHtml}
       <table class="w-full border-collapse">
         <tbody>${rowsHtml}</tbody>
       </table>
+      ${sourceHtml}
       ${footerHtml}
     </div>
   `;
