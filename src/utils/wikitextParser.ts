@@ -2,6 +2,7 @@ import katex from 'katex';
 import { ExtensionManager } from '../core/ExtensionManager';
 import { formatExternalUrl } from './linkUtils';
 import { FileStorageService } from '../services/fileStorageService';
+import { INFOBOX_THEME_COLORS } from './infoboxCatalog';
 
 export interface TocItem {
   id: string;
@@ -625,7 +626,13 @@ function parseTemplatesWithBalancedBraces(
 
         let replacement = '';
 
-        if (lowerName === 'infobox' || lowerName.startsWith('info/') || lowerName.startsWith('ficha')) {
+        if (
+          lowerName === 'infobox' ||
+          lowerName.startsWith('infobox ') ||
+          lowerName.startsWith('infobox/') ||
+          lowerName.startsWith('info/') ||
+          lowerName.startsWith('ficha')
+        ) {
           replacement = handlers.onInfobox(templateBody || normalizedTemplate, templateName);
         } else if (lowerName === 'aviso' || lowerName === 'alerta' || lowerName === 'warning') {
           replacement = handlers.onAviso(templateBody);
@@ -768,14 +775,85 @@ export function formatInline(text: string, inlineMap?: Map<string, string>): str
 
 // === RENDERERS FOR WIKIPEDIA TEMPLATES & BLOCKS ===
 
+function getInfoboxDefaultTheme(templateName: string): { colorKey: string; defaultSubtitle: string } {
+  const lower = templateName
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  if (lower.includes('usuario') || lower.includes('user')) {
+    return { colorKey: 'azul', defaultSubtitle: 'Perfil de Usuário · WikiWorldWeb' };
+  }
+  if (lower.includes('biografia') || lower.includes('pessoa')) {
+    return { colorKey: 'indigo', defaultSubtitle: 'Biografia' };
+  }
+  if (lower.includes('pais') || lower.includes('ciencia') || lower.includes('especie')) {
+    return { colorKey: 'esmeralda', defaultSubtitle: lower.includes('pais') ? 'País / Território' : 'Ciência' };
+  }
+  if (lower.includes('cidade') || lower.includes('municipio')) {
+    return { colorKey: 'teal', defaultSubtitle: 'Município / Localidade' };
+  }
+  if (lower.includes('software') || lower.includes('tecnologia') || lower.includes('app')) {
+    return { colorKey: 'ciano', defaultSubtitle: 'Software & Tecnologia' };
+  }
+  if (lower.includes('jogo') || lower.includes('game')) {
+    return { colorKey: 'roxo', defaultSubtitle: 'Jogo Eletrônico' };
+  }
+  if (lower.includes('filme') || lower.includes('serie')) {
+    return { colorKey: 'ardosia', defaultSubtitle: 'Cinema & Audiovisual' };
+  }
+  if (lower.includes('livro') || lower.includes('obra')) {
+    return { colorKey: 'ambar', defaultSubtitle: 'Obra Literária' };
+  }
+  if (lower.includes('musica') || lower.includes('album')) {
+    return { colorKey: 'rosa', defaultSubtitle: 'Música' };
+  }
+  if (lower.includes('evento') || lower.includes('historia')) {
+    return { colorKey: 'vermelho', defaultSubtitle: 'Evento Histórico' };
+  }
+  if (lower.includes('transporte') || lower.includes('metro') || lower.includes('estacao')) {
+    return { colorKey: 'indigo', defaultSubtitle: 'Transporte & Mobilidade' };
+  }
+  if (lower.includes('empresa') || lower.includes('organizacao') || lower.includes('instituicao')) {
+    return { colorKey: 'azul', defaultSubtitle: 'Organização' };
+  }
+  return { colorKey: 'azul', defaultSubtitle: '' };
+}
+
+function normalizeInfoboxKey(key: string): string {
+  return key
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_')
+    .trim();
+}
+
 function renderInfobox(content: string, inlineMap?: Map<string, string>, templateName: string = 'Infobox'): string {
   const normalizedContent = content.replace(/<br\s*\/?>/gi, '\n').replace(/&nbsp;/gi, ' ');
   const lines = normalizedContent.split('\n');
+  const defaults = getInfoboxDefaultTheme(templateName);
+
   let infoboxTitle = 'Informações';
-  let infoboxSubtitle = '';
+  let infoboxSubtitle = defaults.defaultSubtitle;
+  let infoboxIcon = '';
   let infoboxImage = '';
   let infoboxImageCaption = '';
-  const rows: { label: string; value: string; isHeader?: boolean }[] = [];
+  let infoboxImageShape: 'default' | 'circle' = 'default';
+  let infoboxImageWidthPx: number | null = null;
+  let infoboxColorInput = defaults.colorKey;
+  let infoboxAlign: 'right' | 'left' | 'center' = 'right';
+  let infoboxWidthClass = 'sm:w-80';
+  let infoboxCustomWidthPx: number | null = null;
+  let infoboxFooter = '';
+
+  const rows: {
+    label: string;
+    value: string;
+    isHeader?: boolean;
+    kind?: 'default' | 'status' | 'progress' | 'coords' | 'tags';
+    progressPct?: number;
+  }[] = [];
 
   const paramPairs: string[] = [];
   lines.forEach((line) => {
@@ -787,72 +865,240 @@ function renderInfobox(content: string, inlineMap?: Map<string, string>, templat
     }
   });
 
-  paramPairs.forEach((pair) => {
+  for (const pair of paramPairs) {
     const eqIdx = pair.indexOf('=');
-    if (eqIdx !== -1) {
-      const rawKey = pair.substring(0, eqIdx).trim();
-      const key = rawKey.toLowerCase();
-      const rawVal = pair.substring(eqIdx + 1).trim();
-      const formattedVal = formatInline(rawVal, inlineMap);
+    if (eqIdx === -1) continue;
 
-      if (key === 'nome' || key === 'titulo' || key === 'title' || key === 'name') {
-        infoboxTitle = rawVal;
-      } else if (key === 'subtitulo' || key === 'subtitle' || key === 'tipo') {
-        infoboxSubtitle = rawVal;
-      } else if (key === 'imagem' || key === 'image' || key === 'foto') {
-        infoboxImage = rawVal;
-      } else if (key === 'legenda' || key === 'caption') {
-        infoboxImageCaption = rawVal;
-      } else if (key.startsWith('secao') || key.startsWith('header') || key.startsWith('subsecao')) {
-        rows.push({ label: rawVal, value: '', isHeader: true });
-      } else {
-        const cleanLabel = rawKey.replace(/_/g, ' ');
-        rows.push({ label: cleanLabel, value: formattedVal });
+    const rawKey = pair.substring(0, eqIdx).trim();
+    const key = normalizeInfoboxKey(rawKey);
+    const rawVal = pair.substring(eqIdx + 1).trim();
+    if (!rawVal) continue;
+
+    const formattedVal = formatInline(rawVal, inlineMap);
+
+    if (key === 'nome' || key === 'titulo' || key === 'title' || key === 'name') {
+      infoboxTitle = rawVal;
+    } else if (key === 'subtitulo' || key === 'subtitle' || key === 'categoria_topo') {
+      infoboxSubtitle = rawVal;
+    } else if (key === 'icone' || key === 'icon' || key === 'emblema') {
+      infoboxIcon = rawVal;
+    } else if (
+      key === 'imagem' ||
+      key === 'image' ||
+      key === 'foto' ||
+      key === 'avatar' ||
+      key === 'capa' ||
+      key === 'logo' ||
+      key === 'bandeira' ||
+      key === 'brasao'
+    ) {
+      let resolvedImg = rawVal;
+      const cleanFileRef = rawVal.replace(/^(?:Arquivo|Ficheiro|File|Imagem|Image):/i, '').trim();
+      const registeredFile = FileStorageService.getFileByNameSync(cleanFileRef);
+      if (registeredFile) {
+        resolvedImg = registeredFile.thumbnails?.md || registeredFile.url;
       }
+      infoboxImage = resolvedImg;
+    } else if (key === 'legenda' || key === 'caption' || key === 'imagem_legenda') {
+      infoboxImageCaption = rawVal;
+    } else if (key === 'imagem_forma' || key === 'avatar_forma' || key === 'forma_imagem') {
+      const shapeNorm = normalizeInfoboxKey(rawVal);
+      infoboxImageShape = shapeNorm === 'circulo' || shapeNorm === 'circle' || shapeNorm === 'redondo' ? 'circle' : 'default';
+    } else if (key === 'imagem_largura' || key === 'tamanho_imagem' || key === 'image_size') {
+      const pxMatch = rawVal.match(/(\d+)/);
+      if (pxMatch) {
+        infoboxImageWidthPx = Math.max(64, Math.min(320, parseInt(pxMatch[1], 10)));
+      }
+    } else if (key === 'cor' || key === 'tema' || key === 'cor_cabecalho' || key === 'cor_fundo' || key === 'color') {
+      infoboxColorInput = rawVal;
+    } else if (key === 'alinhamento' || key === 'align' || key === 'posicao') {
+      const alignNorm = normalizeInfoboxKey(rawVal);
+      if (alignNorm === 'esquerda' || alignNorm === 'left') infoboxAlign = 'left';
+      else if (alignNorm === 'centro' || alignNorm === 'center') infoboxAlign = 'center';
+      else infoboxAlign = 'right';
+    } else if (key === 'largura' || key === 'width') {
+      const widthNorm = normalizeInfoboxKey(rawVal);
+      if (widthNorm === 'compacto' || widthNorm === 'sm' || widthNorm === 'pequeno') {
+        infoboxWidthClass = 'sm:w-64';
+      } else if (widthNorm === 'largo' || widthNorm === 'lg' || widthNorm === 'grande') {
+        infoboxWidthClass = 'sm:w-96';
+      } else {
+        const pxMatch = rawVal.match(/^(\d+)px$/i);
+        if (pxMatch) {
+          infoboxCustomWidthPx = Math.max(220, Math.min(440, parseInt(pxMatch[1], 10)));
+        }
+      }
+    } else if (key === 'rodape' || key === 'footer' || key === 'notas' || key === 'observacoes') {
+      infoboxFooter = formattedVal;
+    } else if (key.startsWith('secao') || key.startsWith('header') || key.startsWith('subsecao') || key.startsWith('titulo_secao')) {
+      rows.push({ label: rawVal, value: '', isHeader: true });
+    } else if (key === 'status' || key === 'estado' || key === 'estado_conta') {
+      rows.push({ label: rawKey.replace(/_/g, ' '), value: rawVal, kind: 'status' });
+    } else if (key === 'progresso' || key === 'porcentagem' || key === 'completude') {
+      const pctMatch = rawVal.match(/(\d+(?:[.,]\d+)?)/);
+      const pct = pctMatch ? Math.max(0, Math.min(100, parseFloat(pctMatch[1].replace(',', '.')))) : null;
+      if (pct !== null) {
+        rows.push({ label: rawKey.replace(/_/g, ' '), value: `${Math.round(pct)}%`, kind: 'progress', progressPct: pct });
+      } else {
+        rows.push({ label: rawKey.replace(/_/g, ' '), value: formattedVal });
+      }
+    } else if (key === 'coordenadas' || key === 'coord') {
+      rows.push({ label: rawKey.replace(/_/g, ' '), value: escapeHtml(rawVal), kind: 'coords' });
+    } else if (
+      key === 'tags' ||
+      key === 'palavras_chave' ||
+      key === 'idiomas' ||
+      key === 'areas_interesse' ||
+      key === 'areas_de_interesse'
+    ) {
+      const items = rawVal
+        .split(/[,;]+/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => formatInline(s, inlineMap));
+      rows.push({
+        label: rawKey.replace(/_/g, ' '),
+        value: items.join(' <span class="text-slate-400 mx-0.5" aria-hidden="true">·</span> '),
+        kind: 'tags',
+      });
+    } else {
+      const cleanLabel = rawKey.replace(/_/g, ' ');
+      rows.push({ label: cleanLabel, value: formattedVal });
     }
-  });
+  }
 
-  const imageHtml = infoboxImage ? `
-    <div class="p-2.5 text-center bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-700/80">
-      <img src="${escapeHtml(infoboxImage)}" alt="${escapeHtml(infoboxTitle)}" class="max-h-48 mx-auto rounded object-cover shadow-xs border border-slate-200 dark:border-slate-700" loading="lazy" />
-      ${infoboxImageCaption ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 italic font-sans">${escapeHtml(infoboxImageCaption)}</p>` : ''}
+  // Resolve header theme palette (100% Tailwind classes — seguro sob DOMPurify)
+  const colorKeyNorm = normalizeInfoboxKey(infoboxColorInput);
+  const namedTheme = INFOBOX_THEME_COLORS[colorKeyNorm] || INFOBOX_THEME_COLORS.azul;
+  const headerClass = namedTheme.headerClass;
+  const barClass = namedTheme.barClass;
+
+  const alignClasses =
+    infoboxAlign === 'left'
+      ? 'float-none sm:float-left sm:mr-6'
+      : infoboxAlign === 'center'
+      ? 'float-none mx-auto'
+      : 'float-none sm:float-right sm:ml-6';
+
+  const resolvedWidthClass =
+    infoboxCustomWidthPx !== null
+      ? infoboxCustomWidthPx <= 270
+        ? 'sm:w-64'
+        : infoboxCustomWidthPx >= 360
+        ? 'sm:w-96'
+        : 'sm:w-80'
+      : infoboxWidthClass;
+
+  const resolveImageSizeClass = (px: number | null, circle: boolean): string => {
+    if (circle) {
+      if (px !== null && px <= 88) return 'w-20 h-20';
+      if (px !== null && px >= 128) return 'w-32 h-32';
+      return 'w-24 h-24';
+    }
+    if (px !== null && px <= 130) return 'w-32 max-h-40';
+    if (px !== null && px <= 190) return 'w-44 max-h-48';
+    if (px !== null && px >= 240) return 'w-64 max-h-56';
+    return 'max-h-48';
+  };
+
+  const resolveProgressWidthClass = (pct: number): string => {
+    if (pct <= 0) return 'w-0';
+    if (pct < 15) return 'w-1/12';
+    if (pct < 25) return 'w-1/5';
+    if (pct < 35) return 'w-1/4';
+    if (pct < 45) return 'w-2/5';
+    if (pct < 55) return 'w-1/2';
+    if (pct < 65) return 'w-3/5';
+    if (pct < 75) return 'w-2/3';
+    if (pct < 85) return 'w-3/4';
+    if (pct < 95) return 'w-5/6';
+    return 'w-full';
+  };
+
+  const imgShapeClass =
+    infoboxImageShape === 'circle'
+      ? `${resolveImageSizeClass(infoboxImageWidthPx, true)} rounded-full object-cover mx-auto border-2 border-slate-200 dark:border-slate-700 shadow-xs`
+      : `${resolveImageSizeClass(infoboxImageWidthPx, false)} mx-auto rounded object-cover shadow-xs border border-slate-200 dark:border-slate-700`;
+
+  const imageHtml = infoboxImage
+    ? `
+    <div class="p-3 text-center bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700/80">
+      <img src="${escapeHtml(infoboxImage)}" alt="${escapeHtml(infoboxTitle)}" referrerPolicy="no-referrer" class="${imgShapeClass}" loading="lazy" />
+      ${infoboxImageCaption ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 italic font-sans">${escapeHtml(infoboxImageCaption)}</p>` : ''}
     </div>
-  ` : '';
+  `
+    : '';
 
   const rowsHtml = rows
     .map((r) => {
       if (r.isHeader) {
         return `
-          <tr class="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-            <th colspan="2" class="py-1.5 px-2.5 text-center font-bold text-slate-800 dark:text-slate-200 text-xs font-mono uppercase tracking-wider">
+          <tr class="bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-700">
+            <th colspan="2" class="py-1.5 px-2.5 text-center font-bold text-slate-800 dark:text-slate-100 text-[11px] font-sans tracking-wide">
               ${escapeHtml(r.label)}
             </th>
           </tr>
         `;
       }
+
+      let cellContent = r.value;
+      if (r.kind === 'status') {
+        const statusNorm = normalizeInfoboxKey(r.value);
+        const statusColor =
+          statusNorm.includes('suspens') || statusNorm.includes('banid') || statusNorm.includes('inativ')
+            ? 'text-red-700 dark:text-red-300'
+            : statusNorm.includes('desenvolv') || statusNorm.includes('pendente') || statusNorm.includes('revis')
+            ? 'text-amber-700 dark:text-amber-300'
+            : 'text-emerald-700 dark:text-emerald-300';
+        cellContent = `<span class="font-semibold ${statusColor}">${escapeHtml(r.value)}</span>`;
+      } else if (r.kind === 'progress' && typeof r.progressPct === 'number') {
+        const barWidthClass = resolveProgressWidthClass(r.progressPct);
+        cellContent = `
+          <div class="space-y-1">
+            <div class="flex items-center justify-between text-[11px] font-mono tabular-nums text-slate-700 dark:text-slate-200">
+              <span>${escapeHtml(r.value)}</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div class="h-full rounded-full ${barClass} ${barWidthClass}"></div>
+            </div>
+          </div>
+        `;
+      } else if (r.kind === 'coords') {
+        cellContent = `<span class="font-mono tabular-nums text-[11px] text-slate-700 dark:text-slate-200">${r.value}</span>`;
+      }
+
       return `
         <tr class="border-b border-slate-200/80 dark:border-slate-700/60 text-xs">
           <th class="text-left font-semibold text-slate-700 dark:text-slate-300 py-1.5 px-2.5 bg-slate-50/80 dark:bg-slate-800/60 w-2/5 align-top">
             ${escapeHtml(r.label)}
           </th>
-          <td class="text-slate-800 dark:text-slate-200 py-1.5 px-2.5 align-top leading-snug">
-            ${r.value}
+          <td class="text-slate-800 dark:text-slate-200 py-1.5 px-2.5 align-top leading-snug break-words">
+            ${cellContent}
           </td>
         </tr>
       `;
     })
     .join('');
 
+  const footerHtml = infoboxFooter
+    ? `
+      <div class="px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-700/80 text-[11px] text-slate-500 dark:text-slate-400 text-center leading-snug">
+        ${infoboxFooter}
+      </div>
+    `
+    : '';
+
   return `
-    <div class="wiki-infobox not-prose mb-4 float-none sm:float-right sm:ml-6 sm:w-80 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xs overflow-hidden" data-wikitext="{{${escapeHtml(templateName)}\n${escapeHtml(normalizedContent.trim())}\n}}">
-      <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white font-bold text-center py-2.5 px-3 text-xs sm:text-sm tracking-wide shadow-xs">
-        <span class="block font-serif-heading">${escapeHtml(infoboxTitle)}</span>
-        ${infoboxSubtitle ? `<span class="block text-[10px] font-mono opacity-80 uppercase tracking-widest mt-0.5">${escapeHtml(infoboxSubtitle)}</span>` : ''}
+    <div class="wiki-infobox not-prose mb-4 ${alignClasses} ${resolvedWidthClass} bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xs overflow-hidden" data-wikitext="{{${escapeHtml(templateName)}\n${escapeHtml(normalizedContent.trim())}\n}}">
+      <div class="font-bold text-center py-2.5 px-3 text-xs sm:text-sm tracking-wide ${headerClass}">
+        <span class="block font-serif-heading">${infoboxIcon ? `<span class="mr-1.5">${escapeHtml(infoboxIcon)}</span>` : ''}${escapeHtml(infoboxTitle)}</span>
+        ${infoboxSubtitle ? `<span class="block text-[11px] opacity-85 font-normal mt-0.5">${escapeHtml(infoboxSubtitle)}</span>` : ''}
       </div>
       ${imageHtml}
       <table class="w-full border-collapse">
         <tbody>${rowsHtml}</tbody>
       </table>
+      ${footerHtml}
     </div>
   `;
 }

@@ -45,6 +45,7 @@ import {
   WifiOff,
   BookOpen,
   Eye,
+  LayoutTemplate,
 } from 'lucide-react';
 import {
   UserProfile,
@@ -64,6 +65,12 @@ import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
 import { buildUidPermalink } from '../utils/urlRouter';
 import { sanitizeHtml } from '../utils/sanitizeHtml';
+import { InfoboxTutorialModal, InfoboxModalTab } from './InfoboxTutorialModal';
+import {
+  buildDefaultUserBioWikitext,
+  buildDefaultUserInfoboxWikitext,
+  hasInfoboxInWikitext,
+} from '../utils/infoboxCatalog';
 
 interface UserPageViewProps {
   targetUserIdentifier: string; // uid or username
@@ -117,6 +124,8 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bioText, setBioText] = useState('');
   const [bioSaveSuccess, setBioSaveSuccess] = useState(false);
+  const [showInfoboxTutorialModal, setShowInfoboxTutorialModal] = useState(false);
+  const [infoboxModalInitialTab, setInfoboxModalInitialTab] = useState<InfoboxModalTab>('tutorial');
 
   // User Talk State
   const [talkMessages, setTalkMessages] = useState<UserTalkMessage[]>([]);
@@ -206,7 +215,7 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
     const profile = await StorageService.getUserProfile(targetUserIdentifier);
     if (profile) {
       setUserProfile(profile);
-      setBioText(profile.bio || `= ${profile.displayName || profile.username} =\nEditor da enciclopédia WikiWorldWeb.`);
+      setBioText(profile.bio || buildDefaultUserBioWikitext(profile));
       setSelectedRole(profile.role);
       if (profile.permissions) {
         setPerms(profile.permissions);
@@ -380,11 +389,15 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
     }
   }, [initialTab]);
 
-  // Wikitext Render for Bio
+  // Wikitext Render for Bio (garante Infobox de Usuário em todas as contas)
   const parsedBio = useMemo(() => {
-    if (!userProfile?.bio) return { html: '', toc: [], references: [], categories: [] };
-    return parseWikitext(userProfile.bio);
-  }, [userProfile?.bio]);
+    if (!userProfile) return { html: '', toc: [], references: [], categories: [] };
+    const rawBio = userProfile.bio || '';
+    const effectiveWikitext = hasInfoboxInWikitext(rawBio)
+      ? rawBio
+      : `${buildDefaultUserInfoboxWikitext(userProfile)}\n\n${rawBio || `= ${userProfile.displayName || userProfile.username} =\nEditor(a) da enciclopédia WikiWorldWeb.`}`;
+    return parseWikitext(effectiveWikitext);
+  }, [userProfile]);
 
   // Read Later Bookmarks Filtered Memo
   const filteredBookmarks = useMemo(() => {
@@ -1204,9 +1217,34 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setBioText((prev) => prev + "\n* Item da lista de projetos\n* Outro item\n")}
-                    className="px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-[11px] font-mono hover:bg-slate-100"
+                    className="px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-[11px] font-mono hover:bg-slate-100 cursor-pointer"
                   >
                     * Lista
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!userProfile) return;
+                      const defaultInfobox = buildDefaultUserInfoboxWikitext(userProfile);
+                      setBioText((prev) => `${defaultInfobox}\n\n${prev}`);
+                    }}
+                    className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 rounded text-[11px] font-mono font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 inline-flex items-center gap-1 cursor-pointer"
+                    title="Inserir Infobox padrão de identificação de usuário no topo da bio"
+                  >
+                    <LayoutTemplate size={11} />
+                    <span>{'{{Info/Usuário}}'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInfoboxModalInitialTab('tutorial');
+                      setShowInfoboxTutorialModal(true);
+                    }}
+                    className="px-2 py-0.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded text-[11px] font-semibold hover:opacity-90 inline-flex items-center gap-1 cursor-pointer"
+                    title="Abrir tutorial passo a passo e modelos de Infobox"
+                  >
+                    <BookOpen size={11} />
+                    <span>Tutorial Infobox</span>
                   </button>
                 </div>
 
@@ -1241,15 +1279,28 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
             ) : (
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 shadow-xs">
                 {/* Micro Toolbar */}
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 mb-5">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-600" />
                     <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white font-mono">
-                      Biografia & Conteúdo Oficial
+                      Biografia &amp; Infobox Oficial
                     </h2>
                   </div>
-                  <div className="text-[11px] text-slate-400 font-mono">
-                    Última atualização: {new Date(userProfile.lastActive || userProfile.createdAt || '2026-08-28').toLocaleDateString('pt-BR')}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      id="btn-userpage-infobox-tutorial"
+                      onClick={() => {
+                        setInfoboxModalInitialTab('tutorial');
+                        setShowInfoboxTutorialModal(true);
+                      }}
+                      className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <BookOpen size={13} />
+                      <span>Tutorial: Como usar o Infobox</span>
+                    </button>
+                    <span className="text-[11px] text-slate-400 font-mono tabular-nums">
+                      Atualizado em {new Date(userProfile.lastActive || userProfile.createdAt || '2026-08-28').toLocaleDateString('pt-BR')}
+                    </span>
                   </div>
                 </div>
 
@@ -2995,6 +3046,25 @@ export const UserPageView: React.FC<UserPageViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal de Tutorial & Catálogo de Infoboxes */}
+      <InfoboxTutorialModal
+        isOpen={showInfoboxTutorialModal}
+        onClose={() => setShowInfoboxTutorialModal(false)}
+        initialTab={infoboxModalInitialTab}
+        initialTemplateId="usuario"
+        defaultTitle={userProfile?.displayName || userProfile?.username || 'Seu Pseudônimo'}
+        onInsertWikitext={
+          isEditingBio
+            ? (snippet) => setBioText((prev) => `${snippet}\n\n${prev}`)
+            : isOwner
+            ? (snippet) => {
+                setIsEditingBio(true);
+                setBioText((prev) => `${snippet}\n\n${prev}`);
+              }
+            : undefined
+        }
+      />
     </div>
   );
 };

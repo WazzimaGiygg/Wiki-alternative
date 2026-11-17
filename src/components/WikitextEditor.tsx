@@ -70,6 +70,7 @@ import {
 } from '../utils/citationValidator';
 import { CitationHoverTooltip, CitationTooltipData } from './CitationHoverTooltip';
 import { EditConflictModal } from './EditConflictModal';
+import { InfoboxTutorialModal, InfoboxModalTab } from './InfoboxTutorialModal';
 
 interface WikitextEditorProps {
   initialArticle?: WikiArticle | null;
@@ -219,6 +220,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   }, [user, initialArticle, currentSelectedPage]);
 
   const [securityWarningModal, setSecurityWarningModal] = useState<{ title: string; message: string; requiresLogin?: boolean } | null>(null);
+  const [showInfoboxModal, setShowInfoboxModal] = useState<boolean>(false);
+  const [infoboxModalTab, setInfoboxModalTab] = useState<InfoboxModalTab>('catalog');
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
@@ -1934,17 +1937,27 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           </button>
           <button
             type="button"
-            onClick={() =>
-              insertWikitext(
-                '{{Infobox\n| Nome = ' +
-                  (titulo || 'Título') +
-                  '\n| Campo 1 = Informação 1\n| Campo 2 = Informação 2\n}}'
-              )
-            }
-            title="Inserir Caixa de Informações (Infobox)"
-            className="px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700"
+            id="btn-editor-infobox-catalog"
+            onClick={() => {
+              setInfoboxModalTab('catalog');
+              setShowInfoboxModal(true);
+            }}
+            title="Inserir Infobox: escolha entre 14 tipos (Usuário, Biografia, País, Software, Jogo, Livro e mais)"
+            className="px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
           >
-            <LayoutTemplate size={12} /> Infobox
+            <LayoutTemplate size={12} /> Infoboxes
+          </button>
+          <button
+            type="button"
+            id="btn-editor-infobox-tutorial"
+            onClick={() => {
+              setInfoboxModalTab('tutorial');
+              setShowInfoboxModal(true);
+            }}
+            title="Tutorial de como usar Infoboxes e lista completa de variáveis"
+            className="px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
+          >
+            <BookOpen size={12} /> Tutorial Infobox
           </button>
           <button
             type="button"
@@ -2633,12 +2646,34 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 type="button"
                 onClick={() => {
                   setCustomWikitextCode(
-                    `{{Infobox\n| Nome = ${titulo || 'Título do Artigo'}\n| Subtítulo = Descrição Geral\n| Imagem = https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800\n| Legenda = Legenda da Imagem\n| Origem = Brasil\n| Tipo = Enciclopédia\n}}`
+                    `{{Infobox\n| Nome = ${titulo || 'Título do Artigo'}\n| Subtítulo = Descrição Geral\n| Cor = azul\n| Imagem = /logo.png\n| Legenda = Legenda da Imagem\n| Seção1 = Dados Principais\n| Origem = Brasil\n| Status = Ativo\n| Rodapé = Verbete WikiWorldWeb\n}}`
                   );
                 }}
-                className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition"
+                className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition cursor-pointer"
               >
-                📋 Infobox / Ficha
+                📋 Infobox Geral
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomWikitextCode(
+                    `{{Info/Usuário\n| Nome = ${user?.displayName || 'Seu Pseudônimo'}\n| Subtítulo = Conta Oficial · WikiWorldWeb\n| Cor = azul\n| Ícone = 👤\n| Seção1 = Identificação\n| Cargo = Editor(a)\n| Status = Ativo\n| Idiomas = Português\n| Rodapé = Perfil WikiWorldWeb\n}}`
+                  );
+                }}
+                className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                👤 Info/Usuário
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomWikitextCode(
+                    `{{Info/Software\n| Nome = ${titulo || 'Nome do Software'}\n| Subtítulo = Projeto de Software\n| Cor = ciano\n| Seção1 = Especificações\n| Linguagem = TypeScript\n| Licença = GNU GPL v3.0\n| Status = Ativo\n}}`
+                  );
+                }}
+                className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                💻 Info/Software
               </button>
               <button
                 type="button"
@@ -2915,6 +2950,16 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           }}
         />
       )}
+
+      {/* Modal de Catálogo de Infoboxes, Variáveis & Tutorial */}
+      <InfoboxTutorialModal
+        isOpen={showInfoboxModal}
+        onClose={() => setShowInfoboxModal(false)}
+        initialTab={infoboxModalTab}
+        initialTemplateId="geral"
+        defaultTitle={titulo || undefined}
+        onInsertWikitext={(snippet) => insertWikitext(`\n${snippet}\n`)}
+      />
     </div>
   );
 };

@@ -27,6 +27,10 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
+import {
+  buildDefaultUserBioWikitext,
+  buildDefaultUserInfoboxWikitext,
+} from '../utils/infoboxCatalog';
 
 export class EditConflictError extends Error {
   currentServerArticle: WikiArticle;
@@ -3227,26 +3231,18 @@ export const StorageService = {
         ? user.username
         : resolvedDisplayName.replace(/\s+/g, '_');
 
-      const defaultBio = `= ${resolvedDisplayName} =
-Editor(a) e colaborador(a) da enciclopédia livre '''WikiWorldWeb'''.
-
-== Apresentação ==
-Esta é a página oficial do(a) usuário(a) '''${resolvedDisplayName}'''.
-Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
-
-== Rastreio & Atividades Comunitárias ==
-* '''Status do Usuário:''' Ativo(a)
-* '''Identificador Único Google/Sistema (UID):''' \`\`${user.uid}\`\`
-* '''Rastreabilidade:''' Todas as alterações de rastreio, edições e verbetes criados são automaticamente inseridos nesta página de usuário pública.
-* '''Link Permanente Público (UID):''' Disponível para consulta por qualquer usuário através do link permanente [[User:${user.uid}]].
-* '''Link Alternativo por Nome:''' [[User:${resolvedDisplayName}]].
-
-== Caixas de Usuário ==
-{{Userbox|🌐|Colaborador(a) da WikiWorldWeb Enciclopédia Aberta}}
-{{Userbox|✏️|Editor(a) com rastreamento ativo de edições}}
-{{Userbox|🛡️|Comprometido(a) com a veracidade das informações}}`;
-
       const hasAvatarRemovedNew = Boolean(user.avatarRemovedByAdmin);
+      const defaultBio = buildDefaultUserBioWikitext({
+        uid: user.uid,
+        displayName: resolvedDisplayName,
+        username: resolvedUsername,
+        role: user.role || 'editor',
+        photoURL: hasAvatarRemovedNew ? undefined : user.photoURL,
+        avatarRemovedByAdmin: hasAvatarRemovedNew,
+        location: user.location || 'Brasil',
+        createdAt: user.createdAt || now,
+        isBanned: Boolean(user.isBanned),
+      });
       const newUserPage: UserProfile = {
         uid: user.uid,
         username: resolvedUsername,
@@ -4826,7 +4822,7 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
 
     const updated: UserProfile = {
       ...user,
-      bio: `= ${user.displayName || user.username} =\nPágina de usuário resetada pela moderação administrativa.`,
+      bio: `${buildDefaultUserInfoboxWikitext(user)}\n\n= ${user.displayName || user.username} =\nPágina de usuário resetada pela moderação administrativa.`,
     };
 
     await this.saveCommunityUser(updated);
@@ -4973,7 +4969,17 @@ Conta registrada e disponibilizada publicamente em ${createdDateFormatted}.
         canDelete: isPrivileged,
         canGrantBarnstars: true,
       },
-      bio: userData.bio || `= ${cleanName} =\nUsuário devidamente registrado e autorizado pela administração da WikiWorldWeb.`,
+      bio:
+        userData.bio ||
+        buildDefaultUserBioWikitext({
+          uid: newUid,
+          displayName: cleanName,
+          username: cleanUsername,
+          role: userData.role,
+          location: 'Brasil',
+          createdAt: new Date().toISOString(),
+          isBanned: false,
+        }),
       editsCount: 0,
       reputationScore: userData.role === 'admin' ? 100 : userData.role === 'moderador' ? 50 : 10,
       createdAt: new Date().toISOString(),
