@@ -7,11 +7,13 @@ import {
   Copy,
   Database,
   Download,
+  ExternalLink,
   FileCheck2,
   FileText,
   Flame,
   Gavel,
   Globe,
+  Loader2,
   Lock,
   Presentation,
   Scale,
@@ -258,6 +260,70 @@ const GOVERNANCE_RULES: GovernanceRuleItem[] = [
   },
 ];
 
+interface AccountabilityRecord {
+  account: string;
+  role: string;
+  documentedAllegations: string;
+  wikiWorldWebSafeguard: string;
+}
+
+const WIKIMEDIA_ACCOUNTABILITY_RECORDS: AccountabilityRecord[] = [
+  {
+    account: 'Chronus',
+    role: 'Administrador / Burocrata (pt.wikipedia.org)',
+    documentedAllegations:
+      'Alegações documentadas nos dossiês de acúmulo de papéis (acusador/julgador/executor), imputações de fraude editorial e sockpuppetry sem perícia auditável, perseguição de histórico e bloqueios sumários.',
+    wikiWorldWebSafeguard:
+      'Separação obrigatória de poderes e impedimento automático de moderação em causa própria (Special:Arbitration).',
+  },
+  {
+    account: 'Johannnes89',
+    role: 'Steward / Atuação Global Wikimedia',
+    documentedAllegations:
+      'Registros de contestação quanto à ratificação de bloqueios globais/transprojetos sem contraditório local prévio e aplicação de travas administrativas sem revisão independente.',
+    wikiWorldWebSafeguard:
+      'Nenhuma sanção global sem notificação prévia, log público auditável e recurso garantido em Special:UnblockRequests.',
+  },
+  {
+    account: 'LittleSunshine',
+    role: 'Administrador / Operador de Ferramentas (pt.wikipedia.org)',
+    documentedAllegations:
+      'Contestações documentadas referentes à ratificação corporativa de bloqueios contestados, encerramento sumário de pedidos de revisão e aplicação restritiva de filtros editoriais.',
+    wikiWorldWebSafeguard:
+      'Revisão colegiada obrigatória por membros não envolvidos no conflito inicial (Special:AdminCouncil).',
+  },
+  {
+    account: 'Teles',
+    role: 'Burocrata / Verificador (pt.wikipedia.org)',
+    documentedAllegations:
+      'Relatos documentados sobre manutenção de sanções por pares burocráticos, ausência de transparência probatória em verificações técnicas e resistência à reabertura de recursos.',
+    wikiWorldWebSafeguard:
+      'Auditoria técnica independente e vedação ao uso punitivo de metadados de rede/IP (LGPD e Marco Civil).',
+  },
+  {
+    account: 'Conde Edmond Dantès',
+    role: 'Administrador / Participante de Processos Disciplinares (pt.wikipedia.org)',
+    documentedAllegations:
+      'Registros de contestação em discussões administrativas envolvendo escalonamento punitivo, desqualificação de contribuidores dissidentes e alinhamento em bloqueios de longo prazo.',
+    wikiWorldWebSafeguard:
+      'Código Universal de Conduta (Special:UCoC) vinculante com proteção formal contra retaliação a denunciantes.',
+  },
+];
+
+const WIKI_SITE_EXACT_SPECS = [
+  { label: 'Domínio Oficial Prioritário', value: 'https://wikizero.wazzimagiygg.com/' },
+  { label: 'Nome Oficial da Plataforma', value: 'WikiWorldWeb (anteriormente WikiZero)' },
+  { label: 'Arquitetura & Dados', value: 'React 19 + TypeScript + Cloud Firestore (100% independente da Wikimedia Foundation)' },
+  { label: 'Licenciamento Aberto', value: 'Código GNU GPL v3.0 · Conteúdo CC BY-SA 4.0 · Sem anúncios intrusivos' },
+  { label: 'Governança & Privacidade', value: 'ArbCom ativo, UCoC vinculante, 22 modelos de Infobox e conformidade integral LGPD/GDPR' },
+];
+
+const GROUNDING_PRESET_QUERIES = [
+  'Quais são as informações oficiais sobre a WikiWorldWeb (wikizero.wazzimagiygg.com) e seus recursos abertos?',
+  'Quais são os princípios do Código Universal de Conduta (UCoC) da Wikimedia Foundation sobre abuso de ferramentas administrativas?',
+  'Quais são as diferenças de governança e privacidade (LGPD) entre a WikiWorldWeb e a Wikipédia em português?',
+];
+
 export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsViewProps> = ({
   user,
   onNavigate,
@@ -270,6 +336,42 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [isDossierModalOpen, setIsDossierModalOpen] = useState(false);
   const [dossierDoc, setDossierDoc] = useState<DossierDocType>('chronus');
+  const [groundingQuery, setGroundingQuery] = useState(GROUNDING_PRESET_QUERIES[0]);
+  const [groundingLoading, setGroundingLoading] = useState(false);
+  const [groundingError, setGroundingError] = useState<string | null>(null);
+  const [groundingResult, setGroundingResult] = useState<{
+    text: string;
+    model: string;
+    sources: Array<{ title: string; uri: string }>;
+  } | null>(null);
+
+  const runSearchGrounding = async (customQuery?: string) => {
+    const q = (customQuery ?? groundingQuery).trim();
+    if (q.length < 3) return;
+    setGroundingQuery(q);
+    setGroundingLoading(true);
+    setGroundingError(null);
+    try {
+      const resp = await fetch('/api/gemini/search-grounding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: q }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data?.error || 'Falha ao consultar Google Search Grounding.');
+      }
+      setGroundingResult({
+        text: data.text || '',
+        model: data.model || 'gemini-4-hydrogen',
+        sources: Array.isArray(data.sources) ? data.sources : [],
+      });
+    } catch (err: any) {
+      setGroundingError(err?.message || 'Erro de comunicação com o servidor de pesquisa verificada.');
+    } finally {
+      setGroundingLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (initialTab) {
@@ -851,6 +953,159 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
                   </p>
                 </article>
               ))}
+            </div>
+
+            {/* Ficha Técnica Exata do Wiki-site (Domínio Oficial Prioritário) */}
+            <div className="p-5 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Globe size={16} className="text-blue-700 dark:text-blue-400" />
+                  <span>Ficha Técnica Oficial — WikiWorldWeb (wikizero.wazzimagiygg.com)</span>
+                </h3>
+                <a
+                  href="https://wikizero.wazzimagiygg.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-mono font-semibold text-blue-700 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                >
+                  <span>wikizero.wazzimagiygg.com</span>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                {WIKI_SITE_EXACT_SPECS.map((spec) => (
+                  <div key={spec.label} className="border-b border-blue-100 dark:border-blue-900/40 pb-1.5">
+                    <dt className="font-semibold text-slate-800 dark:text-slate-200">{spec.label}</dt>
+                    <dd className="text-slate-600 dark:text-slate-400 mt-0.5">{spec.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            {/* Quadro de Registros Documentais por Conta Administrativa */}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <ShieldAlert size={16} className="text-rose-700 dark:text-rose-400" />
+                  <span>Registros Documentais de Contestações por Conta Administrativa (Wikipédia / Wikimedia)</span>
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Síntese das alegações documentadas nos dossiês públicos do projeto referentes às contas administrativas abaixo e as salvaguardas equivalentes implementadas em <span className="font-mono">wikizero.wazzimagiygg.com</span>.
+                </p>
+              </div>
+              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700">
+                      <th className="py-2 px-3 font-semibold">Conta / Papel</th>
+                      <th className="py-2 px-3 font-semibold">Alegações Documentadas nos Dossiês</th>
+                      <th className="py-2 px-3 font-semibold">Salvaguarda na WikiWorldWeb</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                    {WIKIMEDIA_ACCOUNTABILITY_RECORDS.map((rec) => (
+                      <tr key={rec.account} className="align-top bg-white dark:bg-slate-900/40">
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="font-bold text-slate-900 dark:text-white">{rec.account}</div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400">{rec.role}</div>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 leading-relaxed">
+                          {rec.documentedAllegations}
+                        </td>
+                        <td className="py-2.5 px-3 text-emerald-800 dark:text-emerald-300 leading-relaxed">
+                          {rec.wikiWorldWebSafeguard}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pesquisa Web Verificada via Google Search Grounding (gemini-4-hydrogen) */}
+            <div className="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Search size={16} className="text-blue-700 dark:text-blue-400" />
+                  <span>Verificação Web em Tempo Real (Google Search Grounding)</span>
+                </h3>
+                <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                  gemini-4-hydrogen · googleSearch
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Consulte dados públicos atualizados no Google Search sobre a WikiWorldWeb (<span className="font-mono">wikizero.wazzimagiygg.com</span>), governança Wikimedia/UCoC ou registros públicos de contestações com citações verificáveis.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {GROUNDING_PRESET_QUERIES.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => runSearchGrounding(preset)}
+                    disabled={groundingLoading}
+                    className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-[11px] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer text-left"
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  runSearchGrounding();
+                }}
+                className="flex flex-col sm:flex-row gap-2"
+              >
+                <input
+                  type="text"
+                  value={groundingQuery}
+                  onChange={(e) => setGroundingQuery(e.target.value)}
+                  placeholder="Digite uma consulta para verificação atualizada via Google Search..."
+                  className="flex-1 px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="submit"
+                  disabled={groundingLoading || groundingQuery.trim().length < 3}
+                  className="px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white text-xs font-semibold transition inline-flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                >
+                  {groundingLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                  <span>{groundingLoading ? 'Verificando...' : 'Verificar no Google Search'}</span>
+                </button>
+              </form>
+              {groundingError && (
+                <p className="text-xs text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-lg px-3 py-2">
+                  {groundingError}
+                </p>
+              )}
+              {groundingResult && (
+                <div className="space-y-2.5 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <div className="text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
+                    {groundingResult.text}
+                  </div>
+                  {groundingResult.sources.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                        Fontes verificadas no Google Search:
+                      </div>
+                      <ul className="space-y-1">
+                        {groundingResult.sources.map((src) => (
+                          <li key={src.uri} className="text-[11px]">
+                            <a
+                              href={src.uri}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-700 dark:text-blue-400 hover:underline inline-flex items-center gap-1 break-all"
+                            >
+                              <span>{src.title}</span>
+                              <ExternalLink size={11} className="shrink-0" />
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Como a WikiWorldWeb previne abusos semelhantes */}

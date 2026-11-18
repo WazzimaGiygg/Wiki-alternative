@@ -34,6 +34,12 @@ const DEFAULT_KEYWORDS = [
   'WazzimaGiygg',
   'Wazzimagiygg',
   'Caso Wazzimagiygg',
+  'Caso Chronus',
+  'Chronus Wikipédia',
+  'Johannnes89',
+  'LittleSunshine',
+  'Teles Wikipédia',
+  'Conde Edmond Dantès',
   'Caso Wazzimagiygg Wikipedia',
   'projetos WazzimaGiygg',
   'quem é WazzimaGiygg',
@@ -361,19 +367,27 @@ export function updateSEO(config: SEOConfig) {
         'EU AI Act wiki'
       );
     } else if (config.view === 'firebase-ethics') {
-      finalTitle = 'Ética e Termos de Uso do Firebase, Independência da Wikimedia Foundation e Caso Chronus - WikiWorldWeb';
+      finalTitle =
+        'WikiWorldWeb (wikizero.wazzimagiygg.com) — Governança, Firebase e Dossiê de Accountability (Chronus, Johannnes89, LittleSunshine, Teles e Conde Edmond Dantès)';
       finalDesc =
-        'Termos de uso, diretrizes de ética e segurança no uso do Google Firebase, fundamentos para a não utilização de dados da Wikimedia Foundation e documentação dos abusos do administrador Chronus.';
+        'Informações exatas da WikiWorldWeb (https://wikizero.wazzimagiygg.com/), termos do Google Firebase, independência da Wikimedia Foundation e registros documentais de contestações sobre condutas atribuídas a Chronus, Johannnes89, LittleSunshine, Teles e Conde Edmond Dantès.';
       canonicalUrl = `${BASE_URL}/?uid=Special:FirebaseEthics`;
       keywords.push(
+        'wikizero.wazzimagiygg.com',
         'termos de uso firebase',
         'ética firebase',
         'governança cloud firestore',
         'não uso dados wikimedia foundation',
         'independência wikipedia',
         'abusos administrador chronus',
-        'caso chronus ucoC',
-        'calúnia chronus'
+        'Chronus',
+        'Johannnes89',
+        'LittleSunshine',
+        'Teles',
+        'Conde Edmond Dantès',
+        'caso chronus ucoc',
+        'calúnia chronus',
+        'accountability wikimedia'
       );
     } else if (config.view === 'terms') {
       finalTitle = 'Termos de Uso, Licenciamento e Serviços do Firebase - WikiWorldWeb';

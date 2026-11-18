@@ -141,6 +141,14 @@ describe('Ética Firebase, Termos de Uso do Firebase, Não Uso da Wikimedia Foun
     expect(html).toContain('Código Universal de Conduta (UCoC)');
     expect(html).toContain('Cal%C3%BAnia%20por%20parte%20de%20Chronus%20V2.pdf');
     expect(html).toContain('Wikimedia_Institutional_Accountability_Dossier.pdf');
+    expect(html).toContain('wikizero.wazzimagiygg.com');
+    expect(html).toContain('Chronus');
+    expect(html).toContain('Johannnes89');
+    expect(html).toContain('LittleSunshine');
+    expect(html).toContain('Teles');
+    expect(html).toContain('Conde Edmond Dantès');
+    expect(html).toContain('Verificação Web em Tempo Real (Google Search Grounding)');
+    expect(html).toContain('gemini-4-hydrogen');
   });
 
   it('renderiza a aba de autoverificação de conformidade Firebase', () => {

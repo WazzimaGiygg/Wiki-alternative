@@ -73,17 +73,17 @@ async function generateWithFallback(
   timeoutMs = 25000
 ) {
   // Modelo estável e de resposta ultra-rápida no Google AI Studio
-  const requested = primaryModel || 'gemini-2.5-flash';
+  const requested = primaryModel || 'gemini-4-hydrogen';
   // Sanitiza modelos descontinuados que retornam 404 (como gemini-2.5-flash-lite ou pro)
   const safePrimary = (requested.includes('lite') || requested.includes('pro'))
-    ? 'gemini-2.5-flash'
+    ? 'gemini-4-hydrogen'
     : requested;
 
   const modelsToTry = [
     safePrimary,
+    'gemini-4-hydrogen',
     'gemini-2.5-flash',
     'gemini-flash-latest',
-    'gemini-3.8-flash',
   ].filter((m, i, arr) => m && arr.indexOf(m) === i);
 
   let lastErr: any = null;
@@ -989,14 +989,14 @@ app.get('/api/gemini/status', (req: Request, res: Response) => {
     status: 'ok',
     hasApiKey: hasKey,
     variableName: 'GEMINI_API_KEY',
-    defaultModel: 'gemini-3.8-flash',
+    defaultModel: 'gemini-4-hydrogen',
     appletId: '0a14dc90-3ab3-47bc-8306-ca5bc2953699',
     provider: 'Google AI Studio & Gemini API',
     maskedKey,
     serverSideProxy: true,
+    searchGroundingEnabled: true,
     recommendedModels: [
-      'gemini-3.8-flash',
-      'gemini-flash-latest',
+      'gemini-4-hydrogen',
       'gemini-4-argon',
       'gemini-3.1-flash-lite',
       'gemini-3.1-flash-lite-image',
@@ -1004,6 +1004,71 @@ app.get('/api/gemini/status', (req: Request, res: Response) => {
       'gemini-3.5-transcribe',
     ],
   });
+});
+
+// 1.05 Google Search Grounding (gemini-4-hydrogen + googleSearch) para verificação pública em tempo real
+const searchGroundingRateLimits = new Map<string, { count: number; resetAt: number }>();
+app.post('/api/gemini/search-grounding', async (req: Request, res: Response) => {
+  try {
+    const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
+    if (!query || query.length < 3 || query.length > 500) {
+      return res.status(400).json({
+        error: 'Informe uma consulta entre 3 e 500 caracteres para pesquisa verificada no Google Search.',
+      });
+    }
+
+    const clientIp = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+    const now = Date.now();
+    const rate = searchGroundingRateLimits.get(clientIp);
+    if (!rate || now > rate.resetAt) {
+      searchGroundingRateLimits.set(clientIp, { count: 1, resetAt: now + 60_000 });
+    } else if (rate.count >= 12) {
+      return res.status(429).json({
+        error: 'Limite temporário de consultas atingido. Aguarde alguns instantes e tente novamente.',
+      });
+    } else {
+      rate.count += 1;
+    }
+
+    const ai = getGemini();
+    const response = await ai.models.generateContent({
+      model: 'gemini-4-hydrogen',
+      contents: query,
+      config: {
+        systemInstruction:
+          'Você é o motor de verificação factual com Google Search Grounding da WikiWorldWeb (https://wikizero.wazzimagiygg.com/). Responda em português do Brasil de forma objetiva, precisa e atualizada usando os resultados do Google Search. Sempre cite fontes públicas verificáveis e diferencie fatos comprovados de alegações em disputa.',
+        tools: [{ googleSearch: {} }],
+      },
+    });
+
+    const groundingMeta = response.candidates?.[0]?.groundingMetadata;
+    const rawChunks = groundingMeta?.groundingChunks || [];
+    const sources: Array<{ title: string; uri: string }> = [];
+    const seenUris = new Set<string>();
+    for (const chunk of rawChunks) {
+      const web = (chunk as { web?: { uri?: string; title?: string } })?.web;
+      if (web?.uri && !seenUris.has(web.uri)) {
+        seenUris.add(web.uri);
+        sources.push({
+          title: web.title || web.uri,
+          uri: web.uri,
+        });
+      }
+    }
+
+    return res.json({
+      text: response.text || '',
+      model: 'gemini-4-hydrogen',
+      sources,
+      searchQueries: groundingMeta?.webSearchQueries || [],
+    });
+  } catch (err: any) {
+    console.error('[Search Grounding API] Erro:', err);
+    const status = typeof err?.status === 'number' && err.status >= 400 && err.status < 600 ? err.status : 500;
+    return res.status(status).json({
+      error: err?.message || 'Não foi possível concluir a verificação via Google Search no momento.',
+    });
+  }
 });
 
 // 1.1 Teste de Ping e Diagnóstico da variável GEMINI_API_KEY (Requisito 3.05.3.ag)
