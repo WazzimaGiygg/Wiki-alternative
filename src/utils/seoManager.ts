@@ -22,12 +22,15 @@ export interface SEOConfig {
   breadcrumbs?: Array<{ name: string; url: string }>;
 }
 
-const BASE_URL = 'https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app';
-const DEFAULT_TITLE = 'WikiWorldWeb - Enciclopédia Livre';
+export const CANONICAL_BASE_URL = 'https://wikizero.wazzimagiygg.com';
+const BASE_URL = CANONICAL_BASE_URL;
+const DEFAULT_TITLE = 'WikiWorldWeb (wikizero.wazzimagiygg.com) — Enciclopédia Livre';
 const DEFAULT_DESC =
-  'WikiWorldWeb - A Enciclopédia Livre, Rápida e Sem Anúncios. Uma alternativa moderna e aberta à Wikipédia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, auditoria descentralizada, temas visuais e conformidade LGPD.';
+  'WikiWorldWeb (wikizero.wazzimagiygg.com) — A Enciclopédia Livre, Rápida e Sem Anúncios. Alternativa moderna e aberta à Wikipédia, Wikimedia, MediaWiki, Wikidot e Fandom com editor wikitexto em tempo real, auditoria descentralizada, temas visuais e conformidade LGPD.';
 const DEFAULT_KEYWORDS = [
+  'wikizero.wazzimagiygg.com',
   'WikiWorldWeb',
+  'WikiZero',
   'WazzimaGiygg',
   'Wazzimagiygg',
   'Caso Wazzimagiygg',
@@ -35,19 +38,20 @@ const DEFAULT_KEYWORDS = [
   'projetos WazzimaGiygg',
   'quem é WazzimaGiygg',
   'WazzimaGiygg a verdade',
-  'alternativa à wikipedia',
+  'alternativa à wikipédia',
   'alternativa wikipedia',
+  'melhor que wikipedia',
   'alternativa fandom',
-  'fandom sem anuncios',
+  'fandom sem anúncios',
   'alternativa mediawiki',
   'alternativa wikidot',
-  'enciclopedia livre',
+  'enciclopédia livre',
   'enciclopédia aberta',
   'wiki colaborativa',
   'editor wikitexto',
-  'enciclopedia online',
+  'enciclopédia online',
   'software livre',
-  'enciclopedia sem anuncios',
+  'enciclopédia sem anúncios',
 ];
 
 /**
@@ -86,6 +90,18 @@ function setCanonicalUrl(url: string) {
     document.head.appendChild(link);
   }
   link.setAttribute('href', url);
+
+  // Mantém hreflang sincronizado com o domínio oficial wikizero.wazzimagiygg.com
+  for (const hreflang of ['pt-BR', 'pt', 'x-default']) {
+    let alt = document.querySelector(`link[rel="alternate"][hreflang="${hreflang}"]`) as HTMLLinkElement | null;
+    if (!alt) {
+      alt = document.createElement('link');
+      alt.setAttribute('rel', 'alternate');
+      alt.setAttribute('hreflang', hreflang);
+      document.head.appendChild(alt);
+    }
+    alt.setAttribute('href', url);
+  }
 }
 
 /**
@@ -137,24 +153,31 @@ export function updateSEO(config: SEOConfig) {
         : `Leia sobre ${art.titulo} na WikiWorldWeb, a enciclopédia livre colaborativa.`);
     canonicalUrl = `${BASE_URL}/?uid=${encodeURIComponent(art.id)}`;
 
-    // Generate Article Schema for search engines
+    // Generate Article Schema anchored to wikizero.wazzimagiygg.com
     setJsonLd('dynamic-article-jsonld', {
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: art.titulo,
       description: finalDesc,
+      url: canonicalUrl,
       inLanguage: art.idioma || 'pt-BR',
+      isPartOf: {
+        '@id': `${BASE_URL}/#website`,
+      },
       mainEntityOfPage: {
         '@type': 'WebPage',
         '@id': canonicalUrl,
       },
+      image: `${BASE_URL}/pwa-512x512.png`,
       author: {
         '@type': 'Person',
         name: art.autor || 'Comunidade WikiWorldWeb',
       },
       publisher: {
         '@type': 'Organization',
+        '@id': `${BASE_URL}/#organization`,
         name: 'WikiWorldWeb',
+        url: `${BASE_URL}/`,
         logo: {
           '@type': 'ImageObject',
           url: `${BASE_URL}/pwa-512x512.png`,
@@ -163,6 +186,7 @@ export function updateSEO(config: SEOConfig) {
       datePublished: art.dataCriacao || new Date().toISOString(),
       dateModified: art.dataEdicao || art.dataCriacao || new Date().toISOString(),
       articleSection: art.categoria || 'Enciclopédia Geral',
+      keywords: [art.titulo, art.categoria || 'Enciclopédia', 'WikiWorldWeb', 'wikizero.wazzimagiygg.com'].join(', '),
     });
   } else {
     removeJsonLd('dynamic-article-jsonld');
@@ -423,12 +447,16 @@ export function updateSEO(config: SEOConfig) {
   setMetaTag('keywords', keywords.join(', '));
   setCanonicalUrl(canonicalUrl);
 
-  // 4. Update OpenGraph & Twitter tags
+  // 4. Update OpenGraph & Twitter tags (always anchored to wikizero.wazzimagiygg.com)
   setMetaTag('og:title', finalTitle, true);
   setMetaTag('og:description', finalDesc, true);
   setMetaTag('og:url', canonicalUrl, true);
+  setMetaTag('og:image', `${BASE_URL}/pwa-512x512.png`, true);
+  setMetaTag('twitter:domain', 'wikizero.wazzimagiygg.com');
+  setMetaTag('twitter:url', canonicalUrl);
   setMetaTag('twitter:title', finalTitle);
   setMetaTag('twitter:description', finalDesc);
+  setMetaTag('twitter:image', `${BASE_URL}/pwa-512x512.png`);
 
   // 5. Update BreadcrumbList Schema
   if (config.breadcrumbs && config.breadcrumbs.length > 0) {

@@ -10,6 +10,9 @@ Allow: /?*
 Allow: /?uid=wazzimagiygg*
 Allow: /?uid=caso-wazzimagiygg*
 Allow: /?uid=averdade*
+Allow: /?uid=comparison*
+Allow: /?uid=Special:AboutWikiWorldWeb*
+Allow: /?uid=search*
 Allow: /sitemap.xml
 Allow: /opensearch.xml
 Allow: /icon.svg
@@ -58,13 +61,20 @@ User-agent: Applebot
 Allow: /
 Allow: /?*
 
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /?*
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /?*
+
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
-# Sitemaps declaration
-Sitemap: /sitemap.xml
-Sitemap: https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/sitemap.xml
-Host: ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app
+# Sitemaps & Primary Domain Authority
+Sitemap: https://wikizero.wazzimagiygg.com/sitemap.xml
+Host: wikizero.wazzimagiygg.com

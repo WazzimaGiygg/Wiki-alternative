@@ -4,7 +4,7 @@
   <Description>WikiWorldWeb - A Enciclopédia Livre e Alternativa Aberta à Wikipédia, MediaWiki e Fandom</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <OutputEncoding>UTF-8</OutputEncoding>
-  <Image width="16" height="16" type="image/svg+xml">/icon.svg</Image>
-  <Url type="text/html" template="https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=search&amp;q={searchTerms}" />
-  <SearchForm>https://ais-pre-ul5azgclkwy3zltg3iyxlw-842441289091.us-east1.run.app/?uid=search</SearchForm>
+  <Image width="16" height="16" type="image/svg+xml">https://wikizero.wazzimagiygg.com/icon.svg</Image>
+  <Url type="text/html" template="https://wikizero.wazzimagiygg.com/?uid=search&amp;q={searchTerms}" />
+  <SearchForm>https://wikizero.wazzimagiygg.com/?uid=search</SearchForm>
 </OpenSearchDescription>
