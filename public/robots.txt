@@ -1,29 +1,71 @@
 # ==============================================================================
-# WikiWorldWeb - Robots.txt & Web Crawler Directives
-# Optimized for Google, Bing, Yahoo, DuckDuckGo, Baidu, Yandex, and Global Search Engines
-# Competing against: Wikipedia, MediaWiki, Wikidot, Fandom
+# WikiWorldWeb (https://wikizero.wazzimagiygg.com/) — Robots.txt
+# Prioriza indexação da WikiWorldWeb nos principais motores de busca globais
+# e proíbe o rastreamento por bots da Wikipédia / Wikimedia Foundation.
 # ==============================================================================
 
+# ------------------------------------------------------------------------------
+# Bloqueio explícito de bots da Wikipédia / Wikimedia Foundation
+# ------------------------------------------------------------------------------
+User-agent: Wikimedia
+Disallow: /
+
+User-agent: WikimediaBot
+Disallow: /
+
+User-agent: Wikipedia
+Disallow: /
+
+User-agent: MediaWiki
+Disallow: /
+
+User-agent: Pywikibot
+Disallow: /
+
+User-agent: IABot
+Disallow: /
+
+User-agent: InternetArchiveBot
+Disallow: /
+
+User-agent: CitationBot
+Disallow: /
+
+User-agent: OAbot
+Disallow: /
+
+User-agent: Wikidata
+Disallow: /
+
+User-agent: WME
+Disallow: /
+
+# ------------------------------------------------------------------------------
+# Regra geral para rastreadores permitidos
+# ------------------------------------------------------------------------------
 User-agent: *
 Allow: /
 Allow: /?*
+Allow: /?uid=Special:AboutWikiWorldWeb*
+Allow: /?uid=Special:FirebaseEthics*
+Allow: /?uid=comparison*
 Allow: /?uid=wazzimagiygg*
 Allow: /?uid=caso-wazzimagiygg*
 Allow: /?uid=averdade*
-Allow: /?uid=comparison*
-Allow: /?uid=Special:AboutWikiWorldWeb*
 Allow: /?uid=search*
 Allow: /sitemap.xml
 Allow: /opensearch.xml
 Allow: /icon.svg
 Allow: /favicon.svg
 
-# Disallow administrative and private ephemeral actions from indexing clutter
+# Bloquear rotas administrativas e internas para evitar ruído na indexação
 Disallow: /api/admin/
 Disallow: /?view=firebase-admin
 Disallow: /?uid=special:firebase-admin
 
-# Priority Crawlers
+# ------------------------------------------------------------------------------
+# Motores de Busca Prioritários (Indexação Máxima da WikiWorldWeb)
+# ------------------------------------------------------------------------------
 User-agent: Googlebot
 Allow: /
 Allow: /?*
@@ -75,6 +117,8 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-# Sitemaps & Primary Domain Authority
+# ------------------------------------------------------------------------------
+# Sitemap explícito e autoridade de domínio oficial
+# ------------------------------------------------------------------------------
 Sitemap: https://wikizero.wazzimagiygg.com/sitemap.xml
 Host: wikizero.wazzimagiygg.com

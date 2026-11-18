@@ -48,6 +48,10 @@ describe('SEO e Priorização de Domínio Oficial (wikizero.wazzimagiygg.com)', 
 
     expect(robots).toContain(`Sitemap: ${PRIMARY_DOMAIN}/sitemap.xml`);
     expect(robots).toContain('Host: wikizero.wazzimagiygg.com');
+    expect(robots).toContain('User-agent: Wikimedia\nDisallow: /');
+    expect(robots).toContain('User-agent: Wikipedia\nDisallow: /');
+    expect(robots).toContain('User-agent: MediaWiki\nDisallow: /');
+    expect(robots).toContain('User-agent: Pywikibot\nDisallow: /');
     expect(robots).not.toContain('ais-pre-ul5azgclkwy3zltg3iyxlw');
 
     expect(sitemap).toContain(`<loc>${PRIMARY_DOMAIN}/</loc>`);
