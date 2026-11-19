@@ -13,7 +13,7 @@ import {
   serverTimestamp,
   Unsubscribe,
 } from 'firebase/firestore';
-import { getDbSafe, handleFirestoreError, OperationType } from './firebase';
+import { getDbSafe, getAuthSafe } from './firebase';
 import { StorageService } from './storageService';
 import { UserChatConversation, UserChatMessage, UserProfile } from '../types';
 
@@ -133,7 +133,8 @@ export class UserChatService {
       updatedAt: now,
     };
 
-    if (!db) {
+    const authUid = getAuthSafe()?.currentUser?.uid || null;
+    if (!db || !authUid) {
       const local = getLocalConversations(currentUser.uid);
       const existing = local.find((c) => c.id === chatId);
       if (existing) return existing;
@@ -143,13 +144,19 @@ export class UserChatService {
     }
 
     try {
-      const chatDocRef = doc(db, 'user_chats', chatId);
+      const effectiveChatId = this.getConversationId(authUid, targetUser.uid);
+      const chatDocRef = doc(db, 'user_chats', effectiveChatId);
       const snap = await getDoc(chatDocRef);
       if (snap.exists()) {
         return snap.data() as UserChatConversation;
       }
-      await setDoc(chatDocRef, newConv);
-      return newConv;
+      const firestoreConv: UserChatConversation = {
+        ...newConv,
+        id: effectiveChatId,
+        participants: Array.from(new Set([authUid, targetUser.uid])),
+      };
+      await setDoc(chatDocRef, firestoreConv);
+      return firestoreConv;
     } catch (err) {
       console.warn('[UserChatService] Erro ao obter/criar conversa no Firestore:', err);
       // Fallback local
@@ -301,8 +308,9 @@ export class UserChatService {
     saveLocalMessages(chatId, localMsgs);
 
     const db = getDbSafe();
-    if (!db) {
-      // Atualiza conversa local
+    const authUid = getAuthSafe()?.currentUser?.uid || null;
+    if (!db || !authUid) {
+      // Atualiza conversa local quando sem sessão Firebase Auth ativa
       const localConvs = getLocalConversations(sender.uid);
       const conv = localConvs.find((c) => c.id === chatId);
       if (conv) {
@@ -317,55 +325,74 @@ export class UserChatService {
       return messagePayload;
     }
 
-    // 2. Gravação no Firestore
+    // 2. Gravação no Firestore: garante PRIMEIRO a existência do documento pai user_chats/{chatId}
+    // para satisfazer a regra de segurança da subcoleção messages/{messageId}
     try {
-      const msgDocRef = doc(db, 'user_chats', chatId, 'messages', msgId);
-      await setDoc(msgDocRef, messagePayload);
-
-      // 3. Atualização do documento da conversa no Firestore
+      const effectiveSenderUid = authUid;
+      const effectiveParticipants = Array.from(new Set([effectiveSenderUid, recipient.uid]));
       const chatDocRef = doc(db, 'user_chats', chatId);
-      const chatSnap = await getDoc(chatDocRef);
 
-      const existingData = chatSnap.exists() ? (chatSnap.data() as UserChatConversation) : null;
+      let existingData: UserChatConversation | null = null;
+      try {
+        const chatSnap = await getDoc(chatDocRef);
+        existingData = chatSnap.exists() ? (chatSnap.data() as UserChatConversation) : null;
+      } catch {
+        existingData = null;
+      }
+
       const currentRecipientUnread = existingData?.unreadCounts?.[recipient.uid] || 0;
+      const mergedParticipants = existingData?.participants
+        ? Array.from(new Set([...existingData.participants, ...effectiveParticipants]))
+        : effectiveParticipants;
 
       await setDoc(
         chatDocRef,
         {
           id: chatId,
-          participants: [sender.uid, recipient.uid],
+          participants: mergedParticipants,
           lastMessage: {
             text: cleanText,
-            senderUid: sender.uid,
+            senderUid: effectiveSenderUid,
             timestamp: now,
           },
           participantDetails: {
-            [sender.uid]: {
-              uid: sender.uid,
+            ...(existingData?.participantDetails || {}),
+            [effectiveSenderUid]: {
+              uid: effectiveSenderUid,
               username: sender.username || sender.displayName || 'Editor',
               displayName: sender.displayName || sender.username || 'Editor',
-              photoURL: sender.photoURL || undefined,
+              photoURL: sender.photoURL || null,
               role: sender.role || 'leitor',
             },
             [recipient.uid]: {
               uid: recipient.uid,
               username: recipient.username || recipient.displayName || 'Usuário',
               displayName: recipient.displayName || recipient.username || 'Usuário',
-              photoURL: recipient.photoURL || undefined,
+              photoURL: recipient.photoURL || null,
               role: recipient.role || 'leitor',
             },
           },
           unreadCounts: {
             ...(existingData?.unreadCounts || {}),
-            [sender.uid]: 0,
+            [effectiveSenderUid]: 0,
             [recipient.uid]: currentRecipientUnread + 1,
           },
+          createdAt: existingData?.createdAt || now,
           updatedAt: now,
         },
         { merge: true }
       );
 
-      return messagePayload;
+      // 3. Agora grava a mensagem na subcoleção messages com senderUid == request.auth.uid
+      const firestoreMessagePayload: UserChatMessage = {
+        ...messagePayload,
+        senderUid: effectiveSenderUid,
+        readBy: [effectiveSenderUid],
+      };
+      const msgDocRef = doc(db, 'user_chats', chatId, 'messages', msgId);
+      await setDoc(msgDocRef, firestoreMessagePayload);
+
+      return firestoreMessagePayload;
     } catch (error) {
       console.error('[UserChatService] Erro ao enviar mensagem:', error);
       return messagePayload;
