@@ -256,22 +256,22 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn select-text pb-12">
+    <div className="w-full max-w-full min-w-0 overflow-x-clip space-y-5 sm:space-y-6 animate-fadeIn select-text pb-12">
       {/* 1. Breadcrumbs & Header Title */}
-      <div className="bg-white dark:bg-[#0d131f] border border-slate-200 dark:border-slate-800 rounded-lg p-5 shadow-xs transition-colors">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400 mb-1">
+      <div className="bg-white dark:bg-[#0d131f] border border-slate-200 dark:border-slate-800 rounded-lg p-3.5 sm:p-5 shadow-xs transition-colors min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 min-w-0">
+          <div className="min-w-0 max-w-full">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-mono text-slate-500 dark:text-slate-400 mb-1 min-w-0">
               <span>WikiWorldWeb</span>
               <span>/</span>
-              <span className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
-                <History size={13} />
-                Especial:MudançasRecentes
+              <span className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 break-all sm:break-normal">
+                <History size={13} className="shrink-0" />
+                <span>Especial:MudançasRecentes</span>
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-              <span>{t('recent_changes.title')}</span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-sans font-normal px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+            <h1 className="text-xl sm:text-3xl font-serif font-bold text-slate-900 dark:text-white tracking-tight flex flex-wrap items-center gap-2 sm:gap-2.5">
+              <span className="break-words">{t('recent_changes.title')}</span>
+              <span className="inline-flex items-center gap-1 text-[11px] font-sans font-normal px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shrink-0">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 Feed ao vivo
               </span>
@@ -282,26 +282,27 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
           </div>
 
           {/* Quick Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => onOpenNewEditor()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition shadow-xs"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[36px] text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition shadow-xs"
             >
-              <Plus size={14} />
+              <Plus size={14} className="shrink-0" />
               <span>Escrever Artigo</span>
             </button>
             <button
               onClick={onCreatePageClick}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md transition border border-slate-200 dark:border-slate-700 shadow-xs"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 min-h-[36px] text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md transition border border-slate-200 dark:border-slate-700 shadow-xs"
             >
-              <FolderPlus size={14} className="text-emerald-600 dark:text-emerald-400" />
+              <FolderPlus size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>Nova Coleção</span>
             </button>
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
               title={t('recent_changes.refresh')}
-              className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md transition border border-slate-200 dark:border-slate-700"
+              aria-label={t('recent_changes.refresh')}
+              className="min-h-[36px] min-w-[36px] flex items-center justify-center p-1.5 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md transition border border-slate-200 dark:border-slate-700 shrink-0"
             >
               <RefreshCw size={15} className={isRefreshing ? 'animate-spin text-blue-600' : ''} />
             </button>
@@ -309,39 +310,39 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
         </div>
 
         {/* Live Metrics Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80">
-          <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded border border-slate-200/70 dark:border-slate-800">
-            <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-4 sm:mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 sm:p-3 rounded border border-slate-200/70 dark:border-slate-800 min-w-0">
+            <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
               {t('recent_changes.stat_total_edits')}
             </div>
-            <div className="text-lg sm:text-xl font-bold font-mono text-slate-800 dark:text-slate-100 mt-0.5">
+            <div className="text-base sm:text-xl font-bold font-mono text-slate-800 dark:text-slate-100 mt-0.5 truncate">
               {stats.total}
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded border border-slate-200/70 dark:border-slate-800">
-            <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 sm:p-3 rounded border border-slate-200/70 dark:border-slate-800 min-w-0">
+            <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 truncate">
               {t('recent_changes.stat_new_articles')}
             </div>
-            <div className="text-lg sm:text-xl font-bold font-mono text-emerald-700 dark:text-emerald-300 mt-0.5">
+            <div className="text-base sm:text-xl font-bold font-mono text-emerald-700 dark:text-emerald-300 mt-0.5 truncate">
               {stats.newArticles}
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded border border-slate-200/70 dark:border-slate-800">
-            <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 sm:p-3 rounded border border-slate-200/70 dark:border-slate-800 min-w-0">
+            <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 truncate">
               {t('recent_changes.stat_active_editors')}
             </div>
-            <div className="text-lg sm:text-xl font-bold font-mono text-indigo-700 dark:text-indigo-300 mt-0.5">
+            <div className="text-base sm:text-xl font-bold font-mono text-indigo-700 dark:text-indigo-300 mt-0.5 truncate">
               {stats.uniqueAuthors}
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded border border-slate-200/70 dark:border-slate-800">
-            <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-2.5 sm:p-3 rounded border border-slate-200/70 dark:border-slate-800 min-w-0">
+            <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
               {t('recent_changes.stat_bytes_delta')}
             </div>
-            <div className="text-lg sm:text-xl font-bold font-mono text-slate-800 dark:text-slate-100 mt-0.5">
+            <div className="text-base sm:text-xl font-bold font-mono text-slate-800 dark:text-slate-100 mt-0.5 truncate">
               {stats.netBytes >= 0 ? `+${(stats.netBytes / 1024).toFixed(1)} KB` : `${(stats.netBytes / 1024).toFixed(1)} KB`}
             </div>
           </div>
@@ -349,23 +350,24 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
       </div>
 
       {/* 2. MediaWiki Filter & Control Console */}
-      <div className="bg-white dark:bg-[#0d131f] border border-slate-200 dark:border-slate-800 rounded-lg p-4 shadow-xs space-y-3 transition-colors">
+      <div className="bg-white dark:bg-[#0d131f] border border-slate-200 dark:border-slate-800 rounded-lg p-3 sm:p-4 shadow-xs space-y-3 transition-colors min-w-0">
         {/* Row 1: Search & Quick Type Selector */}
-        <div className="flex flex-col md:flex-row gap-3">
+        <div className="flex flex-col md:flex-row gap-2.5 sm:gap-3 min-w-0">
           {/* Search bar */}
-          <div className="relative flex-1">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <div className="relative flex-1 min-w-0">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('recent_changes.filter_search_placeholder')}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-slate-900 dark:text-slate-100"
+              className="w-full min-h-[38px] sm:min-h-0 pl-9 pr-8 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded focus:ring-1 focus:ring-blue-500 focus:outline-hidden text-slate-900 dark:text-slate-100"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
+                aria-label="Limpar busca"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-xs text-slate-400 hover:text-slate-600"
               >
                 ✕
               </button>
@@ -373,7 +375,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
           </div>
 
           {/* Time range buttons */}
-          <div className="flex items-center gap-1 text-xs">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-1.5 sm:gap-1 text-xs">
             <span className="text-slate-500 dark:text-slate-400 text-[11px] font-mono mr-1 hidden sm:inline">
               {t('recent_changes.filter_time')}
             </span>
@@ -381,7 +383,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
               <button
                 key={range}
                 onClick={() => setSelectedTimeRange(range)}
-                className={`px-2.5 py-1 rounded text-xs font-mono transition ${
+                className={`px-2.5 py-1.5 sm:py-1 min-h-[36px] sm:min-h-0 rounded text-xs font-mono transition text-center ${
                   selectedTimeRange === range
                     ? 'bg-blue-600 text-white font-bold'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -394,14 +396,14 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
         </div>
 
         {/* Row 2: Secondary Filters & Dropdowns */}
-        <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs min-w-0">
           {/* Change Type Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-mono">Tipo:</span>
+          <div className="flex items-center gap-1.5 w-full sm:w-auto min-w-0">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-mono shrink-0 w-14 sm:w-auto">Tipo:</span>
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden"
+              className="flex-1 sm:flex-none min-w-0 min-h-[36px] sm:min-h-0 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden"
             >
               <option value="all">{t('recent_changes.filter_all')}</option>
               <option value="new_article">{t('recent_changes.filter_new')}</option>
@@ -412,12 +414,12 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
           </div>
 
           {/* Collection Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-mono">Coleção:</span>
+          <div className="flex items-center gap-1.5 w-full sm:w-auto min-w-0">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-mono shrink-0 w-14 sm:w-auto">Coleção:</span>
             <select
               value={selectedPageUid}
               onChange={(e) => setSelectedPageUid(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden max-w-[160px] truncate"
+              className="flex-1 sm:flex-none min-w-0 min-h-[36px] sm:min-h-0 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden max-w-full sm:max-w-[160px] truncate"
             >
               <option value="all">{t('recent_changes.filter_collection_select')}</option>
               {pages.map((p) => (
@@ -429,12 +431,12 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
           </div>
 
           {/* Language Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-mono">Idioma:</span>
+          <div className="flex items-center gap-1.5 w-full sm:w-auto min-w-0">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-mono shrink-0 w-14 sm:w-auto">Idioma:</span>
             <select
               value={selectedLang}
               onChange={(e) => setSelectedLang(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden"
+              className="flex-1 sm:flex-none min-w-0 min-h-[36px] sm:min-h-0 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-hidden"
             >
               <option value="all">{t('recent_changes.filter_language_select')}</option>
               <option value="pt">🇧🇷 Português</option>
@@ -447,8 +449,8 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
           </div>
 
           {/* Checkboxes: Hide Minor / Hide Bots */}
-          <div className="flex items-center gap-3 ml-auto">
-            <label className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 cursor-pointer">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 w-full sm:w-auto sm:ml-auto pt-1 sm:pt-0">
+            <label className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 cursor-pointer min-h-[32px] sm:min-h-0">
               <input
                 type="checkbox"
                 checked={hideMinor}
@@ -458,7 +460,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
               <span>{t('recent_changes.filter_hide_minor')}</span>
             </label>
 
-            <label className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 cursor-pointer">
+            <label className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 cursor-pointer min-h-[32px] sm:min-h-0">
               <input
                 type="checkbox"
                 checked={hideBots}
@@ -470,7 +472,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
 
             <button
               onClick={() => setShowLegend(!showLegend)}
-              className="text-[11px] font-mono text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+              className="text-[11px] font-mono text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 min-h-[32px] sm:min-h-0"
             >
               <Info size={12} />
               <span>{showLegend ? 'Ocultar legenda' : 'Ver legenda'}</span>
@@ -550,28 +552,28 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
           (Object.entries(groupedChanges) as [string, RecentChangeEntry[]][]).map(([groupTitle, items]) => (
             <div key={groupTitle} className="space-y-2">
               {/* Group Date Header */}
-              <div className="flex items-center gap-2 px-1">
-                <Calendar size={14} className="text-blue-600 dark:text-blue-400" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 font-mono">
+              <div className="flex flex-wrap items-center gap-2 px-1 min-w-0">
+                <Calendar size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 font-mono break-words">
                   {groupTitle}
                 </h2>
-                <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 shrink-0">
                   ({items.length} {items.length === 1 ? 'alteração' : 'alterações'})
                 </span>
-                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+                <div className="flex-1 min-w-[24px] h-px bg-slate-200 dark:bg-slate-800"></div>
               </div>
 
               {/* Items List */}
-              <div className="bg-white dark:bg-[#0d131f] border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800/80 shadow-xs overflow-hidden">
+              <div className="bg-white dark:bg-[#0d131f] border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800/80 shadow-xs overflow-hidden min-w-0">
                 {items.map((item) => {
                   const relatedArticle = findArticle(item.articleId, item.articleTitle);
 
                   return (
                     <div
                       key={item.id}
-                      className="p-3 sm:px-4 sm:py-3 hover:bg-slate-50/80 dark:hover:bg-slate-900/50 transition-colors text-xs space-y-1.5"
+                      className="p-3 sm:px-4 sm:py-3 hover:bg-slate-50/80 dark:hover:bg-slate-900/50 transition-colors text-xs space-y-1.5 min-w-0"
                     >
-                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-slate-800 dark:text-slate-200">
+                      <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-2.5 gap-y-1.5 text-slate-800 dark:text-slate-200 min-w-0">
                         {/* 1. Flag Type Badge */}
                         {item.type === 'new_article' && (
                           <span
@@ -646,23 +648,23 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
                         </span>
 
                         {/* 6. Title with link */}
-                        <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1">
+                        <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1 min-w-0 max-w-full">
                           {item.type === 'new_collection' ? (
                             <button
                               onClick={() => onSelectPage(item.pageUid)}
-                              className="text-purple-600 dark:text-purple-400 hover:underline text-left"
+                              className="text-purple-600 dark:text-purple-400 hover:underline text-left break-words min-w-0"
                             >
                               {item.articleTitle}
                             </button>
                           ) : relatedArticle ? (
                             <button
                               onClick={() => onSelectArticle(relatedArticle.id)}
-                              className="text-blue-700 dark:text-blue-300 hover:underline text-left"
+                              className="text-blue-700 dark:text-blue-300 hover:underline text-left break-words min-w-0"
                             >
                               {item.articleTitle}
                             </button>
                           ) : (
-                            <span>{item.articleTitle}</span>
+                            <span className="break-words min-w-0">{item.articleTitle}</span>
                           )}
                         </div>
 
@@ -670,26 +672,26 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
                         {item.pageTitle && (
                           <button
                             onClick={() => onSelectPage(item.pageUid)}
-                            className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                            className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition max-w-full truncate"
                           >
                             {item.pageTitle}
                           </button>
                         )}
 
                         {/* 8. User / Author */}
-                        <div className="text-slate-500 dark:text-slate-400 text-[11px] flex items-center gap-1 ml-auto">
-                          <User size={11} className="text-blue-500" />
+                        <div className="text-slate-500 dark:text-slate-400 text-[11px] flex items-center gap-1 sm:ml-auto min-w-0 max-w-full">
+                          <User size={11} className="text-blue-500 shrink-0" />
                           {onNavigateToUser ? (
                             <button
                               type="button"
                               onClick={() => onNavigateToUser(item.autor)}
-                              className="font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition text-left"
+                              className="font-medium text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition text-left truncate max-w-[180px] sm:max-w-none"
                               title={`Ver página de usuário de ${item.autor}`}
                             >
                               {item.autor}
                             </button>
                           ) : (
-                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                            <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[180px] sm:max-w-none">
                               {item.autor}
                             </span>
                           )}
@@ -700,7 +702,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
                           <button
                             onClick={() => onOpenEditorForEdit(relatedArticle)}
                             title="Editar no WikitextEditor"
-                            className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 p-0.5 rounded transition"
+                            className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 p-1 rounded transition shrink-0"
                           >
                             <Edit size={12} />
                           </button>
@@ -708,13 +710,13 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
                       </div>
 
                       {/* Summary text / Modification comment */}
-                      <div className="text-slate-600 dark:text-slate-300 text-[11px] italic pl-6 flex items-baseline gap-1.5">
-                        <span className="text-slate-400 dark:text-slate-500">↳</span>
-                        <span>
+                      <div className="text-slate-600 dark:text-slate-300 text-[11px] italic pl-2 sm:pl-6 flex flex-wrap items-baseline gap-1.5 min-w-0 break-words">
+                        <span className="text-slate-400 dark:text-slate-500 shrink-0">↳</span>
+                        <span className="break-words min-w-0">
                           {item.resumo ? `(${item.resumo})` : '— Sem sumário de edição informado'}
                         </span>
                         {item.versao && (
-                          <span className="font-mono text-[10px] text-slate-400 not-italic">
+                          <span className="font-mono text-[10px] text-slate-400 not-italic shrink-0">
                             [v.{item.versao}]
                           </span>
                         )}
@@ -730,17 +732,17 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
 
       {/* 4. Diff / Inspection Modal */}
       {diffModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white dark:bg-[#0d131f] border border-slate-200 dark:border-slate-800 rounded-lg max-w-2xl w-full p-6 shadow-xl space-y-4 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-              <div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white dark:bg-[#0d131f] border border-slate-200 dark:border-slate-800 rounded-lg max-w-2xl w-full p-4 sm:p-6 shadow-xl space-y-4 max-h-[85vh] overflow-y-auto min-w-0">
+            <div className="flex items-start justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 min-w-0">
+              <div className="min-w-0">
                 <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
                   Inspeção de Alteração MediaWiki
                 </div>
-                <h3 className="text-lg font-serif font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>{diffModalItem.articleTitle}</span>
+                <h3 className="text-base sm:text-lg font-serif font-bold text-slate-900 dark:text-white flex flex-wrap items-center gap-2 break-words">
+                  <span className="break-words">{diffModalItem.articleTitle}</span>
                   {diffModalItem.versao && (
-                    <span className="text-xs font-mono font-normal px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    <span className="text-xs font-mono font-normal px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
                       Versão {diffModalItem.versao}
                     </span>
                   )}
@@ -748,27 +750,28 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
               </div>
               <button
                 onClick={() => setDiffModalItem(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold"
+                aria-label="Fechar modal"
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold shrink-0"
               >
                 ✕
               </button>
             </div>
 
             {/* Info Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs bg-slate-50 dark:bg-slate-900/60 p-3 rounded border border-slate-200/80 dark:border-slate-800">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-slate-50 dark:bg-slate-900/60 p-3 rounded border border-slate-200/80 dark:border-slate-800">
+              <div className="min-w-0">
                 <span className="text-slate-400 block text-[10px] font-mono">AUTOR / EDITOR</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{diffModalItem.autor}</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 break-words">{diffModalItem.autor}</span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="text-slate-400 block text-[10px] font-mono">DATA & HORA</span>
-                <span className="text-slate-800 dark:text-slate-200">
+                <span className="text-slate-800 dark:text-slate-200 break-words">
                   {new Date(diffModalItem.data).toLocaleString()}
                 </span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="text-slate-400 block text-[10px] font-mono">TAMANHO / DELTA</span>
-                <span className="font-mono text-slate-800 dark:text-slate-200">
+                <span className="font-mono text-slate-800 dark:text-slate-200 break-words">
                   {diffModalItem.tamanho} bytes ({diffModalItem.deltaBytes >= 0 ? `+${diffModalItem.deltaBytes}` : diffModalItem.deltaBytes})
                 </span>
               </div>
@@ -777,7 +780,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
             {/* Summary */}
             <div className="space-y-1 text-xs">
               <span className="font-mono font-bold text-slate-500 uppercase text-[10px]">Sumário da Edição:</span>
-              <div className="p-2.5 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 italic">
+              <div className="p-2.5 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 italic break-words">
                 "{diffModalItem.resumo || 'Criação ou edição de conteúdo enciclopédico.'}"
               </div>
             </div>
@@ -786,7 +789,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
             {(() => {
               const related = findArticle(diffModalItem.articleId, diffModalItem.articleTitle);
               return (
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                   {related && (
                     <>
                       <button
@@ -794,7 +797,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
                           onSelectArticle(related.id);
                           setDiffModalItem(null);
                         }}
-                        className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition flex items-center gap-1.5"
+                        className="w-full sm:w-auto px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition flex items-center justify-center gap-1.5"
                       >
                         <Eye size={13} />
                         <span>Visualizar Artigo</span>
@@ -804,7 +807,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
                           onOpenEditorForEdit(related);
                           setDiffModalItem(null);
                         }}
-                        className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded font-medium transition flex items-center gap-1.5 border border-slate-300 dark:border-slate-700"
+                        className="w-full sm:w-auto px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded font-medium transition flex items-center justify-center gap-1.5 border border-slate-300 dark:border-slate-700"
                       >
                         <Edit size={13} />
                         <span>Editar Artigo</span>
@@ -813,7 +816,7 @@ export const RecentChanges: React.FC<RecentChangesProps> = ({
                   )}
                   <button
                     onClick={() => setDiffModalItem(null)}
-                    className="px-3 py-1.5 text-xs bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-medium transition"
+                    className="w-full sm:w-auto px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 text-xs bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded font-medium transition text-center"
                   >
                     Fechar
                   </button>

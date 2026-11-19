@@ -55,6 +55,8 @@ import {
 } from '../types';
 import { parseWikitext, TocItem } from '../utils/wikitextParser';
 import { buildUidPermalink } from '../utils/urlRouter';
+import { CANONICAL_BASE_URL } from '../utils/seoManager';
+import { attachSortableWikitables } from '../utils/tableSorter';
 import { formatExternalUrl } from '../utils/linkUtils';
 import { useLanguage } from '../context/LanguageContext';
 import { ALL_LANGUAGES } from '../utils/languages';
@@ -126,6 +128,8 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     StorageService.isArticleBookmarked(article.id, user?.uid)
   );
   const [bookmarkToast, setBookmarkToast] = useState<string | null>(null);
+  const [linkCopiedToast, setLinkCopiedToast] = useState(false);
+  const linkCopiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [ratingData, setRatingData] = useState<ArticleRatingData>(() =>
     StorageService.getArticleRating(article.id)
   );
@@ -622,8 +626,19 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     };
 
     el.addEventListener('click', handleLinkClick);
-    return () => el.removeEventListener('click', handleLinkClick);
-  }, [article.descricao, onNavigateToArticleByTitle]);
+    const cleanupSortableTables = attachSortableWikitables(el);
+    return () => {
+      el.removeEventListener('click', handleLinkClick);
+      cleanupSortableTables();
+    };
+  }, [article.descricao, onNavigateToArticleByTitle, html, activeTab]);
+
+  // Attach interactive sortable headers to wikitext tables in Reader Mode
+  useEffect(() => {
+    const el = readerContentRef.current;
+    if (!el || !isReaderMode) return;
+    return attachSortableWikitables(el);
+  }, [isReaderMode, html]);
 
   // Handle Speech Reader
   const toggleSpeech = () => {
@@ -662,6 +677,52 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (linkCopiedTimerRef.current) {
+        clearTimeout(linkCopiedTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleCopyPermanentLink = async () => {
+    const permanentUrl = `${CANONICAL_BASE_URL}/?uid=${encodeURIComponent(localArticle.id)}`;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(permanentUrl);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = permanentUrl;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = permanentUrl;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
+
+    setLinkCopiedToast(true);
+    if (linkCopiedTimerRef.current) {
+      clearTimeout(linkCopiedTimerRef.current);
+    }
+    linkCopiedTimerRef.current = setTimeout(() => {
+      setLinkCopiedToast(false);
+    }, 2500);
   };
 
   const handleCopyUid = () => {
@@ -840,7 +901,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         {/* Minimalist Sticky Reader Toolbar — Ocultada na impressão */}
         {!isPrinting && (
-          <header className={`reader-mode-toolbar sticky top-0 z-40 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 sm:gap-3 shadow-xs no-print select-none ${
+          <header className={`reader-mode-toolbar sticky top-0 z-40 backdrop-blur-md border-b px-2.5 sm:px-6 py-2 sm:py-2.5 flex flex-wrap items-center justify-between gap-2 sm:gap-3 shadow-xs no-print select-none max-w-full ${
             readerTheme === 'sepia'
               ? 'bg-[#fbf0d9]/95 border-[#d8c59f] text-[#2e2215]'
               : readerTheme === 'light'
@@ -853,7 +914,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <button
               onClick={() => handleToggleReaderMode(false)}
-              className={`px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition shadow-2xs shrink-0 ${
+              className={`px-2.5 py-1.5 min-h-[34px] rounded-lg border flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition shadow-2xs shrink-0 ${
                 readerTheme === 'sepia'
                   ? 'border-[#c4a572] bg-[#f4ebd0] text-[#2e2215] hover:bg-[#ebdaba]'
                   : readerTheme === 'light'
@@ -889,7 +950,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           </div>
 
           {/* Right Controls: Readability Settings & Quick Tools */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2 min-w-0 max-w-full">
             {/* Font Family Picker */}
             <div className={`flex items-center p-0.5 rounded-lg border text-xs font-medium ${
               readerTheme === 'sepia'
@@ -1098,7 +1159,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         {/* Floating TableOfContents Popover in Reader Mode */}
         {showReaderToc && (
-          <div className={`reader-toc-popover fixed top-14 right-4 sm:right-6 z-40 w-80 max-h-[75vh] overflow-y-auto rounded-xl border shadow-2xl p-3 animate-in fade-in slide-in-from-top-2 no-print ${
+          <div className={`reader-toc-popover fixed top-14 left-3 right-3 sm:left-auto sm:right-6 z-40 sm:w-80 max-w-[calc(100vw-1.5rem)] max-h-[75vh] overflow-y-auto rounded-xl border shadow-2xl p-3 animate-in fade-in slide-in-from-top-2 no-print ${
             readerTheme === 'sepia'
               ? 'bg-[#fbf0d9] border-[#decba4] text-[#2e2215]'
               : readerTheme === 'light'
@@ -1142,7 +1203,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         {/* Central Article Canvas */}
         <main
-          className={`reader-mode-main mx-auto px-5 sm:px-10 py-10 sm:py-16 transition-all duration-150 ${
+          className={`reader-mode-main mx-auto px-3.5 sm:px-10 py-6 sm:py-16 transition-all duration-150 min-w-0 max-w-full overflow-x-clip ${
             readerWidth === 'narrow'
               ? 'max-w-2xl'
               : readerWidth === 'wide'
@@ -1151,7 +1212,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           }`}
         >
           {/* Article Title & Metadata Banner */}
-          <header className="reader-article-header mb-10 pb-6 border-b border-current/15 text-center sm:text-left">
+          <header className="reader-article-header mb-8 sm:mb-10 pb-5 sm:pb-6 border-b border-current/15 text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2 mb-3 flex-wrap">
               {/* Categoria oculta rigorosamente no momento da impressão (3.05.6.d) */}
               <span
@@ -1174,7 +1235,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             </div>
 
             <h1
-              className={`text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight ${
+              className={`text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight break-words ${
                 readerFontFamily === 'serif'
                   ? 'font-serif'
                   : readerFontFamily === 'mono'
@@ -1199,6 +1260,19 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               <span>Atualizado em {new Date(localArticle.dataEdicao || localArticle.dataCriacao).toLocaleDateString('pt-BR')}</span>
               <span>•</span>
               <span className="font-mono">Versão {localArticle.versao || 1}.0</span>
+              <button
+                type="button"
+                onClick={handleCopyPermanentLink}
+                title={`Copiar link permanente: ${CANONICAL_BASE_URL}/?uid=${encodeURIComponent(localArticle.id)}`}
+                className={`no-print print:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-semibold transition cursor-pointer ${
+                  linkCopiedToast
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'border-current/25 hover:bg-current/10'
+                }`}
+              >
+                {linkCopiedToast ? <Check size={12} /> : <Link2 size={12} />}
+                <span>{linkCopiedToast ? 'Link copied' : 'Copy Link'}</span>
+              </button>
             </div>
           </header>
 
@@ -1253,7 +1327,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           />
 
           {/* End-of-article Navigation & Licensing Footer */}
-          <footer className="reader-mode-footer mt-16 pt-8 border-t border-current/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-70">
+          <footer className="reader-mode-footer mt-12 sm:mt-16 pt-6 sm:pt-8 border-t border-current/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-70 text-center sm:text-left">
             <div>
               <p className="font-bold">WikiWorldWeb — Enciclopédia Livre e Aberta</p>
               <p className="text-[11px]">
@@ -1261,7 +1335,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center gap-2 no-print">
+            <div className="flex flex-wrap items-center justify-center gap-2 no-print">
               <button
                 type="button"
                 onClick={() => {
@@ -1283,6 +1357,18 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             </div>
           </footer>
         </main>
+
+        {/* Link Copied Toast Notification (Reader Mode) */}
+        {linkCopiedToast && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 z-50 px-3.5 sm:px-4 py-3 rounded-2xl bg-slate-900/95 dark:bg-slate-800/95 text-white border border-emerald-500/40 shadow-2xl flex items-center gap-2.5 text-xs animate-in fade-in slide-in-from-bottom-3 backdrop-blur-md max-w-sm no-print"
+          >
+            <Check size={16} className="text-emerald-400 shrink-0" />
+            <span className="font-semibold">Link copied</span>
+          </div>
+        )}
 
         {/* Modals if opened while in Reader Mode */}
         {showPdfModal && (
@@ -1314,35 +1400,46 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       </div>
 
       {bookmarkToast && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900/95 dark:bg-slate-800/95 text-white border border-slate-700/80 shadow-2xl flex items-center gap-3 text-xs animate-in fade-in slide-in-from-bottom-3 backdrop-blur-md">
+        <div className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 z-50 px-3.5 sm:px-4 py-3 rounded-2xl bg-slate-900/95 dark:bg-slate-800/95 text-white border border-slate-700/80 shadow-2xl flex items-center gap-2.5 sm:gap-3 text-xs animate-in fade-in slide-in-from-bottom-3 backdrop-blur-md max-w-md">
           <Bookmark size={16} className="text-emerald-400 shrink-0" fill="currentColor" />
-          <span className="font-semibold">{bookmarkToast}</span>
+          <span className="font-semibold break-words min-w-0">{bookmarkToast}</span>
+        </div>
+      )}
+
+      {linkCopiedToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-6 sm:bottom-6 z-50 px-3.5 sm:px-4 py-3 rounded-2xl bg-slate-900/95 dark:bg-slate-800/95 text-white border border-emerald-500/40 shadow-2xl flex items-center gap-2.5 text-xs animate-in fade-in slide-in-from-bottom-3 backdrop-blur-md max-w-sm no-print print:hidden"
+        >
+          <Check size={16} className="text-emerald-400 shrink-0" />
+          <span className="font-semibold">Link copied</span>
         </div>
       )}
 
       {/* High Density Breadcrumb & Action Bar */}
-      <div className="flex items-center justify-between flex-wrap gap-2 text-xs border-b border-slate-200 dark:border-slate-800 pb-2 no-print print:hidden article-top-toolbar min-w-0 max-w-full">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 flex-wrap">
+      <div className="flex items-center justify-between flex-wrap gap-2 text-xs border-b border-slate-200 dark:border-slate-800 pb-2.5 no-print print:hidden article-top-toolbar min-w-0 max-w-full">
+        <div className="flex items-center gap-2 flex-wrap min-w-0 max-w-full">
+          <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 flex-wrap min-w-0 max-w-full">
             <button
               onClick={onBack}
-              className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold"
+              className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold py-0.5 shrink-0"
             >
               <ArrowLeft size={13} /> Principal
             </button>
-            <ChevronRight size={11} className="text-slate-300 dark:text-slate-600" />
+            <ChevronRight size={11} className="text-slate-300 dark:text-slate-600 shrink-0" />
             {page && (
               <>
                 <button
                   onClick={() => onNavigateToPage(page.uid)}
-                  className="hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 font-medium truncate max-w-[140px] sm:max-w-[220px]"
                 >
                   {page.titulo}
                 </button>
-                <ChevronRight size={11} className="text-slate-300 dark:text-slate-600" />
+                <ChevronRight size={11} className="text-slate-300 dark:text-slate-600 shrink-0" />
               </>
             )}
-            <span className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-xs">
+            <span className="font-bold text-slate-900 dark:text-slate-100 truncate max-w-[180px] sm:max-w-xs min-w-0">
               {currentTitle}
             </span>
           </div>
@@ -1350,7 +1447,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           {/* Reading Time Estimate Label at the Top of ArticleViewer */}
           <div
             title={`Tempo estimado de leitura: ~${readingTimeMinutes} min (${wordCount.toLocaleString()} palavras, ${characterCount.toLocaleString()} caracteres)`}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50/90 dark:bg-blue-950/70 border border-blue-200/90 dark:border-blue-800 text-blue-800 dark:text-blue-300 font-mono text-[11px] font-semibold shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg bg-blue-50/90 dark:bg-blue-950/70 border border-blue-200/90 dark:border-blue-800 text-blue-800 dark:text-blue-300 font-mono text-[11px] font-semibold shadow-2xs shrink-0"
           >
             <Clock size={12} className="text-blue-600 dark:text-blue-400 shrink-0" />
             <span>~{readingTimeMinutes} min de leitura</span>
@@ -1361,17 +1458,17 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         </div>
 
         {/* High Density Toolbar Controls */}
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-1 flex-wrap w-full sm:w-auto min-w-0">
           {/* UID Permalink Button */}
           <button
             onClick={handleCopyUid}
             title={`Copiar Link Permanente UID (?uid=${article.id})`}
-            className="px-2 py-1 rounded border border-blue-200 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition flex items-center gap-1 font-mono text-[11px] font-bold shadow-xs"
+            className="px-2 py-1 min-h-[32px] sm:min-h-0 rounded border border-blue-200 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition flex items-center gap-1 font-mono text-[11px] font-bold shadow-xs max-w-full min-w-0"
           >
-            <Link2 size={12} className="text-blue-500" />
-            <span className="hidden sm:inline">UID:</span>
-            <span>{article.id}</span>
-            {copiedUid ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} className="text-slate-400" />}
+            <Link2 size={12} className="text-blue-500 shrink-0" />
+            <span className="hidden sm:inline shrink-0">UID:</span>
+            <span className="truncate max-w-[110px] sm:max-w-none">{article.id}</span>
+            {copiedUid ? <Check size={11} className="text-emerald-500 shrink-0" /> : <Copy size={11} className="text-slate-400 shrink-0" />}
           </button>
 
           {/* Watchlist Star Toggle */}
@@ -1604,10 +1701,13 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
       </div>
 
       {/* MediaWiki / Fandom High-Density Tab Bar */}
-      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold overflow-x-auto no-print print:hidden article-tabs-nav">
+      <nav
+        aria-label="Navegação do artigo"
+        className="w-full max-w-full flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold overflow-x-auto pb-0.5 [scrollbar-width:thin] no-print print:hidden article-tabs-nav"
+      >
         <button
           onClick={() => setActiveTab('article')}
-          className={`px-3 py-1.5 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+          className={`px-2.5 sm:px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
             activeTab === 'article'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 font-bold'
               : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1618,7 +1718,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         <button
           onClick={() => setActiveTab('talk')}
-          className={`px-3 py-1.5 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+          className={`px-2.5 sm:px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
             activeTab === 'talk'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 font-bold'
               : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1633,7 +1733,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         <button
           onClick={() => setActiveTab('source')}
-          className={`px-3 py-1.5 border-b-2 transition flex items-center gap-1 whitespace-nowrap ${
+          className={`px-2.5 sm:px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 border-b-2 transition flex items-center gap-1 whitespace-nowrap shrink-0 ${
             activeTab === 'source'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 font-bold'
               : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1644,7 +1744,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         <button
           onClick={() => setActiveTab('history')}
-          className={`px-3 py-1.5 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+          className={`px-2.5 sm:px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
             activeTab === 'history'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 font-bold'
               : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1659,7 +1759,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         <button
           onClick={() => setActiveTab('what-links-here')}
-          className={`px-3 py-1.5 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+          className={`px-2.5 sm:px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
             activeTab === 'what-links-here'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 font-bold'
               : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1674,7 +1774,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
         <button
           onClick={() => setActiveTab('info')}
-          className={`px-3 py-1.5 border-b-2 transition whitespace-nowrap ${
+          className={`px-2.5 sm:px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 border-b-2 transition whitespace-nowrap shrink-0 ${
             activeTab === 'info'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 font-bold'
               : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1686,7 +1786,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
         {isWazzimaGiyggArticle && (
           <button
             onClick={() => setActiveTab('timeline')}
-            className={`px-3 py-1.5 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap ${
+            className={`px-2.5 sm:px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 border-b-2 transition flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               activeTab === 'timeline'
                 ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50/70 dark:bg-amber-950/40 font-bold'
                 : 'border-transparent text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 bg-amber-500/10'
@@ -1699,11 +1799,11 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             </span>
           </button>
         )}
-      </div>
+      </nav>
 
       {/* Tab: Talk Page */}
       {activeTab === 'talk' && (
-        <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 shadow-xs">
+        <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-3 sm:p-5 shadow-xs min-w-0 max-w-full overflow-x-clip">
           <TalkPageView
             article={article}
             user={user}
@@ -1714,7 +1814,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
       {/* Tab: What Links Here */}
       {activeTab === 'what-links-here' && (
-        <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 shadow-xs">
+        <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-3 sm:p-5 shadow-xs min-w-0 max-w-full overflow-x-clip">
           <WhatLinksHereView
             currentArticle={article}
             allArticles={allArticles}
@@ -1737,21 +1837,21 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
       {/* Tab: Source Code View */}
       {activeTab === 'source' && (
-        <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-            <h3 className="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-              <FileCode size={14} className="text-blue-600" />
-              Código-fonte em sintaxe Wikitext / MediaWiki / Fandom
+        <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-3 sm:p-5 shadow-xs space-y-3 min-w-0 max-w-full overflow-x-clip">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+            <h3 className="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5 min-w-0">
+              <FileCode size={14} className="text-blue-600 shrink-0" />
+              <span className="break-words">Código-fonte em sintaxe Wikitext / MediaWiki / Fandom</span>
             </h3>
             <button
               onClick={handleCopySource}
-              className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 border border-slate-200 dark:border-slate-700"
+              className="px-2.5 py-1.5 sm:py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 border border-slate-200 dark:border-slate-700 shrink-0"
             >
               {sourceCopied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
               {sourceCopied ? 'Copiado!' : 'Copiar Wikitext'}
             </button>
           </div>
-          <pre className="p-4 bg-slate-900 text-slate-100 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed border border-slate-800">
+          <pre className="p-3 sm:p-4 bg-slate-900 text-slate-100 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words leading-relaxed border border-slate-800 max-w-full">
             {article.descricao}
           </pre>
         </div>
@@ -1759,28 +1859,28 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
       {/* Tab: Info */}
       {activeTab === 'info' && (
-        <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-5 shadow-xs space-y-4 text-xs">
-          <h3 className="font-bold text-sm text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-3 sm:p-5 shadow-xs space-y-4 text-xs min-w-0 max-w-full overflow-x-clip">
+          <h3 className="font-bold text-sm text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2 flex flex-wrap items-center justify-between gap-2">
             <span>Metadados e Informações Técnicas</span>
-            <span className="font-mono text-xs font-normal text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+            <span className="font-mono text-xs font-normal text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800 break-all">
               ?uid={article.id}
             </span>
           </h3>
 
           {/* UID & Navigation Deep Links Card */}
-          <div className="p-3.5 rounded-lg border border-blue-200 dark:border-blue-850 bg-blue-50/40 dark:bg-blue-950/30 space-y-2.5">
+          <div className="p-3 sm:p-3.5 rounded-lg border border-blue-200 dark:border-blue-850 bg-blue-50/40 dark:bg-blue-950/30 space-y-2.5 min-w-0">
             <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-200">
-              <Link2 size={14} className="text-blue-600" />
+              <Link2 size={14} className="text-blue-600 shrink-0" />
               <span>Navegação & Links Permanentes (UID)</span>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
               Você pode acessar diretamente este artigo a qualquer momento digitando <code>?uid=</code> na barra de endereços do navegador:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-              <div className="p-2 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <div>
+              <div className="p-2 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 min-w-0">
+                <div className="min-w-0">
                   <span className="text-[10px] text-slate-400 font-mono block">UID Primário (ID)</span>
-                  <code className="font-bold text-blue-600 dark:text-blue-400">?uid={article.id}</code>
+                  <code className="font-bold text-blue-600 dark:text-blue-400 break-all">?uid={article.id}</code>
                 </div>
                 <button
                   onClick={() => {
@@ -1788,17 +1888,17 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                     setCopiedUid(true);
                     setTimeout(() => setCopiedUid(false), 2000);
                   }}
-                  className="p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300"
+                  className="p-1.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 shrink-0"
                   title="Copiar link"
                 >
                   <Copy size={12} />
                 </button>
               </div>
 
-              <div className="p-2 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <div>
+              <div className="p-2 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 min-w-0">
+                <div className="min-w-0">
                   <span className="text-[10px] text-slate-400 font-mono block">UID Semântico (Título)</span>
-                  <code className="font-bold text-slate-700 dark:text-slate-300">?uid={article.titulo.replace(/\s+/g, '_')}</code>
+                  <code className="font-bold text-slate-700 dark:text-slate-300 break-all">?uid={article.titulo.replace(/\s+/g, '_')}</code>
                 </div>
                 <button
                   onClick={() => {
@@ -1806,7 +1906,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                     setCopiedUid(true);
                     setTimeout(() => setCopiedUid(false), 2000);
                   }}
-                  className="p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300"
+                  className="p-1.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 shrink-0"
                   title="Copiar link"
                 >
                   <Copy size={12} />
@@ -1816,51 +1916,51 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 min-w-0">
               <span className="text-[10px] text-slate-400 uppercase font-mono block">Título do Artigo</span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">{article.titulo}</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200 break-words">{article.titulo}</span>
             </div>
-            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 min-w-0">
               <span className="text-[10px] text-slate-400 uppercase font-mono block">Coleção / Page UID</span>
-              <span className="font-bold text-blue-600 dark:text-blue-400 font-mono">{article.pageUid}</span>
+              <span className="font-bold text-blue-600 dark:text-blue-400 font-mono break-all">{article.pageUid}</span>
             </div>
-            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 min-w-0">
               <span className="text-[10px] text-slate-400 uppercase font-mono block">Data de Criação</span>
               <span className="text-slate-800 dark:text-slate-200">
                 {new Date(article.dataCriacao).toLocaleString('pt-BR')}
               </span>
             </div>
-            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 min-w-0">
               <span className="text-[10px] text-slate-400 uppercase font-mono block">Última Edição</span>
               <span className="text-slate-800 dark:text-slate-200">
                 {new Date(article.dataEdicao || article.dataCriacao).toLocaleString('pt-BR')}
               </span>
             </div>
-            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 min-w-0">
               <span className="text-[10px] text-slate-400 uppercase font-mono block">Tamanho do Wikitext</span>
               <span className="font-mono text-slate-800 dark:text-slate-200">{article.descricao.length} bytes</span>
             </div>
-            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 min-w-0">
               <span className="text-[10px] text-slate-400 uppercase font-mono block">Tempo Estimado de Leitura</span>
               <span className="font-bold text-blue-600 dark:text-blue-400">
                 ~{readingTimeMinutes} min ({wordCount.toLocaleString()} palavras)
               </span>
             </div>
-            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+            <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 min-w-0">
               <span className="text-[10px] text-slate-400 uppercase font-mono block">Licença de Publicação</span>
               <span className="font-bold text-emerald-600 dark:text-emerald-400">GNU General Public License v3.0</span>
             </div>
           </div>
 
           {/* Export Article Box */}
-          <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex items-center justify-between gap-3">
-            <div>
+          <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="min-w-0">
               <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">Exportação Editorial</span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400">Baixe este artigo em formato PDF para leitura offline, impressão ou arquivamento.</span>
             </div>
             <button
               onClick={() => setShowPdfModal(true)}
-              className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs shrink-0"
+              className="w-full sm:w-auto px-3 py-2 sm:py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-xs shrink-0"
             >
               <FileDown size={13} />
               <span>Exportar PDF</span>
@@ -1884,9 +1984,9 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
       {/* Main Tab: Article View */}
       {activeTab === 'article' && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-5 items-start min-w-0 max-w-full">
           {/* Article Content Pane (3 columns) */}
-          <article ref={articlePaneRef} className="lg:col-span-3 bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-4 sm:p-7 shadow-xs space-y-6 min-w-0 max-w-full overflow-x-clip">
+          <article ref={articlePaneRef} className="lg:col-span-3 bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-800 rounded p-3 sm:p-7 shadow-xs space-y-5 sm:space-y-6 min-w-0 max-w-full overflow-x-clip">
             {/* Dedicated Print & PDF Export Document Header */}
             <div className="hidden print:block mb-6 pb-4 border-b-2 border-slate-900 text-black not-prose">
               <div className="flex items-center justify-between text-[11px] text-slate-700 mb-1.5 font-mono">
@@ -1934,14 +2034,14 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
             {/* Collection Protection Banner */}
             {isPageLocked && (
-              <div className="p-2.5 sm:p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 text-xs flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+              <div className="p-2.5 sm:p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 text-xs flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <Lock size={13} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                  <span>
+                  <span className="break-words">
                     A coleção <strong>{page?.titulo}</strong> está protegida pela moderação.
                   </span>
                 </div>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-mono">
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-mono shrink-0">
                   Coleção Bloqueada
                 </span>
               </div>
@@ -1975,11 +2075,11 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => toggleShowOriginal()}
-                    className="px-2.5 py-1 rounded bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-semibold text-xs transition cursor-pointer shadow-2xs"
+                    className="px-2.5 py-1.5 sm:py-1 rounded bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-semibold text-xs transition cursor-pointer shadow-2xs"
                   >
                     {showOriginal ? `Ver em ${currentLanguage.name}` : 'Ver Original (PT)'}
                   </button>
@@ -1987,7 +2087,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                     <button
                       type="button"
                       onClick={onOpenLanguagesModal}
-                      className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition cursor-pointer shadow-2xs flex items-center gap-1"
+                      className="px-2.5 py-1.5 sm:py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition cursor-pointer shadow-2xs flex items-center gap-1"
                     >
                       <Globe2 size={12} />
                       <span>Idiomas</span>
@@ -2026,9 +2126,29 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 </div>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-normal font-serif-heading text-slate-900 dark:text-white leading-tight">
-                {currentTitle}
-              </h1>
+              <div className="flex flex-wrap items-start justify-between gap-2.5 min-w-0">
+                <h1 className="text-xl sm:text-3xl font-normal font-serif-heading text-slate-900 dark:text-white leading-tight break-words min-w-0">
+                  {currentTitle}
+                </h1>
+                <button
+                  type="button"
+                  onClick={handleCopyPermanentLink}
+                  title={`Copiar link permanente: ${CANONICAL_BASE_URL}/?uid=${encodeURIComponent(localArticle.id)}`}
+                  aria-label="Copy Link"
+                  className={`no-print print:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[34px] rounded-lg border text-xs font-semibold transition shadow-2xs shrink-0 cursor-pointer ${
+                    linkCopiedToast
+                      ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                      : 'bg-slate-50 hover:bg-blue-50 dark:bg-slate-800/80 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-blue-300 border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  {linkCopiedToast ? (
+                    <Check size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  ) : (
+                    <Link2 size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                  )}
+                  <span>{linkCopiedToast ? 'Link copied' : 'Copy Link'}</span>
+                </button>
+              </div>
 
               {/* Metadata Badges */}
               <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
@@ -2116,11 +2236,11 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                     Acompanhe cronologicamente todos os 9 marcos dos fatos, perseguições de Chronus, crimes contra a honra, quebra da LGPD e a criação da WikiWorldWeb.
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => setActiveTab('timeline')}
-                    className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                    className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
                   >
                     <Calendar size={14} />
                     <span>Ver Linha do Tempo</span>
@@ -2132,7 +2252,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                       setDossierInitialTab('text');
                       setShowDossierModal(true);
                     }}
-                    className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                    className="flex-1 sm:flex-none px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
                   >
                     <Scale size={13} className="text-rose-600" />
                     <span>Dossiê 47 Págs</span>
@@ -2161,7 +2281,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             <div
               ref={contentRef}
               style={{ fontSize: `${fontSize}px` }}
-              className="wiki-rendered-content font-wiki-body"
+              className="wiki-rendered-content font-wiki-body min-w-0 max-w-full overflow-x-hidden"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
             />
 
@@ -2218,10 +2338,10 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             )}
 
             {/* Fandom-Style Community Rating & Feedback Box */}
-            <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 not-prose no-print print:hidden article-rating-container">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+            <div className="p-3.5 sm:p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 not-prose no-print print:hidden article-rating-container min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
                 <div className="flex items-center gap-2">
-                  <Star size={16} className="text-amber-500" fill="currentColor" />
+                  <Star size={16} className="text-amber-500 shrink-0" fill="currentColor" />
                   <h4 className="font-bold text-xs text-slate-800 dark:text-slate-200 font-serif-heading">
                     Avaliação Comunitária do Artigo
                   </h4>
@@ -2233,7 +2353,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
 
               {!hasRated ? (
                 <form onSubmit={handleSubmitRating} className="space-y-2.5">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <span className="text-xs text-slate-600 dark:text-slate-400">Sua nota:</span>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
@@ -2252,17 +2372,17 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <input
                       type="text"
                       value={ratingComment}
                       onChange={(e) => setRatingComment(e.target.value)}
                       placeholder="Deixe um comentário sobre a qualidade ou precisão do artigo..."
-                      className="flex-1 text-xs px-3 py-1.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+                      className="flex-1 min-w-0 min-h-[38px] sm:min-h-0 text-xs px-3 py-1.5 rounded bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
                     />
                     <button
                       type="submit"
-                      className="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1 transition shadow-xs"
+                      className="px-3 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 rounded bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center justify-center gap-1 transition shadow-xs shrink-0"
                     >
                       <Send size={11} /> Avaliar
                     </button>
@@ -2270,7 +2390,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                 </form>
               ) : (
                 <div className="p-2.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-1.5">
-                  <Check size={14} /> Obrigado pelo seu feedback! Sua avaliação ajuda a aprimorar a qualidade enciclopédica.
+                  <Check size={14} className="shrink-0" /> Obrigado pelo seu feedback! Sua avaliação ajuda a aprimorar a qualidade enciclopédica.
                 </div>
               )}
 
@@ -2281,8 +2401,8 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
                     Comentários Recentes de Leitores:
                   </span>
                   {ratingData.feedbacks.slice(0, 3).map((fb, idx) => (
-                    <div key={idx} className="text-xs bg-slate-50 dark:bg-slate-800/60 p-2 rounded text-slate-700 dark:text-slate-300 flex items-start justify-between gap-2">
-                      <div>
+                    <div key={idx} className="text-xs bg-slate-50 dark:bg-slate-800/60 p-2 rounded text-slate-700 dark:text-slate-300 flex items-start justify-between gap-2 min-w-0">
+                      <div className="min-w-0 break-words">
                         <strong className="text-slate-800 dark:text-slate-200">{fb.autor}:</strong> “{fb.comentario}”
                       </div>
                       <div className="flex items-center gap-0.5 text-amber-500 flex-shrink-0 text-[10px]">
@@ -2295,11 +2415,11 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
             </div>
 
             {/* Article Footer */}
-            <footer className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 font-mono no-print print:hidden article-interactive-footer">
-              <div>
+            <footer className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 font-mono no-print print:hidden article-interactive-footer min-w-0">
+              <div className="min-w-0 break-all sm:break-words">
                 Doc ID: <code className="font-mono text-slate-600 dark:text-slate-300">{article.id}</code> (Coleção: <code className="font-mono text-slate-600 dark:text-slate-300">{article.pageUid}</code>)
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <button
                   onClick={() => {
                     const status = PermissionService.getEditPermissionStatus(user, localArticle);
@@ -2352,7 +2472,7 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
           </article>
 
           {/* Table of Contents & Sidebar info (1 column) */}
-          <aside className="space-y-4 sticky top-16 no-print print:hidden article-tools-sidebar">
+          <aside className="space-y-4 lg:sticky lg:top-16 no-print print:hidden article-tools-sidebar min-w-0 max-w-full">
             {/* Automatic Table of Contents Component (parses h1, h2, h3 in active article and provides jump navigation) */}
             <TableOfContents
               containerRef={contentRef}

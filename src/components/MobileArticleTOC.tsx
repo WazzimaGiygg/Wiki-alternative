@@ -38,11 +38,11 @@ export const MobileArticleTOC: React.FC<MobileArticleTOCProps> = ({
   return (
     <>
       {/* Floating Bottom Action Trigger for Mobile */}
-      <div className="fixed bottom-16 right-4 z-30 md:hidden flex flex-col items-end gap-2">
+      <div className="fixed bottom-16 right-3 sm:right-4 z-30 md:hidden flex flex-col items-end gap-2 max-w-[calc(100vw-1.5rem)]">
         <button
           id="btn-mobile-floating-toc"
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-600/95 hover:bg-blue-700 text-white text-xs font-bold shadow-lg backdrop-blur-xs transition active:scale-95 border border-blue-400/30"
+          className="flex items-center gap-1.5 px-3 py-2 min-h-[38px] rounded-full bg-blue-600/95 hover:bg-blue-700 text-white text-xs font-bold shadow-lg backdrop-blur-xs transition active:scale-95 border border-blue-400/30"
           aria-label="Abrir sumário de seções do artigo"
         >
           <List size={15} />
@@ -77,7 +77,7 @@ export const MobileArticleTOC: React.FC<MobileArticleTOCProps> = ({
             </div>
 
             {/* Quick Reader Controls Bar */}
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 text-xs">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
               {/* Font Size controls */}
               <div className="flex items-center gap-1">
                 <span className="text-[10px] text-slate-400 font-bold uppercase mr-1">Texto:</span>

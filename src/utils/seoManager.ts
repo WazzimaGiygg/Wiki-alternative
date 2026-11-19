@@ -98,7 +98,19 @@ function setCanonicalUrl(url: string) {
   link.setAttribute('href', url);
 
   // Mantém hreflang sincronizado com o domínio oficial wikizero.wazzimagiygg.com
-  for (const hreflang of ['pt-BR', 'pt', 'x-default']) {
+  const hreflangs = [
+    'pt-BR',
+    'pt-PT',
+    'pt-AO',
+    'pt-MZ',
+    'pt-CV',
+    'pt-GW',
+    'pt-ST',
+    'pt-TL',
+    'pt',
+    'x-default',
+  ];
+  for (const hreflang of hreflangs) {
     let alt = document.querySelector(`link[rel="alternate"][hreflang="${hreflang}"]`) as HTMLLinkElement | null;
     if (!alt) {
       alt = document.createElement('link');

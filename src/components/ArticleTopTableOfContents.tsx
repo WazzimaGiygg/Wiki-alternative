@@ -272,7 +272,7 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
               return (
                 <li
                   key={item.id}
-                  className={`group relative flex items-baseline gap-2 py-1 px-2 rounded-lg transition-colors ${indentClass} ${
+                  className={`group relative flex items-baseline gap-2 py-1 px-2 rounded-lg transition-colors min-w-0 ${indentClass} ${
                     isActive
                       ? isReader
                         ? 'bg-current/15 text-current font-semibold ring-1 ring-current/30'
@@ -329,9 +329,9 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
           </ol>
 
           {/* Footer Navigation Hints */}
-          <div className="pt-2 border-t border-current/10 flex items-center justify-between text-[10px] opacity-60 font-mono">
-            <span className="flex items-center gap-1">
-              <Compass size={11} />
+          <div className="pt-2 border-t border-current/10 flex flex-wrap items-center justify-between gap-2 text-[10px] opacity-60 font-mono">
+            <span className="flex items-center gap-1 min-w-0">
+              <Compass size={11} className="shrink-0" />
               <span>Clique em qualquer link para navegar internamente</span>
             </span>
 
@@ -339,7 +339,7 @@ export const ArticleTopTableOfContents: React.FC<ArticleTopTableOfContentsProps>
               <button
                 type="button"
                 onClick={() => onNavigateToSection(toc[0].id)}
-                className="hover:underline flex items-center gap-0.5 cursor-pointer hover:opacity-100"
+                className="hover:underline flex items-center gap-0.5 cursor-pointer hover:opacity-100 shrink-0"
               >
                 <span>Ir para a 1ª seção</span>
                 <ArrowDown size={10} />
