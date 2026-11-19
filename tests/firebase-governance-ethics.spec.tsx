@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { FirebaseGovernanceEthicsView } from '../src/components/FirebaseGovernanceEthicsView';
+import { IrregularidadesDossierModal } from '../src/components/IrregularidadesDossierModal';
 import { TermsOfUseView } from '../src/components/InformativeViews';
 import { getCanonicalUid, resolveNavigationUid } from '../src/utils/urlRouter';
 
@@ -162,5 +163,35 @@ describe('Ética Firebase, Termos de Uso do Firebase, Não Uso da Wikimedia Foun
 
     expect(html).toContain('Checklist de Conformidade Firebase &amp; Governança Independente');
     expect(html).toContain('firestore.rules');
+  });
+
+  it('renderiza o Dossiê 4 (Investigação LGPD e Marco Civil — 41 Páginas) em texto e quadro comparativo', () => {
+    const textHtml = renderToStaticMarkup(
+      <IrregularidadesDossierModal
+        isOpen={true}
+        onClose={() => {}}
+        initialDocument="lgpd_mci"
+        initialTab="text"
+      />
+    );
+    expect(textHtml).toContain('Investigação LGPD e Marco Civil — WMF e Wikipédia (41 Páginas)');
+    expect(textHtml).toContain('Exposição de Endereços IP e Passivo Histórico');
+    expect(textHtml).toContain('Ausência de Encarregado de Dados (DPO) no Brasil');
+    expect(textHtml).toContain('Divergência na Retenção de Logs de Acesso');
+    expect(textHtml).toContain('Inexistência de Representação Legal no Brasil');
+    expect(textHtml).toContain('/Investigacao-LGPD-e-Marco-Civil-WMF-e-Wikipedia.pdf');
+    expect(textHtml).toContain('https://wazzimagiygg.com/Investiga%C3%A7%C3%A3o%20LGPD%20e%20Marco%20Civ%C3%ADl%20WMF%20e%20Wikip%C3%A9dia.pdf');
+
+    const tableHtml = renderToStaticMarkup(
+      <IrregularidadesDossierModal
+        isOpen={true}
+        onClose={() => {}}
+        initialDocument="lgpd_mci"
+        initialTab="table"
+      />
+    );
+    expect(tableHtml).toContain('Wikipédia / WMF (Investigação 41 Págs)');
+    expect(tableHtml).toContain('WikiWorldWeb (wikizero.wazzimagiygg.com)');
+    expect(tableHtml).toContain('Resolução CD/ANPD nº 18/2024');
   });
 });

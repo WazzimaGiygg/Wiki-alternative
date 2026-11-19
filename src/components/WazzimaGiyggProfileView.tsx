@@ -544,6 +544,55 @@ export const WazzimaGiyggProfileView: React.FC<WazzimaGiyggProfileViewProps> = (
               </a>
             </div>
           </div>
+
+          {/* Project 9: Investigação LGPD e Marco Civil — WMF e Wikipédia (41 Páginas) */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-emerald-300 dark:border-emerald-800 shadow-xs flex flex-col justify-between space-y-3">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
+                  <ShieldCheck size={18} />
+                </span>
+                <span className="text-[10px] font-mono font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                  Investigação 41 Págs
+                </span>
+              </div>
+              <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                Investigação: LGPD e Marco Civil — WMF e Wikipédia
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Auditoria regulatória de 41 páginas detalhando não-conformidades da Wikimedia Foundation e Wikipédia Lusófona: passivo histórico de IPs (LGPD Arts. 6º/46), ausência de DPO no Brasil (Art. 41 e Res. CD/ANPD nº 18/2024), retenção de logs em 90 dias (Marco Civil Art. 15), falta de representação legal (Art. 11) e moderação anônima.
+              </p>
+            </div>
+            <div className="pt-2 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => {
+                  setDossierDoc('lgpd_mci');
+                  setIsDossierModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <BookOpen size={12} />
+                <span>Ler Investigação (41 p.)</span>
+              </button>
+              <a
+                href="/Investigacao-LGPD-e-Marco-Civil-WMF-e-Wikipedia.pdf"
+                download="Investigação LGPD e Marco Civil WMF e Wikipédia.pdf"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition"
+              >
+                <Download size={12} />
+                <span>Baixar PDF</span>
+              </a>
+              <a
+                href="https://wazzimagiygg.com/Investiga%C3%A7%C3%A3o%20LGPD%20e%20Marco%20Civ%C3%ADl%20WMF%20e%20Wikip%C3%A9dia.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 hover:underline font-semibold text-xs"
+              >
+                <span>Fonte original</span>
+                <ExternalLink size={11} />
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -1167,6 +1167,24 @@ export const FirebaseGovernanceEthicsView: React.FC<FirebaseGovernanceEthicsView
                 <Download size={14} />
                 <span>PDF Accountability Dossier</span>
               </a>
+
+              <button
+                type="button"
+                onClick={() => openDossier('lgpd_mci')}
+                className="px-4 py-2 min-h-[40px] rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold transition inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              >
+                <FileCheck2 size={14} />
+                <span>Investigação LGPD &amp; Marco Civil (41 p.)</span>
+              </button>
+
+              <a
+                href="/Investigacao-LGPD-e-Marco-Civil-WMF-e-Wikipedia.pdf"
+                download="Investigação LGPD e Marco Civil WMF e Wikipédia.pdf"
+                className="px-3.5 py-2 min-h-[40px] rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition inline-flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Download size={14} />
+                <span>PDF LGPD &amp; Marco Civil (41 p.)</span>
+              </a>
             </div>
           </div>
         </section>

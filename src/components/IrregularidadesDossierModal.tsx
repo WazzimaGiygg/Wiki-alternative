@@ -27,7 +27,7 @@ import {
   Layers,
 } from 'lucide-react';
 
-export type DossierDocType = 'irregularidades' | 'chronus' | 'apresentacao';
+export type DossierDocType = 'irregularidades' | 'chronus' | 'apresentacao' | 'lgpd_mci';
 
 interface IrregularidadesDossierModalProps {
   isOpen: boolean;
@@ -64,14 +64,22 @@ export const IrregularidadesDossierModal: React.FC<IrregularidadesDossierModalPr
 
   const isChronus = selectedDoc === 'chronus';
   const isApresentacao = selectedDoc === 'apresentacao';
+  const isLgpdMci = selectedDoc === 'lgpd_mci';
 
-  const pdfUrl = isApresentacao
+  const LGPD_MCI_EXTERNAL_URL =
+    'https://wazzimagiygg.com/Investiga%C3%A7%C3%A3o%20LGPD%20e%20Marco%20Civ%C3%ADl%20WMF%20e%20Wikip%C3%A9dia.pdf';
+
+  const pdfUrl = isLgpdMci
+    ? '/Investigacao-LGPD-e-Marco-Civil-WMF-e-Wikipedia.pdf'
+    : isApresentacao
     ? '/Wikimedia_Institutional_Accountability_Dossier.pdf'
     : isChronus
     ? '/Cal%C3%BAnia%20por%20parte%20de%20Chronus%20V2.pdf'
     : '/Irregularidades%20da%20Wikip%C3%A9dia%20e%20Wikimedia%20Foundation.pdf';
 
-  const pdfDownloadName = isApresentacao
+  const pdfDownloadName = isLgpdMci
+    ? 'Investigação LGPD e Marco Civil WMF e Wikipédia.pdf'
+    : isApresentacao
     ? 'Wikimedia_Institutional_Accountability_Dossier.pdf'
     : isChronus
     ? 'Calúnia por parte de Chronus V2.pdf'
@@ -79,7 +87,12 @@ export const IrregularidadesDossierModal: React.FC<IrregularidadesDossierModalPr
 
   const handleCopyCitation = () => {
     let citation = '';
-    if (isApresentacao) {
+    if (isLgpdMci) {
+      citation =
+        'WAZZIMAGIYGG / WIKIWORLDWEB. Investigação LGPD e Marco Civil — Wikimedia Foundation (WMF) e Wikipédia Lusófona: Auditoria Regulatória em 41 Páginas (Arts. 3º, 6º, 14, 18, 33, 41 e 46 da LGPD; Arts. 11 e 15 do Marco Civil da Internet; Resolução CD/ANPD nº 18/2024). Disponível em: <' +
+        LGPD_MCI_EXTERNAL_URL +
+        '>.';
+    } else if (isApresentacao) {
       citation =
         'PERES, Pedro Henrique Cardona. Dossiê de Apresentação: Wikimedia Institutional Accountability Dossier — O Caso Chronus: Violações Sistêmicas, Instrumentalização de Ferramentas e Responsabilidade Institucional da Wikimedia Foundation. WikiWorldWeb Enciclopédia, 2026 (Apresentação Oficial em 15 Slides). Disponível em: <' +
         window.location.origin +
@@ -362,6 +375,23 @@ export const IrregularidadesDossierModal: React.FC<IrregularidadesDossierModalPr
               </span>
             </span>
           </button>
+
+          <button
+            onClick={() => setSelectedDoc('lgpd_mci')}
+            className={`px-3 py-2 text-xs font-bold rounded-t-lg transition flex items-center gap-2 border-t-2 shrink-0 ${
+              selectedDoc === 'lgpd_mci'
+                ? 'bg-white dark:bg-[#0f172a] text-emerald-700 dark:text-emerald-400 border-emerald-600 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 border-transparent hover:bg-slate-200/60 dark:hover:bg-slate-900'
+            }`}
+          >
+            <FileCheck2 size={14} className={selectedDoc === 'lgpd_mci' ? 'text-emerald-600' : ''} />
+            <span className="flex items-center gap-1.5">
+              <span>Dossiê 4: Investigação LGPD &amp; Marco Civil</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded font-mono bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                41 Págs
+              </span>
+            </span>
+          </button>
         </div>
 
         {/* Modal Header */}
@@ -369,51 +399,79 @@ export const IrregularidadesDossierModal: React.FC<IrregularidadesDossierModalPr
           <div className="flex items-start gap-3">
             <div
               className={`w-11 h-11 rounded-xl text-white flex items-center justify-center shadow-md shrink-0 ring-4 ${
-                isApresentacao
+                isLgpdMci
+                  ? 'bg-gradient-to-tr from-emerald-700 via-teal-600 to-cyan-600 ring-emerald-50 dark:ring-emerald-950/40'
+                  : isApresentacao
                   ? 'bg-gradient-to-tr from-purple-700 via-indigo-600 to-rose-600 ring-purple-50 dark:ring-purple-950/40'
                   : isChronus
                   ? 'bg-gradient-to-tr from-rose-700 via-red-600 to-amber-600 ring-rose-50 dark:ring-rose-950/40'
                   : 'bg-gradient-to-tr from-blue-700 via-indigo-600 to-cyan-600 ring-blue-50 dark:ring-blue-950/40'
               }`}
             >
-              {isApresentacao ? <Presentation size={22} /> : isChronus ? <Scale size={22} /> : <FileText size={22} />}
+              {isLgpdMci ? <FileCheck2 size={22} /> : isApresentacao ? <Presentation size={22} /> : isChronus ? <Scale size={22} /> : <FileText size={22} />}
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-1.5 mb-1">
                 <span
                   className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
-                    isApresentacao
+                    isLgpdMci
+                      ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                      : isApresentacao
                       ? 'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
                       : isChronus
                       ? 'bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
                       : 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
                   }`}
                 >
-                  {isApresentacao ? 'Apresentação Oficial (15 Slides)' : isChronus ? 'Dossiê 47 Páginas (V2)' : 'PDF Oficial'}
+                  {isLgpdMci
+                    ? 'Investigação 41 Páginas'
+                    : isApresentacao
+                    ? 'Apresentação Oficial (15 Slides)'
+                    : isChronus
+                    ? 'Dossiê 47 Páginas (V2)'
+                    : 'PDF Oficial'}
                 </span>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
-                  {isApresentacao
+                  {isLgpdMci
+                    ? 'LGPD Arts. 3º, 6º, 14, 18, 33, 41 & 46'
+                    : isApresentacao
                     ? 'Responsabilidade Solidária WMF'
                     : isChronus
                     ? 'Código Penal Arts. 138-140 & 147-A'
                     : 'LGPD & Marco Civil'}
                 </span>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
-                  {isApresentacao ? 'Quebra de Sigilo & Whistleblower' : isChronus ? 'UCOC Wikimedia Violado' : 'GDPR Compliant'}
+                  {isLgpdMci
+                    ? 'Resolução CD/ANPD nº 18/2024'
+                    : isApresentacao
+                    ? 'Quebra de Sigilo & Whistleblower'
+                    : isChronus
+                    ? 'UCOC Wikimedia Violado'
+                    : 'GDPR Compliant'}
                 </span>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
-                  {isApresentacao ? 'Marco Civil Arts. 10/11 & DSA' : isChronus ? 'DSA (UE 2022/2065)' : 'Auditoria Jurídica'}
+                  {isLgpdMci
+                    ? 'Marco Civil Arts. 11 & 15'
+                    : isApresentacao
+                    ? 'Marco Civil Arts. 10/11 & DSA'
+                    : isChronus
+                    ? 'DSA (UE 2022/2065)'
+                    : 'Auditoria Jurídica'}
                 </span>
               </div>
               <h2 className="text-base sm:text-lg font-bold font-serif-heading text-slate-900 dark:text-white leading-tight">
-                {isApresentacao
+                {isLgpdMci
+                  ? 'Investigação LGPD e Marco Civil — WMF e Wikipédia (41 Páginas)'
+                  : isApresentacao
                   ? 'Wikimedia Institutional Accountability Dossier: O Caso Chronus'
                   : isChronus
                   ? 'Calúnia por parte de Chronus V2 — Dossiê Jurídico & Documental'
                   : 'Irregularidades da Wikipédia e Wikimedia Foundation'}
               </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {isApresentacao
+                {isLgpdMci
+                  ? 'Auditoria regulatória de não-conformidade da Wikimedia Foundation e Wikipédia Lusófona perante a LGPD (Lei 13.709/2018), ANPD e Marco Civil da Internet (Lei 12.965/2014)'
+                  : isApresentacao
                   ? 'Dossiê de Apresentação sobre Violações Sistêmicas, Instrumentalização de Ferramentas, Vazamento de Sigilo e Responsabilidade WMF'
                   : isChronus
                   ? 'Análise Técnico-Jurídica de Violações: Crimes Contra a Honra, Stalking, Moderação Abusiva e Violação ao UCOC'
@@ -427,7 +485,9 @@ export const IrregularidadesDossierModal: React.FC<IrregularidadesDossierModalPr
               href={pdfUrl}
               download={pdfDownloadName}
               className={`px-3 py-1.5 rounded-lg text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
-                isApresentacao
+                isLgpdMci
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : isApresentacao
                   ? 'bg-purple-600 hover:bg-purple-700'
                   : isChronus
                   ? 'bg-rose-600 hover:bg-rose-700'
@@ -713,6 +773,124 @@ export const IrregularidadesDossierModal: React.FC<IrregularidadesDossierModalPr
                           </ul>
                         </div>
                       ))}
+                    </div>
+                  </section>
+                </>
+              ) : isLgpdMci ? (
+                /* INVESTIGAÇÃO LGPD E MARCO CIVIL (41 PÁGINAS) */
+                <>
+                  <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-bold text-emerald-900 dark:text-emerald-200 uppercase font-mono text-[11px] flex items-center gap-1.5">
+                        <FileCheck2 size={14} className="text-emerald-600" />
+                        <span>Ficha Técnica — Investigação LGPD &amp; Marco Civil (WMF e Wikipédia)</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-100 dark:bg-emerald-900/80 px-2 py-0.5 rounded">
+                        41 Páginas Auditadas
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-600 dark:text-slate-300">
+                      <div>
+                        <strong>Documento Original:</strong>{' '}
+                        <a
+                          href={LGPD_MCI_EXTERNAL_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-700 dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
+                        >
+                          <span>wazzimagiygg.com (PDF 41 p.)</span>
+                          <ExternalLink size={11} />
+                        </a>
+                      </div>
+                      <div>
+                        <strong>Cópia Local Auditável:</strong> <code>Investigacao-LGPD-e-Marco-Civil-WMF-e-Wikipedia.pdf</code>
+                      </div>
+                      <div>
+                        <strong>Diplomas Analisados:</strong> LGPD (Lei nº 13.709/2018), Marco Civil (Lei nº 12.965/2014), CPC Art. 75 e Resoluções CD/ANPD nº 2/2022 e 18/2024
+                      </div>
+                      <div>
+                        <strong>Contraste Institucional:</strong> Não-conformidade regulatória WMF/Wikipédia vs. conformidade nativa da WikiWorldWeb (<code>wikizero.wazzimagiygg.com</code>)
+                      </div>
+                    </div>
+                  </div>
+
+                  <section className="space-y-4">
+                    <h3 className="text-base font-bold font-serif-heading text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-2">
+                      Síntese das 6 Frentes de Não-Conformidade Regulatória Apontadas na Investigação
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs">
+                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-1.5">
+                        <div className="font-mono text-[10px] font-bold text-rose-700 dark:text-rose-400">
+                          01 · LGPD ARTS. 6º E 46
+                        </div>
+                        <h4 className="font-bold text-slate-900 dark:text-white">
+                          Exposição de Endereços IP e Passivo Histórico
+                        </h4>
+                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                          Embora o projeto de <em>IP Masking</em> (Contas Temporárias) mitigue edições recentes, o passivo histórico de IPv4/IPv6 em <code>action=history</code> permanece público e indexado, permitindo mineração de dados (<em>data scraping</em>) e reidentificação de cidadãos brasileiros e menores.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-1.5">
+                        <div className="font-mono text-[10px] font-bold text-rose-700 dark:text-rose-400">
+                          02 · LGPD ART. 41 &amp; RES. CD/ANPD Nº 18/2024
+                        </div>
+                        <h4 className="font-bold text-slate-900 dark:text-white">
+                          Ausência de Encarregado de Dados (DPO) no Brasil
+                        </h4>
+                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                          A WMF centraliza solicitações em <code>privacy@wikimedia.org</code> nos EUA. A associação local Wiki Movimento Brasil (WMB) é autônoma e não atua como DPO das operações globais. O Art. 3º (extraterritorialidade) e o porte massivo afastam qualquer dispensa da Res. CD/ANPD nº 2/2022.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-1.5">
+                        <div className="font-mono text-[10px] font-bold text-rose-700 dark:text-rose-400">
+                          03 · MARCO CIVIL DA INTERNET, ART. 15
+                        </div>
+                        <h4 className="font-bold text-slate-900 dark:text-white">
+                          Divergência na Retenção de Logs de Acesso
+                        </h4>
+                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                          A WMF descarta logs técnicos de acesso em <strong>90 dias</strong>, descumprindo o prazo imperativo de <strong>6 meses (180 dias)</strong> sob sigilo estabelecido pelo Art. 15 do Marco Civil da Internet para provedores de aplicação que atuam no Brasil.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-1.5">
+                        <div className="font-mono text-[10px] font-bold text-rose-700 dark:text-rose-400">
+                          04 · MARCO CIVIL ART. 11 &amp; CPC ART. 75
+                        </div>
+                        <h4 className="font-bold text-slate-900 dark:text-white">
+                          Inexistência de Representação Legal no Brasil
+                        </h4>
+                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                          Sem CNPJ, filial ou representante constituído no Brasil, a citação judicial da WMF exige Cartas Rogatórias internacionais via Ministério da Justiça, gerando morosidade incompatível com liminares e tutelas de urgência.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-1.5">
+                        <div className="font-mono text-[10px] font-bold text-rose-700 dark:text-rose-400">
+                          05 · LGPD ARTS. 14, 18 E 33
+                        </div>
+                        <h4 className="font-bold text-slate-900 dark:text-white">
+                          Menores, Transferência Internacional e Eliminação (Oversight)
+                        </h4>
+                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                          A eliminação definitiva (<em>Oversight</em>) fica condicionada a critérios internos comunitários acima de direitos previstos em lei federal; faltam salvaguardas etárias reforçadas (Art. 14) e publicação de cláusulas-padrão da ANPD para transferência internacional aos EUA (Art. 33).
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-1.5">
+                        <div className="font-mono text-[10px] font-bold text-rose-700 dark:text-rose-400">
+                          06 · GOVERNANÇA &amp; CHECKUSER
+                        </div>
+                        <h4 className="font-bold text-slate-900 dark:text-white">
+                          Moderação Anônima e Ausência de Accountability
+                        </h4>
+                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                          Ferramentas de inspeção de dados não públicos (<code>CheckUser</code>) e sanções disciplinares são delegadas a voluntários anônimos/pseudônimos sem vínculo laboral ou supervisão jurídica direta da WMF.
+                        </p>
+                      </div>
                     </div>
                   </section>
                 </>
@@ -1126,7 +1304,9 @@ export const IrregularidadesDossierModal: React.FC<IrregularidadesDossierModalPr
             <div className="max-w-4xl mx-auto space-y-4">
               <div
                 className={`p-3.5 rounded-lg border text-xs ${
-                  isApresentacao
+                  isLgpdMci
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                    : isApresentacao
                     ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200'
                     : isChronus
                     ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200'
@@ -1134,7 +1314,9 @@ export const IrregularidadesDossierModal: React.FC<IrregularidadesDossierModalPr
                 }`}
               >
                 <strong>Quadro Sinóptico Comparativo:</strong>{' '}
-                {isApresentacao
+                {isLgpdMci
+                  ? 'Contrapropaganda Regulatória Baseada na Investigação de 41 Páginas: não-conformidades da Wikipédia/WMF perante a LGPD e o Marco Civil da Internet versus conformidade nativa da WikiWorldWeb (wikizero.wazzimagiygg.com).'
+                  : isApresentacao
                   ? 'Auditoria de Governança Institucional: O modelo opaco, desregulado e punitivo da Wikimedia Foundation versus a governança transparente, auditável e com direitos da WikiWorldWeb.'
                   : isChronus
                   ? 'Contraste direto entre a conduta criminosa e arbitrária de Chronus / Wikipédia e as diretrizes éticas e legais estritas da WikiWorldWeb.'
@@ -1153,19 +1335,90 @@ export const IrregularidadesDossierModal: React.FC<IrregularidadesDossierModalPr
                             : 'text-rose-700 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/30'
                         }`}
                       >
-                        {isApresentacao
+                        {isLgpdMci
+                          ? 'Wikipédia / WMF (Investigação 41 Págs)'
+                          : isApresentacao
                           ? 'Prática Wikimedia Foundation / Caso Chronus'
                           : isChronus
                           ? 'Caso Chronus / Wikipédia Lusófona'
                           : 'Wikipédia (Wikimedia Foundation)'}
                       </th>
                       <th className="p-3 font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30">
-                        WikiWorldWeb (WazzimaGiygg)
+                        WikiWorldWeb (wikizero.wazzimagiygg.com)
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-[11px]">
-                    {isApresentacao ? (
+                    {isLgpdMci ? (
+                      <>
+                        <tr>
+                          <td className="p-3 font-semibold text-slate-900 dark:text-white">
+                            Passivo Histórico de IPs (LGPD Arts. 6º e 46)
+                          </td>
+                          <td className="p-3 text-rose-600 dark:text-rose-400 bg-rose-50/30 dark:bg-rose-950/10">
+                            IPv4/IPv6 expostos publicamente em históricos antigos (<code>action=history</code>), sujeitos a scraping e reidentificação.
+                          </td>
+                          <td className="p-3 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/30 dark:bg-emerald-950/10">
+                            Zero exposição pública de IP em revisões; pseudonímia padrão e proteção técnica desde a concepção (Privacy by Design).
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-semibold text-slate-900 dark:text-white">
+                            Encarregado / DPO no Brasil (LGPD Art. 41 &amp; ANPD nº 18/2024)
+                          </td>
+                          <td className="p-3 text-rose-600 dark:text-rose-400 bg-rose-50/30 dark:bg-rose-950/10">
+                            Apenas e-mail genérico nos EUA (<code>privacy@wikimedia.org</code>); WMB local não tem poderes de DPO global.
+                          </td>
+                          <td className="p-3 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/30 dark:bg-emerald-950/10">
+                            Canal direto em português para direitos do Art. 18 (exclusão, exportação e revogação LGPD) acessível na própria plataforma.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-semibold text-slate-900 dark:text-white">
+                            Retenção de Logs de Acesso (Marco Civil Art. 15)
+                          </td>
+                          <td className="p-3 text-rose-600 dark:text-rose-400 bg-rose-50/30 dark:bg-rose-950/10">
+                            Descarte em 90 dias, divergindo do prazo legal brasileiro de 6 meses (180 dias) sob sigilo.
+                          </td>
+                          <td className="p-3 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/30 dark:bg-emerald-950/10">
+                            Trilhas de auditoria estruturadas em Cloud Firestore alinhadas às exigências de segurança e legalidade brasileira.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-semibold text-slate-900 dark:text-white">
+                            Jurisdição &amp; Representação (Marco Civil Art. 11 &amp; CPC Art. 75)
+                          </td>
+                          <td className="p-3 text-rose-600 dark:text-rose-400 bg-rose-50/30 dark:bg-rose-950/10">
+                            Sem CNPJ ou representante legal no Brasil; exige Cartas Rogatórias internacionais para ordens judiciais.
+                          </td>
+                          <td className="p-3 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/30 dark:bg-emerald-950/10">
+                            Operação transparente em conformidade expressa com a LGPD, Marco Civil da Internet e legislação brasileira.
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-semibold text-slate-900 dark:text-white">
+                            Menores &amp; Eliminação de Dados (LGPD Arts. 14 e 18)
+                          </td>
+                          <td className="p-3 text-rose-600 dark:text-rose-400 bg-rose-50/30 dark:bg-rose-950/10">
+                            <em>Oversight</em> sujeito a critérios comunitários restritivos e histórico público sem proteção etária reforçada.
+                          </td>
+                          <td className="p-3 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/30 dark:bg-emerald-950/10">
+                            Exclusão de conta LGPD em 1 clique, vedação absoluta a nomes civis de pessoas reais sem base legal (<code>Special:NoRealNamesLGPD</code>).
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 font-semibold text-slate-900 dark:text-white">
+                            Accountability da Moderação (CheckUser vs. ArbCom)
+                          </td>
+                          <td className="p-3 text-rose-600 dark:text-rose-400 bg-rose-50/30 dark:bg-rose-950/10">
+                            Inspeção de dados privados delegada a voluntários anônimos sem supervisão jurídica direta.
+                          </td>
+                          <td className="p-3 text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-50/30 dark:bg-emerald-950/10">
+                            Separação de poderes, ArbCom ativo (<code>Special:Arbitration</code>) e UCoC vinculante com ampla defesa.
+                          </td>
+                        </tr>
+                      </>
+                    ) : isApresentacao ? (
                       <>
                         <tr>
                           <td className="p-3 font-semibold text-slate-900 dark:text-white">

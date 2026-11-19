@@ -1085,6 +1085,64 @@ export const AboutWikiWorldWebView: React.FC<AboutWikiWorldWebViewProps> = ({
           ))}
         </div>
 
+        {/* Contrapropaganda Regulatória: Investigação LGPD & Marco Civil (41 Páginas) */}
+        <div className="mt-8 p-6 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                Auditoria Regulatória · 41 Páginas · LGPD &amp; Marco Civil da Internet
+              </div>
+              <h3 className="text-lg font-bold font-serif-heading text-slate-900 dark:text-white">
+                Por que a WikiWorldWeb (wikizero.wazzimagiygg.com) supera a Wikipédia em conformidade legal no Brasil
+              </h3>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <a
+                href="/Investigacao-LGPD-e-Marco-Civil-WMF-e-Wikipedia.pdf"
+                download="Investigação LGPD e Marco Civil WMF e Wikipédia.pdf"
+                className="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold transition inline-flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Download size={14} />
+                <span>Baixar Investigação (PDF 41 p.)</span>
+              </a>
+              <a
+                href="https://wazzimagiygg.com/Investiga%C3%A7%C3%A3o%20LGPD%20e%20Marco%20Civ%C3%ADl%20WMF%20e%20Wikip%C3%A9dia.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 text-xs font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition inline-flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Globe size={14} />
+                <span>Documento Original</span>
+              </a>
+            </div>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+            A investigação documental de 41 páginas sobre a Wikimedia Foundation (WMF) e a Wikipédia Lusófona aponta seis frentes de não-conformidade frente à <strong>LGPD (Lei nº 13.709/2018)</strong> e ao <strong>Marco Civil da Internet (Lei nº 12.965/2014)</strong> — problemas estruturais que a WikiWorldWeb elimina desde a arquitetura:
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+              <div className="font-bold text-slate-900 dark:text-white">Passivo Histórico de IPs (LGPD Arts. 6º/46)</div>
+              <p className="text-slate-600 dark:text-slate-400">
+                Na Wikipédia, IPs antigos seguem públicos em <code>action=history</code>. Na WikiWorldWeb, nenhum IP é exposto no histórico de edições.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+              <div className="font-bold text-slate-900 dark:text-white">DPO &amp; Representação (Art. 41 / Res. ANPD 18/2024)</div>
+              <p className="text-slate-600 dark:text-slate-400">
+                A WMF não possui DPO nem CNPJ no Brasil (WMB é autônoma). A WikiWorldWeb oferece canal direto em português e exclusão LGPD imediata.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+              <div className="font-bold text-slate-900 dark:text-white">Logs, Menores &amp; Accountability (MCI Art. 15)</div>
+              <p className="text-slate-600 dark:text-slate-400">
+                Contra descarte de logs em 90 dias e moderação anônima (<code>CheckUser</code>), a WikiWorldWeb adota ArbCom ativo, UCoC e vedação a nomes civis.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Institutional Quick Links Footer */}
         <div className="pt-5 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-300">
           <button
