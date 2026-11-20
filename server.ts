@@ -42,6 +42,14 @@ const PORT = 3000;
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 
+// Restringe incorporação em iframe apenas à própria origem e ao Google AI Studio
+const FRAME_ANCESTORS_CSP =
+  "frame-ancestors 'self' https://aistudio.google.com https://*.aistudio.google.com https://*.googleusercontent.com https://*.usercontent.goog";
+app.use((_req, res, next) => {
+  res.setHeader('Content-Security-Policy', FRAME_ANCESTORS_CSP);
+  next();
+});
+
 // Lazy initialization of GoogleGenAI client to avoid crashes if GEMINI_API_KEY is not yet set
 let geminiClient: GoogleGenAI | null = null;
 function getGemini(): GoogleGenAI {
