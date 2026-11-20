@@ -2,7 +2,9 @@ import katex from 'katex';
 import { ExtensionManager } from '../core/ExtensionManager';
 import { formatExternalUrl } from './linkUtils';
 import { FileStorageService } from '../services/fileStorageService';
+import { templateService } from '../services/templateService';
 import { INFOBOX_THEME_COLORS } from './infoboxCatalog';
+import { WikiTemplate } from '../types';
 
 export interface TocItem {
   id: string;
@@ -24,7 +26,8 @@ export interface ParseResult {
 export function parseWikitext(
   rawWikitext: string,
   _onWikiLinkClick?: (target: string) => void,
-  articleTitle?: string
+  articleTitle?: string,
+  customTemplates?: WikiTemplate[]
 ): ParseResult {
   // Aplica filtros registrados por extensões antes de iniciar o parsing do Wikitext
   const wikitext = ExtensionManager.getInstance()
@@ -84,6 +87,9 @@ export function parseWikitext(
     hasExplicitToc = true;
     text = text.replace(/__(?:TOC|SUM[AÁ]RIO)__/gi, '\n\n___WIKI_EXPLICIT_TOC___\n\n');
   }
+
+  // 0.22 Expand user-defined MediaWiki templates {{NomeDaPredefinição|parâmetro}} via templateService
+  text = templateService.processWikitext(text, customTemplates);
 
   // 0.25 Handle MediaWiki template inclusion tags & parameter defaults {{{param|default}}}
   text = text.replace(/<includeonly>[\s\S]*?<\/includeonly>/gi, '');

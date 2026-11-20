@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { getDb, getAuthSafe, handleFirestoreError, OperationType } from './firebase';
 import { Page, PageNamespace, CreatePageInput, UpdatePageInput } from '../types';
-import { TemplateService } from './TemplateService';
+import { TemplateService } from './templateService';
 import { PermissionService } from './PermissionService';
 
 const COLLECTION_NAME = 'pages';

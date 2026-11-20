@@ -47,10 +47,11 @@ import {
   Braces,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus, CustomEditorPluginConfig } from '../types';
+import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus, CustomEditorPluginConfig, WikiTemplate } from '../types';
 import { ExtensionManager } from '../core/ExtensionManager';
 import { parseWikitext } from '../utils/wikitextParser';
 import { StorageService } from '../services/storageService';
+import { templateService } from '../services/templateService';
 import { PermissionService, EditPermissionStatus } from '../services/PermissionService';
 import { sanitizeHtml } from '../utils/sanitizeHtml';
 import { BotAgentService } from '../services/botAgentService';
@@ -266,8 +267,26 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     return () => clearTimeout(timer);
   }, [titulo, descricao, pageUid]);
 
+  // Sincronização reativa de predefinições customizadas para pré-visualização ao vivo
+  const [customTemplates, setCustomTemplates] = useState<WikiTemplate[]>(() =>
+    templateService.getCachedTemplatesSync()
+  );
+
+  useEffect(() => {
+    const unsubscribe = templateService.subscribe((updated) => {
+      setCustomTemplates(updated);
+    });
+    templateService.refreshFromFirestore().catch(() => {
+      // Fallback silencioso para cache local
+    });
+    return unsubscribe;
+  }, []);
+
   // Real-time parse for preview and visual editor initial HTML
-  const { html: renderedHtml } = parseWikitext(descricao);
+  const { html: renderedHtml } = useMemo(
+    () => parseWikitext(descricao, undefined, titulo, customTemplates),
+    [descricao, titulo, customTemplates]
+  );
 
   // Sync HTML into visual editor when entering visual mode
   useEffect(() => {
@@ -2977,6 +2996,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       <PredefinicoesModal
         isOpen={showPredefinicoesModal}
         onClose={() => setShowPredefinicoesModal(false)}
+        user={user}
         onInsertWikitext={(snippet, placement) =>
           insertWikitext(placement === 'inline' ? snippet : `\n${snippet}\n`)
         }

@@ -52,8 +52,10 @@ import {
   UserProfile,
   ArticleHistoryItem,
   ArticleRatingData,
+  WikiTemplate,
 } from '../types';
 import { parseWikitext, TocItem } from '../utils/wikitextParser';
+import { templateService } from '../services/templateService';
 import { buildUidPermalink } from '../utils/urlRouter';
 import { CANONICAL_BASE_URL } from '../utils/seoManager';
 import { attachSortableWikitables } from '../utils/tableSorter';
@@ -477,10 +479,31 @@ export const ArticleViewer: React.FC<ArticleViewerProps> = ({
     }
   };
 
-  // Parse wikitext (with callouts, refs, categories, infoboxes, math, parser functions, redirects, toc controls)
+  // Sincronização reativa de predefinições customizadas ({{NomeDaPredefinição|parâmetro}})
+  const [customTemplates, setCustomTemplates] = useState<WikiTemplate[]>(() =>
+    templateService.getCachedTemplatesSync()
+  );
+
+  useEffect(() => {
+    const unsubscribe = templateService.subscribe((updated) => {
+      setCustomTemplates(updated);
+    });
+    templateService.refreshFromFirestore().catch(() => {
+      // Fallback silencioso para cache local
+    });
+    return unsubscribe;
+  }, []);
+
+  // Expande pré-definições MediaWiki ({{Nome|params}}) com parâmetros dinâmicos antes da renderização final
+  const expandedContent = useMemo(
+    () => templateService.processWikitext(currentContent, customTemplates),
+    [currentContent, customTemplates]
+  );
+
+  // Parse wikitext (with expanded templates, callouts, refs, categories, infoboxes, math, parser functions, redirects, toc controls)
   const { html, toc, references, categories, redirectTarget, hasNotoc, hasExplicitToc } = useMemo(
-    () => parseWikitext(currentContent, undefined, currentTitle),
-    [currentContent, currentTitle]
+    () => parseWikitext(expandedContent, undefined, currentTitle, customTemplates),
+    [expandedContent, currentTitle, customTemplates]
   );
 
   // Calculate reading time estimate based on article text length
