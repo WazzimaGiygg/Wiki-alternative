@@ -44,6 +44,7 @@ import {
   Puzzle,
   LogIn,
   ShieldAlert,
+  Braces,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus, CustomEditorPluginConfig } from '../types';
@@ -71,6 +72,7 @@ import {
 import { CitationHoverTooltip, CitationTooltipData } from './CitationHoverTooltip';
 import { EditConflictModal } from './EditConflictModal';
 import { InfoboxTutorialModal, InfoboxModalTab } from './InfoboxTutorialModal';
+import { PredefinicoesModal } from './PredefinicoesModal';
 
 interface WikitextEditorProps {
   initialArticle?: WikiArticle | null;
@@ -222,6 +224,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [securityWarningModal, setSecurityWarningModal] = useState<{ title: string; message: string; requiresLogin?: boolean } | null>(null);
   const [showInfoboxModal, setShowInfoboxModal] = useState<boolean>(false);
   const [infoboxModalTab, setInfoboxModalTab] = useState<InfoboxModalTab>('catalog');
+  const [showPredefinicoesModal, setShowPredefinicoesModal] = useState<boolean>(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
@@ -1949,6 +1952,15 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           </button>
           <button
             type="button"
+            id="btn-editor-predefinicoes"
+            onClick={() => setShowPredefinicoesModal(true)}
+            title="Inserir Predefinições MediaWiki ({{Sem-fontes}}, {{Navbox}}, {{Ambox}}, {{Portal}}, {{Citar web}}, etc.)"
+            className="px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
+          >
+            <Braces size={12} /> Predefinições
+          </button>
+          <button
+            type="button"
             id="btn-editor-infobox-tutorial"
             onClick={() => {
               setInfoboxModalTab('tutorial');
@@ -2959,6 +2971,15 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         initialTemplateId="geral"
         defaultTitle={titulo || undefined}
         onInsertWikitext={(snippet) => insertWikitext(`\n${snippet}\n`)}
+      />
+
+      {/* Modal de Predefinições MediaWiki ({{...}}) */}
+      <PredefinicoesModal
+        isOpen={showPredefinicoesModal}
+        onClose={() => setShowPredefinicoesModal(false)}
+        onInsertWikitext={(snippet, placement) =>
+          insertWikitext(placement === 'inline' ? snippet : `\n${snippet}\n`)
+        }
       />
     </div>
   );
