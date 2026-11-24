@@ -45,6 +45,10 @@ import {
   LogIn,
   ShieldAlert,
   Braces,
+  Underline,
+  Minus,
+  Check,
+  Type,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { WikiArticle, WikiPage, UserProfile, DailyEditLimitStatus, CustomEditorPluginConfig, WikiTemplate } from '../types';
@@ -59,7 +63,6 @@ import { SaveReasonModal } from './SaveReasonModal';
 import { PdfExportModal } from './PdfExportModal';
 import { PdfPreviewModal } from './PdfPreviewModal';
 import { UnsavedChangesModal } from './UnsavedChangesModal';
-import { htmlToWikitext } from '../utils/wikitextConverters';
 import { GeminiChatbotDrawer } from './GeminiChatbotDrawer';
 import { ResearchEthicsFormSection } from './ResearchEthicsFormSection';
 import { ResearchEthicsCommitteeInfo } from '../types/ethics';
@@ -74,6 +77,15 @@ import { CitationHoverTooltip, CitationTooltipData } from './CitationHoverToolti
 import { EditConflictModal } from './EditConflictModal';
 import { InfoboxTutorialModal, InfoboxModalTab } from './InfoboxTutorialModal';
 import { PredefinicoesModal } from './PredefinicoesModal';
+import {
+  FormattedWikitextPane,
+  FormattedWikitextPaneHandle,
+  ActiveWikitextFormats,
+} from './FormattedWikitextPane';
+import {
+  looksLikeWikitext,
+  normalizePastedHtmlForWikiEditor,
+} from '../utils/wikitextFormattedBridge';
 
 interface WikitextEditorProps {
   initialArticle?: WikiArticle | null;
@@ -228,9 +240,37 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const [showPredefinicoesModal, setShowPredefinicoesModal] = useState<boolean>(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const visualEditorRef = useRef<HTMLDivElement>(null);
+  const formattedPaneRef = useRef<FormattedWikitextPaneHandle>(null);
+  const syncSourceRef = useRef<'code' | 'formatted' | null>(null);
+  const lastFocusedPaneRef = useRef<'code' | 'formatted'>('formatted');
+
+  // Modo interno da aba Página Formatada / Divisão ('editable' = Interativa, 'preview' = Leitura Final)
+  const [formattedPaneMode, setFormattedPaneMode] = useState<'editable' | 'preview'>('editable');
+  const [activeFormats, setActiveFormats] = useState<ActiveWikitextFormats>({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false,
+    blockTag: '',
+    unorderedList: false,
+    orderedList: false,
+  });
+
+  // Drawers interativos da barra de formatação (Link, Tabela, Imagem) sem window.prompt
+  const [activeToolbarDrawer, setActiveToolbarDrawer] = useState<'none' | 'link' | 'table' | 'image'>('none');
+  const [quickLinkType, setQuickLinkType] = useState<'internal' | 'external'>('internal');
+  const [quickLinkTarget, setQuickLinkTarget] = useState('');
+  const [quickLinkLabel, setQuickLinkLabel] = useState('');
+  const [quickTableRows, setQuickTableRows] = useState(3);
+  const [quickTableCols, setQuickTableCols] = useState(3);
+  const [quickTableHeader, setQuickTableHeader] = useState(true);
+  const [quickTableCaption, setQuickTableCaption] = useState('');
+  const [quickImageUrl, setQuickImageUrl] = useState('');
+  const [quickImageCaption, setQuickImageCaption] = useState('');
+  const [pasteFeedback, setPasteFeedback] = useState<string | null>(null);
 
   const handleApplyFromGemini = (wikitext: string, mode: 'insert' | 'replace') => {
+    syncSourceRef.current = 'code';
     if (mode === 'replace') {
       setDescricao(wikitext);
     } else {
@@ -282,20 +322,11 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     return unsubscribe;
   }, []);
 
-  // Real-time parse for preview and visual editor initial HTML
+  // Real-time parse for preview and read-only final view
   const { html: renderedHtml } = useMemo(
     () => parseWikitext(descricao, undefined, titulo, customTemplates),
     [descricao, titulo, customTemplates]
   );
-
-  // Sync HTML into visual editor when entering visual mode
-  useEffect(() => {
-    if (viewMode === 'visual' && visualEditorRef.current) {
-      if (visualEditorRef.current.innerHTML !== renderedHtml) {
-        visualEditorRef.current.innerHTML = renderedHtml;
-      }
-    }
-  }, [viewMode]);
 
   // Word and Char calculations
   const charCount = descricao.length;
@@ -308,21 +339,11 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     if (isSavedSuccessfully) return false;
 
     if (isNewArticle) {
-      // Para novo artigo: qualquer texto inserido no título ou conteúdo
       return Boolean(titulo.trim() || (descricao && descricao.trim()));
     }
 
-    // Para artigo existente: compara com os valores originais
-    let currentContent = descricao;
-    if (viewMode === 'visual' && visualEditorRef.current) {
-      const converted = htmlToWikitext(visualEditorRef.current.innerHTML);
-      if (converted.trim()) {
-        currentContent = converted;
-      }
-    }
-
     const titleChanged = titulo.trim() !== (initialArticle?.titulo || '').trim();
-    const contentChanged = currentContent.trim() !== (initialArticle?.descricao || '').trim();
+    const contentChanged = descricao.trim() !== (initialArticle?.descricao || '').trim();
     const pageChanged = pageUid !== (initialArticle?.pageUid || defaultPageUid);
     const categoryChanged = categoria !== (initialArticle?.categoria || 'Geral');
     const languageChanged = idioma !== (initialArticle?.idioma || 'Português');
@@ -338,7 +359,6 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     defaultPageUid,
     categoria,
     idioma,
-    viewMode,
   ]);
 
   // Propaga status de alterações pendentes para componentes pais
@@ -361,107 +381,120 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  // Insertion of Formatted Wikitext (Converts markup to formatted HTML elements)
-  const insertFormattedWikitextSnippet = (wikitext: string) => {
-    if (!wikitext) return;
+  const isFormattedPaneActive = useCallback(() => {
+    if (formattedPaneMode !== 'editable') return false;
+    if (viewMode === 'visual') return true;
+    if (viewMode === 'split') return lastFocusedPaneRef.current === 'formatted';
+    return false;
+  }, [viewMode, formattedPaneMode]);
 
-    if (viewMode === 'visual') {
-      const parsed = parseWikitext(wikitext);
-      const temp = document.createElement('div');
-      temp.innerHTML = parsed.html;
+  const showTempPasteFeedback = useCallback((msg: string) => {
+    setPasteFeedback(msg);
+    setTimeout(() => {
+      setPasteFeedback((prev) => (prev === msg ? null : prev));
+    }, 4500);
+  }, []);
 
-      const sel = window.getSelection();
-      if (sel && sel.rangeCount > 0 && visualEditorRef.current?.contains(sel.anchorNode)) {
-        const range = sel.getRangeAt(0);
-        range.deleteContents();
-        const frag = document.createDocumentFragment();
-        while (temp.firstChild) {
-          frag.appendChild(temp.firstChild);
-        }
-        range.insertNode(frag);
-      } else if (visualEditorRef.current) {
-        while (temp.firstChild) {
-          visualEditorRef.current.appendChild(temp.firstChild);
-        }
+  // Inserção inteligente de Wikitexto já formatado ou bruto no painel ativo (Visual ou Código)
+  const insertFormattedWikitextSnippet = useCallback(
+    (wikitext: string, placement?: 'block' | 'inline') => {
+      if (!wikitext) return;
+
+      if (isFormattedPaneActive() && formattedPaneRef.current) {
+        formattedPaneRef.current.insertRawWikitextSnippet(wikitext, placement);
+        return;
       }
-      handleVisualEditorInput();
-    } else {
+
+      const trimmed = wikitext.trim();
+      const shouldWrapNewlines =
+        placement === 'block' ||
+        (placement !== 'inline' &&
+          (trimmed.includes('\n') ||
+            /^(?:\{\||\{\{(?:infobox|info\/|aviso|nota|ambox|navbox|citacao|citação|esboço|esboco|portal|reflist)|={1,6}\s|<pre|<gallery)/i.test(
+              trimmed
+            )));
+
       const el = textareaRef.current;
       if (el) {
         const start = el.selectionStart;
         const end = el.selectionEnd;
-        const nextContent =
-          descricao.substring(0, start) +
-          `\n${wikitext.trim()}\n` +
-          descricao.substring(end);
+        const prefix = shouldWrapNewlines && start > 0 && descricao[start - 1] !== '\n' ? '\n' : '';
+        const suffix =
+          shouldWrapNewlines && end < descricao.length && descricao[end] !== '\n' ? '\n' : '';
+        const inserted = `${prefix}${trimmed}${suffix}`;
+        const nextContent = descricao.substring(0, start) + inserted + descricao.substring(end);
+        syncSourceRef.current = 'code';
         setDescricao(nextContent);
         setTimeout(() => {
           el.focus();
-        }, 50);
+          const caret = start + inserted.length;
+          el.setSelectionRange(caret, caret);
+        }, 20);
       } else {
-        setDescricao((prev) => (prev ? `${prev}\n\n${wikitext.trim()}` : wikitext.trim()));
+        syncSourceRef.current = 'code';
+        setDescricao((prev) =>
+          prev ? `${prev}${shouldWrapNewlines ? '\n\n' : ' '}${trimmed}` : trimmed
+        );
       }
-    }
-  };
+    },
+    [descricao, isFormattedPaneActive]
+  );
 
-  // Insertion Helper for Code & Visual Editor
+  // Roteador unificado da barra de formatação entre Página Formatada e Código Wikitexto
   const insertWikitext = (before: string, after: string = '', defaultPlaceholder: string = '') => {
-    if (viewMode === 'visual') {
-      // Apply in visual mode via document.execCommand
+    if (isFormattedPaneActive() && formattedPaneRef.current) {
       if (before === "'''") {
-        document.execCommand('bold', false);
+        formattedPaneRef.current.applyFormat('bold');
+        return;
       } else if (before === "''") {
-        document.execCommand('italic', false);
-      } else if (before === '~~') {
-        document.execCommand('strikeThrough', false);
-      } else if (before.startsWith('= ')) {
-        document.execCommand('formatBlock', false, 'h1');
-      } else if (before.startsWith('== ')) {
-        document.execCommand('formatBlock', false, 'h2');
-      } else if (before.startsWith('=== ')) {
-        document.execCommand('formatBlock', false, 'h3');
+        formattedPaneRef.current.applyFormat('italic');
+        return;
+      } else if (before === '<u>') {
+        formattedPaneRef.current.applyFormat('underline');
+        return;
+      } else if (before === '~~' || before === '<s>') {
+        formattedPaneRef.current.applyFormat('strikethrough');
+        return;
+      } else if (before === '= ') {
+        formattedPaneRef.current.applyFormat('heading1');
+        return;
+      } else if (before === '== ') {
+        formattedPaneRef.current.applyFormat('heading2');
+        return;
+      } else if (before === '=== ') {
+        formattedPaneRef.current.applyFormat('heading3');
+        return;
       } else if (before.startsWith('* ')) {
-        document.execCommand('insertUnorderedList', false);
+        formattedPaneRef.current.applyFormat('bulletList');
+        return;
       } else if (before.startsWith('# ')) {
-        document.execCommand('insertOrderedList', false);
+        formattedPaneRef.current.applyFormat('orderedList');
+        return;
       } else if (before.startsWith('> ')) {
-        document.execCommand('formatBlock', false, 'blockquote');
+        formattedPaneRef.current.applyFormat('blockquote');
+        return;
+      } else if (before === '`') {
+        formattedPaneRef.current.applyFormat('inlineCode');
+        return;
+      } else if (before.trim() === '----') {
+        formattedPaneRef.current.applyFormat('hr');
+        return;
       } else if (before.startsWith('[[')) {
-        const linkTarget = prompt('Digite o título do artigo interno para o link:', 'Metropolitano de São Paulo');
-        if (linkTarget) {
-          document.execCommand('createLink', false, `#wiki/${encodeURIComponent(linkTarget)}`);
-        }
+        formattedPaneRef.current.applyFormat('wikilink');
+        return;
       } else {
-        // Complex wikitext snippets (Tables, Infoboxes, Images, Templates, etc.)
         const snippet = `${before}${defaultPlaceholder}${after}`;
-        const isMarkup =
-          snippet.startsWith('{') ||
-          snippet.startsWith('![') ||
-          snippet.startsWith('<') ||
-          snippet.startsWith('==') ||
-          snippet.includes('\n');
-
-        if (isMarkup) {
-          insertFormattedWikitextSnippet(snippet);
-          return;
-        } else {
-          const sel = window.getSelection();
-          if (sel && sel.rangeCount > 0 && visualEditorRef.current?.contains(sel.anchorNode)) {
-            const range = sel.getRangeAt(0);
-            range.deleteContents();
-            const node = document.createTextNode(snippet);
-            range.insertNode(node);
-          } else if (visualEditorRef.current) {
-            visualEditorRef.current.appendChild(document.createTextNode(snippet));
-          }
-        }
+        insertFormattedWikitextSnippet(snippet);
+        return;
       }
-      handleVisualEditorInput();
-      return;
     }
 
     const el = textareaRef.current;
-    if (!el) return;
+    if (!el) {
+      syncSourceRef.current = 'code';
+      setDescricao((prev) => `${prev}${before}${defaultPlaceholder}${after}`);
+      return;
+    }
 
     const start = el.selectionStart;
     const end = el.selectionEnd;
@@ -470,13 +503,102 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     const replacement = `${before}${selected}${after}`;
     const nextContent = descricao.substring(0, start) + replacement + descricao.substring(end);
 
+    syncSourceRef.current = 'code';
     setDescricao(nextContent);
 
     setTimeout(() => {
       el.focus();
       el.setSelectionRange(start + before.length, start + before.length + selected.length);
-    }, 50);
+    }, 20);
   };
+
+  // Atalhos de teclado no textarea de código (Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+K)
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!editPermission.allowed) return;
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+      const key = e.key.toLowerCase();
+      if (key === 'b') {
+        e.preventDefault();
+        insertWikitext("'''", "'''", 'texto em negrito');
+      } else if (key === 'i') {
+        e.preventDefault();
+        insertWikitext("''", "''", 'texto em itálico');
+      } else if (key === 'u') {
+        e.preventDefault();
+        insertWikitext('<u>', '</u>', 'texto sublinhado');
+      } else if (key === 'k') {
+        e.preventDefault();
+        setActiveToolbarDrawer((prev) => (prev === 'link' ? 'none' : 'link'));
+      }
+    }
+  };
+
+  // Intercepta colagem de texto já formatado (HTML rico de Docs/Word/Sites) no textarea de código
+  const handleTextareaPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!editPermission.allowed) return;
+    const htmlData = e.clipboardData.getData('text/html');
+    const plainData = e.clipboardData.getData('text/plain');
+
+    // Se o texto puro já for Wikitexto explícito, deixa colar literalmente no modo código
+    if (plainData && looksLikeWikitext(plainData)) {
+      return;
+    }
+
+    if (htmlData) {
+      const normalized = normalizePastedHtmlForWikiEditor(htmlData);
+      if (normalized.hasRichFormatting && normalized.wikitext.trim()) {
+        e.preventDefault();
+        insertFormattedWikitextSnippet(normalized.wikitext, 'inline');
+        showTempPasteFeedback('Texto já formatado colado e convertido para sintaxe Wikitexto.');
+      }
+    }
+  };
+
+  const builtQuickLinkSyntax = useMemo(() => {
+    const target = quickLinkTarget.trim();
+    const label = quickLinkLabel.trim();
+    if (quickLinkType === 'internal') {
+      const safeTarget = target || 'Página_principal';
+      return label && label !== safeTarget.replace(/_/g, ' ')
+        ? `[[${safeTarget}|${label}]]`
+        : `[[${safeTarget}]]`;
+    }
+    const safeUrl = target
+      ? /^(?:https?:\/\/|mailto:)/i.test(target)
+        ? target
+        : `https://${target}`
+      : 'https://exemplo.com';
+    return label ? `[${safeUrl} ${label}]` : `[${safeUrl} Título do Link]`;
+  }, [quickLinkType, quickLinkTarget, quickLinkLabel]);
+
+  const builtQuickTableSyntax = useMemo(() => {
+    const cols = Math.max(1, Math.min(8, quickTableCols));
+    const rows = Math.max(1, Math.min(10, quickTableRows));
+    const lines: string[] = ['{| class="wikitable"'];
+    if (quickTableCaption.trim()) {
+      lines.push(`|+ ${quickTableCaption.trim()}`);
+    }
+    if (quickTableHeader) {
+      const headers = Array.from({ length: cols }, (_, i) => `Coluna ${i + 1}`).join(' !! ');
+      lines.push(`! ${headers}`);
+    }
+    for (let r = 0; r < rows; r++) {
+      lines.push('|-');
+      const cells = Array.from({ length: cols }, (_, c) => `Célula ${r + 1}.${c + 1}`).join(' || ');
+      lines.push(`| ${cells}`);
+    }
+    lines.push('|}');
+    return lines.join('\n');
+  }, [quickTableRows, quickTableCols, quickTableHeader, quickTableCaption]);
+
+  const builtQuickImageSyntax = useMemo(() => {
+    const url = quickImageUrl.trim() || 'Nome_do_arquivo.png';
+    const caption = quickImageCaption.trim() || 'Legenda da imagem';
+    if (/^https?:\/\//i.test(url) || url.startsWith('/')) {
+      return `![${caption}](${url})`;
+    }
+    return `[[Ficheiro:${url}|thumb|${caption}]]`;
+  }, [quickImageUrl, quickImageCaption]);
 
   // Detects if the article already contains a references section
   const hasReferencesSection = useMemo(() => {
@@ -506,11 +628,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   // Opens citation modal and captures any currently selected text
   const handleOpenCitationModal = () => {
     let selText = '';
-    if (viewMode === 'visual') {
-      const sel = window.getSelection();
-      if (sel && sel.toString().trim()) {
-        selText = sel.toString().trim();
-      }
+    if (isFormattedPaneActive() && formattedPaneRef.current) {
+      selText = formattedPaneRef.current.getSelectedText();
     } else if (textareaRef.current) {
       const el = textareaRef.current;
       const start = el.selectionStart;
@@ -527,27 +646,25 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   const handleInsertCitation = (citationWikitext: string, autoGenerateSection: boolean) => {
     if (!citationWikitext) return;
 
-    let updatedContent = descricao;
     let sectionGenerated = false;
 
-    if (viewMode === 'visual') {
-      insertFormattedWikitextSnippet(citationWikitext);
+    if (isFormattedPaneActive() && formattedPaneRef.current) {
+      formattedPaneRef.current.insertRawWikitextSnippet(citationWikitext, 'inline');
       if (autoGenerateSection) {
-        const currentHtml = visualEditorRef.current?.innerHTML || '';
-        const currentWikitext = htmlToWikitext(currentHtml);
-        const alreadyHasSection = /(?:==\s*Refer[êe]ncias\s*==|<references\s*\/>|\{\{reflist\}\}|\{\{Reflist\}\})/i.test(currentWikitext);
+        const alreadyHasSection = /(?:==\s*Refer[êe]ncias\s*==|<references\s*\/>|\{\{reflist\}\}|\{\{Reflist\}\})/i.test(descricao);
         if (!alreadyHasSection) {
-          insertFormattedWikitextSnippet('\n\n== Referências ==\n{{reflist}}');
+          syncSourceRef.current = 'code';
+          setDescricao((prev) => `${prev.trimEnd()}\n\n== Referências ==\n{{reflist}}`);
           sectionGenerated = true;
         }
       }
     } else {
+      let updatedContent = descricao;
       const el = textareaRef.current;
       if (el) {
         const start = el.selectionStart;
         const end = el.selectionEnd;
         const selected = descricao.substring(start, end);
-        // If text was highlighted, place reference immediately after it
         const replacement = selected ? `${selected}${citationWikitext}` : citationWikitext;
         updatedContent =
           descricao.substring(0, start) +
@@ -565,6 +682,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         }
       }
 
+      syncSourceRef.current = 'code';
       setDescricao(updatedContent);
       setTimeout(() => {
         el?.focus();
@@ -612,18 +730,14 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
   }, [citationValidation]);
 
   const handleApplyCitationFix = (newWikitext: string, successMessage: string) => {
+    syncSourceRef.current = 'code';
     setDescricao(newWikitext);
-    if (viewMode === 'visual' && visualEditorRef.current) {
-      const { html } = parseWikitext(newWikitext);
-      visualEditorRef.current.innerHTML = html;
-    }
     setCitationFeedback(successMessage);
     setTimeout(() => setCitationFeedback(null), 4000);
   };
 
   const handleHighlightCitationIssue = (issue: CitationIssue) => {
-    // Alterne para modo edit ou split se estiver no visual para permitir edição direta
-    if (viewMode === 'visual') {
+    if (viewMode === 'visual' || viewMode === 'preview') {
       setViewMode('split');
     }
 
@@ -663,19 +777,9 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
   // 'Fix Citations': Cruza todas as tags com a seção de Referências e adiciona entradas pendentes como placeholders
   const handleFixCitations = () => {
-    let currentText = descricao;
-    if (viewMode === 'visual' && visualEditorRef.current) {
-      const converted = htmlToWikitext(visualEditorRef.current.innerHTML);
-      if (converted) currentText = converted;
-    }
-
-    const result = fixAllCitationsWithPlaceholders(currentText);
+    const result = fixAllCitationsWithPlaceholders(descricao);
+    syncSourceRef.current = 'code';
     setDescricao(result.updatedWikitext);
-
-    if (viewMode === 'visual' && visualEditorRef.current) {
-      const { html } = parseWikitext(result.updatedWikitext);
-      visualEditorRef.current.innerHTML = html;
-    }
 
     let msg = 'Citações cruzadas com sucesso! Entradas pendentes foram adicionadas como placeholders na seção de Referências.';
     if (result.fixedIssuesDescriptions.length > 0) {
@@ -799,50 +903,12 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     }
   };
 
-  // Intercept paste in visual editor to format wikitext
-  const handleVisualEditorPaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
-    const text = e.clipboardData.getData('text/plain');
-    if (!text) return;
-
-    const hasWikitext =
-      /\{\{[\s\S]*?\}\}/.test(text) ||
-      /\{\s*\|[\s\S]*?\|\}/.test(text) ||
-      /^={1,6}\s+.*?={1,6}/m.test(text) ||
-      /'''[\s\S]*?'''/.test(text) ||
-      /''[\s\S]*?''/.test(text) ||
-      /\[\[[\s\S]*?\]\]/.test(text) ||
-      /^[\*\#\>\;]\s+/m.test(text);
-
-    if (hasWikitext) {
-      e.preventDefault();
-      insertFormattedWikitextSnippet(text);
-    }
-  };
-
-  // Handler for visual editor changes
-  const handleVisualEditorInput = () => {
-    if (!visualEditorRef.current) return;
-    const newHtml = visualEditorRef.current.innerHTML;
-    const convertedWikitext = htmlToWikitext(newHtml);
-    if (convertedWikitext !== undefined) {
-      setDescricao(convertedWikitext);
-    }
-  };
-
-  // Mode switching with synchronized bidirectional conversion
+  // Alternância de modo (FormattedWikitextPane já mantém `descricao` sincronizada continuamente)
   const handleSwitchMode = (newMode: 'visual' | 'edit' | 'split' | 'preview') => {
-    if (viewMode === 'visual' && newMode !== 'visual' && visualEditorRef.current) {
-      const converted = htmlToWikitext(visualEditorRef.current.innerHTML);
-      if (converted) {
-        setDescricao(converted);
-      }
-    } else if (newMode === 'visual' && viewMode !== 'visual') {
-      const { html } = parseWikitext(descricao);
-      setTimeout(() => {
-        if (visualEditorRef.current) {
-          visualEditorRef.current.innerHTML = html;
-        }
-      }, 10);
+    if (newMode === 'edit') {
+      lastFocusedPaneRef.current = 'code';
+    } else if (newMode === 'visual') {
+      lastFocusedPaneRef.current = 'formatted';
     }
     setViewMode(newMode);
   };
@@ -869,17 +935,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       return;
     }
 
-    // Sync any pending changes from visual editor
-    let currentContent = descricao;
-    if (viewMode === 'visual' && visualEditorRef.current) {
-      const converted = htmlToWikitext(visualEditorRef.current.innerHTML);
-      if (converted.trim()) {
-        currentContent = converted;
-        setDescricao(converted);
-      }
-    }
-
-    if (!currentContent.trim()) {
+    if (!descricao.trim()) {
       setSecurityWarningModal({
         title: 'Conteúdo Obrigatório',
         message: 'O conteúdo do artigo não pode ficar vazio.',
@@ -926,12 +982,6 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     setIsSaving(true);
     let finalDescricao = descricao;
     try {
-      if (viewMode === 'visual' && visualEditorRef.current) {
-        const converted = htmlToWikitext(visualEditorRef.current.innerHTML);
-        if (converted.trim()) {
-          finalDescricao = converted;
-        }
-      }
 
       // 4.1.1.18C.1 & 4.1.1.11E.1 & 4.1.1.E0.1 / 4.1.1-L8.3: Interceptação e Auditoria por Bots
       const botCheck = BotAgentService.processArticleOnSave(
@@ -959,6 +1009,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       // Higienização automática por LGPD (removendo números de cartão/CPF desnecessários)
       if (botCheck.sanitizedArticle.descricao && botCheck.sanitizedArticle.descricao !== finalDescricao) {
         finalDescricao = botCheck.sanitizedArticle.descricao;
+        syncSourceRef.current = 'code';
         setDescricao(finalDescricao);
       }
 
@@ -1088,12 +1139,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     if (!m) return;
 
     const newContent = descricao.substring(0, m.start) + replaceQuery + descricao.substring(m.end);
+    syncSourceRef.current = 'code';
     setDescricao(newContent);
-
-    if (viewMode === 'visual' && visualEditorRef.current) {
-      const { html } = parseWikitext(newContent);
-      visualEditorRef.current.innerHTML = html;
-    }
 
     setFindReplaceFeedback('1 ocorrência substituída.');
     setTimeout(() => setFindReplaceFeedback(null), 2500);
@@ -1121,12 +1168,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
     }
     const regex = new RegExp(pattern, matchCase ? 'g' : 'gi');
     const newContent = descricao.replace(regex, replaceQuery);
+    syncSourceRef.current = 'code';
     setDescricao(newContent);
-
-    if (viewMode === 'visual' && visualEditorRef.current) {
-      const { html } = parseWikitext(newContent);
-      visualEditorRef.current.innerHTML = html;
-    }
 
     setCurrentMatchIdx(0);
     setFindReplaceFeedback(`${count} ocorrência${count > 1 ? 's' : ''} substituída${count > 1 ? 's' : ''}!`);
@@ -1142,8 +1185,8 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
       if (el && el.selectionStart !== el.selectionEnd) {
         selected = descricao.substring(el.selectionStart, el.selectionEnd);
       }
-    } else if (viewMode === 'visual') {
-      selected = window.getSelection()?.toString() || '';
+    } else if (viewMode === 'visual' && formattedPaneRef.current) {
+      selected = formattedPaneRef.current.getSelectedText();
     }
 
     if (selected.trim() && !selected.includes('\n')) {
@@ -1169,7 +1212,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         if (viewMode === 'edit' || viewMode === 'split') {
           textareaRef.current?.focus();
         } else if (viewMode === 'visual') {
-          visualEditorRef.current?.focus();
+          formattedPaneRef.current?.focus();
         }
         return;
       }
@@ -1307,6 +1350,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                     (comiteEtica.numeroParecer ? `* '''Número do Parecer:''' ${comiteEtica.numeroParecer}\n` : '') +
                     (comiteEtica.dataAprovacao ? `* '''Data de Aprovação:''' ${comiteEtica.dataAprovacao}\n` : '') +
                     `* '''Resolução de Referência:''' ${comiteEtica.resolucaoRegulamentadora || 'Resolução CNS nº 466/2012'}\n`;
+                  syncSourceRef.current = 'code';
                   setDescricao((prev) => prev + cepCode);
                   setShowEthicsModal(false);
                 }}
@@ -1770,7 +1814,11 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             type="button"
             onClick={() => insertWikitext('= ', ' =', 'Título Principal')}
             title="Título Principal (H1)"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 font-semibold"
+            className={`p-1.5 rounded font-semibold cursor-pointer transition ${
+              isFormattedPaneActive() && activeFormats.blockTag === 'h1'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <Heading1 size={14} />
           </button>
@@ -1778,7 +1826,11 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             type="button"
             onClick={() => insertWikitext('== ', ' ==', 'Seção Principal')}
             title="Seção Principal (H2)"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 font-semibold"
+            className={`p-1.5 rounded font-semibold cursor-pointer transition ${
+              isFormattedPaneActive() && activeFormats.blockTag === 'h2'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <Heading2 size={14} />
           </button>
@@ -1786,7 +1838,11 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             type="button"
             onClick={() => insertWikitext('=== ', ' ===', 'Subseção')}
             title="Subseção (H3)"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 font-semibold"
+            className={`p-1.5 rounded font-semibold cursor-pointer transition ${
+              isFormattedPaneActive() && activeFormats.blockTag === 'h3'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <Heading3 size={14} />
           </button>
@@ -1797,24 +1853,48 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           <button
             type="button"
             onClick={() => insertWikitext("'''", "'''", 'texto em negrito')}
-            title="Negrito (''')"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 font-bold"
+            title="Negrito (Ctrl+B)"
+            className={`p-1.5 rounded font-bold cursor-pointer transition ${
+              isFormattedPaneActive() && activeFormats.bold
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <Bold size={14} />
           </button>
           <button
             type="button"
             onClick={() => insertWikitext("''", "''", 'texto em itálico')}
-            title="Itálico ('')"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 italic"
+            title="Itálico (Ctrl+I)"
+            className={`p-1.5 rounded italic cursor-pointer transition ${
+              isFormattedPaneActive() && activeFormats.italic
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <Italic size={14} />
           </button>
           <button
             type="button"
+            onClick={() => insertWikitext('<u>', '</u>', 'texto sublinhado')}
+            title="Sublinhado (Ctrl+U)"
+            className={`p-1.5 rounded cursor-pointer transition ${
+              isFormattedPaneActive() && activeFormats.underline
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <Underline size={14} />
+          </button>
+          <button
+            type="button"
             onClick={() => insertWikitext('~~', '~~', 'texto riscado')}
             title="Riscado (~~)"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"
+            className={`p-1.5 rounded cursor-pointer transition ${
+              isFormattedPaneActive() && activeFormats.strikethrough
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <Strikethrough size={14} />
           </button>
@@ -1826,7 +1906,11 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             type="button"
             onClick={() => insertWikitext('* ', '', 'Item com marcador')}
             title="Lista com marcadores (*)"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"
+            className={`p-1.5 rounded cursor-pointer transition ${
+              isFormattedPaneActive() && activeFormats.unorderedList
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <List size={14} />
           </button>
@@ -1834,7 +1918,11 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             type="button"
             onClick={() => insertWikitext('# ', '', 'Item numerado')}
             title="Lista numerada (#)"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"
+            className={`p-1.5 rounded cursor-pointer transition ${
+              isFormattedPaneActive() && activeFormats.orderedList
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <ListOrdered size={14} />
           </button>
@@ -1842,33 +1930,47 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             type="button"
             onClick={() => insertWikitext('> ', '', 'Citação em destaque')}
             title="Citação em destaque (>)"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"
+            className={`p-1.5 rounded cursor-pointer transition ${
+              isFormattedPaneActive() && activeFormats.blockTag === 'blockquote'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <Quote size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => insertWikitext('\n----\n', '', '')}
+            title="Linha horizontal separadora (----)"
+            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 cursor-pointer transition"
+          >
+            <Minus size={14} />
           </button>
 
           <span className="w-px h-4 bg-slate-300 dark:bg-slate-700 mx-0.5" />
 
-          {/* Links & Blocks */}
+          {/* Links, Images & Inline Code */}
           <button
             type="button"
-            onClick={() => insertWikitext('[[', ']]', 'Título do Artigo')}
-            title="Link Interno ([[...]])"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"
+            onClick={() => setActiveToolbarDrawer((prev) => (prev === 'link' ? 'none' : 'link'))}
+            title="Construtor de Link Interno/Externo (Ctrl+K)"
+            className={`p-1.5 rounded cursor-pointer transition ${
+              activeToolbarDrawer === 'link'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <LinkIcon size={14} />
           </button>
           <button
             type="button"
-            onClick={() =>
-              insertWikitext(
-                '![Legenda da imagem](',
-                ')',
-                'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800'
-              )
-            }
-            title="Imagem (![alt](url))"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"
+            onClick={() => setActiveToolbarDrawer((prev) => (prev === 'image' ? 'none' : 'image'))}
+            title="Inserir Imagem ou Ficheiro MediaWiki"
+            className={`p-1.5 rounded cursor-pointer transition ${
+              activeToolbarDrawer === 'image'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
           >
             <Image size={14} />
           </button>
@@ -1876,7 +1978,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             type="button"
             onClick={() => insertWikitext('`', '`', 'código')}
             title="Código inline (`)"
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300"
+            className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 cursor-pointer transition"
           >
             <Code size={14} />
           </button>
@@ -1947,13 +2049,13 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           {/* Infobox & Table Templates */}
           <button
             type="button"
-            onClick={() =>
-              insertWikitext(
-                '{|\n class="wikitable"\n! Coluna 1 !! Coluna 2\n|-\n| Linha 1A || Linha 1B\n|-\n| Linha 2A || Linha 2B\n|}'
-              )
-            }
-            title="Inserir Tabela MediaWiki"
-            className="px-2 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700"
+            onClick={() => setActiveToolbarDrawer((prev) => (prev === 'table' ? 'none' : 'table'))}
+            title="Construtor Rápido de Tabela MediaWiki"
+            className={`px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1 border cursor-pointer transition ${
+              activeToolbarDrawer === 'table'
+                ? 'bg-teal-600 text-white border-teal-700 shadow-xs'
+                : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+            }`}
           >
             <Table size={12} /> Tabela
           </button>
@@ -2047,6 +2149,209 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             </kbd>
           </button>
         </div>
+
+        {/* Interactive Toolbar Drawers: Construtor de Link, Construtor de Tabela, Inserir Imagem */}
+        {activeToolbarDrawer === 'link' && (
+          <div className="bg-blue-50/80 dark:bg-blue-950/30 border-b border-blue-200 dark:border-blue-800/80 p-2.5 text-xs space-y-2 animate-in fade-in">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                <LinkIcon size={13} /> Construtor de Link MediaWiki
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveToolbarDrawer('none')}
+                className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="flex items-center rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setQuickLinkType('internal')}
+                  className={`flex-1 py-1 px-2 rounded text-[11px] font-semibold cursor-pointer ${
+                    quickLinkType === 'internal'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Interno ([[...]])
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickLinkType('external')}
+                  className={`flex-1 py-1 px-2 rounded text-[11px] font-semibold cursor-pointer ${
+                    quickLinkType === 'external'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Externo ([http...])
+                </button>
+              </div>
+              <input
+                type="text"
+                value={quickLinkTarget}
+                onChange={(e) => setQuickLinkTarget(e.target.value)}
+                placeholder={
+                  quickLinkType === 'internal'
+                    ? 'Título do artigo interno'
+                    : 'https://exemplo.com'
+                }
+                className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                value={quickLinkLabel}
+                onChange={(e) => setQuickLinkLabel(e.target.value)}
+                placeholder="Texto exibido (opcional)"
+                className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <code className="px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-blue-700 dark:text-blue-300">
+                {builtQuickLinkSyntax}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  insertFormattedWikitextSnippet(builtQuickLinkSyntax, 'inline');
+                  setActiveToolbarDrawer('none');
+                  setQuickLinkTarget('');
+                  setQuickLinkLabel('');
+                }}
+                className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1 cursor-pointer"
+              >
+                <Check size={13} />
+                <span>Inserir Link</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeToolbarDrawer === 'table' && (
+          <div className="bg-teal-50/80 dark:bg-teal-950/30 border-b border-teal-200 dark:border-teal-800/80 p-2.5 text-xs space-y-2 animate-in fade-in">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-teal-900 dark:text-teal-200 flex items-center gap-1.5">
+                <Table size={13} /> Construtor Rápido de Tabela MediaWiki
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveToolbarDrawer('none')}
+                className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
+                <span>Linhas:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={quickTableRows}
+                  onChange={(e) => setQuickTableRows(Number(e.target.value) || 1)}
+                  className="w-14 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono"
+                />
+              </label>
+              <label className="flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300">
+                <span>Colunas:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={8}
+                  value={quickTableCols}
+                  onChange={(e) => setQuickTableCols(Number(e.target.value) || 1)}
+                  className="w-14 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono"
+                />
+              </label>
+              <input
+                type="text"
+                value={quickTableCaption}
+                onChange={(e) => setQuickTableCaption(e.target.value)}
+                placeholder="Legenda da tabela (opcional)"
+                className="flex-1 min-w-[160px] px-2.5 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
+              />
+              <label className="flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={quickTableHeader}
+                  onChange={(e) => setQuickTableHeader(e.target.checked)}
+                />
+                <span>Linha de cabeçalho (!)</span>
+              </label>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <pre className="flex-1 min-w-[220px] p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded font-mono text-[10px] text-slate-700 dark:text-slate-300 overflow-x-auto max-h-24">
+                {builtQuickTableSyntax}
+              </pre>
+              <button
+                type="button"
+                onClick={() => {
+                  insertFormattedWikitextSnippet(builtQuickTableSyntax, 'block');
+                  setActiveToolbarDrawer('none');
+                }}
+                className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded font-semibold text-xs flex items-center gap-1 cursor-pointer shrink-0"
+              >
+                <Check size={13} />
+                <span>Inserir Tabela</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeToolbarDrawer === 'image' && (
+          <div className="bg-slate-100 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 p-2.5 text-xs space-y-2 animate-in fade-in">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
+                <Image size={13} /> Inserir Imagem / Ficheiro
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveToolbarDrawer('none')}
+                className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                type="text"
+                value={quickImageUrl}
+                onChange={(e) => setQuickImageUrl(e.target.value)}
+                placeholder="Nome do ficheiro (ex: Mapa.png) ou URL https://..."
+                className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs font-mono"
+              />
+              <input
+                type="text"
+                value={quickImageCaption}
+                onChange={(e) => setQuickImageCaption(e.target.value)}
+                placeholder="Legenda / texto alternativo"
+                className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-xs"
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <code className="px-2 py-1 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300">
+                {builtQuickImageSyntax}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  insertFormattedWikitextSnippet(builtQuickImageSyntax, 'block');
+                  setActiveToolbarDrawer('none');
+                  setQuickImageUrl('');
+                  setQuickImageCaption('');
+                }}
+                className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1 cursor-pointer"
+              >
+                <Check size={13} />
+                <span>Inserir Imagem</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Real-time 'Validation Status' summary at the bottom of the toolbar */}
         <div className="bg-slate-100/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs select-none">
@@ -2307,6 +2612,23 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           </div>
         )}
 
+        {/* Feedback de colagem de texto formatado / Wikitexto */}
+        {pasteFeedback && (
+          <div className="bg-blue-50 dark:bg-blue-950/60 border-b border-blue-200 dark:border-blue-800/80 px-3.5 py-2 text-xs text-blue-900 dark:text-blue-200 flex items-center justify-between animate-in fade-in">
+            <span className="flex items-center gap-2 font-medium">
+              <CheckCircle2 size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>{pasteFeedback}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setPasteFeedback(null)}
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-300 p-0.5 cursor-pointer"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        )}
+
         {/* Feedback de inserção de citação */}
         {citationFeedback && (
           <div className="bg-emerald-50 dark:bg-emerald-950/60 border-b border-emerald-200 dark:border-emerald-800/80 px-3.5 py-2 text-xs text-emerald-900 dark:text-emerald-200 flex items-center justify-between animate-in fade-in">
@@ -2337,32 +2659,72 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
 
         {/* Content Editing Canvas */}
         <div className="min-h-[440px] flex flex-col">
-          {/* 1. VISUAL FORMATTED PAGE MODE (WYSIWYG) */}
+          {/* 1. VISUAL FORMATTED PAGE MODE (WYSIWYG com bridge atômico sem perda) */}
           {viewMode === 'visual' && (
             <div className="p-4 sm:p-6 flex-1 flex flex-col bg-white dark:bg-slate-950">
-              <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-2 pb-1.5 border-b border-slate-100 dark:border-slate-800">
-                <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold">
-                  <FileText size={13} /> MODO PÁGINA FORMATADA (EDIÇÃO VISUAL DIRETA)
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] mb-2 pb-1.5 border-b border-slate-100 dark:border-slate-800">
+                <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-semibold">
+                  <Type size={13} />
+                  <span>Página Formatada (Edição Visual Direta · Sincronizada com Wikitexto)</span>
                 </span>
-                {draftSaved && (
-                  <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-bold">
-                    <CheckCircle2 size={11} /> Rascunho salvo
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {draftSaved && (
+                    <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-mono font-bold">
+                      <CheckCircle2 size={11} /> Rascunho salvo
+                    </span>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setFormattedPaneMode('editable')}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer border ${
+                        formattedPaneMode === 'editable'
+                          ? 'bg-emerald-600 text-white border-emerald-700'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                      }`}
+                    >
+                      Interativa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormattedPaneMode('preview')}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer border ${
+                        formattedPaneMode === 'preview'
+                          ? 'bg-blue-600 text-white border-blue-700'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                      }`}
+                    >
+                      Leitura Final
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Editable Formatted Page */}
-              <div
-                ref={visualEditorRef}
-                contentEditable
-                suppressContentEditableWarning
-                onInput={handleVisualEditorInput}
-                onBlur={handleVisualEditorInput}
-                onPaste={handleVisualEditorPaste}
-                onMouseMove={handleCitationHover}
-                onMouseLeave={handleCitationLeave}
-                className="wiki-rendered-content font-wiki-body text-xs flex-1 min-h-[380px] p-4 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 focus:outline-none focus:ring-1 focus:ring-blue-500 overflow-y-auto leading-relaxed"
-              />
+              {formattedPaneMode === 'editable' ? (
+                <FormattedWikitextPane
+                  ref={formattedPaneRef}
+                  value={descricao}
+                  onChange={setDescricao}
+                  disabled={!editPermission.allowed}
+                  articleTitle={titulo}
+                  customTemplates={customTemplates}
+                  syncSourceRef={syncSourceRef}
+                  onFocusPane={() => {
+                    lastFocusedPaneRef.current = 'formatted';
+                  }}
+                  onActiveFormatsChange={setActiveFormats}
+                  onMouseMove={handleCitationHover}
+                  onMouseLeave={handleCitationLeave}
+                  onPasteFeedback={showTempPasteFeedback}
+                />
+              ) : (
+                <div
+                  onMouseMove={handleCitationHover}
+                  onMouseLeave={handleCitationLeave}
+                  className="wiki-rendered-content font-wiki-body text-xs flex-1 min-h-[420px] max-h-[600px] p-4 sm:p-5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-y-auto leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderedHtml) }}
+                />
+              )}
             </div>
           )}
 
@@ -2436,23 +2798,32 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
               <textarea
                 ref={textareaRef}
                 value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
+                disabled={!editPermission.allowed}
+                onFocus={() => {
+                  lastFocusedPaneRef.current = 'code';
+                }}
+                onChange={(e) => {
+                  syncSourceRef.current = 'code';
+                  setDescricao(e.target.value);
+                }}
+                onKeyDown={handleTextareaKeyDown}
+                onPaste={handleTextareaPaste}
                 onSelect={handleTextareaCitationHover}
                 onClick={handleTextareaCitationHover}
                 onKeyUp={handleTextareaCitationHover}
-                placeholder="Escreva seu artigo aqui usando sintaxe MediaWiki..."
+                placeholder="Escreva seu artigo aqui ou cole texto já formatado (Ctrl+V converte automaticamente para Wikitexto)..."
                 className="w-full flex-1 min-h-[380px] p-3 text-xs font-mono-code bg-slate-50/50 dark:bg-slate-950/50 text-slate-900 dark:text-slate-100 rounded border border-slate-300 dark:border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y leading-relaxed"
               />
             </div>
           )}
 
-          {/* 3. SPLIT VIEW (CODE + LIVE PREVIEW) */}
+          {/* 3. SPLIT VIEW (CÓDIGO + EDIÇÃO FORMATADA BIDIRECIONAL) */}
           {viewMode === 'split' && (
             <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200 dark:divide-slate-800 flex-1">
               <div className="p-3 flex flex-col">
-                <div className="text-[10px] font-mono text-slate-400 mb-1 flex items-center justify-between flex-wrap gap-1">
+                <div className="text-[10px] font-mono text-slate-400 mb-1.5 flex items-center justify-between flex-wrap gap-1">
                   <span className="flex items-center gap-1">
-                    <span className="font-bold">CÓDIGO:</span>
+                    <span className="font-bold">CÓDIGO WIKITEXTO:</span>
                     {citationMarkersSummary.total > 0 && (
                       <span className="inline-flex items-center gap-1">
                         <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">
@@ -2473,26 +2844,82 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 <textarea
                   ref={textareaRef}
                   value={descricao}
-                  onChange={(e) => setDescricao(e.target.value)}
+                  disabled={!editPermission.allowed}
+                  onFocus={() => {
+                    lastFocusedPaneRef.current = 'code';
+                  }}
+                  onChange={(e) => {
+                    syncSourceRef.current = 'code';
+                    setDescricao(e.target.value);
+                  }}
+                  onKeyDown={handleTextareaKeyDown}
+                  onPaste={handleTextareaPaste}
                   onSelect={handleTextareaCitationHover}
                   onClick={handleTextareaCitationHover}
                   onKeyUp={handleTextareaCitationHover}
-                  className="w-full flex-1 min-h-[380px] p-2.5 text-xs font-mono-code bg-slate-50/50 dark:bg-slate-950/50 text-slate-900 dark:text-slate-100 rounded border border-slate-300 dark:border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Código-fonte MediaWiki..."
+                  className="w-full flex-1 min-h-[420px] p-2.5 text-xs font-mono-code bg-slate-50/50 dark:bg-slate-950/50 text-slate-900 dark:text-slate-100 rounded border border-slate-300 dark:border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 leading-relaxed"
                 />
               </div>
 
-              <div
-                onMouseMove={handleCitationHover}
-                onMouseLeave={handleCitationLeave}
-                className="p-4 overflow-y-auto max-h-[520px]"
-              >
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1 font-mono">
-                  <Eye size={12} /> Pré-visualização em Tempo Real
+              <div className="p-3 flex flex-col bg-white dark:bg-slate-950">
+                <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                    <Type size={13} />
+                    <span>Edição Formatada (Visual)</span>
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setFormattedPaneMode('editable')}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer border ${
+                        formattedPaneMode === 'editable'
+                          ? 'bg-emerald-600 text-white border-emerald-700'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                      }`}
+                    >
+                      Interativa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormattedPaneMode('preview')}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer border ${
+                        formattedPaneMode === 'preview'
+                          ? 'bg-blue-600 text-white border-blue-700'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                      }`}
+                    >
+                      Leitura Final
+                    </button>
+                  </div>
                 </div>
-                <div
-                  className="wiki-rendered-content font-wiki-body text-xs"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderedHtml) }}
-                />
+
+                {formattedPaneMode === 'editable' ? (
+                  <FormattedWikitextPane
+                    ref={formattedPaneRef}
+                    value={descricao}
+                    onChange={setDescricao}
+                    disabled={!editPermission.allowed}
+                    articleTitle={titulo}
+                    customTemplates={customTemplates}
+                    syncSourceRef={syncSourceRef}
+                    onFocusPane={() => {
+                      lastFocusedPaneRef.current = 'formatted';
+                    }}
+                    onActiveFormatsChange={setActiveFormats}
+                    onMouseMove={handleCitationHover}
+                    onMouseLeave={handleCitationLeave}
+                    onPasteFeedback={showTempPasteFeedback}
+                    minHeightClassName="min-h-[420px]"
+                  />
+                ) : (
+                  <div
+                    onMouseMove={handleCitationHover}
+                    onMouseLeave={handleCitationLeave}
+                    className="wiki-rendered-content font-wiki-body text-xs flex-1 min-h-[420px] max-h-[600px] p-4 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 overflow-y-auto leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderedHtml) }}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -2940,6 +3367,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
           baseWikitext={conflictModalData.baseWikitext}
           onClose={() => setConflictModalData(null)}
           onApplyMergedText={(mergedText) => {
+            syncSourceRef.current = 'code';
             setDescricao(mergedText);
             baseVersionRef.current = conflictModalData.serverArticle.versao || baseVersionRef.current;
             baseContentRef.current = conflictModalData.serverArticle.descricao || '';
@@ -2974,6 +3402,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
             }
           }}
           onDiscardMyChanges={() => {
+            syncSourceRef.current = 'code';
             setDescricao(conflictModalData.serverArticle.descricao || '');
             baseVersionRef.current = conflictModalData.serverArticle.versao || 1;
             baseContentRef.current = conflictModalData.serverArticle.descricao || '';
@@ -2989,7 +3418,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         initialTab={infoboxModalTab}
         initialTemplateId="geral"
         defaultTitle={titulo || undefined}
-        onInsertWikitext={(snippet) => insertWikitext(`\n${snippet}\n`)}
+        onInsertWikitext={(snippet) => insertFormattedWikitextSnippet(snippet, 'block')}
       />
 
       {/* Modal de Predefinições MediaWiki ({{...}}) */}
@@ -2998,7 +3427,7 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
         onClose={() => setShowPredefinicoesModal(false)}
         user={user}
         onInsertWikitext={(snippet, placement) =>
-          insertWikitext(placement === 'inline' ? snippet : `\n${snippet}\n`)
+          insertFormattedWikitextSnippet(snippet, placement)
         }
       />
     </div>

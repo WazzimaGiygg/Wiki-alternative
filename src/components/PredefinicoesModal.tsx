@@ -192,6 +192,16 @@ export const PredefinicoesModal: React.FC<PredefinicoesModalProps> = ({
     customTemplates,
   ]);
 
+  const liveValidation = useMemo(() => {
+    if (!isEditingCustom) return null;
+    if (!formName.trim() && !formContent.trim()) return null;
+    return TemplateService.validateTemplate({
+      name: formName || 'PreviaModelo',
+      content: formContent,
+      description: formDescription,
+    });
+  }, [isEditingCustom, formName, formContent, formDescription]);
+
   if (!isOpen) return null;
 
   const handleCopyText = async (text: string) => {
@@ -711,14 +721,30 @@ export const PredefinicoesModal: React.FC<PredefinicoesModalProps> = ({
                       placeholder="{{Nota|'''{{{título|{{{1|Título}}}}}}''' — {{{texto|{{{2|Conteúdo}}}}}}}"
                       className="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                      Parâmetros detectados:{' '}
-                      {TemplateService.extractParameters(formContent).length > 0
-                        ? TemplateService.extractParameters(formContent)
-                            .map((p) => `{{{${p}}}}`)
-                            .join(', ')
-                        : 'nenhum (modelo estático)'}
-                    </p>
+                    <div className="mt-1.5 space-y-1">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Parâmetros detectados:{' '}
+                        {(liveValidation?.extractedParameters.length ?? 0) > 0
+                          ? liveValidation!.extractedParameters
+                              .map((p) => `{{{${p}}}}`)
+                              .join(', ')
+                          : 'nenhum (modelo estático)'}
+                      </p>
+                      {liveValidation && liveValidation.errors.length > 0 && formName.trim().length > 0 && (
+                        <div className="p-2 rounded bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-700 dark:text-rose-300 space-y-0.5">
+                          {liveValidation.errors.map((err, idx) => (
+                            <div key={idx}>• {err}</div>
+                          ))}
+                        </div>
+                      )}
+                      {liveValidation && liveValidation.warnings.length > 0 && (
+                        <div className="p-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/70 text-[11px] text-amber-800 dark:text-amber-300 space-y-0.5">
+                          {liveValidation.warnings.map((warn, idx) => (
+                            <div key={idx}>• {warn}</div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Live Preview of Draft Template */}
