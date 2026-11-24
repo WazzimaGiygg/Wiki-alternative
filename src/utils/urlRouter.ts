@@ -253,6 +253,9 @@ export function getCanonicalUid(
     case 'admin-extensions':
       return 'Special:Extensions';
 
+    case 'admin-templates':
+      return 'Special:Templates';
+
     case 'checkuser':
       return options.targetUserIdentifier ? `CheckUser:${options.targetUserIdentifier}` : 'Special:CheckUser';
 
@@ -501,6 +504,12 @@ export function resolveNavigationUid(
     'admin-extensions': { view: 'admin-extensions' },
     'extensions': { view: 'admin-extensions' },
     'extensoes': { view: 'admin-extensions' },
+
+    'special:templates': { view: 'admin-templates' },
+    'special:predefinicoes': { view: 'admin-templates' },
+    'admin-templates': { view: 'admin-templates' },
+    'templates': { view: 'admin-templates' },
+    'predefinicoes': { view: 'admin-templates' },
 
     'special:checkuser': { view: 'checkuser' },
     'checkuser': { view: 'checkuser' },

@@ -621,6 +621,7 @@ export type ViewMode =
   | 'admin-council'
   | 'admin-data-removal'
   | 'admin-extensions'
+  | 'admin-templates'
   | 'admin-firebase'
   | 'checkuser'
   | 'unblock-requests'

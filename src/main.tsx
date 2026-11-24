@@ -8,6 +8,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { ExtensionManager } from './core/ExtensionManager';
 import { StorageService } from './services/storageService';
 import { siteAutoUpdateService } from './services/siteAutoUpdateService';
+import 'katex/dist/katex.min.css';
 import './index.css';
 import './print.css';
 

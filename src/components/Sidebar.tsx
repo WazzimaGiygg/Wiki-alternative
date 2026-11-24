@@ -50,6 +50,7 @@ import {
   Cpu,
   Flame,
   Megaphone,
+  Braces,
 } from 'lucide-react';
 import { ViewMode, DeviceMode, AppTheme } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -716,7 +717,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 currentView === 'admin-council' ||
                 currentView === 'admin-data-removal' ||
                 currentView === 'unblock-requests' ||
-                currentView === 'admin-extensions'
+                currentView === 'admin-extensions' ||
+                currentView === 'admin-templates'
                   ? 'bg-gradient-to-r from-purple-100 to-indigo-100 dark:from-purple-950/80 dark:to-indigo-950/80 text-purple-900 dark:text-purple-100 font-bold border border-purple-300 dark:border-purple-700 shadow-xs'
                   : 'text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/30'
               }`}
@@ -767,6 +769,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="truncate font-semibold">Extensões da Wiki</span>
                   <span className="text-[8px] bg-purple-200 dark:bg-purple-900 text-purple-900 dark:text-purple-200 font-mono font-bold px-1 rounded-xs">
                     BUROCRATAS
+                  </span>
+                </div>
+              )}
+            </button>
+
+            <button
+              onClick={() => onNavigate('admin-templates')}
+              title="Gerenciamento de Pré-Definições (Special:Templates)"
+              className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition ${
+                currentView === 'admin-templates'
+                  ? 'bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-200 font-bold border border-blue-300 dark:border-blue-700 shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <Braces size={15} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full truncate">
+                  <span className="truncate font-semibold">Pré-Definições</span>
+                  <span className="text-[8px] bg-blue-100 dark:bg-blue-900/70 text-blue-800 dark:text-blue-200 font-mono font-bold px-1 rounded-xs">
+                    ADMIN
                   </span>
                 </div>
               )}

@@ -29,10 +29,32 @@ export function parseWikitext(
   articleTitle?: string,
   customTemplates?: WikiTemplate[]
 ): ParseResult {
+  // Protege blocos literais (<nowiki>, blocos de código e código inline) antes de hooks de extensão (ex: MathKatex)
+  const preHookLiterals: string[] = [];
+  const protectPreHookLiteral = (raw: string): string => {
+    const token = `___PRE_HOOK_LITERAL_${preHookLiterals.length}___`;
+    preHookLiterals.push(raw);
+    return token;
+  };
+
+  let hookInput = rawWikitext || '';
+  hookInput = hookInput
+    .replace(/<nowiki>[\s\S]*?<\/nowiki>/gi, protectPreHookLiteral)
+    .replace(/```[a-zA-Z0-9_-]*\n[\s\S]*?```/g, protectPreHookLiteral)
+    .replace(/<pre(?:\s+[^>]*)?>[\s\S]*?<\/pre>/gi, protectPreHookLiteral)
+    .replace(/<syntaxhighlight(?:\s+[^>]*)?>[\s\S]*?<\/syntaxhighlight>/gi, protectPreHookLiteral)
+    .replace(/`[^`\n]+`/g, protectPreHookLiteral);
+
   // Aplica filtros registrados por extensões antes de iniciar o parsing do Wikitext
-  const wikitext = ExtensionManager.getInstance()
+  let wikitext = ExtensionManager.getInstance()
     .getHooks()
-    .applyFilters<string>('render:wikitext', rawWikitext || '', articleTitle);
+    .applyFilters<string>('render:wikitext', hookInput, articleTitle);
+
+  if (preHookLiterals.length > 0) {
+    preHookLiterals.forEach((raw, idx) => {
+      wikitext = wikitext.split(`___PRE_HOOK_LITERAL_${idx}___`).join(raw);
+    });
+  }
 
   if (!wikitext || !wikitext.trim()) {
     return {
@@ -51,6 +73,7 @@ export function parseWikitext(
 
   const blockPlaceholders = new Map<string, string>();
   const inlinePlaceholders = new Map<string, string>();
+  const inlineRawValues = new Map<string, string>();
   let placeholderCount = 0;
 
   const addBlockPlaceholder = (html: string): string => {
@@ -59,10 +82,18 @@ export function parseWikitext(
     return `\n\n${id}\n\n`;
   };
 
-  const addInlinePlaceholder = (html: string): string => {
+  const addInlinePlaceholder = (html: string, rawSource?: string): string => {
     const id = `___WIKI_INLINE_${++placeholderCount}___`;
     inlinePlaceholders.set(id, html);
+    if (rawSource !== undefined) {
+      inlineRawValues.set(id, rawSource);
+    }
     return id;
+  };
+
+  const resolveRawInline = (input: string): string => {
+    if (!input || inlineRawValues.size === 0) return input;
+    return input.replace(/___WIKI_INLINE_\d+___/g, (token) => inlineRawValues.get(token) ?? token);
   };
 
   let text = wikitext;
@@ -73,6 +104,14 @@ export function parseWikitext(
   if (redirectMatch) {
     redirectTarget = redirectMatch[1].trim();
   }
+
+  // 0.05 Extract <nowiki>...</nowiki> literals before directives, templates, math, tables, or inline markup
+  text = text.replace(/<nowiki>([\s\S]*?)<\/nowiki>/gi, (fullMatch, rawLiteral) =>
+    addInlinePlaceholder(
+      `<code class="wiki-nowiki px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono text-xs border border-slate-200 dark:border-slate-700">${escapeHtml(rawLiteral)}</code>`,
+      fullMatch
+    )
+  );
 
   // 0.1 Check for __NOTOC__ / __SEM_SUMÁRIO__
   let hasNotoc = false;
@@ -88,6 +127,19 @@ export function parseWikitext(
     text = text.replace(/__(?:TOC|SUM[AÁ]RIO)__/gi, '\n\n___WIKI_EXPLICIT_TOC___\n\n');
   }
 
+  // 0.21 Protect fenced/tag/inline code literals before template and parser-function expansion
+  const preTplLiterals: string[] = [];
+  const protectPreTplLiteral = (raw: string): string => {
+    const token = `___PRE_TPL_LITERAL_${preTplLiterals.length}___`;
+    preTplLiterals.push(raw);
+    return token;
+  };
+  text = text
+    .replace(/```[a-zA-Z0-9_-]*\n[\s\S]*?```/g, protectPreTplLiteral)
+    .replace(/<pre(?:\s+[^>]*)?>[\s\S]*?<\/pre>/gi, protectPreTplLiteral)
+    .replace(/<syntaxhighlight(?:\s+[^>]*)?>[\s\S]*?<\/syntaxhighlight>/gi, protectPreTplLiteral)
+    .replace(/`[^`\n]+`/g, protectPreTplLiteral);
+
   // 0.22 Expand user-defined MediaWiki templates {{NomeDaPredefinição|parâmetro}} via templateService
   text = templateService.processWikitext(text, customTemplates);
 
@@ -99,8 +151,61 @@ export function parseWikitext(
   // 0.3 Preprocess MediaWiki Parser Functions (#if, #ifeq, #switch, #expr) and Magic Variables
   text = processParserFunctionsAndVariables(text, articleTitle);
 
+  if (preTplLiterals.length > 0) {
+    preTplLiterals.forEach((raw, idx) => {
+      text = text.split(`___PRE_TPL_LITERAL_${idx}___`).join(raw);
+    });
+  }
+
+  // 0.38 Isolate KaTeX HTML blocks/spans pre-rendered by MathKatex extension so formatInline won't escape MathML tags
+  text = text.replace(/<div class="wiki-math-block[^"]*">[\s\S]*?<\/div>/gi, (blockHtml) =>
+    addBlockPlaceholder(blockHtml)
+  );
+  if (text.includes('class="wiki-math-inline')) {
+    let outMath = '';
+    let pos = 0;
+    const marker = '<span class="wiki-math-inline';
+    while (pos < text.length) {
+      const start = text.indexOf(marker, pos);
+      if (start === -1) {
+        outMath += text.slice(pos);
+        break;
+      }
+      outMath += text.slice(pos, start);
+      let scan = start;
+      let spanDepth = 0;
+      let foundEnd = -1;
+      while (scan < text.length) {
+        if (text.slice(scan, scan + 5).toLowerCase() === '<span') {
+          spanDepth++;
+          scan += 5;
+          continue;
+        }
+        if (text.slice(scan, scan + 7).toLowerCase() === '</span>') {
+          spanDepth--;
+          scan += 7;
+          if (spanDepth <= 0) {
+            foundEnd = scan;
+            break;
+          }
+          continue;
+        }
+        scan++;
+      }
+      if (foundEnd !== -1) {
+        const inlineMathHtml = text.slice(start, foundEnd);
+        outMath += addInlinePlaceholder(inlineMathHtml, '<math>...</math>');
+        pos = foundEnd;
+      } else {
+        outMath += text.slice(start);
+        break;
+      }
+    }
+    text = outMath;
+  }
+
   // 0.4 Extract Math Formulas (<math>...</math> and <math display="block">...</math>) using KaTeX
-  text = text.replace(/<math(?:\s+display=["']?(inline|block)["']?)?>([\s\S]*?)<\/math>/gi, (_m, displayAttr, mathContent) => {
+  text = text.replace(/<math(?:\s+display=["']?(inline|block)["']?)?>([\s\S]*?)<\/math>/gi, (fullMath, displayAttr, mathContent) => {
     const isBlock = displayAttr?.toLowerCase() === 'block' || mathContent.includes('\n');
     try {
       const rendered = katex.renderToString(mathContent.trim(), {
@@ -117,11 +222,11 @@ export function parseWikitext(
         return addBlockPlaceholder(mathHtml);
       } else {
         const mathHtml = `<span class="wiki-math-inline align-middle mx-1 inline-block">${rendered}</span>`;
-        return addInlinePlaceholder(mathHtml);
+        return addInlinePlaceholder(mathHtml, fullMath);
       }
     } catch {
       const fallbackHtml = `<code class="font-mono text-xs text-rose-500 bg-rose-50 dark:bg-rose-950/40 px-1 py-0.5 rounded border border-rose-200 dark:border-rose-800">${escapeHtml(mathContent.trim())}</code>`;
-      return isBlock ? addBlockPlaceholder(fallbackHtml) : addInlinePlaceholder(fallbackHtml);
+      return isBlock ? addBlockPlaceholder(fallbackHtml) : addInlinePlaceholder(fallbackHtml, fullMath);
     }
   });
 
@@ -159,7 +264,7 @@ export function parseWikitext(
 
   // 3. Extract MediaWiki Tables: {| ... |} (supports whitespace/newlines like {\n|)
   text = text.replace(/\{\s*\|([\s\S]*?)\|\}/g, (_m, tableContent) => {
-    const tableHtml = renderMediaWikiTable(tableContent, inlinePlaceholders, addInlinePlaceholder);
+    const tableHtml = renderMediaWikiTable(tableContent, inlinePlaceholders, addInlinePlaceholder, resolveRawInline);
     return addBlockPlaceholder(tableHtml);
   });
 
@@ -167,7 +272,7 @@ export function parseWikitext(
   const hasRefSectionInSource = /(?:==\s*Refer[êe]ncias\s*==|==\s*Referencias\s*==|==\s*References\s*==|<references\s*\/?>|\{\{reflist\}\}|\{\{Reflist\}\})/i.test(wikitext);
 
   // Handle standard <ref> tags first to populate namedRefsMap
-  text = text.replace(/<ref(?:\s+name=["']([^"']+)["'])?>([\s\S]*?)<\/ref>/gi, (_m, name, refContent) => {
+  text = text.replace(/<ref(?:\s+name=["']([^"']+)["'])?>([\s\S]*?)<\/ref>/gi, (fullRef, name, refContent) => {
     const cleanContent = refContent.trim();
     const cleanTooltip = cleanContent
       .replace(/<[^>]*>/g, '')
@@ -194,11 +299,11 @@ export function parseWikitext(
     const labelSuffix = isValid ? '' : ' ⚠';
 
     const footnoteHtml = `<sup class="wiki-footnote inline-block ml-0.5 cursor-pointer" data-ref-index="${refIndex}" data-ref-name="${name ? escapeHtml(name.trim()) : ''}" data-ref-tooltip="${cleanTooltip}"><a href="#cite_note-${refIndex}" id="cite_ref-${refIndex}" data-ref-index="${refIndex}" data-ref-name="${name ? escapeHtml(name.trim()) : ''}" data-ref-tooltip="${cleanTooltip}" class="${indicatorClass} font-mono text-[11px] font-bold hover:underline" title="${cleanTooltip}">${statusDot}[${refIndex}${labelSuffix}]</a></sup>`;
-    return addInlinePlaceholder(footnoteHtml);
+    return addInlinePlaceholder(footnoteHtml, fullRef);
   });
 
   // Handle self-closing reused named refs: <ref name="xyz" />
-  text = text.replace(/<ref\s+name=["']([^"']+)["']\s*\/>/gi, (_m, name) => {
+  text = text.replace(/<ref\s+name=["']([^"']+)["']\s*\/>/gi, (fullRef, name) => {
     const trimmedName = name.trim();
     const existingIndex = namedRefsMap.get(trimmedName);
     if (existingIndex !== undefined) {
@@ -211,12 +316,12 @@ export function parseWikitext(
       const labelSuffix = isValid ? '' : ' ⚠';
 
       const footnoteHtml = `<sup class="wiki-footnote inline-block ml-0.5 cursor-pointer" data-ref-index="${existingIndex}" data-ref-name="${escapeHtml(trimmedName)}" data-ref-tooltip="${tooltip}"><a href="#cite_note-${existingIndex}" id="cite_ref-${existingIndex}" data-ref-index="${existingIndex}" data-ref-name="${escapeHtml(trimmedName)}" data-ref-tooltip="${tooltip}" class="${indicatorClass} font-mono text-[11px] font-bold hover:underline" title="${tooltip}">${statusDot}[${existingIndex}${labelSuffix}]</a></sup>`;
-      return addInlinePlaceholder(footnoteHtml);
+      return addInlinePlaceholder(footnoteHtml, fullRef);
     }
     // Highlight undefined citation inconsistency in rendered article in RED
     const errorTooltip = `Esta referência ("${escapeHtml(trimmedName)}") foi invocada no texto mas não possui uma entrada correspondente definida na seção de referências. Use o botão 'Fix Citations' para gerar a entrada correspondente.`;
     const errorHtml = `<sup class="wiki-footnote inline-block ml-0.5 not-prose cursor-pointer" data-ref-error="true" data-ref-name="${escapeHtml(trimmedName)}" data-ref-tooltip="${errorTooltip}"><span data-ref-error="true" data-ref-name="${escapeHtml(trimmedName)}" data-ref-tooltip="${errorTooltip}" class="wiki-citation-broken font-mono text-[10px] font-bold" title="Erro de Citação: O marcador <ref name=&quot;${trimmedName}&quot; /> não possui uma definição no artigo."><span class="w-1.5 h-1.5 rounded-full bg-rose-600 inline-block mr-0.5 animate-ping"></span>[Erro: ref ${escapeHtml(trimmedName)} ⚠]</span></sup>`;
-    return addInlinePlaceholder(errorHtml);
+    return addInlinePlaceholder(errorHtml, fullRef);
   });
 
   // 5. Extract Galleries: <gallery> ... </gallery> or {{Galeria|...}}
@@ -263,7 +368,7 @@ export function parseWikitext(
 
   // 8. Balanced Templates Parser (handles nested templates {{...}} safely)
   text = parseTemplatesWithBalancedBraces(text, {
-    onInfobox: (content, tName) => addBlockPlaceholder(renderInfobox(content, inlinePlaceholders, tName)),
+    onInfobox: (content, tName) => addBlockPlaceholder(renderInfobox(content, inlinePlaceholders, tName, resolveRawInline)),
     onAviso: (content) => addBlockPlaceholder(renderWarningNotice(content, inlinePlaceholders)),
     onNota: (content) => addBlockPlaceholder(renderInfoNotice(content, inlinePlaceholders)),
     onDestaque: (content) => addBlockPlaceholder(renderHighlightNotice(content, inlinePlaceholders)),
@@ -272,9 +377,9 @@ export function parseWikitext(
     onUserbox: (content) => addBlockPlaceholder(renderUserbox(content, inlinePlaceholders)),
     onMainArticle: (target) => addBlockPlaceholder(renderMainArticle(target)),
     onSeeAlso: (targets) => addBlockPlaceholder(renderSeeAlso(targets)),
-    onCitationNeeded: () => addInlinePlaceholder(renderCitationNeeded()),
+    onCitationNeeded: () => addInlinePlaceholder(renderCitationNeeded(), '{{Carece de fontes}}'),
     onDisambig: (content) => addBlockPlaceholder(renderDisambig(content)),
-    onCitationTemplate: (content) => addInlinePlaceholder(renderCitationTemplate(content)),
+    onCitationTemplate: (content) => addInlinePlaceholder(renderCitationTemplate(content), `{{${content}}}`),
     onCollapsible: (content) => addBlockPlaceholder(renderCollapsibleTemplate(content, inlinePlaceholders)),
     onAmbox: (kind, content) => addBlockPlaceholder(renderAmbox(kind, content, inlinePlaceholders)),
     onNavbox: (content) => addBlockPlaceholder(renderNavbox(content, inlinePlaceholders)),
@@ -282,7 +387,7 @@ export function parseWikitext(
     onHatnote: (content) => addBlockPlaceholder(renderHatnote(content, inlinePlaceholders)),
     onColumns: (content) => addBlockPlaceholder(renderColumns(content, inlinePlaceholders)),
     onReflist: () => addBlockPlaceholder('___WIKI_REFLIST_PLACEHOLDER___'),
-    onGenericTemplate: (name, params) => addInlinePlaceholder(renderGenericBadge(name, params)),
+    onGenericTemplate: (name, params) => addInlinePlaceholder(renderGenericBadge(name, params), `{{${name}${params.length ? '|' + params.join('|') : ''}}}`),
   });
 
   // 9. Line-by-Line Section & Block Parsing
@@ -384,12 +489,14 @@ export function parseWikitext(
         : htmlHeaderMatch![2].replace(/<[^>]+>/g, '');
       const headerText = rawText.trim();
 
-      // Compute hierarchical numbering
+      // Compute hierarchical numbering skipping leading empty levels (e.g. == H2 == without = H1 =)
       sectionCounters[level - 1]++;
       for (let l = level; l < sectionCounters.length; l++) {
         sectionCounters[l] = 0;
       }
-      const numberStr = sectionCounters.slice(0, level).join('.');
+      const rawSlice = sectionCounters.slice(0, level);
+      const firstNonZero = rawSlice.findIndex((n) => n > 0);
+      const numberStr = (firstNonZero !== -1 ? rawSlice.slice(firstNonZero) : rawSlice).join('.');
 
       headerGlobalIndex++;
       const id = `section-${headerGlobalIndex}-${slugify(headerText)}`;
@@ -931,7 +1038,12 @@ function normalizeInfoboxKey(key: string): string {
     .trim();
 }
 
-function renderInfobox(content: string, inlineMap?: Map<string, string>, templateName: string = 'Infobox'): string {
+function renderInfobox(
+  content: string,
+  inlineMap?: Map<string, string>,
+  templateName: string = 'Infobox',
+  resolveRaw?: (s: string) => string
+): string {
   const normalizedContent = content.replace(/<br\s*\/?>/gi, '\n').replace(/&nbsp;/gi, ' ');
   const lines = normalizedContent.split('\n');
   const defaults = getInfoboxDefaultTheme(templateName);
@@ -1241,8 +1353,10 @@ function renderInfobox(content: string, inlineMap?: Map<string, string>, templat
       ? 'border border-slate-200 dark:border-slate-800 shadow-none'
       : 'border border-slate-300 dark:border-slate-700 shadow-xs';
 
+  const rawAttrWikitext = resolveRaw ? resolveRaw(normalizedContent.trim()) : normalizedContent.trim();
+
   return `
-    <div class="wiki-infobox not-prose mb-4 ${alignClasses} ${resolvedWidthClass} bg-white dark:bg-slate-900 ${containerStyleClass} rounded-lg overflow-hidden" data-wikitext="{{${escapeHtml(templateName)}\n${escapeHtml(normalizedContent.trim())}\n}}">
+    <div class="wiki-infobox not-prose mb-4 ${alignClasses} ${resolvedWidthClass} bg-white dark:bg-slate-900 ${containerStyleClass} rounded-lg overflow-hidden" data-wikitext="{{${escapeHtml(templateName)}\n${escapeHtml(rawAttrWikitext)}\n}}">
       <div class="font-bold text-center py-2.5 px-3 text-xs sm:text-sm tracking-wide ${headerClass}">
         <span class="block font-serif-heading">${infoboxIcon ? `<span class="mr-1.5">${escapeHtml(infoboxIcon)}</span>` : ''}${escapeHtml(infoboxTitle)}</span>
         ${infoboxSubtitle ? `<span class="block text-[11px] opacity-85 font-normal mt-0.5">${escapeHtml(infoboxSubtitle)}</span>` : ''}
@@ -1406,7 +1520,8 @@ function renderMediaWikiImage(content: string, inlineMap?: Map<string, string>):
 function renderMediaWikiTable(
   content: string,
   _inlineMap?: Map<string, string>,
-  _addInline?: (html: string) => string
+  _addInline?: (html: string) => string,
+  resolveRaw?: (s: string) => string
 ): string {
   const normalizedContent = content.replace(/<br\s*\/?>/gi, '\n').replace(/&nbsp;/gi, ' ');
   const lines = normalizedContent.split('\n');
@@ -1435,13 +1550,17 @@ function renderMediaWikiTable(
       headers.forEach((h) => {
         // MediaWiki: cell attributes can precede pipe, e.g. style="..." | Title
         let headerText = h;
-        if (h.includes('|')) {
-          const pipeIdx = h.indexOf('|');
-          headerText = h.substring(pipeIdx + 1).trim();
+        const pipeIdx = h.indexOf('|');
+        if (pipeIdx !== -1) {
+          const beforePipe = h.slice(0, pipeIdx).trim();
+          if (/^(?:class|style|align|valign|width|height|colspan|rowspan|scope|bgcolor|data-[a-z0-9-]+)\s*=/i.test(beforePipe)) {
+            headerText = h.substring(pipeIdx + 1).trim();
+          }
         }
         currentRow.push(
           `<th class="bg-slate-100 dark:bg-slate-800 py-2 px-3 font-semibold text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 text-xs font-serif-heading">${formatInline(
-            headerText
+            headerText,
+            _inlineMap
           )}</th>`
         );
       });
@@ -1453,13 +1572,17 @@ function renderMediaWikiTable(
       cells.forEach((c) => {
         // MediaWiki: cell attributes can precede pipe, e.g. style="..." | Text
         let cellText = c;
-        if (c.includes('|')) {
-          const pipeIdx = c.indexOf('|');
-          cellText = c.substring(pipeIdx + 1).trim();
+        const pipeIdx = c.indexOf('|');
+        if (pipeIdx !== -1) {
+          const beforePipe = c.slice(0, pipeIdx).trim();
+          if (/^(?:class|style|align|valign|width|height|colspan|rowspan|scope|bgcolor|data-[a-z0-9-]+)\s*=/i.test(beforePipe)) {
+            cellText = c.substring(pipeIdx + 1).trim();
+          }
         }
         currentRow.push(
           `<td class="py-2 px-3 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs leading-relaxed">${formatInline(
-            cellText
+            cellText,
+            _inlineMap
           )}</td>`
         );
       });
@@ -1473,8 +1596,10 @@ function renderMediaWikiTable(
 
   const tableBody = rows.map((r) => `<tr>${r.join('')}</tr>`).join('');
 
+  const rawAttrWikitext = resolveRaw ? resolveRaw(normalizedContent.trim()) : normalizedContent.trim();
+
   return `
-    <div class="wiki-table-container overflow-x-auto my-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs not-prose bg-white dark:bg-slate-900" data-wikitext="{|\n${escapeHtml(normalizedContent.trim())}\n|}">
+    <div class="wiki-table-container overflow-x-auto my-4 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs not-prose bg-white dark:bg-slate-900" data-wikitext="{|\n${escapeHtml(rawAttrWikitext)}\n|}">
       ${tableCaption ? `<div class="p-2 font-bold text-xs text-center border-b border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/40">${escapeHtml(tableCaption)}</div>` : ''}
       <table class="wikitable w-full text-xs border-collapse">
         <tbody>${tableBody}</tbody>

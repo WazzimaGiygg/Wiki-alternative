@@ -19,6 +19,45 @@ export interface StandardPdfHeroOptions {
 }
 
 /**
+ * Converte símbolos Unicode não suportados pelas fontes WinAnsi padrão do jsPDF (Helvetica/Courier)
+ * para equivalentes legíveis sem corrupção de caracteres (ex: Ø=ÜØ).
+ */
+export function sanitizePdfText(input: string): string {
+  if (!input) return '';
+  return String(input)
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/→/g, '->')
+    .replace(/←/g, '<-')
+    .replace(/≥/g, '>=')
+    .replace(/≤/g, '<=')
+    .replace(/≠/g, '!=')
+    .replace(/≈/g, '~=')
+    .replace(/∞/g, 'inf')
+    .replace(/·/g, '|')
+    .replace(/₀/g, '0')
+    .replace(/₁/g, '1')
+    .replace(/₂/g, '2')
+    .replace(/₃/g, '3')
+    .replace(/₄/g, '4')
+    .replace(/₅/g, '5')
+    .replace(/₆/g, '6')
+    .replace(/₇/g, '7')
+    .replace(/₈/g, '8')
+    .replace(/₉/g, '9')
+    .replace(/⁰/g, '^0')
+    .replace(/¹/g, '^1')
+    .replace(/²/g, '^2')
+    .replace(/³/g, '^3')
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+    .replace(/[\u2600-\u27BF\uFE0F]/g, '')
+    .replace(/[^\x09\x0A\x0D\x20-\xFF\u2022]/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+/**
  * Desenha o logotipo oficial padronizado da WikiWorldWeb / WazzimaGiygg
  * (portal infinito em perspectiva 3D geométrica / Mondrian moderno).
  */
@@ -107,51 +146,74 @@ export function drawPdfStandardHeroBanner(
 
   doc.saveGraphicsState();
 
+  const textStartX = margin + 31;
+  const maxTextWidth = contentWidth - 36;
+
+  const cleanTag = sanitizePdfText(categoryTag).toUpperCase();
+  const cleanTitle = sanitizePdfText(title);
+  const cleanSubtitle = sanitizePdfText(subtitle);
+  const cleanMeta = sanitizePdfText(metadataLine);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11.5);
+  const splitTitle = doc.splitTextToSize(cleanTitle, maxTextWidth).slice(0, 2);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  const splitSubtitle = doc.splitTextToSize(cleanSubtitle, maxTextWidth).slice(0, 2);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  const splitMeta = doc.splitTextToSize(cleanMeta, maxTextWidth).slice(0, 2);
+
+  const titleHeight = splitTitle.length * 4.8;
+  const subHeight = splitSubtitle.length * 3.8;
+  const metaHeight = splitMeta.length * 3.4;
+  const computedHeight = Math.max(height, 14 + titleHeight + subHeight + metaHeight + 5);
+
   // Card branco com contorno fino nítido
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(30, 41, 59); // slate-800
   doc.setLineWidth(0.35);
-  doc.roundedRect(margin, y, contentWidth, height, 2.5, 2.5, 'FD');
+  doc.roundedRect(margin, y, contentWidth, computedHeight, 2.5, 2.5, 'FD');
 
-  // Logotipo quadrado oficial à esquerda
+  // Logotipo quadrado oficial à esquerda centralizado verticalmente
   const logoSize = 22;
   const logoX = margin + 5;
-  const logoY = y + 7;
+  const logoY = y + Math.max(5, (computedHeight - logoSize) / 2);
   drawPdfStandardLogo(doc, logoX, logoY, logoSize);
 
-  const textStartX = margin + 31;
-  const maxTextWidth = contentWidth - 36;
+  let cursorY = y + 7.5;
 
   // 1. Tag de categoria em caixa alta
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
+  doc.setFontSize(7.2);
   doc.setTextColor(30, 41, 59);
-  doc.text(categoryTag.toUpperCase(), textStartX, y + 8.5);
+  doc.text(cleanTag, textStartX, cursorY);
+  cursorY += 5.5;
 
-  // 2. Título Principal em negrito
+  // 2. Título Principal em negrito (até 2 linhas sem cortar)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12.5);
+  doc.setFontSize(11.5);
   doc.setTextColor(15, 23, 42); // slate-900
-  const splitTitle = doc.splitTextToSize(title, maxTextWidth);
-  const titleY = y + 15.5;
-  doc.text(splitTitle[0] || title, textStartX, titleY);
+  doc.text(splitTitle, textStartX, cursorY);
+  cursorY += splitTitle.length * 4.8 + 1.2;
 
   // 3. Subtítulo descritivo
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105); // slate-600
-  const splitSubtitle = doc.splitTextToSize(subtitle, maxTextWidth);
-  doc.text(splitSubtitle[0] || subtitle, textStartX, y + 22.5);
+  doc.text(splitSubtitle, textStartX, cursorY);
+  cursorY += splitSubtitle.length * 3.8 + 1.2;
 
   // 4. Linha de Metadados / Emissão
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
+  doc.setFontSize(6.8);
   doc.setTextColor(100, 116, 139); // slate-500
-  const splitMeta = doc.splitTextToSize(metadataLine, maxTextWidth);
-  doc.text(splitMeta[0] || metadataLine, textStartX, y + 29.5);
+  doc.text(splitMeta, textStartX, cursorY);
 
   doc.restoreGraphicsState();
-  return height;
+  return computedHeight;
 }
 
 /**
@@ -187,19 +249,19 @@ export function drawPdfStandardKpiCards(
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.2);
     doc.setTextColor(textCol[0], textCol[1], textCol[2]);
-    doc.text(kpi.title.toUpperCase(), cardX + 3.2, y + 4.5);
+    doc.text(sanitizePdfText(kpi.title).toUpperCase(), cardX + 3.2, y + 4.5);
 
     // Valor Numérico em Destaque
     doc.setFont('courier', 'bold');
     doc.setFontSize(10.5);
     doc.setTextColor(15, 23, 42);
-    doc.text(kpi.val, cardX + 3.2, y + 10.5);
+    doc.text(sanitizePdfText(kpi.val), cardX + 3.2, y + 10.5);
 
     // Rótulo Inferior / Subtítulo
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(5.8);
     doc.setTextColor(100, 116, 139);
-    doc.text(kpi.sub, cardX + 3.2, y + 14);
+    doc.text(sanitizePdfText(kpi.sub), cardX + 3.2, y + 14);
   });
 
   doc.restoreGraphicsState();
@@ -223,12 +285,12 @@ export function drawPdfStandardSectionHeader(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(15, 23, 42); // slate-900
-  doc.text(title.toUpperCase(), margin, y + 5);
+  doc.text(sanitizePdfText(title).toUpperCase(), margin, y + 5);
 
   doc.setFont('courier', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(71, 85, 105);
-  doc.text(badgeCountText, pageWidth - margin, y + 5, { align: 'right' });
+  doc.text(sanitizePdfText(badgeCountText), pageWidth - margin, y + 5, { align: 'right' });
 
   // Linha fina separadora
   doc.setDrawColor(226, 232, 240);
@@ -262,14 +324,14 @@ export function drawPdfStandardCategoryBanner(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.2);
   doc.setTextColor(colorRgb[0], colorRgb[1], colorRgb[2]);
-  doc.text(`CATEGORIA: ${categoryLabel.toUpperCase()}`, margin + 3.5, y + 4.3);
+  doc.text(`CATEGORIA: ${sanitizePdfText(categoryLabel).toUpperCase()}`, margin + 3.5, y + 4.3);
 
   doc.restoreGraphicsState();
   return height;
 }
 
 /**
- * Desenha o cabeçalho corrido mini das páginas seguintes (Páginas 2 em diante)
+ * Desenha o cabeçalho corrido mini das páginas seguintes (Páginas 2 em diante) sem colisão de textos
  */
 export function drawPdfStandardMiniHeader(
   doc: jsPDF,
@@ -299,15 +361,27 @@ export function drawPdfStandardMiniHeader(
     console.warn('Falha ao renderizar miniatura do logotipo:', err);
   }
 
+  const cleanLeft = sanitizePdfText(leftText).toUpperCase();
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(7.6);
   doc.setTextColor(30, 64, 175); // Royal blue
-  doc.text(leftText.toUpperCase(), textX, 10.3);
+  doc.text(cleanLeft, textX, 10.3);
+  const leftWidth = doc.getTextWidth(cleanLeft);
+
+  const rightMaxX = pageWidth - margin;
+  const availableRightWidth = Math.max(20, rightMaxX - (textX + leftWidth + 6));
+  let cleanRight = sanitizePdfText(rightText);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
+  doc.setFontSize(6.8);
   doc.setTextColor(100, 116, 139);
-  doc.text(rightText, pageWidth - margin, 10.3, { align: 'right' });
+  if (doc.getTextWidth(cleanRight) > availableRightWidth) {
+    while (cleanRight.length > 4 && doc.getTextWidth(`${cleanRight}...`) > availableRightWidth) {
+      cleanRight = cleanRight.slice(0, -1).trimEnd();
+    }
+    cleanRight = `${cleanRight}...`;
+  }
+  doc.text(cleanRight, rightMaxX, 10.3, { align: 'right' });
 
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.3);
@@ -344,7 +418,7 @@ export function drawPdfStandardFooters(
     doc.setFontSize(7);
     doc.setTextColor(225, 29, 72); // rose-600
     doc.text(
-      `WikiWorldWeb • ${documentTypeLabel} • Relatório Gerado Automaticamente`,
+      sanitizePdfText(`WikiWorldWeb • ${documentTypeLabel} • Relatório Gerado Automaticamente`),
       margin,
       footerY
     );
@@ -375,8 +449,15 @@ export function drawPdfStandardGovernanceBox(
     '• Em conformidade com o Marco Civil da Internet (Lei 12.965/2014) e governança de dados da LGPD (Lei 13.709/2018).',
   ];
 
-  const allBullets = extraBullets && extraBullets.length > 0 ? [...baseBullets, ...extraBullets] : baseBullets;
-  const boxHeight = 12 + allBullets.length * 4.5;
+  const allBullets = (extraBullets && extraBullets.length > 0 ? [...baseBullets, ...extraBullets] : baseBullets).map(
+    (b) => sanitizePdfText(b)
+  );
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.2);
+  const wrappedBullets = allBullets.map((b) => doc.splitTextToSize(b, contentWidth - 8));
+  const totalLines = wrappedBullets.reduce((sum, lines) => sum + lines.length, 0);
+  const boxHeight = 11.5 + totalLines * 3.8 + wrappedBullets.length * 0.8;
 
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(226, 232, 240);
@@ -392,8 +473,10 @@ export function drawPdfStandardGovernanceBox(
   doc.setFontSize(7.2);
   doc.setTextColor(71, 85, 105);
 
-  allBullets.forEach((bullet, bIdx) => {
-    doc.text(bullet, margin + 4, y + 11.5 + bIdx * 4.5);
+  let bulletY = y + 11.5;
+  wrappedBullets.forEach((lines) => {
+    doc.text(lines, margin + 4, bulletY);
+    bulletY += lines.length * 3.8 + 0.8;
   });
 
   doc.restoreGraphicsState();

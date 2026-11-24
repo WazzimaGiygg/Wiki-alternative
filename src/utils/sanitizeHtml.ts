@@ -18,12 +18,13 @@ export function sanitizeHtml(dirty: string | null | undefined): string {
         'ul', 'ol', 'li', 'dl', 'dt', 'dd',
         'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
         'a', 'img', 'div', 'section', 'article', 'aside', 'details', 'summary',
-        'figure', 'figcaption', 'abbr', 'time', 'kbd', 'var', 'samp', 'del', 'ins'
+        'figure', 'figcaption', 'abbr', 'time', 'kbd', 'var', 'samp', 'del', 'ins',
+        'math', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'msup', 'msub', 'mfrac', 'msqrt', 'mspace', 'mtext', 'annotation'
       ],
       ALLOWED_ATTR: [
         'href', 'target', 'rel', 'title', 'src', 'alt', 'width', 'height',
         'class', 'id', 'name', 'align', 'colspan', 'rowspan', 'border', 'cellpadding', 'cellspacing',
-        'loading', 'decoding', 'data-*', 'aria-*', 'role', 'tabindex'
+        'loading', 'decoding', 'encoding', 'xmlns', 'data-*', 'aria-*', 'role', 'tabindex'
       ],
       ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
       ADD_ATTR: ['target', 'rel'],

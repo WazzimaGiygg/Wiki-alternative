@@ -23,6 +23,7 @@ import { WikiTemplate, CreateTemplateInput, UpdateTemplateInput } from '../types
 
 const COLLECTION_NAME = 'templates';
 const LOCAL_STORAGE_KEY = 'wikizero_templates_cache_v1';
+const DELETED_SEEDS_STORAGE_KEY = 'wikizero_deleted_seed_templates_v1';
 
 export interface TemplateValidationResult {
   valid: boolean;
@@ -488,6 +489,46 @@ export class TemplateService {
       let i = 0;
 
       while (i < input.length) {
+        if (input[i] === '<') {
+          const lowerTail = input.slice(i, i + 18).toLowerCase();
+          if (lowerTail.startsWith('<nowiki>')) {
+            const closeIdx = input.toLowerCase().indexOf('</nowiki>', i + 8);
+            if (closeIdx !== -1) {
+              result += input.slice(i, closeIdx + 9);
+              i = closeIdx + 9;
+              continue;
+            }
+          } else if (/^<(?:pre|syntaxhighlight)(?:\s|>)/i.test(lowerTail)) {
+            const tagName = lowerTail.startsWith('<pre') ? 'pre' : 'syntaxhighlight';
+            const closeIdx = input.toLowerCase().indexOf(`</${tagName}>`, i + tagName.length + 1);
+            if (closeIdx !== -1) {
+              const endPos = closeIdx + tagName.length + 3;
+              result += input.slice(i, endPos);
+              i = endPos;
+              continue;
+            }
+          }
+        }
+
+        if (input.slice(i, i + 3) === '```') {
+          const closeFence = input.indexOf('```', i + 3);
+          if (closeFence !== -1) {
+            result += input.slice(i, closeFence + 3);
+            i = closeFence + 3;
+            continue;
+          }
+        }
+
+        if (input[i] === '`') {
+          const nlIdx = input.indexOf('\n', i + 1);
+          const closeTick = input.indexOf('`', i + 1);
+          if (closeTick !== -1 && (nlIdx === -1 || closeTick < nlIdx)) {
+            result += input.slice(i, closeTick + 1);
+            i = closeTick + 1;
+            continue;
+          }
+        }
+
         if (input[i] === '{' && input[i + 1] === '{' && input[i + 2] === '{') {
           result += '{{{';
           i += 3;
@@ -643,6 +684,7 @@ export class TemplateService {
       updatedAt: now,
     };
 
+    this.unmarkSeedDeleted(newTemplate.id, newTemplate.name);
     this.saveToLocalCache(newTemplate);
     this.notifyListeners();
 
@@ -736,15 +778,30 @@ export class TemplateService {
     try {
       const db = getDb();
       const docRef = doc(db, COLLECTION_NAME, id);
-      await updateDoc(docRef, {
-        name: updatedTemplate.name,
-        content: updatedTemplate.content,
-        description: updatedTemplate.description,
-        category: updatedTemplate.category,
-        parameters: updatedTemplate.parameters,
-        updatedAt: updatedTemplate.updatedAt,
-        _serverTimestamp: serverTimestamp(),
-      });
+      const auth = getAuthSafe();
+      const currentUser = auth?.currentUser;
+      try {
+        await updateDoc(docRef, {
+          name: updatedTemplate.name,
+          content: updatedTemplate.content,
+          description: updatedTemplate.description,
+          category: updatedTemplate.category,
+          parameters: updatedTemplate.parameters,
+          updatedAt: updatedTemplate.updatedAt,
+          _serverTimestamp: serverTimestamp(),
+        });
+      } catch (updateErr) {
+        const errCode = (updateErr as { code?: string })?.code;
+        if (errCode === 'not-found' || (updateErr instanceof Error && updateErr.message.includes('No document to update'))) {
+          await setDoc(docRef, {
+            ...updatedTemplate,
+            authorUid: updatedTemplate.authorUid || currentUser?.uid || 'anonymous',
+            _serverTimestamp: serverTimestamp(),
+          });
+        } else {
+          throw updateErr;
+        }
+      }
       return updatedTemplate;
     } catch (error) {
       console.warn('[templateService] Erro ao atualizar template no Firestore, mantido em cache local:', error);
@@ -756,6 +813,8 @@ export class TemplateService {
    * Exclui um template pelo ID.
    */
   public static async deleteTemplate(id: string): Promise<boolean> {
+    const existing = this.getFromLocalCache().find((t) => t && t.id === id);
+    this.markSeedDeleted(id, existing?.name);
     this.deleteFromLocalCache(id);
     this.notifyListeners();
 
@@ -771,6 +830,38 @@ export class TemplateService {
       }
       return true;
     }
+  }
+
+  /**
+   * Restaura as pré-definições padrão do sistema que tenham sido removidas localmente.
+   */
+  public static async restoreDefaultTemplates(): Promise<WikiTemplate[]> {
+    try {
+      localStorage.removeItem(DELETED_SEEDS_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    for (const seed of SEED_TEMPLATES) {
+      const exists = this.getFromLocalCache().some(
+        (t) => t && (t.id === seed.id || this.toLookupKey(t.name) === this.toLookupKey(seed.name))
+      );
+      if (!exists) {
+        this.saveToLocalCache(seed);
+      }
+    }
+    this.notifyListeners();
+    return this.getFromLocalCache();
+  }
+
+  /**
+   * Retorna quantos modelos padrão do sistema foram removidos e podem ser restaurados.
+   */
+  public static getDeletedDefaultSeedsCount(): number {
+    const deletedKeys = this.getDeletedSeedKeys();
+    if (deletedKeys.size === 0) return 0;
+    return SEED_TEMPLATES.filter(
+      (seed) => deletedKeys.has(seed.id) || deletedKeys.has(this.toLookupKey(seed.name))
+    ).length;
   }
 
   /**
@@ -812,14 +903,65 @@ export class TemplateService {
   // MÉTODOS PRIVADOS DE CACHE LOCAL
   // ==========================================
 
+  private static getDeletedSeedKeys(): Set<string> {
+    try {
+      const raw = localStorage.getItem(DELETED_SEEDS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return new Set(parsed.filter((item): item is string => typeof item === 'string'));
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return new Set<string>();
+  }
+
+  private static markSeedDeleted(id: string, name?: string): void {
+    const matchingSeed = SEED_TEMPLATES.find(
+      (s) => s.id === id || (name ? this.toLookupKey(s.name) === this.toLookupKey(name) : false)
+    );
+    if (!matchingSeed) return;
+    const keys = this.getDeletedSeedKeys();
+    keys.add(matchingSeed.id);
+    keys.add(this.toLookupKey(matchingSeed.name));
+    try {
+      localStorage.setItem(DELETED_SEEDS_STORAGE_KEY, JSON.stringify(Array.from(keys)));
+    } catch {
+      // ignore
+    }
+  }
+
+  private static unmarkSeedDeleted(id: string, name?: string): void {
+    const keys = this.getDeletedSeedKeys();
+    if (keys.size === 0) return;
+    let changed = keys.delete(id);
+    if (name && keys.delete(this.toLookupKey(name))) {
+      changed = true;
+    }
+    if (changed) {
+      try {
+        localStorage.setItem(DELETED_SEEDS_STORAGE_KEY, JSON.stringify(Array.from(keys)));
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   private static getFromLocalCache(): WikiTemplate[] {
+    const deletedSeeds = this.getDeletedSeedKeys();
+    const activeSeeds = SEED_TEMPLATES.filter(
+      (seed) => !deletedSeeds.has(seed.id) && !deletedSeeds.has(this.toLookupKey(seed.name))
+    );
+
     try {
       const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           const merged = [...parsed];
-          for (const seed of SEED_TEMPLATES) {
+          for (const seed of activeSeeds) {
             if (!merged.some((t) => t && this.toLookupKey(t.name) === this.toLookupKey(seed.name))) {
               merged.push(seed);
             }
@@ -831,11 +973,11 @@ export class TemplateService {
       // Ignora erro de JSON
     }
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(SEED_TEMPLATES));
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(activeSeeds));
     } catch {
       // ignore
     }
-    return [...SEED_TEMPLATES];
+    return [...activeSeeds];
   }
 
   private static saveToLocalCache(template: WikiTemplate): void {
@@ -890,6 +1032,8 @@ export const templateService = {
   updateTemplate: (id: string, input: UpdateTemplateInput) => TemplateService.updateTemplate(id, input),
   deleteTemplate: (id: string) => TemplateService.deleteTemplate(id),
   listTemplates: (category?: string) => TemplateService.listTemplates(category),
+  restoreDefaultTemplates: () => TemplateService.restoreDefaultTemplates(),
+  getDeletedDefaultSeedsCount: () => TemplateService.getDeletedDefaultSeedsCount(),
 };
 
 export default templateService;

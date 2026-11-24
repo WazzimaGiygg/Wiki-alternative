@@ -564,4 +564,240 @@ A aplicação transparente e corajosa da LGPD na wiki transforma o ambiente cola
       'Salvaguardas constitucionais de due process, canal oficial de DPO e conformidade estrita na redação de biografias de pessoas vivas (BLP).',
     ],
   },
+  {
+    id: 'curated-artigo-modelo-completo',
+    pageUid: 'geral',
+    titulo: 'Artigo Modelo: Guia Completo de Formatação e Recursos',
+    categoria: 'Guias & Documentação',
+    idioma: 'pt',
+    autor: 'Conselho Editorial WikiWorldWeb',
+    dataCriacao: '2026-11-24T00:00:00Z',
+    dataEdicao: '2026-11-24T08:05:00Z',
+    visualizacoes: 3120,
+    versao: 2,
+    tags: [
+      'Artigo Modelo',
+      'Wikitexto',
+      'Markdown',
+      'Pré-definições',
+      'Tabelas Ordenáveis',
+      'KaTeX',
+      'Referências',
+    ],
+    resumo:
+      'Artigo de referência completo que demonstra, de forma prática e formatada, todos os recursos de redação, marcação Markdown/MediaWiki, infoboxes, tabelas interativas, fórmulas KaTeX, pré-definições dinâmicas, citações e navegação disponíveis na WikiWorldWeb.',
+    descricao: `{{Hatnote|Este verbete funciona como um '''artigo modelo completo''' e pronto para uso: copie sua estrutura pelo botão Editar ou insira-o pelo editor para criar novos artigos com todos os recursos da plataforma.}}
+
+{{Artigo principal|WikiWorldWeb: A Nova Fronteira da Enciclopédia Livre e Descentralizada}}
+{{Ver também|WazzimaGiygg|Marco Civil e LGPD aplicados a Wikis: Manual Jurídico Completo}}
+
+{{Info/Tecnologia
+| nome = Artigo Modelo WikiWorldWeb
+| subtitulo = Padrão Editorial Completo (Wikitexto + Markdown)
+| icone = 📘
+| cor = indigo
+| alinhamento = right
+| largura = medio
+| selo = Modelo Oficial Verificado
+| estilo = highlight
+| imagem = /logo.png
+| legenda = Emblema oficial da plataforma WikiWorldWeb
+| imagem_largura = 140px
+| secao1 = Especificações do Formato
+| Padrão = MediaWiki + Markdown Híbrido
+| Editor = Código e Página Formatada
+| Licença = GNU GPL v3.0
+| secao2 = Indicadores Visuais da Infobox
+| status = Ativo e Validado
+| progresso = 100%
+| avaliacao = 10/10
+| coordenadas = 23°33'S 46°38'O
+| tags = Wikitexto, Markdown, KaTeX, Pré-definições
+| fonte = Documentação interna da [[WikiWorldWeb: A Nova Fronteira da Enciclopédia Livre e Descentralizada|WikiWorldWeb]]
+| rodape = Atualizado automaticamente em {{CURRENTYEAR}}
+}}
+
+O '''{{PAGENAME}}''' reúne, em um único exemplo vivo e formatado, todos os recursos editoriais suportados pela '''{{SITENAME}}'''<ref name="guia-wiki">{{Citar web|autor=Conselho Editorial WikiWorldWeb|titulo=Padrões de Marcação e Formatação Colaborativa|url=https://wikiworldweb.org|site=Documentação WikiWorldWeb|data=2026-10-01|acessodata=2026-11-24}}</ref>. Ao combinar a expressividade do '''Wikitexto MediaWiki''' com a agilidade do '''Markdown''', editores podem produzir verbetes ricos, acessíveis e auditáveis sem escrever HTML complexo.
+
+__TOC__
+
+== 1. Formatação de Texto e Tipografia ==
+O motor da enciclopédia aceita simultaneamente marcações clássicas de wiki, atalhos de Markdown e tags semânticas seguras<ref name="livro-estilo">{{Citar livro|autor=Silva, Marina|titulo=Arquitetura de Enciclopédias Digitais Abertas|editora=Imprensa Livre|ano=2025|paginas=42-68|isbn=978-85-0000-001-2}}</ref>.
+
+=== Estilos Inline e Realces ===
+* '''Negrito em Wikitexto''' e **negrito em Markdown** destacam termos essenciais.
+* ''Itálico em Wikitexto'' e *itálico em Markdown* servem para expressões estrangeiras ou títulos de obras.
+* '''''Negrito e itálico combinados''''' aplicam dupla ênfase tipográfica.
+* ~~Texto tachado~~ indica termos substituídos ou revogados em revisões.
+* Código em linha usa crases, como \`parseWikitext()\`, preservando fonte monoespaçada.
+* Realces HTML seguros: <u>sublinhado</u>, <mark>texto marcado em destaque</mark>, fórmula química H<sub>2</sub>O, potência 2<sup>10</sup> = 1024, atalho <kbd>Ctrl</kbd> + <kbd>S</kbd>, sigla com legenda <abbr title="Single-Page Application">SPA</abbr> e <small>observação em tamanho reduzido</small>.
+* Bloco literal protegido com \`nowiki\`: <nowiki>'''texto sem formatação''' e {{SintaxeLiteral}}</nowiki>.
+
+=== Links Internos e Externos ===
+* Link interno direto para outro verbete: [[WazzimaGiygg]].
+* Link interno com rótulo personalizado: [[WikiWorldWeb: A Nova Fronteira da Enciclopédia Livre e Descentralizada|filosofia editorial da WikiWorldWeb]].
+* Link externo nomeado: [https://www.gnu.org/licenses/gpl-3.0.html Texto oficial da Licença GNU GPL v3.0].
+
+## 2. Seções em Markdown, Listas e Citações
+Este título foi escrito com \`##\` (sintaxe Markdown), integrando-se automaticamente ao sumário numerado junto com os títulos \`==\` do MediaWiki.
+
+=== Listas Aninhadas e Definições ===
+* Item principal de lista não ordenada
+** Subitem de segundo nível
+*** Detalhe de terceiro nível
+* Segundo item principal com indicação editorial de verificação{{Carece de fontes}}
+
+# Primeiro passo em lista numerada
+# Segundo passo em lista numerada
+## Subetapa numerada internamente
+# Terceiro passo concluído
+
+; Wikitexto : Linguagem de marcação colaborativa projetada para enciclopédias abertas.
+; Pré-definição : Bloco reutilizável invocado via chaves duplas com parâmetros dinâmicos.
+
+: Recuo simples estilo MediaWiki utilizado em notas e discussões.
+:: Recuo duplo para respostas encadeadas em diálogos editoriais.
+
+> Bloco de citação rápida em estilo Markdown (\`>\`), ideal para destacar trechos curtos no corpo do texto.
+
+{{Citação|O conhecimento compartilhado multiplica seu valor quando estruturado com clareza, transparência e fontes verificáveis.|Comunidade WikiWorldWeb|Manual Editorial}}
+
+----
+
+== 3. Avisos Editoriais e Pré-definições Dinâmicas ==
+As caixas contextuais comunicam o estado editorial do verbete e padronizam componentes visuais em toda a wiki<ref name="guia-wiki" />.
+
+{{Destaque|Este artigo modelo demonstra todas as predefinições nativas e dinâmicas do serviço \`templateService\` em funcionamento real.}}
+
+{{Nota|Utilize uma única seção de referências ao final do artigo para que todas as notas <nowiki><ref></nowiki> exibam o indicador verde de citação válida.}}
+
+{{Aviso|Mantenha o balanceamento correto das chaves ao personalizar ou criar novas pré-definições no painel administrativo.}}
+
+{{Ambox|tipo=noticia|icone=📘|título=Caixa Editorial Parametrizada (Ambox)|texto=Suporta os tipos \`conteudo\`, \`estilo\`, \`noticia\`, \`fusao\`, \`exclusao\` e \`protecao\`, além de data e motivo.|data=2026}}
+
+=== Pré-definições Gerenciáveis (\`templateService\`) ===
+{{Dica|título=Dica de Produtividade|texto=Você pode editar ou criar modelos como \`Dica\`, \`Cartão\` e \`FichaRápida\` diretamente em Gerenciar Pré-definições.}}
+
+{{Cartão|icone=🧩|título=Cartão Reutilizável Expandido|texto=Este bloco foi processado dinamicamente pelo \`templateService\` antes da renderização final do artigo.}}
+
+{{FichaRápida|rotulo1=Componente|rotulo2=Comportamento na WikiWorldWeb|campo1=Transclusão MediaWiki|valor1=Expande parâmetros nomeados e posicionais com suporte a <nowiki><noinclude></nowiki> e <nowiki><includeonly></nowiki>.}}
+
+=== Selos de Colaborador (Userboxes) ===
+{{Userbox|🛡️|Este verbete segue as diretrizes completas de formatação e acessibilidade.}}
+{{Userbox|⚙️|Compatível com modo Claro, Escuro e Modo de Leitura Imersivo.}}
+
+== 4. Tabela Interativa Ordenável ==
+Clique em qualquer cabeçalho da tabela abaixo no leitor para ordenar as linhas '''alfabeticamente''' ou '''numericamente''' em ordem crescente ou decrescente.
+
+{| class="wikitable"
+|+ Comparativo dos Principais Recursos Suportados
+! Recurso !! Sintaxe Principal !! Categoria !! Pontos de Expressividade !! Adoção (%)
+|-
+| Cabeçalhos Híbridos || <nowiki>== Seção ==</nowiki> ou <nowiki>## Seção</nowiki> || Estrutura || 95 || 100%
+|-
+| Infobox Lateral || <nowiki>{{Info/Tecnologia|...}}</nowiki> || Metadados || 98 || 89%
+|-
+| Tabela Ordenável || <nowiki>{| class="wikitable" ... |}</nowiki> || Dados || 92 || 76%
+|-
+| Fórmulas KaTeX || <nowiki><math>...</math></nowiki> || Ciência || 90 || 64%
+|-
+| Pré-definições || <nowiki>{{Dica|título=...|texto=...}}</nowiki> || Automação || 99 || 84%
+|-
+| Citações e Refs || <nowiki><ref>{{Citar web|...}}</ref></nowiki> || Verificação || 96 || 93%
+|}
+
+== 5. Fórmulas Matemáticas e Blocos de Código ==
+Expressões científicas são renderizadas pelo motor '''KaTeX''' tanto no meio da frase — como a relação energia-massa <math>E = mc^2</math> e o somatório <math>\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}</math> — quanto em equações centralizadas de bloco<ref name="artigo-katex">{{Citar jornal|autor=Mendes, Rafael|titulo=Tipografia Matemática na Web com KaTeX|jornal=Revista Brasileira de Computação Aberta|data=2026-04-15|paginas=12-20}}</ref>:
+
+<math display="block">
+f(x) = \\int_{-\\infty}^{\\infty} \\hat{f}(\\xi)\\,e^{2\\pi i \\xi x}\\,d\\xi
+</math>
+
+==== Blocos de Código (Markdown e MediaWiki) ====
+\`\`\`typescript
+// Exemplo de expansão de pré-definições no pipeline da WikiWorldWeb
+const wikitextoExpandido = templateService.processWikitext(conteudoArtigo);
+const resultado = parseWikitext(wikitextoExpandido, undefined, tituloArtigo);
+\`\`\`
+
+<pre lang="wikitext">
+== Exemplo de Estrutura Mínima ==
+{{Infobox
+| nome = Meu Novo Artigo
+| cor = azul
+| status = Ativo
+}}
+Texto introdutório com referência.<ref>{{Citar web|titulo=Fonte|url=https://exemplo.org}}</ref>
+== Referências ==
+{{Referências}}
+</pre>
+
+== 6. Variáveis Mágicas e Funções de Parser ==
+O parser avalia variáveis dinâmicas da página e expressões lógicas automaticamente durante a renderização:
+* '''Nome da página atual:''' <nowiki>{{PAGENAME}}</nowiki> → '''{{PAGENAME}}'''
+* '''Enciclopédia e data corrente:''' <nowiki>{{SITENAME}}</nowiki> em {{CURRENTDAY}} de {{CURRENTMONTHNAME}} de {{CURRENTYEAR}}
+* '''Cálculo aritmético (\`#expr\`):''' <nowiki>{{#expr: (12 + 8) * 5}}</nowiki> → '''{{#expr: (12 + 8) * 5}}'''
+* '''Condicional (\`#if\`):''' <nowiki>{{#if: ativo | Motor operacional | Inativo}}</nowiki> → '''{{#if: ativo | Motor operacional | Inativo}}'''
+* '''Comparação (\`#ifeq\`):''' <nowiki>{{#ifeq: 10 | 10 | Parâmetros idênticos | Divergente}}</nowiki> → '''{{#ifeq: 10 | 10 | Parâmetros idênticos | Divergente}}'''
+* '''Seleção (\`#switch\`):''' <nowiki>{{#switch: pt | pt=Português (Brasil) | en=Inglês | #default=Multilíngue}}</nowiki> → '''{{#switch: pt | pt=Português (Brasil) | en=Inglês | #default=Multilíngue}}'''
+
+== 7. Colunas, Seções Recolhíveis e Mídia ==
+=== Conteúdo em Múltiplas Colunas ===
+{{Colunas|2|
+• '''Coluna 1 — Redação Clara:''' Prefira parágrafos objetivos e títulos hierárquicos bem definidos.
+• '''Coluna 1 — Fontes Abertas:''' Sempre atribua referências a afirmações históricas ou numéricas.
+• '''Coluna 2 — Acessibilidade:''' Use textos alternativos descritivos em todas as figuras.
+• '''Coluna 2 — Reuso:''' Padronize caixas recorrentes através do sistema de pré-definições.
+}}
+
+=== Blocos Recolhíveis (Oculto e Collapsible) ===
+{{Oculto|título=Clique aqui para abrir as boas práticas de revisão editorial|conteúdo=Antes de publicar: 1) confira o sumário automático, 2) valide os links internos, 3) teste a ordenação das colunas numéricas da tabela e 4) garanta que <nowiki>{{Referências}}</nowiki> esteja no fim da página.}}
+
+[[collapsible show="Ver checklist rápido de criação de novos artigos" hide="Recolher checklist"]]
+* Defina uma '''Infobox''' tematicamente colorida no topo para contextualizar o leitor.
+* Insira <nowiki>__TOC__</nowiki> caso queira posicionar o sumário após a introdução.
+* Organize o corpo com <nowiki>== Seção ==</nowiki> e <nowiki>=== Subseção ===</nowiki>.
+* Adicione <nowiki>[[Categoria:Sua Categoria]]</nowiki> ao rodapé para indexação temática.
+[[/collapsible]]
+
+=== Imagem e Galeria de Mídia ===
+![Identidade visual oficial da enciclopédia WikiWorldWeb](/logo.png)
+
+<gallery caption="Galeria de Ativos Visuais da Plataforma">
+/logo.png | Logotipo principal da WikiWorldWeb
+/pwa-512x512.png | Ícone oficial da versão instalável (PWA)
+/wikizero-logo.jpg | Emblema clássico de origem da enciclopédia
+</gallery>
+
+== 8. Portais, Navegação e Referências ==
+{{Portal|Tecnologia|Documentação}}
+
+== Referências ==
+{{Referências}}
+
+{{Navbox
+| título = Guia de Recursos da {{SITENAME}}
+| acima = Navegação rápida pelos recursos disponíveis neste artigo modelo
+| grupo1 = Estrutura e Texto
+| lista1 = Títulos Híbridos · Formatação Inline · Listas · Definições · Citações · Links
+| grupo2 = Componentes Ricos
+| lista2 = Infoboxes · Tabelas Ordenáveis · Fórmulas KaTeX · Blocos de Código · Colunas · Galerias
+| grupo3 = Automação e Verificação
+| lista3 = Pré-definições · Funções de Parser · Variáveis Mágicas · Blocos Recolhíveis · Referências
+| abaixo = Utilize este artigo modelo livremente como base formatada para novos verbetes da enciclopédia.
+}}
+
+[[Categoria:Guias e Tutoriais]]
+[[Categoria:Documentação]]
+[[Categoria:Artigos Modelo]]`,
+    highlights: [
+      'Demonstração completa e formatada de títulos híbridos, formatação inline, listas, citações e links internos/externos.',
+      'Exemplos reais de Infobox completa, tabelas interativas ordenáveis, fórmulas matemáticas KaTeX e blocos de código.',
+      'Uso prático de pré-definições dinâmicas (templateService), variáveis mágicas, funções de parser, galeria, recolhíveis, referências e Navbox.',
+    ],
+  },
 ];
+
+export const FULL_MODEL_ARTICLE_WIKITEXT: string =
+  CURATED_FEATURED_ARTICLES.find((a) => a.id === 'curated-artigo-modelo-completo')?.descricao || '';
+

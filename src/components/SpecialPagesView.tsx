@@ -48,6 +48,7 @@ import {
   Cpu,
   Flame,
   Megaphone,
+  Braces,
 } from 'lucide-react';
 import { WikiArticle, WikiPage, WatchlistItem, UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
@@ -75,6 +76,7 @@ interface SpecialPagesViewProps {
   onNavigateToUsersList?: () => void;
   onNavigateToAdminCouncil?: () => void;
   onNavigateToExtensions?: () => void;
+  onNavigateToTemplates?: () => void;
   onNavigateToUpload?: () => void;
   onNavigateToFilesList?: () => void;
   onNavigateToArbitration?: () => void;
@@ -117,6 +119,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
   onNavigateToUsersList,
   onNavigateToAdminCouncil,
   onNavigateToExtensions,
+  onNavigateToTemplates,
   onNavigateToUpload,
   onNavigateToFilesList,
   onNavigateToArbitration,
@@ -402,6 +405,25 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                 Gerenciamento de Extensões, Ganchos & Módulos
+              </div>
+            </div>
+          </button>
+        )}
+
+        {onNavigateToTemplates && (
+          <button
+            onClick={onNavigateToTemplates}
+            className="p-3 rounded-lg border border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/70 dark:hover:bg-blue-900/40 text-left transition flex items-center gap-2.5 group"
+          >
+            <div className="p-2 rounded-md bg-blue-600 text-white shrink-0">
+              <Braces size={16} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-blue-900 dark:text-blue-200 truncate group-hover:underline flex items-center gap-1.5">
+                Special:Templates
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Administração de Pré-Definições MediaWiki
               </div>
             </div>
           </button>
@@ -1533,6 +1555,7 @@ export const SpecialPagesView: React.FC<SpecialPagesViewProps> = ({
           else if (view === 'admin-users' && onNavigateToUsersList) onNavigateToUsersList();
           else if (view === 'admin-firebase' && onNavigateToAdminFirebase) onNavigateToAdminFirebase();
           else if (view === 'admin-extensions' && onNavigateToExtensions) onNavigateToExtensions();
+          else if (view === 'admin-templates' && onNavigateToTemplates) onNavigateToTemplates();
           else if (view === 'tools' && onNavigateToTools) onNavigateToTools();
           else if (view === 'library' && onNavigateToLibrary) onNavigateToLibrary();
           else if (view === 'academic' && onNavigateToAcademic) onNavigateToAcademic();

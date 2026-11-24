@@ -509,10 +509,21 @@ export const StorageService = {
           return localArticles;
         }
 
-        // Incluir artigos canônicos e garantir persistência no Firestore
+        // Incluir artigos canônicos e atualizar se houver revisão canônica mais recente não editada por terceiros
         for (const c of CURATED_FEATURED_ARTICLES) {
-          if (!remoteArticles.some((a) => a.id.toLowerCase() === c.id.toLowerCase())) {
-            remoteArticles.push(c);
+          const existingIdx = remoteArticles.findIndex((a) => a.id.toLowerCase() === c.id.toLowerCase());
+          const existing = existingIdx >= 0 ? remoteArticles[existingIdx] : null;
+          const shouldUpgradeCanonical =
+            !!existing &&
+            (c.versao || 1) > (existing.versao || 1) &&
+            existing.autor === c.autor;
+
+          if (!existing || shouldUpgradeCanonical) {
+            if (existingIdx >= 0) {
+              remoteArticles[existingIdx] = c;
+            } else {
+              remoteArticles.push(c);
+            }
 
             // Sincroniza em segundo plano no Firestore
             if (firebaseActive && db) {
@@ -571,8 +582,14 @@ export const StorageService = {
         console.warn('[StorageService] Erro ao carregar artigos do Firestore, usando cache local:', err);
         const fallbackList = [...localArticles];
         for (const c of CURATED_FEATURED_ARTICLES) {
-          if (!fallbackList.some((a) => a.id.toLowerCase() === c.id.toLowerCase())) {
+          const existingIdx = fallbackList.findIndex((a) => a.id.toLowerCase() === c.id.toLowerCase());
+          if (existingIdx === -1) {
             fallbackList.push(c);
+          } else {
+            const existing = fallbackList[existingIdx];
+            if ((c.versao || 1) > (existing.versao || 1) && existing.autor === c.autor) {
+              fallbackList[existingIdx] = c;
+            }
           }
         }
         return fallbackList;
@@ -581,8 +598,14 @@ export const StorageService = {
 
     const fallbackList = [...localArticles];
     for (const c of CURATED_FEATURED_ARTICLES) {
-      if (!fallbackList.some((a) => a.id.toLowerCase() === c.id.toLowerCase())) {
+      const existingIdx = fallbackList.findIndex((a) => a.id.toLowerCase() === c.id.toLowerCase());
+      if (existingIdx === -1) {
         fallbackList.push(c);
+      } else {
+        const existing = fallbackList[existingIdx];
+        if ((c.versao || 1) > (existing.versao || 1) && existing.autor === c.autor) {
+          fallbackList[existingIdx] = c;
+        }
       }
     }
     return fallbackList;
@@ -656,8 +679,14 @@ export const StorageService = {
           });
 
           for (const c of CURATED_FEATURED_ARTICLES) {
-            if (!list.some((a) => a.id.toLowerCase() === c.id.toLowerCase())) {
+            const existingIdx = list.findIndex((a) => a.id.toLowerCase() === c.id.toLowerCase());
+            if (existingIdx === -1) {
               list.push(c);
+            } else {
+              const existing = list[existingIdx];
+              if ((c.versao || 1) > (existing.versao || 1) && existing.autor === c.autor) {
+                list[existingIdx] = c;
+              }
             }
           }
           list.sort((a, b) => {

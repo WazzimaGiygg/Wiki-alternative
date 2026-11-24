@@ -19,17 +19,20 @@ import {
   CheckCircle2,
   Lock,
   Puzzle,
+  Braces,
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { StorageService } from '../services/storageService';
 import { ExtensionManager } from '../core/ExtensionManager';
+import { TemplateService } from '../services/templateService';
 import { AdminUsersManagementView } from './AdminUsersManagementView';
 import { AdminCouncilView } from './AdminCouncilView';
 import { AdminDataRemovalRequestsView } from './AdminDataRemovalRequestsView';
 import { UnblockRequestsView } from './UnblockRequestsView';
 import { AdminExtensionsManagementView } from './AdminExtensionsManagementView';
+import { AdminTemplatesView } from './AdminTemplatesView';
 
-export type AdminDashboardTab = 'users' | 'council' | 'data-removal' | 'unblock-requests' | 'extensions';
+export type AdminDashboardTab = 'users' | 'council' | 'data-removal' | 'unblock-requests' | 'extensions' | 'templates';
 
 export interface UnifiedAdminDashboardProps {
   currentUser: UserProfile | null;
@@ -69,16 +72,18 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
     bannedUsersCount: 0,
     activeExtensionsCount: 0,
     totalExtensionsCount: 0,
+    templatesCount: TemplateService.getCachedTemplatesSync().length,
   });
 
   const loadSummaryStats = async () => {
     setIsRefreshingStats(true);
     try {
-      const [allUsers, lgpdReqs, unblockReqs, promoReqs] = await Promise.all([
+      const [allUsers, lgpdReqs, unblockReqs, promoReqs, templatesList] = await Promise.all([
         StorageService.getCommunityUsers().catch(() => []),
         StorageService.getLgpdDeletionRequests().catch(() => []),
         StorageService.getUnblockRequests().catch(() => []),
         StorageService.getPromotionRequests().catch(() => []),
+        TemplateService.refreshFromFirestore(false).catch(() => TemplateService.getCachedTemplatesSync()),
       ]);
 
       const operators = allUsers.filter(
@@ -106,6 +111,7 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
         bannedUsersCount: banned.length,
         activeExtensionsCount: activeExts,
         totalExtensionsCount: allExts.length,
+        templatesCount: templatesList.length,
       });
     } catch (err) {
       console.error('[UnifiedAdminDashboard] Erro ao carregar métricas:', err);
@@ -116,6 +122,12 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
 
   useEffect(() => {
     loadSummaryStats();
+    const unsubTemplates = TemplateService.subscribe((list) => {
+      setStats((prev) => ({ ...prev, templatesCount: list.length }));
+    });
+    return () => {
+      unsubTemplates();
+    };
   }, []);
 
   // Update active tab if initialTab prop changes externally
@@ -243,7 +255,7 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
           </div>
 
           {/* Primary Tab Navigation Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-4">
             {/* Tab 1: Users Management */}
             <button
               type="button"
@@ -415,6 +427,38 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
                 {stats.activeExtensionsCount} ativas
               </span>
             </button>
+
+            {/* Tab 6: MediaWiki Templates */}
+            <button
+              type="button"
+              onClick={() => handleTabChange('templates')}
+              className={`p-3 rounded-xl border text-left transition flex items-center justify-between group ${
+                activeTab === 'templates'
+                  ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-500 dark:border-blue-600 ring-2 ring-blue-500/20 text-blue-900 dark:text-blue-100 shadow-xs'
+                  : 'bg-slate-50/70 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className={`p-2 rounded-lg shrink-0 ${
+                    activeTab === 'templates'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 group-hover:text-blue-600'
+                  }`}
+                >
+                  <Braces className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold truncate">6. Pré-Definições</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    Modelos {'{{...}}'} do sistema
+                  </div>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-bold tabular-nums px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
+                {stats.templatesCount}
+              </span>
+            </button>
           </div>
         </div>
       </header>
@@ -477,6 +521,16 @@ export const UnifiedAdminDashboard: React.FC<UnifiedAdminDashboardProps> = ({
         {activeTab === 'extensions' && (
           <div className="animate-in fade-in duration-200">
             <AdminExtensionsManagementView
+              currentUser={currentUser}
+              onNavigateToUser={onNavigateToUser}
+              onBack={onBack}
+            />
+          </div>
+        )}
+
+        {activeTab === 'templates' && (
+          <div className="animate-in fade-in duration-200">
+            <AdminTemplatesView
               currentUser={currentUser}
               onNavigateToUser={onNavigateToUser}
               onBack={onBack}

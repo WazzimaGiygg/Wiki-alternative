@@ -59,6 +59,7 @@ import { templateService } from '../services/templateService';
 import { PermissionService, EditPermissionStatus } from '../services/PermissionService';
 import { sanitizeHtml } from '../utils/sanitizeHtml';
 import { BotAgentService } from '../services/botAgentService';
+import { FULL_MODEL_ARTICLE_WIKITEXT } from '../data/curatedArticles';
 import { SaveReasonModal } from './SaveReasonModal';
 import { PdfExportModal } from './PdfExportModal';
 import { PdfPreviewModal } from './PdfPreviewModal';
@@ -3154,6 +3155,15 @@ Escreva aqui o contexto e os principais conceitos. Utilize a sintaxe MediaWiki p
                 className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition"
               >
                 💬 Citação
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomWikitextCode(FULL_MODEL_ARTICLE_WIKITEXT);
+                }}
+                className="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition cursor-pointer"
+              >
+                📖 Artigo Modelo Completo
               </button>
             </div>
 

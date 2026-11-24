@@ -16,7 +16,12 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { WikiArticle } from '../types';
-import { exportArticleToStructuredPdf, cleanWikitextForPdf, PdfExportOptions } from '../utils/pdfExport';
+import {
+  exportArticleToStructuredPdf,
+  cleanWikitextForPdf,
+  preprocessArticleWikitextForPdf,
+  parseArticleIntoStructuredSections,
+} from '../utils/pdfExport';
 import { parseWikitext } from '../utils/wikitextParser';
 import { WIKIWORLDWEB_STANDARD_LOGO_DATA_URL } from '../utils/pdfStandardLogoAsset';
 
@@ -38,14 +43,18 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Parse do wikitext para renderizar a estrutura exata do documento no preview
-  const parseResult = useMemo(() => {
-    return parseWikitext(article.descricao || '', undefined, article.titulo);
+  const expandedWikitext = useMemo(() => {
+    return preprocessArticleWikitextForPdf(article.descricao || '', article.titulo);
   }, [article.descricao, article.titulo]);
 
+  // Parse do wikitext para renderizar a estrutura exata do documento no preview
+  const parseResult = useMemo(() => {
+    return parseWikitext(expandedWikitext, undefined, article.titulo);
+  }, [expandedWikitext, article.titulo]);
+
   const rawCleanText = useMemo(() => {
-    return cleanWikitextForPdf(article.descricao || '');
-  }, [article.descricao]);
+    return cleanWikitextForPdf(expandedWikitext);
+  }, [expandedWikitext]);
 
   const wordsCount = useMemo(() => {
     return rawCleanText.trim() ? rawCleanText.trim().split(/\s+/).length : 0;
@@ -57,91 +66,37 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
 
   // Seções estruturadas para o preview idêntico ao modelo de exportação PDF
   const structuredSections = useMemo(() => {
-    const lines = (article.descricao || '').split('\n');
-    const sections: Array<{
-      numberStr: string;
-      title: string;
-      badge: string;
-      badgeColor: string;
-      badgeBg: string;
-      categoryLabel: string;
-      paragraphs: string[];
-      bullets: string[];
-    }> = [];
+    const parsed = parseArticleIntoStructuredSections(expandedWikitext, article.titulo);
+    return parsed.map((sec) => {
+      let badgeColor = 'text-blue-700 dark:text-blue-300';
+      let badgeBg = 'bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800';
+      let categoryLabel = 'DESENVOLVIMENTO & DETALHAMENTO TEMÁTICO';
 
-    let current = {
-      numberStr: '§ 1.0',
-      title: `Introdução & Sumário Executivo: ${article.titulo}`,
-      badge: 'CONCEITO',
-      badgeColor: 'text-emerald-700 dark:text-emerald-300',
-      badgeBg: 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800',
-      categoryLabel: 'INTRODUÇÃO & CONCEITO GERAL',
-      paragraphs: [] as string[],
-      bullets: [] as string[],
-    };
-
-    let sectionCounter = 1;
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      const isH2 = /^={1,2}[^=]+={1,2}$/.test(line);
-      const isH3 = /^={3}[^=]+={3}$/.test(line);
-
-      if (isH2 || isH3) {
-        if (current.paragraphs.length > 0 || current.bullets.length > 0) {
-          sections.push(current);
-        }
-
-        const hTitle = line.replace(/=/g, '').trim();
-        const lower = hTitle.toLowerCase();
-
-        let badge = 'DETALHE';
-        let badgeColor = 'text-blue-700 dark:text-blue-300';
-        let badgeBg = 'bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800';
-        let categoryLabel = 'DESENVOLVIMENTO & DETALHAMENTO TEMÁTICO';
-
-        if (lower.includes('referência') || lower.includes('fonte') || lower.includes('bibliografia')) {
-          badge = 'FONTE';
-          badgeColor = 'text-purple-700 dark:text-purple-300';
-          badgeBg = 'bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800';
-          categoryLabel = 'FONTES & REFERÊNCIAS BIBLIOGRÁFICAS';
-        } else if (lower.includes('análise') || lower.includes('impacto') || lower.includes('dados') || lower.includes('estatística')) {
-          badge = 'ANÁLISE';
-          badgeColor = 'text-cyan-700 dark:text-cyan-300';
-          badgeBg = 'bg-cyan-50 dark:bg-cyan-950/60 border-cyan-200 dark:border-cyan-800';
-          categoryLabel = 'ANÁLISE, IMPACTO & DADOS ESTATÍSTICOS';
-        }
-
-        if (isH2) {
-          sectionCounter++;
-        }
-
-        current = {
-          numberStr: `§ ${sectionCounter}.0`,
-          title: hTitle,
-          badge,
-          badgeColor,
-          badgeBg,
-          categoryLabel,
-          paragraphs: [],
-          bullets: [],
-        };
-        continue;
+      if (sec.categoryGroup === 'intro') {
+        badgeColor = 'text-emerald-700 dark:text-emerald-300';
+        badgeBg = 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800';
+        categoryLabel = 'INTRODUÇÃO & CONCEITO GERAL';
+      } else if (sec.categoryGroup === 'analysis') {
+        badgeColor = 'text-cyan-700 dark:text-cyan-300';
+        badgeBg = 'bg-cyan-50 dark:bg-cyan-950/60 border-cyan-200 dark:border-cyan-800';
+        categoryLabel = 'ANÁLISE, TABELAS & FÓRMULAS';
+      } else if (sec.categoryGroup === 'references') {
+        badgeColor = 'text-purple-700 dark:text-purple-300';
+        badgeBg = 'bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800';
+        categoryLabel = 'FONTES & REFERÊNCIAS BIBLIOGRÁFICAS';
       }
 
-      if (line.startsWith('*') || line.startsWith('#')) {
-        current.bullets.push(cleanWikitextForPdf(line.replace(/^[*#]+\s*/, '')));
-      } else if (line.length > 0) {
-        current.paragraphs.push(cleanWikitextForPdf(line));
-      }
-    }
-
-    if (current.paragraphs.length > 0 || current.bullets.length > 0) {
-      sections.push(current);
-    }
-
-    return sections;
-  }, [article.descricao, article.titulo]);
+      return {
+        numberStr: sec.numberStr,
+        title: sec.title,
+        badge: sec.badge,
+        badgeColor,
+        badgeBg,
+        categoryLabel,
+        elements: sec.elements,
+      };
+    });
+  }, [expandedWikitext, article.titulo]);
 
   if (!isOpen) return null;
 
@@ -395,7 +350,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                         </span>
                       </div>
                       <span className="text-[10px] text-slate-500">
-                        Seção Editorial • {sec.paragraphs.length + sec.bullets.length} itens
+                        Seção Editorial • {sec.elements.length} itens
                       </span>
                     </div>
 
@@ -403,21 +358,104 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                       {sec.title}
                     </h2>
 
-                    {sec.paragraphs.map((p, pIdx) => (
-                      <p key={pIdx} className="text-xs text-slate-700 leading-relaxed">
-                        {p}
-                      </p>
-                    ))}
-
-                    {sec.bullets.length > 0 && (
-                      <ul className="space-y-1 pl-4 list-disc text-xs text-slate-700">
-                        {sec.bullets.map((b, bIdx) => (
-                          <li key={bIdx} className="leading-snug">
-                            {b}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                    {sec.elements.map((el, elIdx) => {
+                      if (el.type === 'paragraph') {
+                        return (
+                          <p key={elIdx} className="text-xs text-slate-700 leading-relaxed">
+                            {el.text}
+                          </p>
+                        );
+                      }
+                      if (el.type === 'bullet') {
+                        return (
+                          <div key={elIdx} className="text-xs text-slate-700 leading-snug pl-3 flex items-start gap-1.5">
+                            <span className="font-bold text-slate-500">{el.marker}</span>
+                            <span>{el.text}</span>
+                          </div>
+                        );
+                      }
+                      if (el.type === 'quote') {
+                        return (
+                          <blockquote key={elIdx} className="border-l-2 border-blue-500 bg-slate-50 px-3 py-1.5 text-xs italic text-slate-600 rounded-r">
+                            {el.text}
+                          </blockquote>
+                        );
+                      }
+                      if (el.type === 'callout') {
+                        return (
+                          <div key={elIdx} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-xs">
+                            <div className="font-bold text-slate-800">{el.label}</div>
+                            <div className="text-slate-600 mt-0.5">{el.text}</div>
+                          </div>
+                        );
+                      }
+                      if (el.type === 'code') {
+                        return (
+                          <pre key={elIdx} className="p-2.5 rounded-lg bg-slate-100 border border-slate-200 text-[11px] font-mono text-slate-800 overflow-x-auto">
+                            {el.text}
+                          </pre>
+                        );
+                      }
+                      if (el.type === 'infobox') {
+                        return (
+                          <div key={elIdx} className="border border-indigo-200 rounded-lg overflow-hidden text-[11px]">
+                            <div className="bg-indigo-700 text-white font-bold px-3 py-1.5 text-center">
+                              {el.data.title}
+                            </div>
+                            <div className="divide-y divide-slate-200">
+                              {el.data.rows.map((r, rIdx) =>
+                                r.isSection ? (
+                                  <div key={rIdx} className="bg-indigo-50 px-3 py-1 font-bold text-indigo-900 text-center">
+                                    {r.label}
+                                  </div>
+                                ) : (
+                                  <div key={rIdx} className="grid grid-cols-3 px-3 py-1 gap-2">
+                                    <span className="font-semibold text-slate-700">{r.label}</span>
+                                    <span className="col-span-2 text-slate-600">{r.value}</span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+                      if (el.type === 'table') {
+                        return (
+                          <div key={elIdx} className="overflow-x-auto border border-slate-200 rounded-lg">
+                            {el.data.caption && (
+                              <div className="bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-800 text-center border-b border-slate-200">
+                                {el.data.caption}
+                              </div>
+                            )}
+                            <table className="w-full text-[11px] border-collapse">
+                              {el.data.headers.length > 0 && (
+                                <thead className="bg-slate-100">
+                                  <tr>
+                                    {el.data.headers.map((h, hIdx) => (
+                                      <th key={hIdx} className="border border-slate-200 px-2 py-1 text-left font-bold text-slate-800">
+                                        {h}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                              )}
+                              <tbody>
+                                {el.data.rows.map((row, rIdx) => (
+                                  <tr key={rIdx} className={rIdx % 2 === 1 ? 'bg-slate-50' : 'bg-white'}>
+                                    {row.map((cell, cIdx) => (
+                                      <td key={cIdx} className="border border-slate-200 px-2 py-1 text-slate-700">
+                                        {cell}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
                   </div>
                 </div>
               ))}

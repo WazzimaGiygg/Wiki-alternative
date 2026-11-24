@@ -2106,6 +2106,7 @@ export default function App() {
               onNavigateToUsersList={() => handleNavigate('admin-users')}
               onNavigateToAdminCouncil={() => handleNavigate('admin-council')}
               onNavigateToExtensions={() => handleNavigate('admin-extensions')}
+              onNavigateToTemplates={() => handleNavigate('admin-templates')}
               onNavigateToUpload={() => handleNavigateToUpload()}
               onNavigateToFilesList={() => handleNavigate('files-list')}
               onNavigateToArbitration={() => handleNavigate('arbitration')}
@@ -2157,6 +2158,7 @@ export default function App() {
               onNavigateToUsersList={() => handleNavigate('admin-users')}
               onNavigateToAdminCouncil={() => handleNavigate('admin-council')}
               onNavigateToExtensions={() => handleNavigate('admin-extensions')}
+              onNavigateToTemplates={() => handleNavigate('admin-templates')}
               onNavigateToUpload={() => handleNavigateToUpload()}
               onNavigateToFilesList={() => handleNavigate('files-list')}
               onNavigateToArbitration={() => handleNavigate('arbitration')}
@@ -2231,7 +2233,8 @@ export default function App() {
             currentView === 'admin-council' ||
             currentView === 'admin-data-removal' ||
             currentView === 'unblock-requests' ||
-            currentView === 'admin-extensions') && (
+            currentView === 'admin-extensions' ||
+            currentView === 'admin-templates') && (
             <UnifiedAdminDashboard
               currentUser={user}
               initialTab={
@@ -2243,6 +2246,8 @@ export default function App() {
                   ? 'unblock-requests'
                   : currentView === 'admin-extensions'
                   ? 'extensions'
+                  : currentView === 'admin-templates'
+                  ? 'templates'
                   : 'users'
               }
               onNavigateToUser={handleNavigateToUser}
