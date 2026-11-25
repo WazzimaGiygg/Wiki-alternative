@@ -1094,7 +1094,7 @@ export async function exportArticleToStructuredPdf(
       doc.setFontSize(scaleFont(8.4));
       doc.setTextColor(51, 65, 85);
       const lines = doc.splitTextToSize(el.text, boxW);
-      doc.text(lines, boxX, yStart);
+      doc.text(lines, boxX, yStart, { align: 'justify', maxWidth: boxW });
       return lines.length * lineHPara + 2;
     }
 
@@ -1107,7 +1107,7 @@ export async function exportArticleToStructuredPdf(
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(51, 65, 85);
       const lines = doc.splitTextToSize(el.text, boxW - 5);
-      doc.text(lines, boxX + 4.5, yStart);
+      doc.text(lines, boxX + 4.5, yStart, { align: 'justify', maxWidth: boxW - 5 });
       return lines.length * lineHBullet + 1.6;
     }
 
@@ -1124,7 +1124,7 @@ export async function exportArticleToStructuredPdf(
       doc.line(boxX, yStart - 2.4, boxX, yStart - 2.4 + qH);
 
       doc.setTextColor(71, 85, 105);
-      doc.text(lines, boxX + 3.5, yStart + 0.8);
+      doc.text(lines, boxX + 3.5, yStart + 0.8, { align: 'justify', maxWidth: boxW - 7 });
       return qH + 2;
     }
 
@@ -1153,7 +1153,10 @@ export async function exportArticleToStructuredPdf(
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(scaleFont(7.8));
       doc.setTextColor(51, 65, 85);
-      doc.text(bodyLines, boxX + 3.5, yStart + 0.8 + titleLines.length * 3.6);
+      doc.text(bodyLines, boxX + 3.5, yStart + 0.8 + titleLines.length * 3.6, {
+        align: 'justify',
+        maxWidth: boxW - 7,
+      });
       return cH + 2.2;
     }
 

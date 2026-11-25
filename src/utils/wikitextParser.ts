@@ -339,7 +339,7 @@ export function parseWikitext(
           <span>${escapeHtml(title)}</span>
           <span class="text-[10px] text-slate-400 font-mono group-open:rotate-180 transition-transform">▼</span>
         </summary>
-        <div class="p-3.5 text-xs border-t border-slate-200 dark:border-slate-800 leading-relaxed text-slate-700 dark:text-slate-300">
+        <div class="p-3.5 text-xs border-t border-slate-200 dark:border-slate-800 leading-relaxed text-slate-700 dark:text-slate-300 text-justify">
           ${formatInline(content.trim(), inlinePlaceholders)}
         </div>
       </details>
@@ -604,8 +604,10 @@ export function parseWikitext(
     if (trimmed.startsWith(':')) {
       const indentCount = (line.match(/^:+/) || [''])[0].length;
       const textAfter = line.replace(/^:+/, '').trim();
+      const indentClass =
+        indentCount === 1 ? 'ml-6' : indentCount === 2 ? 'ml-12' : indentCount === 3 ? 'ml-16' : 'ml-20';
       processedLines.push(`
-        <div style="margin-left: ${indentCount * 1.5}rem" class="my-1.5 text-slate-700 dark:text-slate-300 text-xs sm:text-sm border-l-2 border-slate-200 dark:border-slate-700 pl-2">
+        <div class="wiki-indent-block ${indentClass} my-1.5 text-slate-700 dark:text-slate-300 text-xs sm:text-sm border-l-2 border-slate-200 dark:border-slate-700 pl-2">
           ${formatInline(textAfter, inlinePlaceholders)}
         </div>
       `);
@@ -1638,7 +1640,7 @@ function renderWarningNotice(content: string, inlineMap?: Map<string, string>): 
   return `
     <div class="my-3.5 p-3.5 rounded-lg border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5 shadow-xs not-prose">
       <span class="text-amber-600 dark:text-amber-400 text-base font-bold flex-shrink-0">⚠️</span>
-      <div class="flex-1 leading-relaxed"><strong>Aviso Editorial:</strong> ${formatInline(content.trim(), inlineMap)}</div>
+      <div class="flex-1 leading-relaxed text-justify"><strong>Aviso Editorial:</strong> ${formatInline(content.trim(), inlineMap)}</div>
     </div>
   `;
 }
@@ -1647,7 +1649,7 @@ function renderInfoNotice(content: string, inlineMap?: Map<string, string>): str
   return `
     <div class="my-3.5 p-3.5 rounded-lg border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 text-xs flex items-start gap-2.5 shadow-xs not-prose">
       <span class="text-blue-600 dark:text-blue-400 text-base font-bold flex-shrink-0">ℹ️</span>
-      <div class="flex-1 leading-relaxed"><strong>Nota Informativa:</strong> ${formatInline(content.trim(), inlineMap)}</div>
+      <div class="flex-1 leading-relaxed text-justify"><strong>Nota Informativa:</strong> ${formatInline(content.trim(), inlineMap)}</div>
     </div>
   `;
 }
@@ -1656,7 +1658,7 @@ function renderHighlightNotice(content: string, inlineMap?: Map<string, string>)
   return `
     <div class="my-3.5 p-3.5 rounded-lg border-l-4 border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 text-xs flex items-start gap-2.5 shadow-xs not-prose">
       <span class="text-emerald-600 dark:text-emerald-400 text-base font-bold flex-shrink-0">✨</span>
-      <div class="flex-1 leading-relaxed"><strong>Destaque Enciclopédico:</strong> ${formatInline(content.trim(), inlineMap)}</div>
+      <div class="flex-1 leading-relaxed text-justify"><strong>Destaque Enciclopédico:</strong> ${formatInline(content.trim(), inlineMap)}</div>
     </div>
   `;
 }
@@ -1992,7 +1994,7 @@ function renderAmbox(kind: string, body: string, inlineMap?: Map<string, string>
       <span class="text-lg leading-none flex-shrink-0 mt-0.5 select-none" aria-hidden="true">${escapeHtml(icon)}</span>
       <div class="flex-1 min-w-0 leading-relaxed text-slate-700 dark:text-slate-300 break-words">
         <div class="font-bold ${style.titleColor}">${formatInline(title, inlineMap)}${extraDate}</div>
-        ${message ? `<div class="mt-0.5">${formatInline(message, inlineMap)}</div>` : ''}
+        ${message ? `<div class="mt-0.5 text-justify">${formatInline(message, inlineMap)}</div>` : ''}
         ${extraMotivo}
       </div>
     </div>
@@ -2130,7 +2132,7 @@ function renderCollapsibleTemplate(content: string, inlineMap?: Map<string, stri
         <span>${formatInline(title, inlineMap)}</span>
         <span class="text-[10px] text-slate-400 font-mono group-open:rotate-180 transition-transform">▼</span>
       </summary>
-      <div class="p-3.5 text-xs border-t border-slate-200 dark:border-slate-800 leading-relaxed text-slate-700 dark:text-slate-300">
+      <div class="p-3.5 text-xs border-t border-slate-200 dark:border-slate-800 leading-relaxed text-slate-700 dark:text-slate-300 text-justify">
         ${formatInline(innerContent.trim(), inlineMap)}
       </div>
     </details>

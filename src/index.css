@@ -185,6 +185,57 @@
   color: #94a3b8;
 }
 
+@layer components {
+  :where(.wiki-rendered-content) :where(p, li, dd, blockquote, .wiki-indent-block):not([align]):not(.text-left):not(.text-center):not(.text-right):not(.text-justify):not([style*="text-align"]) {
+    text-align: justify;
+    text-justify: inter-word;
+  }
+
+  :where(.wiki-rendered-content) :where([align="left"], .text-left) :where(p, li, dd, blockquote, .wiki-indent-block):not([align]):not(.text-center):not(.text-right):not(.text-justify),
+  :where(.wiki-rendered-content) :where([align="center"], .text-center, center) :where(p, li, dd, blockquote, .wiki-indent-block):not([align]):not(.text-left):not(.text-right):not(.text-justify),
+  :where(.wiki-rendered-content) :where([align="right"], .text-right) :where(p, li, dd, blockquote, .wiki-indent-block):not([align]):not(.text-left):not(.text-center):not(.text-justify),
+  :where(.wiki-rendered-content) :where([style*="text-align"]) :where(p, li, dd, blockquote, .wiki-indent-block):not([align]):not(.text-left):not(.text-center):not(.text-right):not(.text-justify) {
+    text-align: inherit;
+    text-justify: auto;
+  }
+
+  :where(.wiki-rendered-content) :where(
+    table,
+    .wikitable,
+    .wiki-infobox,
+    .wiki-navbox,
+    .wiki-toc-inline,
+    .wiki-code-block,
+    .wiki-math-block,
+    .wiki-image-thumb,
+    .wiki-gallery,
+    .wiki-userbox,
+    .wiki-portal,
+    .references-section
+  ) :where(p, li, dd, blockquote, .wiki-indent-block) {
+    text-align: inherit;
+    text-justify: auto;
+  }
+
+  .wiki-rendered-content center,
+  .wiki-rendered-content [align="center"] {
+    text-align: center;
+  }
+
+  .wiki-rendered-content [align="left"] {
+    text-align: left;
+  }
+
+  .wiki-rendered-content [align="right"] {
+    text-align: right;
+  }
+
+  .wiki-rendered-content [align="justify"] {
+    text-align: justify;
+    text-justify: inter-word;
+  }
+}
+
 .wiki-rendered-content code {
   font-family: 'Consolas', 'Courier New', monospace;
   background-color: #f1f5f9;

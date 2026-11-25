@@ -469,6 +469,51 @@ body.is-printing-article .wikidiota-notice-box {
     break-inside: avoid;
   }
 
+  /* Alinhamento justificado padrão para corpo do artigo na impressão (preservando alinhamentos explícitos e blocos especiais) */
+  :where(.wiki-rendered-content, .reader-mode-content) :where(p, li, dd, blockquote, .wiki-indent-block):not([align]):not(.text-left):not(.text-center):not(.text-right):not([style*="text-align"]) {
+    text-align: justify;
+    text-justify: inter-word;
+  }
+
+  :where(.wiki-rendered-content, .reader-mode-content) :where([align="left"], .text-left) :where(p, li, dd, blockquote, .wiki-indent-block):not([align]):not(.text-center):not(.text-right),
+  :where(.wiki-rendered-content, .reader-mode-content) :where([align="center"], .text-center, center) :where(p, li, dd, blockquote, .wiki-indent-block):not([align]):not(.text-left):not(.text-right),
+  :where(.wiki-rendered-content, .reader-mode-content) :where([align="right"], .text-right) :where(p, li, dd, blockquote, .wiki-indent-block):not([align]):not(.text-left):not(.text-center),
+  :where(.wiki-rendered-content, .reader-mode-content) :where(
+    table,
+    .wikitable,
+    .wiki-infobox,
+    .wiki-navbox,
+    .wiki-toc-inline,
+    .article-top-toc,
+    .wiki-code-block,
+    .wiki-math-block,
+    .wiki-image-thumb,
+    .wiki-gallery,
+    .wiki-userbox,
+    .wiki-portal,
+    .references-section
+  ) :where(p, li, dd, blockquote, .wiki-indent-block) {
+    text-align: inherit;
+    text-justify: auto;
+  }
+
+  .wiki-rendered-content center,
+  .wiki-rendered-content [align="center"],
+  .reader-mode-content center,
+  .reader-mode-content [align="center"] {
+    text-align: center !important;
+  }
+
+  .wiki-rendered-content [align="left"],
+  .reader-mode-content [align="left"] {
+    text-align: left !important;
+  }
+
+  .wiki-rendered-content [align="right"],
+  .reader-mode-content [align="right"] {
+    text-align: right !important;
+  }
+
   /* Code blocks & monospace */
   pre,
   code {
@@ -541,6 +586,7 @@ body.is-printing-article .wikidiota-notice-box {
 
   .article-top-toc li {
     margin-bottom: 2pt !important;
+    text-align: left !important;
   }
 
   .article-top-toc a {

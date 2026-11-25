@@ -361,7 +361,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                     {sec.elements.map((el, elIdx) => {
                       if (el.type === 'paragraph') {
                         return (
-                          <p key={elIdx} className="text-xs text-slate-700 leading-relaxed">
+                          <p key={elIdx} className="text-xs text-slate-700 leading-relaxed text-justify">
                             {el.text}
                           </p>
                         );
@@ -370,13 +370,13 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                         return (
                           <div key={elIdx} className="text-xs text-slate-700 leading-snug pl-3 flex items-start gap-1.5">
                             <span className="font-bold text-slate-500">{el.marker}</span>
-                            <span>{el.text}</span>
+                            <span className="flex-1 text-justify">{el.text}</span>
                           </div>
                         );
                       }
                       if (el.type === 'quote') {
                         return (
-                          <blockquote key={elIdx} className="border-l-2 border-blue-500 bg-slate-50 px-3 py-1.5 text-xs italic text-slate-600 rounded-r">
+                          <blockquote key={elIdx} className="border-l-2 border-blue-500 bg-slate-50 px-3 py-1.5 text-xs italic text-slate-600 rounded-r text-justify">
                             {el.text}
                           </blockquote>
                         );
@@ -385,7 +385,7 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
                         return (
                           <div key={elIdx} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 text-xs">
                             <div className="font-bold text-slate-800">{el.label}</div>
-                            <div className="text-slate-600 mt-0.5">{el.text}</div>
+                            <div className="text-slate-600 mt-0.5 text-justify">{el.text}</div>
                           </div>
                         );
                       }

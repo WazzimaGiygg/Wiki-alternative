@@ -14,7 +14,7 @@ export function sanitizeHtml(dirty: string | null | undefined): string {
     return DOMPurify.sanitize(dirty, {
       ALLOWED_TAGS: [
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'strong', 'em', 'b', 'i', 'u', 's',
-        'sub', 'sup', 'small', 'mark', 'code', 'pre', 'blockquote', 'hr', 'br',
+        'sub', 'sup', 'small', 'mark', 'code', 'pre', 'blockquote', 'cite', 'center', 'hr', 'br',
         'ul', 'ol', 'li', 'dl', 'dt', 'dd',
         'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
         'a', 'img', 'div', 'section', 'article', 'aside', 'details', 'summary',
